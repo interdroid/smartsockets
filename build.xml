@@ -1,0 +1,56 @@
+<project
+    name="multi ip lib"
+    default="build"
+    basedir=".">
+
+    <property name="srcdir" value="./src"/>
+    <property name="builddir" value="./build"/>
+    <property name="distdir" value="./jars"/>
+
+    <property name="external" value="./external/log4j-1.2.9.jar:./external/ibis-util.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar"/>
+	
+    <!-- Internal target - Preparations for building. -->
+    <target name="prepare"> 
+    	<mkdir dir="${distdir}" />
+        <mkdir dir="${builddir}" />
+    </target>
+
+    <target name="compile" depends="prepare">
+	
+	<javac 	classpath="${external}"
+		destdir="${builddir}"
+                srcdir="${srcdir}"
+                debug="true"
+                includes="**/*.java"/>
+    </target>
+
+    <!-- Internal target - Builds the JAR file -->
+    <target name="jar" depends="compile">
+
+	<delete failonerror="false" file="${distdir}/ibisConnect.jar" />
+
+	<jar 	jarfile="${distdir}/ibisConnect.jar"
+                basedir="${builddir}"
+		includes="**">
+       		<manifest>
+			<attribute name="Built-By" value="${user.name}"/>
+		</manifest>
+	</jar>
+
+    </target>
+    
+    <target name="build" depends="prepare,compile,jar">
+    </target>
+	
+    <!-- remove all generated code -->
+    <target name="clean" description="Removes the ${distdir} directory">
+         <delete failonerror="false" dir="${builddir}" />
+         <delete failonerror="false" dir="${distdir}" />
+    </target>
+
+    <target name="distclean" depends="clean">
+         <delete failonerror="false" dir="./build-eclipse" />
+    </target>
+
+
+</project>
