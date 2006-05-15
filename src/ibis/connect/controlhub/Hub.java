@@ -135,9 +135,8 @@ public class Hub extends Thread implements Protocol {
             directFactory = DirectSocketFactory.getSocketFactory();
             server = directFactory.createServerSocket(port, 50, null);        
         
-            System.err.println("Hub created on host:  \"" 
-                    + server.getAddressSet() + "\" and port \"" +  
-                    + port + "\"");
+            System.err.println("Hub created on host: \"" 
+                    + server.getAddressSet() + "\"");
         } catch (IOException e) { 
             logger.info("Failed to creating hub on port: " + port, e);            
             throw e;

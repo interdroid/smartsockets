@@ -93,6 +93,7 @@ public class VirtualServerSocket {
             }
         }
         
+        result.setTcpNoDelay(true);        
         return result;
     }
         

@@ -25,7 +25,7 @@ public class Direct extends ConnectModule {
     private static final String PREFIX = Properties.PREFIX + ".modules.direct";    
     private static final String PORT = PREFIX + ".port";        
         
-    private static final int DEFAULT_PORT = 0;     
+    private static final int DEFAULT_PORT = 19827;     
     
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
@@ -82,7 +82,8 @@ public class Direct extends ConnectModule {
                     + server.getAddressSet());
             
         } catch (IOException e) {            
-            logger.warn(name + ": Failed to create ServerSocket", e);
+            logger.warn(name + ": Failed to create ServerSocket on port " 
+                    + port, e);
             throw e;
         }
         
@@ -111,18 +112,31 @@ public class Direct extends ConnectModule {
         DataInputStream in = null;
         DataOutputStream out = null;
         
+        if (logger.isDebugEnabled()) { 
+            logger.debug(name + ": Got incoming connection on " + s);
+        }
+           
         try {         
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
         
             SocketAddressSet target = new SocketAddressSet(in.readUTF());            
             int targetPort = in.readInt();
-                        
+    
+            if (logger.isDebugEnabled()) { 
+                logger.debug(name + ": Target port " + targetPort);
+            }
+                    
             // First check if we are the desired target machine...
             if (!checkTarget(target)) { 
                 out.write(WRONG_MACHINE);
                 out.flush();                
                 close(s, out, in);
+                
+                if (logger.isDebugEnabled()) { 
+                    logger.debug(name + ": Connection failed, WRONG machine!");
+                }
+                
                 return;
             }
             
@@ -133,6 +147,11 @@ public class Direct extends ConnectModule {
                 out.write(PORT_NOT_FOUND);
                 out.flush();                
                 close(s, out, in);
+                
+                if (logger.isDebugEnabled()) { 
+                    logger.debug(name + ": Connection failed, PORT not found!");
+                }                
+                
                 return;
             }
             
@@ -142,10 +161,15 @@ public class Direct extends ConnectModule {
                         
             boolean accept = vss.incomingConnection(dvs);
             
-            if (!accept) { 
+            if (!accept) {
                 out.write(CONNECTION_REJECTED);
                 out.flush();                
                 close(s, out, in);
+                
+                if (logger.isDebugEnabled()) { 
+                    logger.debug(name + ": Connection failed, REJECTED!");
+                }
+                
                 return;
             }
             
@@ -204,7 +228,7 @@ public class Direct extends ConnectModule {
             // Failed to create the exception, but other modules may be more 
             // succesful.            
             throw new ModuleNotSuitableException(name + ": Failed to " +
-                    "connect to " + target);           
+                    "connect to " + target + " " + e);           
         }
         
         DirectVirtualSocket tmp = null;

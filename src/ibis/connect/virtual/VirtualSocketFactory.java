@@ -156,7 +156,10 @@ public class VirtualSocketFactory {
             ConnectModule m = (ConnectModule) modules.get(i);
             
             try { 
-                return m.connect(target, timeout, properties);
+                VirtualSocket vs = m.connect(target, timeout, properties);
+                // TODO: move to ibis ?
+                vs.setTcpNoDelay(true);
+                return vs;
             } catch (ModuleNotSuitableException e) {
                 // Just print and try the next module...
                 logger.info("Module not suitable", e);
@@ -164,7 +167,7 @@ public class VirtualSocketFactory {
             // NOTE: other exceptions are forwarded to the user!
         }        
         
-        throw new ConnectException("Not suitable module found to connect to "
+        throw new ConnectException("No suitable module found to connect to "
                 + target);        
     } 
         

@@ -66,7 +66,15 @@ public class Reverse extends ConnectModule {
         
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
             Map properties) throws ModuleNotSuitableException, IOException {
-                    
+
+        // When the reverse module is asked for a connection to a remote 
+        // address, it simply creates a local serversocket and send a message 
+        // to the remote machine asking for a connection. If no connection comes 
+        // in within the specified timeout, the module assumes the connection 
+        // setup has failed and throws an exception. If a connection does come 
+        // in, the local socket still has to wait for the remote serversocket to 
+        // do an accept.         
+                
         if (timeout == 0 || timeout > DEFAULT_TIMEOUT) { 
             timeout = DEFAULT_TIMEOUT; 
         }
@@ -90,6 +98,7 @@ public class Reverse extends ConnectModule {
             ss.close();
         }
         
+        // Now wait for the remote accept to finish 
         s.waitForAccept();      
         return s;
     }
