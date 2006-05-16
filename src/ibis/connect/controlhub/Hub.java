@@ -41,7 +41,6 @@ public class Hub extends Thread implements Protocol {
             this.out = out;
             this.in = in;
         }
-
         
         private void handleMessage() throws IOException { 
             // Handle the message

@@ -146,25 +146,37 @@ public class VirtualSocketFactory {
     
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
-      
+                
         if (timeout == 0 && modules.size() > 1) { 
             timeout = DEFAULT_TIMEOUT;
         }
-                
+                               
         // try modules here
-        for (int i=0;i<modules.size();i++) { 
+        for (int i=0;i<modules.size();i++) {
+            
+            boolean skip = false;
+            
             ConnectModule m = (ConnectModule) modules.get(i);
             
-            try { 
-                VirtualSocket vs = m.connect(target, timeout, properties);
-                // TODO: move to ibis ?
-                vs.setTcpNoDelay(true);
-                return vs;
-            } catch (ModuleNotSuitableException e) {
-                // Just print and try the next module...
-                logger.info("Module not suitable", e);
-            }            
-            // NOTE: other exceptions are forwarded to the user!
+            if (properties != null) {
+                String tmp = (String) properties.get(
+                        "connect.module." + m.name + ".skip");
+                
+                skip = (tmp != null && tmp.equalsIgnoreCase("true")); 
+            }
+
+            if (!skip) { 
+                try { 
+                    VirtualSocket vs = m.connect(target, timeout, properties);
+                    // TODO: move to ibis ?
+                    vs.setTcpNoDelay(true);
+                    return vs;
+                } catch (ModuleNotSuitableException e) {
+                    // Just print and try the next module...
+                    logger.info("Module not suitable", e);
+                }            
+                // NOTE: other exceptions are forwarded to the user!
+            } 
         }        
         
         throw new ConnectException("No suitable module found to connect to "
