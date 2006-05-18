@@ -5,6 +5,7 @@ import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.virtual.modules.ConnectModule;
 import ibis.connect.virtual.modules.direct.Direct;
 import ibis.connect.virtual.modules.reverse.Reverse;
+import ibis.connect.virtual.modules.routed.Routed;
 import ibis.util.TypedProperties;
 
 import java.io.IOException;
@@ -102,6 +103,19 @@ public class VirtualSocketFactory {
         try {    
             // Reverse module 
             ConnectModule m = new Reverse();
+            m.init(this, logger);
+          
+            // TODO: should be 'add to set' operation here...
+            //myAddresses = m.getAddresses(); 
+                
+            modules.add(m);
+        } catch (Exception e) {
+            logger.warn("Failed to load module: Reverse", e);
+        }       
+        
+        try {    
+            // Reverse module 
+            ConnectModule m = new Routed();
             m.init(this, logger);
           
             // TODO: should be 'add to set' operation here...
