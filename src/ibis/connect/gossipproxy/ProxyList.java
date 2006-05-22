@@ -11,16 +11,14 @@ import java.util.LinkedList;
 
 class ProxyList {
     
-    //private final MachineDescription myMachine;
-    
     private LinkedList list = new LinkedList();     
     private HashMap map = new HashMap();    
     private boolean change = false;
             
-    ProxyList(ProxyDescription local) {  
-        // The local machine is special. It's in the map (so we can find it), 
-        // but it's not on the list.         
-        map.put(local.proxyAddress, local);
+    synchronized void addLocalDescription(ProxyDescription desc) {
+        // The description of the local machine is only put in the map, not the
+        // list...
+        map.put(desc.proxyAddress, desc);                        
     }
                            
     synchronized void add(ProxyDescription desc) {        

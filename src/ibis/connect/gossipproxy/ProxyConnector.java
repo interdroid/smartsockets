@@ -14,30 +14,14 @@ import java.util.LinkedList;
 
 import org.apache.log4j.Logger;
 
-class ProxyConnector extends Thread {
-    
-    protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(ProxyConnector.class.getName());
-    
-    private static final int DEFAULT_TIMEOUT = 1000;
-    private static final HashMap CONNECT_PROPERTIES = new HashMap();    
-        
-    private final ProxyList knownProxies;
-    private final VirtualSocketFactory factory;    
-    //private final VirtualSocketAddress local;
-    private final String localAsString;
+class ProxyConnector extends CommunicationThread {
     
     private final LinkedList newProxies = new LinkedList();
-    
     private boolean done = false;
     
-    ProxyConnector(VirtualSocketFactory factory, String localAsString, 
-            ProxyList knownProxies) {
-        this.factory = factory;
-        this.knownProxies = knownProxies;
-        this.localAsString = localAsString;
-        
-        CONNECT_PROPERTIES.put("allowed.modules", "direct");        
+    ProxyConnector(GossipProxy parent, ProxyList knownProxies, 
+            VirtualSocketFactory factory) {        
+        super(parent, knownProxies, factory);
     }
     
     synchronized void addNewProxy(ProxyDescription proxy) { 
@@ -177,7 +161,7 @@ class ProxyConnector extends Thread {
         
         if (!result) {
             logger.info("ProxyConnector failed to set up connection!");
-            GossipProxy.close(s, in, out);
+            close(s, in, out);
         }
     }
     
