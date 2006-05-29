@@ -82,7 +82,10 @@ class ProxyList {
         return map.containsKey(m); 
     }
     
-    private void add(ProxyDescription desc) {        
+    private void add(ProxyDescription desc) {
+        
+        System.err.println("ADD(" + desc.proxyAddress + ")");
+        
         map.put(desc.proxyAddress, desc);
         unknown.addLast(desc);
         notifyAll();
@@ -154,7 +157,16 @@ class ProxyList {
         
         ProxyDescription tmp = get(a);
         
-        if (tmp == null) {            
+        if (tmp == null) {                 
+            System.err.println("GET returns null! map.size() == " +             
+                    map.size()); 
+            
+            if (map.size() > 2) { 
+                System.err.println("ERROR!!! map > 2");
+                new Exception().printStackTrace(System.err);
+                System.exit(1);
+            }
+            
             tmp = new ProxyDescription(a, src, size()+1, state);
             add(tmp);            
         }

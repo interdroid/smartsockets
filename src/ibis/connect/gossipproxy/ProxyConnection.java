@@ -30,11 +30,13 @@ class ProxyConnection implements Runnable {
     
     public void writeProxies(int currentState) { 
         
-        if (currentState <= lastWrittenState) {
-            return;
-        } 
+        try {             
+            if (currentState <= lastWrittenState) {
+                writePing();
+                out.flush();
+                return;
+            } 
         
-        try { 
             Iterator itt = knownProxies.iterator();
         
             while (itt.hasNext()) { 
@@ -50,6 +52,11 @@ class ProxyConnection implements Runnable {
         lastWrittenState = currentState;
     }
     
+    private void writePing() throws IOException {        
+        System.err.println("Sending ping to " + peer.proxyAddress);
+        out.write(Protocol.PROXY_PING);
+    } 
+    
     private void writeProxy(ProxyDescription d) throws IOException { 
         out.write(Protocol.PROXY_GOSSIP);
         out.writeUTF(d.proxyAddress.toString());
@@ -64,6 +71,11 @@ class ProxyConnection implements Runnable {
         knownProxies.addProxyDescription(address, state, peer.proxyAddress);
     }
         
+    private void handlePing() {
+        System.err.println("Got ping from " + peer.proxyAddress);
+        peer.setContactTimeStamp();
+    }
+    
     private void receive() {
     
         try { 
@@ -78,7 +90,11 @@ class ProxyConnection implements Runnable {
             case Protocol.PROXY_GOSSIP:
                 readProxy();
                 break;
-                
+    
+            case Protocol.PROXY_PING:
+                handlePing();
+                break;
+                                
             default:
             
             }

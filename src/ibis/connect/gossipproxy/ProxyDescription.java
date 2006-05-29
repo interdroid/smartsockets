@@ -43,7 +43,7 @@ class ProxyDescription {
         clients.add(client);
     }
            
-    private void setContactTimeStamp() { 
+    void setContactTimeStamp() { 
         lastContact = System.currentTimeMillis();    
     }
     
@@ -128,12 +128,12 @@ class ProxyDescription {
     private String reachableToString(byte r) { 
         switch (r) { 
         case REACHABLE:
-            return "reachable";        
+            return "directly";        
         case UNREACHABLE:
             if (indirection != null) { 
                 return "indirectly";
             } else {             
-                return "unreachable";
+                return "no";
             }
         default:
             return "unknown";

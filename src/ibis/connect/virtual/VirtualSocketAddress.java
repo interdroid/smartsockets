@@ -57,7 +57,7 @@ public class VirtualSocketAddress implements Serializable {
     
     public boolean equals(Object other) { 
      
-        if (this == other) { 
+        if (this == other) {            
             return true;
         }
         
@@ -65,7 +65,7 @@ public class VirtualSocketAddress implements Serializable {
             return false;
         }
                 
-        if (!(other instanceof VirtualSocketAddress)) { 
+        if (!(other instanceof VirtualSocketAddress)) {
             return false;
         }
         
@@ -74,7 +74,12 @@ public class VirtualSocketAddress implements Serializable {
         if (port != tmp.port) { 
             return false;
         }
-        
+
         return machine.equals(tmp.machine);
+    }
+    
+    public int hashCode() {         
+        // TODO: improve
+        return machine.hashCode() ^ port;        
     }
 }
