@@ -11,37 +11,87 @@ import java.util.LinkedList;
 
 class ProxyList {
     
-    private LinkedList list = new LinkedList();     
-    private HashMap map = new HashMap();    
-    private boolean change = false;
+    private static int RETRY_DELAY = 10000;
+
+    private final LinkedList connected = new LinkedList();     
+    private final LinkedList notConnected = new LinkedList();     
+    private final LinkedList unknown = new LinkedList();
+        
+    private final HashMap map = new HashMap();    
+        
+    public synchronized ProxyDescription getUnconnectedProxy() {
+               
+        while (true) { 
+        
+            long waitTime = 0;
             
-    synchronized void addLocalDescription(ProxyDescription desc) {
+            if (unknown.size() > 0) {
+                return (ProxyDescription) unknown.removeFirst(); 
+            }
+            
+            if (notConnected.size() > 0) {
+                ProxyDescription d = (ProxyDescription) notConnected.getFirst();
+                
+                long now = System.currentTimeMillis();
+                
+                if (d.lastContact+RETRY_DELAY <= now) {
+                    notConnected.removeFirst();
+                    return d;
+                } else { 
+                    waitTime = (d.lastContact+RETRY_DELAY) - now; 
+                }
+            }
+                        
+            try { 
+                wait(waitTime);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+    }
+    
+    public synchronized void addLocalDescription(ProxyDescription desc) {
         // The description of the local machine is only put in the map, not the
         // list...
         map.put(desc.proxyAddress, desc);                        
     }
-                           
-    synchronized void add(ProxyDescription desc) {        
-        list.addLast(desc);
-        map.put(desc.proxyAddress, desc);                        
-        notifyAll();
-        change = true;
+        
+           
+    public synchronized void isUnreachable(ProxyDescription d) {
+        d.setUnreachable(map.size());
+        
+        if (!d.canReachMe()) { 
+            notConnected.addLast(d);
+            notifyAll();
+        } 
     }
     
-    synchronized void addIfNotPresent(ProxyDescription desc) {
-        if (!map.containsKey(desc.proxyAddress)) { 
-            add(desc);
-        }        
+    public synchronized void isReachable(ProxyDescription d) {        
+        d.setReachable(size());
+        connected.addLast(d);
+        notifyAll();
+    }
+    
+    public synchronized void canReachMe(ProxyDescription d) {        
+        d.setCanReachMe(size(), 0);
+        connected.addLast(d);
+        notifyAll();
     }
             
-    synchronized boolean contains(VirtualSocketAddress m) {         
+    public synchronized boolean contains(VirtualSocketAddress m) {         
         return map.containsKey(m); 
     }
     
-    synchronized ProxyDescription get(VirtualSocketAddress m) {                        
+    private void add(ProxyDescription desc) {        
+        map.put(desc.proxyAddress, desc);
+        unknown.addLast(desc);
+        notifyAll();
+    }
+        
+    private ProxyDescription get(VirtualSocketAddress m) {                        
         return (ProxyDescription) map.get(m);
     }
-    
+    /*
     synchronized ProxyDescription get(VirtualSocketAddress m, long timeout) {
         
         ProxyDescription result = (ProxyDescription) map.get(m);
@@ -81,57 +131,43 @@ class ProxyList {
         
         return result;
     }
+    */
     
-    
-    synchronized int size() {
-        return list.size();
-    }
-    
-    synchronized boolean anyChange() {
-        boolean prev = change;
-        change = false;
-        return prev;
-    }
-    
-    Iterator iterator() { 
-        return list.iterator();
+    public synchronized int size() {
+        return map.size();
     }
         
-    synchronized ProxyDescription removeFirst() { 
+    public synchronized Iterator iterator() { 
+        return map.values().iterator();
+    }
+    
+    public synchronized Iterator connectedProxiesIterator() { 
+        return connected.iterator();
+    }
+    
+    public ProxyDescription addProxyDescription(VirtualSocketAddress a) {  
+        return addProxyDescription(a, 0, null);        
+    }
         
-        while (list.size() == 0) {
-            try { 
-                wait();
-            } catch (InterruptedException e) { 
-                // ignore
-            }                        
+    public synchronized ProxyDescription addProxyDescription(VirtualSocketAddress a, 
+            int state, VirtualSocketAddress src) { 
+        
+        ProxyDescription tmp = get(a);
+        
+        if (tmp == null) {            
+            tmp = new ProxyDescription(a, src, size()+1, state);
+            add(tmp);            
         }
-                
-        ProxyDescription desc = (ProxyDescription) list.removeFirst();        
-        map.remove(desc.proxyAddress);        
-        change = true;        
-        return desc;
-    }
-   
-    synchronized ProxyDescription getFirst() { 
         
-        while (list.size() == 0) {
-            try { 
-                wait();
-            } catch (InterruptedException e) { 
-                // ignore
-            }                        
-        }
-                
-        ProxyDescription desc = (ProxyDescription) list.getFirst();        
-        return desc;
+        return tmp;
     }
-       
+    
+    
     public String toString() {
         
         StringBuffer result = new StringBuffer();
         
-        Iterator itt = list.iterator();
+        Iterator itt = iterator();
         
         while (itt.hasNext()) { 
             ProxyDescription desc = (ProxyDescription) itt.next();

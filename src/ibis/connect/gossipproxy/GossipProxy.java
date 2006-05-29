@@ -4,65 +4,101 @@ import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-public class GossipProxy {
+public class GossipProxy extends Thread {
+    
+    private static int GOSSIP_SLEEP = 5000;
     
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(GossipProxyClient.class.getName());
+        ibis.util.GetLogger.getLogger(GossipProxy.class.getName());
                
     private ProxyList proxies;     
     private ProxyAcceptor proxyAcceptor;
     private ProxyConnector proxyConnector;
-                
-    public GossipProxy() throws IOException { 
+    
+   public GossipProxy() throws IOException { 
+        this(null);
+    }
+    
+    public GossipProxy(VirtualSocketAddress [] proxyAds) throws IOException { 
 
+        logger.info("Creating GossipProxy");
+                
         VirtualSocketFactory factory = VirtualSocketFactory.getSocketFactory();
         
         // Create the proxy list
         proxies = new ProxyList();
                 
-        proxyAcceptor = new ProxyAcceptor(this, proxies, factory);        
-        proxyConnector = new ProxyConnector(this, proxies, factory);
+        proxyAcceptor = new ProxyAcceptor(proxies, factory);        
+        proxyConnector = new ProxyConnector(proxies, factory);
         
         VirtualSocketAddress local = proxyAcceptor.getLocal();         
         
         proxyConnector.setLocal(local);
                 
+        logger.info("GossipAcceptor listning at " + local);
+        
         // Create a description for the local machine. 
         ProxyDescription localDesc = new ProxyDescription(local, null, 0, 0);        
-        localDesc.setReachable(1, 1, ProxyDescription.DIRECT);
+        localDesc.setReachable(1);
         localDesc.setCanReachMe(1, 1);
         
         proxies.addLocalDescription(localDesc);
-    }
-    
-    ProxyDescription getProxyDescription(VirtualSocketAddress a) {
-        return getProxyDescription(a, 0, null, false);        
-    }
-    
-    ProxyDescription getProxyDescription(VirtualSocketAddress a, 
-            boolean direct) {
-        return getProxyDescription(a, 0, null, direct);        
-    }
+
+        addProxies(proxyAds);
         
-    synchronized ProxyDescription getProxyDescription(VirtualSocketAddress a, 
-            int state, VirtualSocketAddress src, boolean direct) { 
+        logger.info("Starting Gossip connector/acceptor");
+                
+        proxyAcceptor.start();
+        proxyConnector.start();
         
-        ProxyDescription tmp = proxies.get(a);
+        start();
+    }
+
+    void addProxies(VirtualSocketAddress [] proxyAds) { 
         
-        if (tmp == null) { 
-            tmp = new ProxyDescription(a, src, proxies.size()+1, state);
-            proxies.add(tmp);                
-            proxyConnector.addNewProxy(tmp);
+        if (proxyAds == null || proxyAds.length == 0) { 
+            return;
         }
         
-        if (direct && !tmp.canDirectlyReachMe()) { 
-            tmp.setCanReachMe(proxies.size(), state);
-        }        
+        for (int i=0;i<proxyAds.length;i++) { 
+            if (proxyAds[i] != null) { 
+                proxies.addProxyDescription(proxyAds[i], 0, null);
+            } 
+        }
+    }
+    
+    private void gossip() { 
         
-        return tmp;
+        logger.info("Starting gossip round");
+        
+        Iterator itt = proxies.connectedProxiesIterator();
+        
+        while (itt.hasNext()) { 
+            ProxyDescription d = (ProxyDescription) itt.next();            
+            ProxyConnection c = d.getConnection();
+            
+            if (c != null) {               
+                c.writeProxies(proxies.size());
+            }            
+        }        
+    }
+    
+    public void run() { 
+        
+        while (true) { 
+            try { 
+                logger.info("Sleeping for " + GOSSIP_SLEEP + " ms.");
+                Thread.sleep(GOSSIP_SLEEP);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            
+            gossip();
+        }        
     }
     
     /*
@@ -72,8 +108,29 @@ public class GossipProxy {
     }
     */
     
+    /*
     void activateConnection(ProxyConnection c) {
         // TODO: Should use threadpool
         new Thread(c).start();
+    }    
+    */
+    
+    public static void main(String [] args) { 
+        
+        VirtualSocketAddress [] proxies = new VirtualSocketAddress[args.length];
+            
+        for (int i=0;i<args.length;i++) {                
+            try { 
+                proxies[i] = new VirtualSocketAddress(args[i]);
+            } catch (Exception e) {
+                logger.warn("Skipping proxy address: " + args[i]);
+            }
+        } 
+        
+        try {
+            new GossipProxy(proxies);
+        } catch (IOException e) {
+            logger.warn("Oops: ", e);
+        }        
     }
 }

@@ -1,7 +1,6 @@
 package ibis.connect.gossipproxy;
 
 import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
 
 import java.io.BufferedInputStream;
@@ -9,39 +8,15 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-
-import org.apache.log4j.Logger;
 
 class ProxyConnector extends CommunicationThread {
     
-    private final LinkedList newProxies = new LinkedList();
     private boolean done = false;
     
-    ProxyConnector(GossipProxy parent, ProxyList knownProxies, 
-            VirtualSocketFactory factory) {        
-        super(parent, knownProxies, factory);
+    ProxyConnector(ProxyList knownProxies, VirtualSocketFactory factory) {        
+        super(knownProxies, factory);
     }
-    
-    synchronized void addNewProxy(ProxyDescription proxy) { 
-        newProxies.addLast(proxy);
-        notifyAll();
-    }
-    
-    private synchronized ProxyDescription getNewProxy() {
-        
-        while (newProxies.size() == 0) { 
-            try { 
-                wait();
-            } catch (InterruptedException e) {
-                // ignore
-            }
-        }
-        
-        return (ProxyDescription) newProxies.removeFirst();
-    }
-         
+
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
         throws IOException { 
 
@@ -54,10 +29,10 @@ class ProxyConnector extends CommunicationThread {
         int opcode = in.read();
 
         switch (opcode) {
-        case Protocol.CONNECTION_ACCEPTED:
+        case Protocol.REPLY_CONNECTION_ACCEPTED:
             logger.info("Connection request accepted");            
             return true;
-        case Protocol.CONNECTION_DUPLICATE:
+        case Protocol.REPLY_CONNECTION_REFUSED:
             logger.info("Connection request refused (duplicate)");
             return false;
         default:
@@ -65,33 +40,30 @@ class ProxyConnector extends CommunicationThread {
             return false;
         }
     }
-    
-    private void handleNewProxy() { 
-
-        // Handles the connection setup to newly discoverd proxies. Note that 
-        // there is a very nice race condition here, since the target proxy may
-        // be doing exactly the same connection setup to us at this very moment.
-        // As a result, we may get two half-backed connections between the 
-        // proxies, because the state of the two receiving ends conflicts with 
-        // the state of the sending parts....
-        //        
-        // To solve this problem, we must introduce some 'total order' on the 
-        // proxies (i.e., by comparing the string form of their addresses) and 
-        // let the smallest/largest one decide what to do...          
-        ProxyDescription d = getNewProxy();
-        
-        if (d.haveConnection()) {
-            // The connection was already created by the other side...
-            return;
-        }
-            
-        logger.info("Creating connection to " + d.proxyAddress);
-        
+              
+    private void createConnection(ProxyDescription d) { 
+                
         VirtualSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
         boolean result = false;
+        ProxyConnection c = null;
         
+        // Creates a connection to a newly discovered proxy. Note that there is 
+        // a very nice race condition here, since the target proxy may be doing
+        // exactly the same connection setup to us at this very moment.
+        //
+        // As a result, we may get two half-backed connections between the 
+        // proxies, because the state of the two receiving ends conflicts with 
+        // the state of the sending parts....
+        //        
+        // To solve this problem, we introduce some 'total order' on the proxies
+        // by comparing the string form of their addresses. We then let the 
+        // smallest one decide what to do...                                  
+        boolean master = localAsString.compareTo(d.proxyAddress.toString()) < 0;
+        
+        logger.info("Creating connection to " + d.proxyAddress);
+                
         try { 
             s = factory.createClientSocket(d.proxyAddress, 
                     DEFAULT_TIMEOUT, CONNECT_PROPERTIES);
@@ -102,12 +74,10 @@ class ProxyConnector extends CommunicationThread {
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
-            int order = localAsString.compareTo(d.proxyAddress.toString());
-
-            // If (order < 0) I must atomically grab the connection 'lock' 
+            // If I ams the master I must atomically grab the connection 'lock' 
             // before sending the request. It will return true if it is still 
             // free. If it isn't, we don't need to create the connection anymore 
-            // and just send a ping message instead. If (order > 0) then we 
+            // and just send a ping message instead. If I am the slave then we 
             // grab the lock after sending the connect message. 
             //
             // This approach ensures that if their are two machines trying to 
@@ -119,14 +89,12 @@ class ProxyConnector extends CommunicationThread {
             // Note that we intentionally create the connection first, since
             // we don't want to grab the lock until we're absolutely sure that 
             // we're able to create the connection. If we wouldn't do this, we 
-            // may 'accidently' block a connection from a machine that we are 
-            // not able to connect to ourselves.
-            // 
-
-            if (order < 0) { 
+            // may 'accidently' block an incoming connection from a machine that
+            // we are not able to connect to ourselves.        
+            if (master) { 
                 logger.info("I am master during connection setup");
                 
-                ProxyConnection c = new ProxyConnection(s, in, out, d);                
+                c = new ProxyConnection(s, in, out, d, knownProxies);                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -137,7 +105,7 @@ class ProxyConnector extends CommunicationThread {
                     out.writeUTF(localAsString);
                     out.flush();
                 } else {
-                    result = sendConnect(out, in);
+                    result = sendConnect(out, in);                    
                 } 
             } else {   
                 logger.info("I am slave during connection setup");
@@ -145,26 +113,45 @@ class ProxyConnector extends CommunicationThread {
                 result = sendConnect(out, in);
 
                 if (result) {                 
-                    ProxyConnection c = new ProxyConnection(s, in, out, d);                
+                    c = new ProxyConnection(s, in, out, d, knownProxies);                
                     result = d.createConnection(c);
                     
                     if (!result) { 
                         // This should not happen if the protocol works....
-                        logger.warn("Race condition during connection setup!!");
+                        logger.warn("Race condition triggered during " +
+                                "connection setup!!");
                     }
                 }                 
             }
         
+            knownProxies.isReachable(d);            
         } catch (Exception e) {
-            logger.warn("ProxyConnector got exception!", e);
+            logger.warn("Got exception!", e);
+            knownProxies.isUnreachable(d);
         }
         
-        if (!result) {
-            logger.info("ProxyConnector failed to set up connection!");
+        if (result) {
+            logger.info("Succesfully created connection!");
+            c.activate();
+        } else { 
+            logger.info("Failed to set up connection!");
             close(s, in, out);
         }
     }
     
+    private void handleNewProxy() { 
+
+        // Handles the connection setup to newly discovered proxies.
+        ProxyDescription d = knownProxies.getUnconnectedProxy();
+        
+        if (d.haveConnection()) {
+            // The connection was already created by the other side...
+            return;
+        }
+      
+        createConnection(d);
+    } 
+   
     public void run() {
     
         while (!done) {            

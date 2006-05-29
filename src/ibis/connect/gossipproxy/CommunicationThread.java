@@ -20,15 +20,13 @@ abstract class CommunicationThread extends Thread {
     protected final Logger logger;     
     protected final ProxyList knownProxies;
     protected final VirtualSocketFactory factory;    
-    protected final GossipProxy parent;
     
     protected VirtualSocketAddress local;
     protected String localAsString;
     
-    protected CommunicationThread(GossipProxy parent, ProxyList knownProxies,
+    protected CommunicationThread(ProxyList knownProxies,
             VirtualSocketFactory factory) { 
                 
-        this.parent= parent;
         this.knownProxies = knownProxies;
         this.factory = factory;        
         logger = GetLogger.getLogger(this.getClass().getName());                

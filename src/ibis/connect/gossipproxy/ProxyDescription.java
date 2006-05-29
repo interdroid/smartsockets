@@ -10,8 +10,7 @@ class ProxyDescription {
     // Note: order is important here, we always want the highest possible value!
     static final byte UNKNOWN     = 0;    
     static final byte UNREACHABLE = 1;
-    static final byte INDIRECT    = 2;    
-    static final byte DIRECT      = 3;
+    static final byte REACHABLE   = 2;
     
     final VirtualSocketAddress proxyAddress;    
     VirtualSocketAddress indirection; 
@@ -43,13 +42,7 @@ class ProxyDescription {
     void addClient(VirtualSocketAddress client) { 
         clients.add(client);
     }
-        
-    void setContactTimeStamp(long value) {     
-        if (value > lastContact) { 
-            lastContact = value;
-        }            
-    }
-        
+           
     private void setContactTimeStamp() { 
         lastContact = System.currentTimeMillis();    
     }
@@ -58,27 +51,11 @@ class ProxyDescription {
         lastLocalState = localState;
     }
 
-    void setReachable(int localState, int remoteState, byte reachMe) { 
+    void setReachable(int localState) { 
 
-        boolean change = false;
-        
-        if (reachable != DIRECT) { 
-            reachable = DIRECT;            
+        if (reachable != REACHABLE) { 
+            reachable = REACHABLE;            
             indirection = null;
-            change = true;
-        }
-        
-        if (lastKnownState < remoteState) {
-            lastKnownState = remoteState;
-            change = true;
-        }
-
-        if (canReachMe < reachMe) { 
-            canReachMe = reachMe;
-            change = true;
-        }
-        
-        if (change) { 
             updateState(localState);
         } 
          
@@ -86,18 +63,12 @@ class ProxyDescription {
     } 
         
     void setUnreachable(int localState) { 
-               
-        if (reachable == UNKNOWN || reachable == DIRECT) {
-            
-            if (indirection != null) { 
-                reachable = INDIRECT;
-            } else { 
-                reachable = UNREACHABLE;
-            }
 
+        if (reachable != UNREACHABLE) { 
+            reachable = UNREACHABLE;
             updateState(localState);
-        }
-         
+        } 
+        
         setContactTimeStamp();
     } 
         
@@ -105,8 +76,8 @@ class ProxyDescription {
 
         boolean change = false;
         
-        if (canReachMe != DIRECT) { 
-            canReachMe = DIRECT;    
+        if (canReachMe != REACHABLE) { 
+            canReachMe = REACHABLE;    
             change = true;
         }        
         
@@ -127,18 +98,14 @@ class ProxyDescription {
         setContactTimeStamp();
     }
     
-    boolean canDirectlyReachMe() { 
-        return canReachMe == DIRECT;
+    boolean canReachMe() { 
+        return canReachMe == REACHABLE;
     }
     
-    boolean isDirectlyReachable() { 
-        return reachable == DIRECT;
+    boolean isReachable() { 
+        return reachable == REACHABLE;
     }
-    
-    boolean isIndirectlyReachable() { 
-        return reachable == INDIRECT;
-    }
-
+        
     boolean haveConnection() { 
         return (connection != null);        
     }
@@ -154,14 +121,20 @@ class ProxyDescription {
         return true;
     }
         
+    synchronized ProxyConnection getConnection() { 
+        return connection;
+    }
+    
     private String reachableToString(byte r) { 
         switch (r) { 
-        case DIRECT:
-            return "directly";
-        case INDIRECT:
-            return "indirectly";
+        case REACHABLE:
+            return "reachable";        
         case UNREACHABLE:
-            return "unreachable";
+            if (indirection != null) { 
+                return "indirectly";
+            } else {             
+                return "unreachable";
+            }
         default:
             return "unknown";
         }
@@ -178,7 +151,7 @@ class ProxyDescription {
         buffer.append("Last Update  : ").append(time).append(" seconds ago\n");
         buffer.append("Reachable    : ").append(reachableToString(reachable)).append('\n');
                 
-        if (reachable != DIRECT && indirection != null) { 
+        if (reachable == UNREACHABLE && indirection != null) { 
             buffer.append("Reachable Via: ").append(indirection).append('\n');               
         }        
 
