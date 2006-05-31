@@ -22,8 +22,8 @@ import java.util.Map;
 
 public class Direct extends ConnectModule {
     
-    private static final String PREFIX = Properties.PREFIX + ".modules.direct";    
-    private static final String PORT = PREFIX + ".port";        
+    private static final String PREFIX = Properties.PREFIX + "modules.direct.";    
+    private static final String PORT = PREFIX + "port";        
         
     private static final int DEFAULT_PORT = 19827;     
     
@@ -62,6 +62,8 @@ public class Direct extends ConnectModule {
         // Retrieve the value of the PORT property (if set). 
         int port = TypedProperties.intProperty(PORT, DEFAULT_PORT);
 
+        System.err.println("***** PORT SET TO " + port + " -- " + PORT);
+        
         // Create a direct socket factory.
         direct = DirectSocketFactory.getSocketFactory();
                 
@@ -153,6 +155,11 @@ public class Direct extends ConnectModule {
                 }                
                 
                 return;
+            }
+            
+            if (logger.isDebugEnabled()) { 
+                logger.debug(name + ": Connection seems OK, checking is " +
+                        "server is willing to accept");
             }
             
             // Next check if the serverSocket is willing to accept

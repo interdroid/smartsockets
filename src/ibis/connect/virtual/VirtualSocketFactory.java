@@ -15,6 +15,7 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -129,13 +130,17 @@ public class VirtualSocketFactory {
         
     private void passServiceLinkToModules() { 
         
-        for (int i=0;i<modules.size();i++) { 
-            ConnectModule c = (ConnectModule) modules.get(i);
+        Iterator itt = modules.iterator();
+        
+        while (itt.hasNext()) { 
+            ConnectModule c = (ConnectModule) itt.next();
+            
             try { 
                 c.startModule(serviceLink);
             } catch (Exception e) { 
                 logger.warn("Module " + c.name 
                         + " did not accept serviceLink!", e);
+                itt.remove();
             }
         }        
     }
@@ -161,6 +166,10 @@ public class VirtualSocketFactory {
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
                 
+        if (timeout < 0) { 
+            timeout = DEFAULT_TIMEOUT;
+        }
+        
         if (timeout == 0 && modules.size() > 1) { 
             timeout = DEFAULT_TIMEOUT;
         }
@@ -179,11 +188,17 @@ public class VirtualSocketFactory {
                 skip = (tmp != null && tmp.equalsIgnoreCase("true")); 
             }
 
-            if (!skip) { 
+            if (!skip) {
+                
+                logger.debug("Using module " + m.name + " to set up connection to " + target);
+                
                 try { 
                     VirtualSocket vs = m.connect(target, timeout, properties);
                     // TODO: move to ibis ?
                     vs.setTcpNoDelay(true);
+                    
+                    logger.debug("Sucess with module " + m.name + " connected to " + target);
+                    
                     return vs;
                 } catch (ModuleNotSuitableException e) {
                     // Just print and try the next module...
