@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -165,7 +166,9 @@ public class VirtualSocketFactory {
     
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
-                
+              
+        int notSuitableCount = 0;
+        
         if (timeout < 0) { 
             timeout = DEFAULT_TIMEOUT;
         }
@@ -195,21 +198,32 @@ public class VirtualSocketFactory {
                 try { 
                     VirtualSocket vs = m.connect(target, timeout, properties);
                     // TODO: move to ibis ?
-                    vs.setTcpNoDelay(true);
                     
-                    logger.debug("Sucess with module " + m.name + " connected to " + target);
-                    
-                    return vs;
+                    if (vs != null) {                     
+                        vs.setTcpNoDelay(true);                    
+                        logger.debug("Sucess with module " + m.name + " connected to " + target);                    
+                        return vs;
+                    } 
                 } catch (ModuleNotSuitableException e) {
                     // Just print and try the next module...
                     logger.info("Module not suitable", e);
+                    notSuitableCount++;
                 }            
                 // NOTE: other exceptions are forwarded to the user!
             } 
         }        
         
-        throw new ConnectException("No suitable module found to connect to "
-                + target);        
+        if (notSuitableCount == modules.size()) {
+            // No suitable modules found...
+            throw new ConnectException("No suitable module found to connect to "
+                    + target);
+        } else { 
+            // Apparently, some modules where suitable but failed to connect. 
+            // This is treated as a timeout 
+            // TODO: is this right ?
+            throw new SocketTimeoutException("Timeout during connect to " 
+                    + target);
+        }        
     } 
         
     private int getPort() {
