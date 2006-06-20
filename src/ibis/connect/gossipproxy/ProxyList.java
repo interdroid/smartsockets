@@ -42,6 +42,7 @@ class ProxyList {
                 }
             }
                         
+            // NOTE: wakes up when a new proxy is added to unknown.  
             try { 
                 wait(waitTime);
             } catch (InterruptedException e) {
@@ -147,6 +148,14 @@ class ProxyList {
     public synchronized Iterator connectedProxiesIterator() { 
         return connected.iterator();
     }
+    
+    public synchronized Iterator unconnectedProxiesIterator() { 
+        return notConnected.iterator();
+    }
+    
+    public synchronized Iterator unknownProxiesIterator() { 
+        return unknown.iterator();
+    }        
     
     public ProxyDescription addProxyDescription(VirtualSocketAddress a) {  
         return addProxyDescription(a, 0, null);        

@@ -74,20 +74,18 @@ public class GossipProxy extends Thread {
     private void gossip() { 
         
         logger.info("Starting gossip round....\n");        
-        logger.info("I know the following proxies:");        
-        
+        logger.info("I know the following proxies:\n" + proxies.toString());        
+                        
         Iterator itt = proxies.connectedProxiesIterator();
         
         while (itt.hasNext()) { 
             ProxyDescription d = (ProxyDescription) itt.next();            
             ProxyConnection c = d.getConnection();
             
-            logger.info(d);        
-                                       
             if (c != null) {               
                 c.writeProxies(proxies.size());
             }            
-        }        
+        }               
     }
     
     public void run() { 
