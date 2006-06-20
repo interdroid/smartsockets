@@ -126,7 +126,7 @@ public class GossipProxy extends Thread {
             try { 
                 proxies[i] = new VirtualSocketAddress(args[i]);
             } catch (Exception e) {
-                logger.warn("Skipping proxy address: " + args[i]);
+                logger.warn("Skipping proxy address: " + args[i], e);              
             }
         } 
         

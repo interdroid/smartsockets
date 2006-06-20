@@ -24,6 +24,9 @@ public class SocketAddressSet extends SocketAddress {
         
     private static final long serialVersionUID = -2662260670251814982L;
     
+    private static final char IP_PORT_SEPERATOR = '-';
+    private static final char ADDRESS_SEPERATOR = '/';
+    
     private final IPAddressSet address;      
     private final InetSocketAddress [] sas;
             
@@ -136,17 +139,26 @@ public class SocketAddressSet extends SocketAddress {
      * Construct a new IbisSocketAddress from a String representation of a 
      * IbisSocketAddress. 
      * 
-     * This representation contains any number of InetAddresses seperated by '/'
-     * characters, followed by a colon ':' and a port number.
+     * This representation contains any number of InetAddresses seperated by
+     * ADDRESS_SEPARATOR characters (usually defined as '/'), followed by a 
+     * IP_PORT_SEPERATOR (usually '-') and a port number.
      * 
      * This sequence may be repeated any number of times, separated by slashes. 
      * 
-     * The following examples are valid string representations:
+     * The following examples are valid IPv4 string representations:
      * 
-     *    192.168.1.35:1234
-     *    192.168.1.35/10.0.0.1:1234
-     *    192.168.1.35/10.0.0.1:1234/192.31.231.65:5678
-     *    192.168.1.35/10.0.0.1:1234/192.31.231.65/130.37.24.4:5678
+     *    192.168.1.35-1234
+     *    192.168.1.35/10.0.0.1-1234
+     *    192.168.1.35/10.0.0.1-1234/192.31.231.65-5678
+     *    192.168.1.35/10.0.0.1-1234/192.31.231.65/130.37.24.4-5678
+     *    
+     * We can also handle IPv6:    
+     *    
+     *    fe80:0:0:0:2e0:18ff:fe2c:a31%2-1234
+     * 
+     * Or a mix of the two: 
+     * 
+     *    fe80:0:0:0:2e0:18ff:fe2c:a31%2/169.254.207.84-1234 
      * 
      * @param addressPort The String representation of a IbisSocketAddress.
      * @throws UnknownHostException
@@ -162,8 +174,8 @@ public class SocketAddressSet extends SocketAddress {
         while (!done) {
             // We start by selecting a single address and port number from the 
             // string, starting where we ended the last time.             
-            int colon = addressPort.indexOf(':', start);                
-            int slash = addressPort.indexOf('/', colon+1);
+            int colon = addressPort.indexOf(IP_PORT_SEPERATOR, start);                
+            int slash = addressPort.indexOf(ADDRESS_SEPERATOR, colon+1);
         
             // We now seperate the 'address' and 'port' parts. If there is a '/'            
             // behind the port there is an other address following it. If not, 
@@ -285,13 +297,13 @@ public class SocketAddressSet extends SocketAddress {
            
             if (i < len-1) {                
                 if (sas[i].getPort() != sas[i+1].getPort()) { 
-                    b.append(':');
+                    b.append(IP_PORT_SEPERATOR);
                     b.append(sas[i].getPort());
                 } 
             
-                b.append('/');
+                b.append(ADDRESS_SEPERATOR);
             } else { 
-                b.append(':');
+                b.append(IP_PORT_SEPERATOR);
                 b.append(sas[i].getPort());
             }
         }

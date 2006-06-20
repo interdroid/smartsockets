@@ -48,7 +48,7 @@ public class DirectSocketFactory {
     private static final boolean ALLOW_BOUNCER = TypedProperties
             .booleanProperty(Properties.USE_BOUNCER, false);
 
-    private static Logger logger = ibis.util.GetLogger
+    protected static Logger logger = ibis.util.GetLogger
             .getLogger(DirectSocketFactory.class.getName());
 
     private static final DirectSocketFactory factory = new DirectSocketFactory();

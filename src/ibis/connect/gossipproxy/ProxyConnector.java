@@ -74,7 +74,7 @@ class ProxyConnector extends CommunicationThread {
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
-            // If I ams the master I must atomically grab the connection 'lock' 
+            // If I am the master I must atomically grab the connection 'lock' 
             // before sending the request. It will return true if it is still 
             // free. If it isn't, we don't need to create the connection anymore 
             // and just send a ping message instead. If I am the slave then we 

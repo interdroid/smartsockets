@@ -42,8 +42,6 @@ import java.util.StringTokenizer;
 public class IPAddressSet implements Serializable {
     
     private static final long serialVersionUID = 8548119455369383377L;
-
-    private static final boolean VERBOSE = false;
     
     // Size of the byte representations of 'standard' InetAddresses.
     private static final int LENGTH_IPv4 = 4;
@@ -51,7 +49,7 @@ public class IPAddressSet implements Serializable {
        
     // A object capable of sorting 'standard' InetAddresses.
     protected static final AddressSorter SORTER = new AddressSorter();
-    
+       
     // Cache for the InetXAddress representing this machine.
     private static IPAddressSet localHost;    
                        
@@ -371,20 +369,17 @@ public class IPAddressSet implements Serializable {
             InetAddress [] addresses = 
                 sort(NetworkUtils.getAllHostAddresses(true, false));    
                            
-            if (VERBOSE) { 
-                System.out.println("  Result after sorting: ");
-                System.out.println("    " + NetworkUtils.ipToString(addresses));
-            }        
+            DirectSocketFactory.logger.info("Result after sorting: ");
+            DirectSocketFactory.logger.info(" " 
+                    + NetworkUtils.ipToString(addresses));
         
             if (!NetworkUtils.containsGlobalAddress(addresses)) {
-                if (VERBOSE) { 
-                    System.out.println("  Result does NOT contain global address!");
-                }                    
+                DirectSocketFactory.logger.info(" Result does NOT contain " +
+                        "global address!");
                 // TODO: Try to find the external address here ?
             } else { 
-                if (VERBOSE) { 
-                    System.out.println("  Result contains global address!");
-                }                               
+                DirectSocketFactory.logger.info(" Result contains global " +
+                        "address!");
             }
                 
             localHost = new IPAddressSet(addresses);

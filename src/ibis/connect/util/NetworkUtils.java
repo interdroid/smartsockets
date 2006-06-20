@@ -9,11 +9,16 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 /**
  * This class contains some network related utilities to deal with IP addresses.
  */
 public class NetworkUtils {
-          
+
+    protected static Logger logger = 
+        ibis.util.GetLogger.getLogger(NetworkUtils.class.getName());
+    
     private NetworkUtils() {
         // No instance allowed 
     }
@@ -24,7 +29,7 @@ public class NetworkUtils {
      * @param address the specified address.
      * @return <code>true</code> if <code>addr</code> is an external address.
      */
-    public static boolean isExternalAddress(InetAddress address) {
+    public static boolean isExternalAddress(InetAddress address) {                       
         if (address.isLoopbackAddress()) {
             return false;
         }
@@ -109,18 +114,23 @@ public class NetworkUtils {
      */
     private static void getAllHostAddresses(NetworkInterface nw, List target, 
             boolean ignoreLoopback, boolean ignoreIP6) { 
-        
+                
+        logger.info("   " + nw.getDisplayName() + ":");
+                        
         Enumeration e2 = nw.getInetAddresses();
             
         while (e2.hasMoreElements()) {
             
             InetAddress tmp = (InetAddress) e2.nextElement();
-
+                       
             boolean t1 = !ignoreLoopback || !tmp.isLoopbackAddress();
             boolean t2 = !ignoreIP6 || (tmp instanceof Inet4Address); 
             
-            if (t1 && t2) {                 
+            if (t1 && t2) {
+                logger.info("    - " + tmp.getHostAddress() + " (used)");                
                 target.add(tmp);
+            } else { 
+                logger.info("    - " + tmp.getHostAddress() + " (ignored)");
             }
         }
     }
@@ -148,10 +158,12 @@ public class NetworkUtils {
 
         ArrayList nwl = getNetworkInterfacesList();
         ArrayList list = new ArrayList();
-                
-        for (int i=0;i<nwl.size();i++) { 
-            getAllHostAddresses((NetworkInterface) nwl.get(i), list, 
-                    ignoreLoopback, ignoreIP6);
+            
+        logger.info("Determining available addresses:");
+        
+        for (int i=0;i<nwl.size();i++) {             
+            NetworkInterface nwi = (NetworkInterface) nwl.get(i);
+            getAllHostAddresses(nwi, list, ignoreLoopback, ignoreIP6);
         } 
         
         return (InetAddress []) list.toArray(new InetAddress[list.size()]);
@@ -216,6 +228,10 @@ public class NetworkUtils {
      */
     public static String ipToString(InetAddress ad) { 
         
+        return ad.getHostAddress(); 
+        
+        /*
+        
         byte [] bytes = ad.getAddress();
         
         StringBuffer result = new StringBuffer("");
@@ -228,7 +244,8 @@ public class NetworkUtils {
             }
         }
         
-        return result.toString();        
+        return result.toString();
+        */        
     }
     
     /**
