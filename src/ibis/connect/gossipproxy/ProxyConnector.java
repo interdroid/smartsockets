@@ -40,7 +40,44 @@ class ProxyConnector extends CommunicationThread {
             return false;
         }
     }
-              
+
+    private void testConnection(ProxyDescription d) {
+
+        VirtualSocket s = null;
+        DataInputStream in = null;
+        DataOutputStream out = null;
+        
+        // Creates a connection to a proxy to check if it is reachable. If so, 
+        // it will send a ping. 
+        logger.info("Creating test connection to " + d.proxyAddress);
+                
+        try { 
+            s = factory.createClientSocket(d.proxyAddress, 
+                    DEFAULT_TIMEOUT, CONNECT_PROPERTIES);
+            
+            out = new DataOutputStream(
+                    new BufferedOutputStream(s.getOutputStream()));
+            
+            in = new DataInputStream(
+                    new BufferedInputStream(s.getInputStream()));
+
+            out.write(Protocol.PROXY_PING);
+            out.writeUTF(localAsString);
+            out.flush();            
+            
+            logger.info("Succesfully created connection!");            
+            knownProxies.isReachable(d);                   
+            
+        } catch (Exception e) {
+            
+            logger.info("Failed to set up connection!");
+            knownProxies.isUnreachable(d);
+            
+        } finally {             
+            close(s, in, out);
+        } 
+    }
+    
     private void createConnection(ProxyDescription d) { 
                 
         VirtualSocket s = null;
@@ -124,10 +161,14 @@ class ProxyConnector extends CommunicationThread {
                 }                 
             }
         
-            knownProxies.isReachable(d);            
+            knownProxies.isReachable(d);
+            knownProxies.connected(d);            
+        
         } catch (Exception e) {
             logger.warn("Got exception!", e);
+        
             knownProxies.isUnreachable(d);
+            knownProxies.notConnected(d);
         }
         
         if (result) {
@@ -145,8 +186,12 @@ class ProxyConnector extends CommunicationThread {
         ProxyDescription d = knownProxies.getUnconnectedProxy();
         
         if (d.haveConnection()) {
-            // The connection was already created by the other side...
-            return;
+            // The connection was already created by the other side. Create a 
+            // test connection to see if the proxy is reachable from here. 
+            testConnection(d);
+            
+            
+            
         }
       
         createConnection(d);

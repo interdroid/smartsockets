@@ -32,7 +32,8 @@ public class ProxyAcceptor extends CommunicationThread {
                 
         logger.info("Got connection from " + addr);
         
-        ProxyDescription d = knownProxies.addProxyDescription(addr);        
+        ProxyDescription d = knownProxies.addProxyDescription(addr, 0, null);
+        
         knownProxies.canReachMe(d);
                 
         ProxyConnection c = new ProxyConnection(s, in, out, d, knownProxies);
@@ -50,6 +51,8 @@ public class ProxyAcceptor extends CommunicationThread {
             
             out.write(Protocol.REPLY_CONNECTION_ACCEPTED);            
             out.flush();
+            
+            knownProxies.connected(d);
             
             // Now activate it. 
             c.activate();

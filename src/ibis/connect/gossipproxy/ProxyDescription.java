@@ -1,9 +1,8 @@
 package ibis.connect.gossipproxy;
 
-import java.util.ArrayList;
-
-import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
+
+import java.util.ArrayList;
 
 class ProxyDescription {
         
