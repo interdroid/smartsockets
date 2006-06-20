@@ -157,6 +157,14 @@ class ProxyDescription {
 
         buffer.append("Can Reach Me : ").append(reachableToString(canReachMe)).append('\n');
         
+        buffer.append("Connection   : ");
+                
+        if (haveConnection()) {         
+            buffer.append("yes\n");
+        } else { 
+            buffer.append("no\n");
+        }
+        
         return buffer.toString();        
     }     
 }
