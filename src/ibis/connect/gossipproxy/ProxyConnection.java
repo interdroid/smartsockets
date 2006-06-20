@@ -13,43 +13,68 @@ class ProxyConnection implements Runnable {
     private final VirtualSocket s;
     private final DataInputStream in;
     private final DataOutputStream out; 
-    private final ProxyDescription peer;    
-    private final ProxyList knownProxies; 
     
-    private int lastWrittenState = 0;    
+    private final ProxyDescription peer;
+    private final ProxyDescription local;    
+            
+    private final ProxyList knownProxies; 
+    private final StateCounter state;
+    
     private boolean done = false;
           
     ProxyConnection(VirtualSocket s, DataInputStream in, DataOutputStream out, 
-            ProxyDescription peer, ProxyList knownProxies) { 
+            ProxyDescription peer, ProxyList knownProxies, StateCounter state) {
+        
         this.s = s;
         this.in = in;
         this.out = out;
         this.peer = peer;
         this.knownProxies = knownProxies;
+        this.state = state;
+        
+        local = knownProxies.getLocalDescription();
     }
     
-    public void writeProxies(int currentState) { 
+    public void writeProxies(long currentState) { 
         
-        try {             
-            if (currentState <= lastWrittenState) {
-                writePing();
-                out.flush();
-                return;
-            } 
+        long lastSendState = peer.getLastSendState();
         
+        try {
+            int writes = 0;
+
+            GossipProxy.logger.info("=============================="); 
+            GossipProxy.logger.info("Gossiping with: " + peer.proxyAddress); 
+            
             Iterator itt = knownProxies.iterator();
-        
+            
             while (itt.hasNext()) { 
-                ProxyDescription tmp = (ProxyDescription) itt.next();            
-                writeProxy(tmp);
+                ProxyDescription tmp = (ProxyDescription) itt.next();
+                
+                if (tmp.getLastLocalUpdate() > lastSendState) {
+                    
+                    GossipProxy.logger.info("Writing proxy:\n" 
+                            + tmp.toString() + "\n\n");
+                    
+                    writeProxy(tmp);                    
+                    writes++;
+                }
             }        
             
-            out.flush();           
+            if (writes == 0) {
+                // No proxies where written, so write a ping instead.                 
+                writePing();
+            } 
+            
+            out.flush();
+        
+            GossipProxy.logger.info("==============================\n");
+            
         } catch (Exception e) {
             // TODO: handle exception
         }
         
-        lastWrittenState = currentState;
+        peer.setLastSendState(state);        
+        peer.setContactTimeStamp(false);        
     }
     
     private void writePing() throws IOException {        
@@ -57,23 +82,39 @@ class ProxyConnection implements Runnable {
         out.write(Protocol.PROXY_PING);
     } 
     
-    private void writeProxy(ProxyDescription d) throws IOException { 
+    private void writeProxy(ProxyDescription d) throws IOException {        
         out.write(Protocol.PROXY_GOSSIP);
         out.writeUTF(d.proxyAddress.toString());
-        out.writeInt(d.lastKnownState);        
+        out.writeInt(d.getHops());                  
     } 
         
-    private void readProxy() throws IOException { 
+    private void readProxy() throws IOException {
+                
+        VirtualSocketAddress address = new VirtualSocketAddress(in.readUTF());                
+        ProxyDescription tmp = knownProxies.add(address);
+               
+        int hops = in.readInt();
         
-        VirtualSocketAddress address = new VirtualSocketAddress(in.readUTF());
-        int state = in.readInt();        
-
-        knownProxies.addProxyDescription(address, state, peer.proxyAddress);
+        if (hops+1 < tmp.getHops()) {
+            // We seem to have found a shorter route to the target
+            tmp.addIndirection(state, peer.proxyAddress, hops+1);
+        } 
+        
+        if (local.proxyAddress.equals(address)) {
+            // Just received information about myself!
+            if (hops == 0) {
+                peer.setCanReachMe(state);
+            } else { 
+                peer.setCanNotReachMe(state);
+            }
+        }
+        
+        peer.setContactTimeStamp(false);
     }
         
     private void handlePing() {
         System.err.println("Got ping from " + peer.proxyAddress);
-        peer.setContactTimeStamp();
+        peer.setContactTimeStamp(false);
     }
     
     private void receive() {
@@ -106,7 +147,7 @@ class ProxyConnection implements Runnable {
     
     public void activate() {
         // TODO: Use pool ?         
-        new Thread(this).start();
+        new Thread(this, "ProxyConnection").start();
     }
         
     public void run() { 

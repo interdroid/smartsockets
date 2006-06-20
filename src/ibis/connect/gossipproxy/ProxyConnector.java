@@ -13,8 +13,10 @@ class ProxyConnector extends CommunicationThread {
     
     private boolean done = false;
     
-    ProxyConnector(ProxyList knownProxies, VirtualSocketFactory factory) {        
-        super(knownProxies, factory);
+    ProxyConnector(StateCounter state, ProxyList knownProxies, 
+            VirtualSocketFactory factory) {
+        
+        super("ProxyConnector", state, knownProxies, factory);
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
@@ -65,13 +67,13 @@ class ProxyConnector extends CommunicationThread {
             out.writeUTF(localAsString);
             out.flush();            
             
-            logger.info("Succesfully created connection!");            
-            knownProxies.isReachable(d);                   
-            
+            logger.info("Succesfully created connection!");                       
+            d.setReachable(state);
+           
         } catch (Exception e) {
             
             logger.info("Failed to set up connection!");
-            knownProxies.isUnreachable(d);
+            d.setUnreachable(state);
             
         } finally {             
             close(s, in, out);
@@ -131,7 +133,7 @@ class ProxyConnector extends CommunicationThread {
             if (master) { 
                 logger.info("I am master during connection setup");
                 
-                c = new ProxyConnection(s, in, out, d, knownProxies);                
+                c = new ProxyConnection(s, in, out, d, knownProxies, state);                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -150,7 +152,7 @@ class ProxyConnector extends CommunicationThread {
                 result = sendConnect(out, in);
 
                 if (result) {                 
-                    c = new ProxyConnection(s, in, out, d, knownProxies);                
+                    c = new ProxyConnection(s, in, out, d, knownProxies, state);                
                     result = d.createConnection(c);
                     
                     if (!result) { 
@@ -161,15 +163,11 @@ class ProxyConnector extends CommunicationThread {
                 }                 
             }
         
-            knownProxies.isReachable(d);
-            knownProxies.connected(d);            
-        
+            d.setReachable(state);       
         } catch (Exception e) {
-            logger.warn("Got exception!", e);
-        
-            knownProxies.isUnreachable(d);
-            knownProxies.notConnected(d);
-        }
+            logger.warn("Got exception!", e);        
+            d.setUnreachable(state);
+       }
         
         if (result) {
             logger.info("Succesfully created connection!");
@@ -183,18 +181,17 @@ class ProxyConnector extends CommunicationThread {
     private void handleNewProxy() { 
 
         // Handles the connection setup to newly discovered proxies.
-        ProxyDescription d = knownProxies.getUnconnectedProxy();
+        ProxyDescription d = knownProxies.nextProxyToCheck();
         
         if (d.haveConnection()) {
             // The connection was already created by the other side. Create a 
             // test connection to see if the proxy is reachable from here. 
             testConnection(d);
-            
-            
-            
-        }
-      
-        createConnection(d);
+        } else {       
+            createConnection(d);
+        } 
+        
+        knownProxies.putBack(d);
     } 
    
     public void run() {

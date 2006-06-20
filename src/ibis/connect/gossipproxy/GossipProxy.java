@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 public class GossipProxy extends Thread {
     
-    private static int GOSSIP_SLEEP = 5000;
+    private static int GOSSIP_SLEEP = 10000;
     
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(GossipProxy.class.getName());
@@ -19,21 +19,25 @@ public class GossipProxy extends Thread {
     private ProxyAcceptor proxyAcceptor;
     private ProxyConnector proxyConnector;
     
-   public GossipProxy() throws IOException { 
+    private StateCounter state = new StateCounter();
+            
+    public GossipProxy() throws IOException { 
         this(null);
     }
     
     public GossipProxy(VirtualSocketAddress [] proxyAds) throws IOException { 
 
+        super("GossipProxy");
+        
         logger.info("Creating GossipProxy");
                 
         VirtualSocketFactory factory = VirtualSocketFactory.getSocketFactory();
         
         // Create the proxy list
-        proxies = new ProxyList();
+        proxies = new ProxyList(state);
                 
-        proxyAcceptor = new ProxyAcceptor(proxies, factory);        
-        proxyConnector = new ProxyConnector(proxies, factory);
+        proxyAcceptor = new ProxyAcceptor(state, proxies, factory);        
+        proxyConnector = new ProxyConnector(state, proxies, factory);
         
         VirtualSocketAddress local = proxyAcceptor.getLocal();         
         
@@ -42,9 +46,9 @@ public class GossipProxy extends Thread {
         logger.info("GossipAcceptor listning at " + local);
         
         // Create a description for the local machine. 
-        ProxyDescription localDesc = new ProxyDescription(local, null, 0, 0);        
-        localDesc.setReachable(1);
-        localDesc.setCanReachMe(1, 1);
+        ProxyDescription localDesc = new ProxyDescription(local, state);        
+        localDesc.setReachable(state);
+        localDesc.setCanReachMe(state);
         
         proxies.addLocalDescription(localDesc);
 
@@ -66,14 +70,14 @@ public class GossipProxy extends Thread {
         
         for (int i=0;i<proxyAds.length;i++) { 
             if (proxyAds[i] != null) { 
-                proxies.addProxyDescription(proxyAds[i], 0, null);
+                proxies.add(proxyAds[i]);
             } 
         }
     }
     
     private void gossip() { 
         
-        logger.info("Starting gossip round....\n");        
+        logger.info("Starting gossip round (local state = " + state.get() + ")");        
         logger.info("I know the following proxies:\n" + proxies.toString());        
                         
         Iterator itt = proxies.connectedProxiesIterator();
@@ -83,7 +87,7 @@ public class GossipProxy extends Thread {
             ProxyConnection c = d.getConnection();
             
             if (c != null) {               
-                c.writeProxies(proxies.size());
+                c.writeProxies(state.get());
             }            
         }               
     }

@@ -12,129 +12,124 @@ import java.util.LinkedList;
 class ProxyList {
     
     private static int RETRY_DELAY = 10000;
-
-    private final LinkedList connected = new LinkedList();     
-    private final LinkedList notConnected = new LinkedList();     
-    private final LinkedList unknown = new LinkedList();
+    
+    private final StateCounter state; 
+    
+    private final LinkedList checked = new LinkedList();     
+    private final LinkedList mustCheck = new LinkedList();
         
     private final HashMap map = new HashMap();    
+    
+    private ProxyDescription localDescription;
+    
+    public ProxyList(StateCounter state) { 
+        this.state = state; 
+    }
         
-    public synchronized ProxyDescription getUnconnectedProxy() {
+    public synchronized ProxyDescription nextProxyToCheck() {
                
-        while (true) { 
-        
-            long waitTime = 0;
-            
-            while (unknown.size() > 0) {
-                ProxyDescription tmp = (ProxyDescription) unknown.removeFirst();
-                
-                // Check if the poxy is still not connected. It's state may have
-                // changed due to incoming connections. 
-                if (tmp.haveConnection()) { 
-                    connected.addLast(tmp);                                        
-                } else {
-                    return tmp;
-                }
-            }
-                                    
-            if (notConnected.size() > 0) {
-                ProxyDescription d = (ProxyDescription) notConnected.getFirst();
-                
-                long now = System.currentTimeMillis();
-                
-                if (d.lastContact+RETRY_DELAY <= now) {
-                    notConnected.removeFirst();
-                    return d;
-                } else { 
-                    waitTime = (d.lastContact+RETRY_DELAY) - now; 
-                }
-            }
-                        
-            // NOTE: wakes up when a new proxy is added to unknown.  
+        // Wait until there are proxies to check.
+        while (mustCheck.size() == 0) {            
             try { 
+                System.out.println("@@@@@@@@@@@@@ waiting");
+                wait();
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        } 
+        
+        while (true) { 
+
+            System.out.println("@@@@@@@@@@@@@ get proxy");
+            
+            // Get the first one from the list. 
+            ProxyDescription tmp = (ProxyDescription) mustCheck.getFirst();
+            
+            if (tmp.lastContact == 0) {
+                
+                System.out.println("@@@@@@@@@@@@@ return new");
+                
+                // it's a new entry, so we can check it immediately
+                return (ProxyDescription) mustCheck.removeFirst();                        
+            }
+        
+            // it's an old entry, so check it we have to wait for a while. 
+            long now = System.currentTimeMillis();
+
+            if (tmp.lastConnect+RETRY_DELAY < now) {
+
+                System.out.println("@@@@@@@@@@@@@ return old");
+                
+                // we've passed the deadline and can return the proxy. 
+                return (ProxyDescription) mustCheck.removeFirst();
+            }
+            
+            long waitTime = (tmp.lastConnect+RETRY_DELAY) - now;
+            
+            try {
+                System.out.println("@@@@@@@@@@@@@ old wait " + waitTime);                
                 wait(waitTime);
             } catch (InterruptedException e) {
                 // ignore
             }
-        }
+            
+            // We may have reached this point because the deadline has passed, 
+            // OR because we have been interrupted by a new proxy that was added 
+            // to the list. We decide on what to next by running the loop again.            
+        } 
     }
     
-    public synchronized void addLocalDescription(ProxyDescription desc) {
+    public void addLocalDescription(ProxyDescription desc) {
+        // NOTE: We assume that it is not required to be thread safe!        
         // The description of the local machine is only put in the map, not the
         // list...
-        map.put(desc.proxyAddress, desc);                        
-    }
-         
-    public synchronized void connected(ProxyDescription d) {
-        connected.addLast(d);
-        notifyAll();        
-    }
-        
-    public synchronized void notConnected(ProxyDescription d) {
-        notConnected.addLast(d);
-        notifyAll();    
-    }
-        
-    public synchronized void isUnreachable(ProxyDescription d) {
-        d.setUnreachable(map.size());
+        localDescription = desc;
+        map.put(desc.proxyAddress, desc);        
     }
     
-    public synchronized void isReachable(ProxyDescription d) {        
-        d.setReachable(size());
+    public ProxyDescription getLocalDescription() {
+        // NOTE: We assume that it is not required to be thread safe!
+        return localDescription;
     }
-    
-    public synchronized void canReachMe(ProxyDescription d) {        
-        d.setCanReachMe(size(), 0);
-    }
-    
+                  
     public synchronized boolean contains(VirtualSocketAddress m) {         
         return map.containsKey(m); 
     }
-    
-    private void add(ProxyDescription desc) {
-        map.put(desc.proxyAddress, desc);
-        unknown.addLast(desc);
-        notifyAll();
-    }
-        
+           
     private ProxyDescription get(VirtualSocketAddress m) {                        
         return (ProxyDescription) map.get(m);
     }
-        
-    public synchronized int size() {
-        return map.size();
-    }
-        
+            
     public synchronized Iterator iterator() { 
         return map.values().iterator();
     }
     
     public synchronized Iterator connectedProxiesIterator() { 
-        return connected.iterator();
-    }
-
-    /*
-    public synchronized Iterator unconnectedProxiesIterator() { 
-        return notConnected.iterator();
+        return checked.iterator();
     }
     
-    public synchronized Iterator unknownProxiesIterator() { 
-        return unknown.iterator();
-    }        
-   
-    public ProxyDescription addProxyDescription(VirtualSocketAddress a) {  
-        return addProxyDescription(a, 0, null);        
+    public synchronized void putBack(ProxyDescription d) {
+        
+        if (d.reachableKnown()) { 
+            checked.addLast(d);        
+        } else {
+            // Existing entries go to the tail of the list
+            mustCheck.addLast(d);
+            notifyAll();
+        } 
     }
-*/
     
-    public synchronized ProxyDescription addProxyDescription(
-            VirtualSocketAddress a, int state, VirtualSocketAddress src) { 
+    public synchronized ProxyDescription add(VirtualSocketAddress a) { 
         
         ProxyDescription tmp = get(a);
         
         if (tmp == null) {                             
-            tmp = new ProxyDescription(a, src, size()+1, state);
-            add(tmp);            
+            tmp = new ProxyDescription(a, state);
+            map.put(tmp.proxyAddress, tmp);
+            
+            // Fresh entries go to the head of the list
+            mustCheck.addFirst(tmp);
+            notifyAll();
         }
         
         return tmp;

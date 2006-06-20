@@ -14,11 +14,27 @@ class ProxyDescription {
     final VirtualSocketAddress proxyAddress;    
     VirtualSocketAddress indirection; 
     
-    int lastKnownState;
-    int lastLocalState;
+    // Value of the local state the last time anything was changed in this 
+    // description.  
+    private long lastLocalUpdate;
     
+    // Indicates the value of the local state the last time any data was send 
+    // to this machine. This allows us to send delta's instead of all info. 
+    private long lastSendState;
+        
+    // Number of hops required to reach this machine. A value of '0' indicates 
+    // that a direct connection is possible. A value of 'Integer.MAX_VALUE/2'
+    // or large indicates an unreachable machine. NOTE: The '/2' is used to 
+    // prevent overflow when we forward this information to other machines. Each 
+    // forward adds '1' to the hop count, so 'Integer.MAX_VALUE' would not work. 
+    private int hops = Integer.MAX_VALUE/2; 
+        
+    // Last time that there was any contact with this machine.  
     long lastContact;    
-           
+    
+    // Last time that we tried to connect to this machine.      
+    long lastConnect;    
+        
     byte reachable  = UNKNOWN;
     byte canReachMe = UNKNOWN;
 
@@ -26,14 +42,11 @@ class ProxyDescription {
 
     private ProxyConnection connection;
     
-    ProxyDescription(VirtualSocketAddress address, 
-            VirtualSocketAddress indirection, int localState, int remoteState) {
+    ProxyDescription(VirtualSocketAddress address, StateCounter state) {
         
         this.proxyAddress = address;
-        this.indirection = indirection;        
-        this.lastKnownState = remoteState;   
-        this.lastLocalState = localState;
-                
+        this.lastLocalUpdate = state.increment();
+        
         this.reachable = UNKNOWN;
         this.canReachMe = UNKNOWN;                
     }
@@ -42,61 +55,94 @@ class ProxyDescription {
         clients.add(client);
     }
            
-    void setContactTimeStamp() { 
-        lastContact = System.currentTimeMillis();    
+    void setContactTimeStamp(boolean connect) { 
+        lastContact = System.currentTimeMillis();
+        
+        if (connect) { 
+            lastConnect = lastContact;            
+        }
     }
     
-    private void updateState(int localState) { 
-        lastLocalState = localState;
+    public long getLastLocalUpdate() { 
+        return lastLocalUpdate;
+    }
+    
+    public long getLastSendState() { 
+        return lastSendState;
     }
 
-    void setReachable(int localState) { 
+    public void setLastSendState(StateCounter state) {
+        lastSendState = state.get();
+    }
+    
+    public int getHops() { 
+        return hops;
+    }
+    
+    void setReachable(StateCounter state) {
 
         if (reachable != REACHABLE) { 
-            reachable = REACHABLE;            
+            reachable = REACHABLE;                     
             indirection = null;
-            updateState(localState);
+            hops = 0;
+            lastLocalUpdate = state.increment();
         } 
          
-        setContactTimeStamp();
+        setContactTimeStamp(true);
     } 
         
-    void setUnreachable(int localState) { 
-
+    void setUnreachable(StateCounter state) { 
+        
         if (reachable != UNREACHABLE) { 
             reachable = UNREACHABLE;
-            updateState(localState);
+            lastLocalUpdate = state.increment();
         } 
-        
-        setContactTimeStamp();
+
+        setContactTimeStamp(true);        
     } 
         
-    void setCanReachMe(int localState, int remoteState) { 
-
-        boolean change = false;
+    void setCanReachMe(StateCounter state) { 
         
         if (canReachMe != REACHABLE) { 
-            canReachMe = REACHABLE;    
-            change = true;
+            canReachMe = REACHABLE;                      
+            lastLocalUpdate = state.increment();
         }        
         
-        if (lastKnownState < remoteState) {
-            lastKnownState = remoteState;
-            change = true;
-        }
+        setContactTimeStamp(false);        
+    }
+    
+    void setCanNotReachMe(StateCounter state) {
 
-        if (change) { 
-            updateState(localState);
-        } 
+        if (canReachMe != UNREACHABLE) { 
+            canReachMe = UNREACHABLE;                      
+            lastLocalUpdate = state.increment();
+        }        
         
-        setContactTimeStamp();
+        setContactTimeStamp(false);
     }
     
-    void setCanNotReachMe() { 
-        canReachMe = UNREACHABLE;
-        setContactTimeStamp();
+    void addIndirection(StateCounter state, VirtualSocketAddress indirection, 
+            int hops) {
+        
+        if (reachable != REACHABLE && hops < this.hops) {
+            this.hops = hops;
+            this.indirection = indirection;
+            lastLocalUpdate = state.increment();
+        } 
     }
     
+    boolean isStable() {         
+        return reachableKnown() && canReachMeKnown();        
+    }
+    
+    boolean reachableKnown() {         
+        return (reachable != UNKNOWN);        
+    }
+    
+    boolean canReachMeKnown() {         
+        return (canReachMe != UNKNOWN);        
+    }
+        
     boolean canReachMe() { 
         return canReachMe == REACHABLE;
     }
@@ -143,17 +189,20 @@ class ProxyDescription {
     
         StringBuffer buffer = new StringBuffer();
         buffer.append("Address      : ").append(proxyAddress).append('\n');                      
-        buffer.append("Last State   : ").append(lastKnownState).append('\n');
-        
+        buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
+        buffer.append("Last Gossip  : ").append(lastSendState).append('\n');
+                
         long time = (System.currentTimeMillis() - lastContact) / 1000;
         
         buffer.append("Last Update  : ").append(time).append(" seconds ago\n");
         buffer.append("Reachable    : ").append(reachableToString(reachable)).append('\n');
                 
         if (reachable == UNREACHABLE && indirection != null) { 
-            buffer.append("Reachable Via: ").append(indirection).append('\n');               
+            buffer.append("Reachable Via: ").append(indirection).append('\n');
         }        
 
+        buffer.append("Required Hops: ").append(hops).append('\n');
+        
         buffer.append("Can Reach Me : ").append(reachableToString(canReachMe)).append('\n');
         
         buffer.append("Connection   : ");

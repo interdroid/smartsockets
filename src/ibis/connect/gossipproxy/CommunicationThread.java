@@ -17,6 +17,7 @@ abstract class CommunicationThread extends Thread {
     protected static final int DEFAULT_TIMEOUT = 1000;
     protected static final HashMap CONNECT_PROPERTIES = new HashMap();    
             
+    protected final StateCounter state;         
     protected final Logger logger;     
     protected final ProxyList knownProxies;
     protected final VirtualSocketFactory factory;    
@@ -24,9 +25,10 @@ abstract class CommunicationThread extends Thread {
     protected VirtualSocketAddress local;
     protected String localAsString;
     
-    protected CommunicationThread(ProxyList knownProxies,
-            VirtualSocketFactory factory) { 
-                
+    protected CommunicationThread(String name, StateCounter state, 
+            ProxyList knownProxies, VirtualSocketFactory factory) {                 
+        super(name);        
+        this.state = state;
         this.knownProxies = knownProxies;
         this.factory = factory;        
         logger = GetLogger.getLogger(this.getClass().getName());                

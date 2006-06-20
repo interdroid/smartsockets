@@ -16,10 +16,10 @@ public class ProxyAcceptor extends CommunicationThread {
     private VirtualServerSocket server;
     private boolean done = false;
     
-    ProxyAcceptor(ProxyList knownProxies, VirtualSocketFactory factory) 
-        throws IOException {
+    ProxyAcceptor(StateCounter state, ProxyList knownProxies, 
+            VirtualSocketFactory factory) throws IOException {
         
-        super(knownProxies, factory);
+        super("ProxyAcceptor", state, knownProxies, factory);
         server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
         setLocal(server.getLocalSocketAddress());        
     }
@@ -32,11 +32,11 @@ public class ProxyAcceptor extends CommunicationThread {
                 
         logger.info("Got connection from " + addr);
         
-        ProxyDescription d = knownProxies.addProxyDescription(addr, 0, null);
+        ProxyDescription d = knownProxies.add(addr);        
+        d.setCanReachMe(state);
         
-        knownProxies.canReachMe(d);
-                
-        ProxyConnection c = new ProxyConnection(s, in, out, d, knownProxies);
+        ProxyConnection c = 
+            new ProxyConnection(s, in, out, d, knownProxies, state);
         
         if (!d.createConnection(c)) { 
             // There already was a connection with this proxy...            
@@ -51,8 +51,6 @@ public class ProxyAcceptor extends CommunicationThread {
             
             out.write(Protocol.REPLY_CONNECTION_ACCEPTED);            
             out.flush();
-            
-            knownProxies.connected(d);
             
             // Now activate it. 
             c.activate();
