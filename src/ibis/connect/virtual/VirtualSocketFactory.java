@@ -164,6 +164,33 @@ public class VirtualSocketFactory {
         return null;
     }
     
+    public void close(VirtualSocket s, OutputStream out, InputStream in) { 
+        
+        try { 
+            if (out != null) {
+                out.close();
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        
+        try { 
+            if (in != null) { 
+                in.close();
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        
+        try { 
+            if (s != null){ 
+                s.close(); 
+            }
+        } catch (Exception e) {
+            // ignore
+        }        
+    }
+    
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
               

@@ -17,7 +17,7 @@ import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
 
 public class GossipProxyClient extends Thread {
-  /*
+
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(GossipProxyClient.class.getName());
     
@@ -61,6 +61,16 @@ public class GossipProxyClient extends Thread {
         this();        
         addProxy(proxy);
     }
+    
+    public GossipProxyClient(VirtualSocketAddress [] proxies) throws IOException {         
+        this();
+        
+        for (int i=0;i<proxies.length;i++) { 
+            if (proxies[i] != null) { 
+                addProxy(proxies[i]);
+            } 
+        } 
+    }
         
     public boolean addProxy(VirtualSocketAddress proxy) {
 
@@ -79,32 +89,55 @@ public class GossipProxyClient extends Thread {
             knownProxies.put(proxy, info);
         } 
         
+        VirtualSocket s = null;
+        DataOutputStream out = null;
+        DataInputStream in = null;
+        
         // Otherwise, try to set up a connection
         try { 
-            VirtualSocket s = factory.createClientSocket(proxy, DEFAULT_TIMEOUT,
+            s = factory.createClientSocket(proxy, DEFAULT_TIMEOUT,
                     CONNECT_PROPERTIES);
             
-            DataOutputStream out = new DataOutputStream(s.getOutputStream());
-            
-            out.write(Protocol.CLIENT_REQUEST_CONNECT);
+            out = new DataOutputStream(s.getOutputStream());
+                        
+            out.write(Protocol.PROXY_CLIENT_REGISTER);
             out.writeUTF(server.getLocalSocketAddress().toString());
             out.flush();            
-            out.close();            
-            s.close();
-                        
+            
+            in = new DataInputStream(s.getInputStream());
+            int reply = in.readByte();
+            
+            switch (reply) {
+            case Protocol.REPLY_CLIENT_REGISTRATION_ACCEPTED:
+                logger.info("Proxy " + proxy + " accepted our registration.");
+                break;
+                
+            case Protocol.REPLY_CLIENT_REGISTRATION_REFUSED:
+                logger.info("Proxy " + proxy + " refused our registration.");
+                return false;                 
+                                
+            default:
+                logger.info("Proxy " + proxy + " returned gibberish!");
+                return false;                             
+            }
+
         } catch (IOException e) {           
             logger.warn("Could not contact Proxy " + proxy, e);
             return false;
+        } finally { 
+            factory.close(s, out, in);
         }
         
         synchronized (this) {
             // Could reach the machine, so update the proxy info
             info.reachable = true;
             reachableProxies.add(info);
-        }            
+        }
+        
+        return true;
     }
     
-    
+    /*
     private void handleProxyTestConnect(VirtualSocket s, DataInputStream in) 
         throws IOException { 
         
@@ -147,5 +180,24 @@ public class GossipProxyClient extends Thread {
         
     }
     */
+    
+    public static void main(String [] args) { 
+
+        VirtualSocketAddress [] proxies = new VirtualSocketAddress[args.length];
+        
+        for (int i=0;i<args.length;i++) {                
+            try { 
+                proxies[i] = new VirtualSocketAddress(args[i]);
+            } catch (Exception e) {
+                logger.warn("Skipping proxy address: " + args[i], e);              
+            }
+        } 
+        
+        try {
+            new GossipProxyClient(proxies);
+        } catch (IOException e) {
+            logger.warn("Oops: ", e);
+        }        
+    }
 }
 
