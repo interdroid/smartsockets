@@ -121,17 +121,17 @@ class ProxyConnection implements Runnable {
         } else if (tmp == peer) {
             // The peer send information about itself. 
             for (int i=0;i<clients;i++) { 
-                peer.addClient(c[i]);
+                tmp.addClient(c[i]);
             }  
         } else {
-            // We got information about a 'third party'.             
+            // We got information about a 'third party'.              
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
                 tmp.addIndirection(peer.proxyAddress, hops+1);
             } 
             
             for (int i=0;i<clients;i++) { 
-                peer.addClient(c[i]);
+                tmp.addClient(c[i]);
             }  
         }
         

@@ -120,6 +120,9 @@ class ProxyDescription {
         if (canReachMe != REACHABLE) { 
             canReachMe = REACHABLE;                      
             lastLocalUpdate = state.increment();
+            
+            hops = 0;
+            indirection = null;            
         }        
         
         setContactTimeStamp(false);        
