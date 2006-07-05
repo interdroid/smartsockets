@@ -183,13 +183,38 @@ public class GossipProxyClient extends Thread {
     
     public static void main(String [] args) { 
 
-        VirtualSocketAddress [] proxies = new VirtualSocketAddress[args.length];
+        VirtualSocketAddress [] proxies = null;
+        String [] clients = null;
+
+        int proxyCount = 0; 
+        int clientCount = 0;        
         
-        for (int i=0;i<args.length;i++) {                
-            try { 
-                proxies[i] = new VirtualSocketAddress(args[i]);
-            } catch (Exception e) {
-                logger.warn("Skipping proxy address: " + args[i], e);              
+        for (int i=0;i<args.length;i++) {           
+            if (args[i].equals("-c")) {
+                clientCount++;            
+            }
+            
+            if (args[i].equals("-p")) {
+                proxyCount++;
+            }
+        }         
+        
+        proxies = new VirtualSocketAddress[proxyCount];
+        clients = new String[clientCount];
+          
+        clientCount = proxyCount = 0;
+        
+        for (int i=0;i<args.length;i++) {           
+            if (args[i].equals("-c")) {
+                clients[clientCount++] = args[++i];                
+            }
+            
+            if (args[i].equals("-p")) {                
+                try { 
+                    proxies[proxyCount++] = new VirtualSocketAddress(args[++i]);
+                } catch (Exception e) {
+                    logger.warn("Skipping proxy address: " + args[i], e);              
+                }
             }
         } 
         

@@ -124,8 +124,6 @@ class ProxyList {
         ProxyDescription tmp = get(a);
         
         if (tmp == null) {   
-            
-            
             tmp = new ProxyDescription(a, state);
             map.put(tmp.proxyAddress, tmp);
             
@@ -139,7 +137,43 @@ class ProxyList {
         return tmp;
     }
     
-    
+    public synchronized LinkedList findClient(String client) {
+
+        // Finds all proxies that claim to known this client. Return them in 
+        // a list, sorted by how 'good an option' they are. We prefer proxies 
+        // that we can connect to directly, followed by proxies that can connect 
+        // to us directly. Finally, we also accept proxies that we cannot create 
+        // a connection to in either direction.                
+        LinkedList good = new LinkedList();
+        LinkedList bad = new LinkedList();
+        LinkedList ugly = new LinkedList();
+                
+        Iterator itt = map.values().iterator();
+        
+        while (itt.hasNext()) { 
+            
+            ProxyDescription tmp = (ProxyDescription) itt.next();
+            
+            if (tmp.clients.contains(client)) { 
+                System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
+                        + client + ":\n" + tmp + "\n");
+                
+                if (tmp.isReachable()) { 
+                    good.add(tmp);
+                } else if (tmp.canReachMe()) { 
+                    bad.add(tmp);
+                } else {                     
+                    ugly.add(tmp);
+                }
+            }
+        }
+        
+        good.addAll(bad);
+        good.addAll(ugly);
+        
+        return good;
+    }
+        
     public String toString() {
         
         StringBuffer result = new StringBuffer();

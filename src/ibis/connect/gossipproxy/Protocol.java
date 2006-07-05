@@ -15,5 +15,7 @@ public interface Protocol {
    
     public static final byte PROXY_CLIENT_CONNECT = 9;       
     public static final byte REPLY_CLIENT_CONNECTION_ACCEPTED = 10;    
-    public static final byte REPLY_CLIENT_CONNECTION_REFUSED = 11;  
+    public static final byte REPLY_CLIENT_CONNECTION_UNKNOWN_HOST = 11;
+    public static final byte REPLY_CLIENT_CONNECTION_DENIED = 12;    
+    
 } 

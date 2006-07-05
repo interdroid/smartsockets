@@ -10,6 +10,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.LinkedList;
 
 public class ProxyAcceptor extends CommunicationThread {
         
@@ -114,8 +115,41 @@ public class ProxyAcceptor extends CommunicationThread {
    
     }
     
-    private boolean handleClientConnect(VirtualSocket s, DataInputStream in, DataOutputStream out) {
-        // TODO implement...        
+    private boolean handleClientConnect(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
+        
+        String clientAsString = in.readUTF();
+        String targetAsString = in.readUTF();
+                        
+        logger.info("Got request client " + clientAsString 
+                + " to connect to " + targetAsString);
+        
+        // Add client to list of clients we know...
+        ProxyDescription tmp = knownProxies.getLocalDescription();
+        tmp.addClient(clientAsString);
+        
+        // See if we known any proxies that know the target machine...
+        LinkedList proxies = knownProxies.findClient(targetAsString);
+        
+        if (proxies.size() == 0) {
+            // Nobody knows the target, so we give up for now...
+            logger.info("Nobody seems to know " + targetAsString);            
+            out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
+            out.flush();
+            return false;                
+        }
+
+        logger.info("Found " + proxies.size() + " proxies that know " 
+                + targetAsString + ": ");            
+
+        
+        for (int i=0;i<proxies.size();i++) { 
+            ProxyDescription p = (ProxyDescription) proxies.removeFirst();          
+            logger.info("   " + i + " -> " + p.proxyAddress); 
+        }
+        
+        // give up for now....
+        out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_DENIED);
+        out.flush();                
         return false;
     }
 
