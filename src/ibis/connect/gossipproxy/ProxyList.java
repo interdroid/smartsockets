@@ -123,10 +123,14 @@ class ProxyList {
         
         ProxyDescription tmp = get(a);
         
-        if (tmp == null) {                             
+        if (tmp == null) {   
+            
+            
             tmp = new ProxyDescription(a, state);
             map.put(tmp.proxyAddress, tmp);
             
+            System.out.println("@@@@@@@@@@@@@ ADD NEW PROXY:\n " + tmp + "\n");      
+                                   
             // Fresh entries go to the head of the list
             mustCheck.addFirst(tmp);
             notifyAll();

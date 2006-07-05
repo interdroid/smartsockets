@@ -94,12 +94,7 @@ class ProxyConnection implements Runnable {
         ProxyDescription tmp = knownProxies.add(address);
                
         int hops = in.readInt();
-        
-        if (hops+1 < tmp.getHops()) {
-            // We seem to have found a shorter route to the target
-            tmp.addIndirection(state, peer.proxyAddress, hops+1);
-        } 
-        
+                
         if (local.proxyAddress.equals(address)) {
             // Just received information about myself!
             if (hops == 0) {
@@ -107,6 +102,16 @@ class ProxyConnection implements Runnable {
             } else { 
                 peer.setCanNotReachMe(state);
             }
+        } else if (tmp == peer) {
+            // The peer send information about itself. 
+            // ignore for now, since there is nothing interresting there...                
+        } else {
+            // We got information about a 'third party'. 
+            
+            if (hops+1 < tmp.getHops()) {
+                // We seem to have found a shorter route to the target
+                tmp.addIndirection(state, peer.proxyAddress, hops+1);
+            } 
         }
         
         peer.setContactTimeStamp(false);
