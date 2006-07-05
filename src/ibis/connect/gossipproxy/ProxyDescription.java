@@ -38,6 +38,9 @@ class ProxyDescription {
     byte reachable  = UNKNOWN;
     byte canReachMe = UNKNOWN;
 
+    // Maintain a list of machines that have registered themselves as clients. 
+    // Note that this is probably a very bad idea from a scalabitly point of 
+    // view...
     ArrayList clients = new ArrayList(); 
 
     private ProxyConnection connection;
@@ -51,10 +54,17 @@ class ProxyDescription {
         this.canReachMe = UNKNOWN;                
     }
     
-    void addClient(VirtualSocketAddress client) { 
-        clients.add(client);
+  //  void addClient(VirtualSocketAddress client) { 
+  //      clients.add(client);
+  //  }
+
+    void addClient(String clientAsString) {        
+        // TODO: optimize!!!
+        if (!clients.contains(clientAsString)) {         
+            clients.add(clientAsString);
+        } 
     }
-           
+    
     void setContactTimeStamp(boolean connect) { 
         lastContact = System.currentTimeMillis();
         
@@ -212,6 +222,16 @@ class ProxyDescription {
         } else { 
             buffer.append("no\n");
         }
+        
+        buffer.append("Clients      : ");
+        buffer.append(clients.size());
+        buffer.append("\n");
+                
+        for (int i=0;i<clients.size();i++) { 
+            buffer.append("             : ");
+            buffer.append(clients.get(i));
+            buffer.append("\n");                
+        } 
         
         return buffer.toString();        
     }     

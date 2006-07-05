@@ -94,6 +94,12 @@ public class ProxyAcceptor extends CommunicationThread {
                 result = handlePing(s, in, out);                   
                 break;
         
+            case Protocol.PROXY_CLIENT_REGISTER:
+                result = handleClientRegistration(s, in, out);
+                
+            case Protocol.PROXY_CLIENT_CONNECT:
+                result = handleClientConnect(s, in, out);
+                                
             default:
                 break;
             }
@@ -108,6 +114,34 @@ public class ProxyAcceptor extends CommunicationThread {
    
     }
     
+    private boolean handleClientConnect(VirtualSocket s, DataInputStream in, DataOutputStream out) {
+        // TODO implement...        
+        return false;
+    }
+
+    private boolean handleClientRegistration(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
+
+        // Read the clients address. 
+        String clientAsString = in.readUTF();        
+        // VirtualSocketAddress client = new VirtualSocketAddress(clientAsString); 
+                        
+        logger.info("Got connection from client: " + clientAsString);
+        
+        ProxyDescription tmp = knownProxies.getLocalDescription();
+        tmp.addClient(clientAsString);
+
+        // Always accept the connection for now.              
+        out.writeByte(Protocol.REPLY_CLIENT_REGISTRATION_ACCEPTED);
+        out.flush();       
+
+        // TODO: should check here is we can reach the client. If so then 
+        // all is well, if not, then we should refuse the connection or keep it 
+        // open (which doesn't really scale) ...  
+        
+        // Always return false, so the main thread will close the connection. 
+        return false;
+    }
+
     public void run() { 
         
         while (!done) {           

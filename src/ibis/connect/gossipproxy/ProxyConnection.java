@@ -6,6 +6,7 @@ import ibis.connect.virtual.VirtualSocketAddress;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 class ProxyConnection implements Runnable {
@@ -85,7 +86,15 @@ class ProxyConnection implements Runnable {
     private void writeProxy(ProxyDescription d) throws IOException {        
         out.write(Protocol.PROXY_GOSSIP);
         out.writeUTF(d.proxyAddress.toString());
-        out.writeInt(d.getHops());                  
+        out.writeInt(d.getHops());
+        
+        // TODO: fix race condition here!
+        int size = d.clients.size();        
+        out.writeInt(size); 
+
+        for (int i=0;i<size;i++) {         
+            out.writeUTF(d.proxyAddress.toString());
+        } 
     } 
         
     private void readProxy() throws IOException {
@@ -94,7 +103,14 @@ class ProxyConnection implements Runnable {
         ProxyDescription tmp = knownProxies.add(address);
                
         int hops = in.readInt();
-                
+        
+        int clients = in.readInt();
+        String [] c = new String[clients];
+        
+        for (int i=0;i<clients;i++) {  
+            c[i] = in.readUTF();
+        }
+                        
         if (local.proxyAddress.equals(address)) {
             // Just received information about myself!
             if (hops == 0) {
@@ -104,14 +120,19 @@ class ProxyConnection implements Runnable {
             }
         } else if (tmp == peer) {
             // The peer send information about itself. 
-            // ignore for now, since there is nothing interresting there...                
+            for (int i=0;i<clients;i++) { 
+                peer.addClient(c[i]);
+            }  
         } else {
-            // We got information about a 'third party'. 
-            
+            // We got information about a 'third party'.             
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
                 tmp.addIndirection(state, peer.proxyAddress, hops+1);
             } 
+            
+            for (int i=0;i<clients;i++) { 
+                peer.addClient(c[i]);
+            }  
         }
         
         peer.setContactTimeStamp(false);
