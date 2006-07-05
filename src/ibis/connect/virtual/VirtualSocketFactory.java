@@ -164,7 +164,7 @@ public class VirtualSocketFactory {
         return null;
     }
     
-    public void close(VirtualSocket s, OutputStream out, InputStream in) { 
+    public static void close(VirtualSocket s, OutputStream out, InputStream in) { 
         
         try { 
             if (out != null) {

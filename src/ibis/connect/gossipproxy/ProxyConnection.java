@@ -2,6 +2,7 @@ package ibis.connect.gossipproxy;
 
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
+import ibis.connect.virtual.VirtualSocketFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -151,7 +152,8 @@ class ProxyConnection implements Runnable {
             switch (opcode) { 
         
             case -1:
-                // Connection died ? 
+                GossipProxy.logger.info("ProxyConnection got EOF!");
+                done = true;
                 break; 
             
             case Protocol.PROXY_GOSSIP:
@@ -163,11 +165,13 @@ class ProxyConnection implements Runnable {
                 break;
                                 
             default:
-            
+                GossipProxy.logger.info("ProxyConnection got junk!");
+                done = true;                
             }
                         
         } catch (Exception e) {
-            // TODO: handle exception
+            GossipProxy.logger.info("ProxyConnection got exception!", e);
+            done = true;
         }
     }
     
@@ -181,5 +185,7 @@ class ProxyConnection implements Runnable {
         while (!done) { 
             receive();
         }
+        
+        VirtualSocketFactory.close(s, out, in);        
     }
 }
