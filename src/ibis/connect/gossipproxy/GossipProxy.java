@@ -47,8 +47,8 @@ public class GossipProxy extends Thread {
         
         // Create a description for the local machine. 
         ProxyDescription localDesc = new ProxyDescription(local, state);        
-        localDesc.setReachable(state);
-        localDesc.setCanReachMe(state);
+        localDesc.setReachable();
+        localDesc.setCanReachMe();
         
         proxies.addLocalDescription(localDesc);
 

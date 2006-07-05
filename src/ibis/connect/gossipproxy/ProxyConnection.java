@@ -74,7 +74,7 @@ class ProxyConnection implements Runnable {
             // TODO: handle exception
         }
         
-        peer.setLastSendState(state);        
+        peer.setLastSendState();        
         peer.setContactTimeStamp(false);        
     }
     
@@ -114,9 +114,9 @@ class ProxyConnection implements Runnable {
         if (local.proxyAddress.equals(address)) {
             // Just received information about myself!
             if (hops == 0) {
-                peer.setCanReachMe(state);
+                peer.setCanReachMe();
             } else { 
-                peer.setCanNotReachMe(state);
+                peer.setCanNotReachMe();
             }
         } else if (tmp == peer) {
             // The peer send information about itself. 
@@ -127,7 +127,7 @@ class ProxyConnection implements Runnable {
             // We got information about a 'third party'.             
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
-                tmp.addIndirection(state, peer.proxyAddress, hops+1);
+                tmp.addIndirection(peer.proxyAddress, hops+1);
             } 
             
             for (int i=0;i<clients;i++) { 

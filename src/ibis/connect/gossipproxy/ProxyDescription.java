@@ -14,6 +14,8 @@ class ProxyDescription {
     final VirtualSocketAddress proxyAddress;    
     VirtualSocketAddress indirection; 
     
+    final StateCounter state;
+    
     // Value of the local state the last time anything was changed in this 
     // description.  
     private long lastLocalUpdate;
@@ -47,6 +49,7 @@ class ProxyDescription {
     
     ProxyDescription(VirtualSocketAddress address, StateCounter state) {
         
+        this.state = state;        
         this.proxyAddress = address;
         this.lastLocalUpdate = state.increment();
         
@@ -60,7 +63,8 @@ class ProxyDescription {
 
     void addClient(String clientAsString) {        
         // TODO: optimize!!!
-        if (!clients.contains(clientAsString)) {         
+        if (!clients.contains(clientAsString)) {   
+            this.lastLocalUpdate = state.increment();            
             clients.add(clientAsString);
         } 
     }
@@ -81,7 +85,7 @@ class ProxyDescription {
         return lastSendState;
     }
 
-    public void setLastSendState(StateCounter state) {
+    public void setLastSendState() {
         lastSendState = state.get();
     }
     
@@ -89,7 +93,7 @@ class ProxyDescription {
         return hops;
     }
     
-    void setReachable(StateCounter state) {
+    void setReachable() {
 
         if (reachable != REACHABLE) { 
             reachable = REACHABLE;                     
@@ -101,7 +105,7 @@ class ProxyDescription {
         setContactTimeStamp(true);
     } 
         
-    void setUnreachable(StateCounter state) { 
+    void setUnreachable() { 
         
         if (reachable != UNREACHABLE) { 
             reachable = UNREACHABLE;
@@ -111,7 +115,7 @@ class ProxyDescription {
         setContactTimeStamp(true);        
     } 
         
-    void setCanReachMe(StateCounter state) { 
+    void setCanReachMe() { 
         
         if (canReachMe != REACHABLE) { 
             canReachMe = REACHABLE;                      
@@ -121,7 +125,7 @@ class ProxyDescription {
         setContactTimeStamp(false);        
     }
     
-    void setCanNotReachMe(StateCounter state) {
+    void setCanNotReachMe() {
 
         if (canReachMe != UNREACHABLE) { 
             canReachMe = UNREACHABLE;                      
@@ -131,8 +135,7 @@ class ProxyDescription {
         setContactTimeStamp(false);
     }
     
-    void addIndirection(StateCounter state, VirtualSocketAddress indirection, 
-            int hops) {
+    void addIndirection(VirtualSocketAddress indirection, int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;

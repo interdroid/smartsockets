@@ -33,7 +33,7 @@ public class ProxyAcceptor extends CommunicationThread {
         logger.info("Got connection from " + addr);
         
         ProxyDescription d = knownProxies.add(addr);        
-        d.setCanReachMe(state);
+        d.setCanReachMe();
         
         ProxyConnection c = 
             new ProxyConnection(s, in, out, d, knownProxies, state);

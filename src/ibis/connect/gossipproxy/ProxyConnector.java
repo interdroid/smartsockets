@@ -68,12 +68,12 @@ class ProxyConnector extends CommunicationThread {
             out.flush();            
             
             logger.info("Succesfully created connection!");                       
-            d.setReachable(state);
+            d.setReachable();
            
         } catch (Exception e) {
             
             logger.info("Failed to set up connection!");
-            d.setUnreachable(state);
+            d.setUnreachable();
             
         } finally {             
             close(s, in, out);
@@ -163,10 +163,10 @@ class ProxyConnector extends CommunicationThread {
                 }                 
             }
         
-            d.setReachable(state);       
+            d.setReachable();       
         } catch (Exception e) {
             logger.warn("Got exception!", e);        
-            d.setUnreachable(state);
+            d.setUnreachable();
        }
         
         if (result) {
