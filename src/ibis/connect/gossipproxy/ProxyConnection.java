@@ -93,7 +93,7 @@ class ProxyConnection implements Runnable {
         out.writeInt(size); 
 
         for (int i=0;i<size;i++) {         
-            out.writeUTF(d.proxyAddress.toString());
+            out.writeUTF((String) d.clients.get(i));
         } 
     } 
         
