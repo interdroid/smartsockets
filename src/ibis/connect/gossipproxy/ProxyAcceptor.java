@@ -66,8 +66,92 @@ public class ProxyAcceptor extends CommunicationThread {
         logger.info("Got ping from: " + sender);      
         return false;
     }    
+   
+    private boolean handleClientConnect(VirtualSocket s, DataInputStream in, 
+            DataOutputStream out) throws IOException {
+        
+        String clientAsString = in.readUTF();
+        String targetAsString = in.readUTF();
+                        
+        logger.info("Got request client " + clientAsString 
+                + " to connect to " + targetAsString);
+        
+        // Add client to list of clients we know...
+        ProxyDescription tmp = knownProxies.getLocalDescription();
+        tmp.addClient(clientAsString);
+        
+        // First check if we known the target ourselves:
+        if (tmp.clients.contains(targetAsString)) {
+            logger.info("We know target " + targetAsString + " ourselves!");            
+            
+            if (connectToClient(s, out, in)) { 
+                return true;
+            }
+        }
+                
+        // Next, see if we known any proxies that know the target machine...
+        LinkedList proxies = knownProxies.findClient(targetAsString, false);
+        
+        if (proxies.size() == 0) {
+            // Nobody knows the target, so we give up for now...
+            logger.info("Nobody seems to know " + targetAsString);            
+            out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
+            out.flush();
+            return false;                
+        }
 
-    private void doAccept() {
+        logger.info("Found " + proxies.size() + " proxies that know " 
+                + targetAsString);            
+        
+        for (int i=0;i<proxies.size();i++) { 
+            ProxyDescription p = (ProxyDescription) proxies.removeFirst();          
+            logger.info("  trying proxy " + i + " -> " + p.proxyAddress);            
+            
+            if (connectViaProxy(s, out, in)) { 
+                return true;
+            }
+        }
+        
+        // Failed to connect, so give up....
+        out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_DENIED);
+        out.flush();                
+        return false;
+    }
+
+    private boolean connectViaProxy(VirtualSocket s, DataOutputStream out, DataInputStream in) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    private boolean connectToClient(VirtualSocket s, DataOutputStream out, DataInputStream in) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    private boolean handleClientRegistration(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
+
+        // Read the clients address. 
+        String clientAsString = in.readUTF();        
+        // VirtualSocketAddress client = new VirtualSocketAddress(clientAsString); 
+                        
+        logger.info("Got connection from client: " + clientAsString);
+        
+        ProxyDescription tmp = knownProxies.getLocalDescription();
+        tmp.addClient(clientAsString);
+
+        // Always accept the connection for now.              
+        out.writeByte(Protocol.REPLY_CLIENT_REGISTRATION_ACCEPTED);
+        out.flush();       
+
+        // TODO: should check here is we can reach the client. If so then 
+        // all is well, if not, then we should refuse the connection or keep it 
+        // open (which doesn't really scale) ...  
+        
+        // Always return false, so the main thread will close the connection. 
+        return false;
+    }
+
+  private void doAccept() {
         
         VirtualSocket s = null;
         DataInputStream in = null;
@@ -97,10 +181,12 @@ public class ProxyAcceptor extends CommunicationThread {
         
             case Protocol.PROXY_CLIENT_REGISTER:
                 result = handleClientRegistration(s, in, out);
+                break;
                 
             case Protocol.PROXY_CLIENT_CONNECT:
                 result = handleClientConnect(s, in, out);
-                                
+                break;
+                
             default:
                 break;
             }
@@ -111,71 +197,9 @@ public class ProxyAcceptor extends CommunicationThread {
         
         if (!result) { 
             close(s, in, out);
-        }
-   
+        }   
     }
     
-    private boolean handleClientConnect(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
-        
-        String clientAsString = in.readUTF();
-        String targetAsString = in.readUTF();
-                        
-        logger.info("Got request client " + clientAsString 
-                + " to connect to " + targetAsString);
-        
-        // Add client to list of clients we know...
-        ProxyDescription tmp = knownProxies.getLocalDescription();
-        tmp.addClient(clientAsString);
-        
-        // See if we known any proxies that know the target machine...
-        LinkedList proxies = knownProxies.findClient(targetAsString);
-        
-        if (proxies.size() == 0) {
-            // Nobody knows the target, so we give up for now...
-            logger.info("Nobody seems to know " + targetAsString);            
-            out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
-            out.flush();
-            return false;                
-        }
-
-        logger.info("Found " + proxies.size() + " proxies that know " 
-                + targetAsString + ": ");            
-
-        
-        for (int i=0;i<proxies.size();i++) { 
-            ProxyDescription p = (ProxyDescription) proxies.removeFirst();          
-            logger.info("   " + i + " -> " + p.proxyAddress); 
-        }
-        
-        // give up for now....
-        out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_DENIED);
-        out.flush();                
-        return false;
-    }
-
-    private boolean handleClientRegistration(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
-
-        // Read the clients address. 
-        String clientAsString = in.readUTF();        
-        // VirtualSocketAddress client = new VirtualSocketAddress(clientAsString); 
-                        
-        logger.info("Got connection from client: " + clientAsString);
-        
-        ProxyDescription tmp = knownProxies.getLocalDescription();
-        tmp.addClient(clientAsString);
-
-        // Always accept the connection for now.              
-        out.writeByte(Protocol.REPLY_CLIENT_REGISTRATION_ACCEPTED);
-        out.flush();       
-
-        // TODO: should check here is we can reach the client. If so then 
-        // all is well, if not, then we should refuse the connection or keep it 
-        // open (which doesn't really scale) ...  
-        
-        // Always return false, so the main thread will close the connection. 
-        return false;
-    }
-
     public void run() { 
         
         while (!done) {           

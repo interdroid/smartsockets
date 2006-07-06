@@ -146,13 +146,13 @@ public class GossipProxyClient {
                     CONNECT_PROPERTIES);
         
             out = new DataOutputStream(s.getOutputStream());
+            in = new DataInputStream(s.getInputStream());
                     
             out.write(Protocol.PROXY_CLIENT_CONNECT);
+            out.writeUTF(localClientAddress.toString());
             out.writeUTF(target.toString());
             out.flush();            
-    
-            in = new DataInputStream(s.getInputStream());
-            
+                
             int result = in.readByte();
             
             switch (result) { 

@@ -137,7 +137,8 @@ class ProxyList {
         return tmp;
     }
     
-    public synchronized LinkedList findClient(String client) {
+    public synchronized LinkedList findClient(String client, 
+            boolean includeLocal) {
 
         // Finds all proxies that claim to known this client. Return them in 
         // a list, sorted by how 'good an option' they are. We prefer proxies 
@@ -154,7 +155,9 @@ class ProxyList {
             
             ProxyDescription tmp = (ProxyDescription) itt.next();
             
-            if (tmp.clients.contains(client)) { 
+            if ((includeLocal || tmp != localDescription) && 
+                    tmp.clients.contains(client)) {
+                
                 System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
                         + client + ":\n" + tmp + "\n");
                 

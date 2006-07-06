@@ -79,16 +79,110 @@ public class Test {
         }
     }
     
-    private void connect(String target) { 
+    private void directConnect(String target) { 
         
+        if (connected) { 
+            System.out.println("Already connected to " + target);
+            return;
+        }
+        
+        try { 
+            VirtualSocketAddress address = new VirtualSocketAddress(target);
+                        
+            s = factory.createClientSocket(address, 10000, null);                
+            
+            in = new DataInputStream(new BufferedInputStream(s.getInputStream()));
+            out = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
+        
+            out.writeUTF(ss.toString());            
+            String conn = in.readUTF();
+            
+            System.out.println("Connected to " + conn);
+
+            connected = true;
+        } catch (Exception e) {
+            System.out.println("Connection setup failed " + e);
+            VirtualSocketFactory.close(s, out, in);
+        } 
     }
+
+    private void proxyConnect(String target) { 
+        
+        if (connected) { 
+            System.out.println("Already connected to " + target);
+            return;
+        }
+        
+        try { 
+            VirtualSocketAddress address = new VirtualSocketAddress(target);
+                        
+            s = gpc.connect(address, 10000);                
+            
+            in = new DataInputStream(new BufferedInputStream(s.getInputStream()));
+            out = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
+        
+            out.writeUTF(ss.toString());            
+            String conn = in.readUTF();
+            
+            System.out.println("Connected to " + conn);
+
+            connected = true;
+        } catch (Exception e) {
+            System.out.println("Connection setup failed " + e);
+            VirtualSocketFactory.close(s, out, in);
+        } 
+    }
+
     
     private void disconnect() { 
+        if (!connected) { 
+            System.out.println("Not connected yet!");
+            return;
+        } 
+
+        try { 
+            out.writeUTF(null);            
+            
+            String tmp = in.readUTF();
+            
+            if (tmp != null) {             
+                System.out.println("Disconnect returned: " + tmp);
+            } 
+        } catch (Exception e) {
+            System.out.println("Disconnect troublesome: " + e);
+        } 
         
+        VirtualSocketFactory.close(s, out, in);        
+        connected = false;
     }
     
     private void send(String line) { 
         
+    }
+    
+    private void proxy(String proxy) { 
+        
+        VirtualSocketAddress address = null;
+        
+        try { 
+            address = new VirtualSocketAddress(proxy);        
+        } catch (Exception e) {
+            System.out.println("Failed to parse proxy address!");
+            return;
+        }
+        
+        if (!gpc.addProxy(address)) { 
+            System.out.println("Failed to connect to proxy!");
+        }
+    }
+    
+    private void usage() {         
+        System.out.println("help         - this help");
+        System.out.println("proxy <id>   - add proxy with address <id> to list");
+        System.out.println("connect <id> - connect to machine with address <id>");
+        System.out.println("disconnect   - disconnect current connection");
+        System.out.println("send <txt>   - send text <txt> over connection");        
+        System.out.println("exit         - disconnect and exit");        
     }
     
     private void parseInput() { 
@@ -104,31 +198,27 @@ public class Test {
                 
                 String line = clin.readLine();
                 
-                if (line.startsWith("connect ")) {                    
-                    if (connected) { 
-                        System.out.println("Already connected to " + target);
-                    } else {                    
-                        connect(line.substring(8).trim()); 
-                        connected = true;
-                    } 
+                if (line.startsWith("help")) {
+                    usage();
+                } else if (line.startsWith("proxy ")) {                    
+                    proxy(line.substring(6).trim());                                         
+                } else if (line.startsWith("connect ")) {                    
+                    proxyConnect(line.substring(8).trim());                         
                 } else if (line.startsWith("disconnect")) {
-                    if (!connected) { 
+                    disconnect();
+                } else if (line.startsWith("send ")) {
+                    if (!connected) {
                         System.out.println("Not connected yet!");
-                    } else {                    
-                        disconnect();
-                        connected = false;
-                    }                  
+                    } else { 
+                        send(line.substring(5).trim());
+                    }                     
                 } else if (line.startsWith("exit")) {                    
                     if (connected) { 
                         disconnect();
                     }
                     done = true;
-                } else { 
-                    if (!connected) {
-                        System.out.println("Not connected yet!");
-                    } else { 
-                        send(line);
-                    } 
+                } else {
+                    System.out.println("Unknown command, try help");
                 }
             }
         } catch (Exception e) {
