@@ -108,13 +108,15 @@ public class Test {
                     if (connected) { 
                         System.out.println("Already connected to " + target);
                     } else {                    
-                        connect(line.substring(8).trim());                        
+                        connect(line.substring(8).trim()); 
+                        connected = true;
                     } 
                 } else if (line.startsWith("disconnect")) {
                     if (!connected) { 
                         System.out.println("Not connected yet!");
                     } else {                    
                         disconnect();
+                        connected = false;
                     }                  
                 } else if (line.startsWith("exit")) {                    
                     if (connected) { 
