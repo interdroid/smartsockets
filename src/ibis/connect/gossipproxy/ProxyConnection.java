@@ -7,7 +7,6 @@ import ibis.connect.virtual.VirtualSocketFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 
 class ProxyConnection implements Runnable {
@@ -20,7 +19,7 @@ class ProxyConnection implements Runnable {
     private final ProxyDescription local;    
             
     private final ProxyList knownProxies; 
-    private final StateCounter state;
+ //   private final StateCounter state;
     
     private boolean done = false;
           
@@ -32,7 +31,7 @@ class ProxyConnection implements Runnable {
         this.out = out;
         this.peer = peer;
         this.knownProxies = knownProxies;
-        this.state = state;
+     //   this.state = state;
         
         local = knownProxies.getLocalDescription();
     }
