@@ -12,17 +12,18 @@ class ProxyDescription {
     static final byte REACHABLE   = 2;
     
     final VirtualSocketAddress proxyAddress;    
-    VirtualSocketAddress indirection; 
+    final StateCounter state;        
+    final boolean local;
     
-    final StateCounter state;
-    
+    VirtualSocketAddress indirection;     
+        
     // Value of the local state the last time anything was changed in this 
     // description.  
     private long lastLocalUpdate;
     
     // Indicates the value of the local state the last time any data was send 
     // to this machine. This allows us to send delta's instead of all info. 
-    private long lastSendState;
+    private long lastSendState;    
         
     // Number of hops required to reach this machine. A value of '0' indicates 
     // that a direct connection is possible. A value of 'Integer.MAX_VALUE/2'
@@ -46,15 +47,22 @@ class ProxyDescription {
     ArrayList clients = new ArrayList(); 
 
     private ProxyConnection connection;
-    
+  
     ProxyDescription(VirtualSocketAddress address, StateCounter state) {
+        this(address, state, false);
+    } 
+    
+    ProxyDescription(VirtualSocketAddress address, StateCounter state, 
+            boolean local) {
         
         this.state = state;        
         this.proxyAddress = address;
         this.lastLocalUpdate = state.increment();
         
         this.reachable = UNKNOWN;
-        this.canReachMe = UNKNOWN;                
+        this.canReachMe = UNKNOWN;
+        
+        this.local = local;
     }
     
   //  void addClient(VirtualSocketAddress client) { 
@@ -169,6 +177,10 @@ class ProxyDescription {
         
     boolean haveConnection() { 
         return (connection != null);        
+    }
+    
+    boolean isLocal() { 
+        return local;
     }
     
     synchronized boolean createConnection(ProxyConnection c) {

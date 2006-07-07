@@ -137,8 +137,7 @@ class ProxyList {
         return tmp;
     }
     
-    public synchronized LinkedList findClient(String client, 
-            boolean includeLocal) {
+    public synchronized LinkedList findClient(String client) {
 
         // Finds all proxies that claim to known this client. Return them in 
         // a list, sorted by how 'good an option' they are. We prefer proxies 
@@ -155,18 +154,19 @@ class ProxyList {
             
             ProxyDescription tmp = (ProxyDescription) itt.next();
             
-            if ((includeLocal || tmp != localDescription) && 
-                    tmp.clients.contains(client)) {
+            if (tmp.clients.contains(client)) {
                 
                 System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
                         + client + ":\n" + tmp + "\n");
                 
-                if (tmp.isReachable()) { 
-                    good.add(tmp);
+                if (tmp == localDescription) {
+                    good.addFirst(tmp);                    
+                } else if (tmp.isReachable()) {
+                    good.addLast(tmp);
                 } else if (tmp.canReachMe()) { 
-                    bad.add(tmp);
+                    bad.addLast(tmp);
                 } else {                     
-                    ugly.add(tmp);
+                    ugly.addLast(tmp);
                 }
             }
         }

@@ -18,9 +18,11 @@ public class GossipProxy extends Thread {
     private ProxyList proxies;     
     private ProxyAcceptor proxyAcceptor;
     private ProxyConnector proxyConnector;
-    
-    private StateCounter state = new StateCounter();
             
+    private StateCounter state = new StateCounter();
+        
+    private ClientConnections connections = new ClientConnections();
+    
     public GossipProxy() throws IOException { 
         this(null);
     }
@@ -36,7 +38,7 @@ public class GossipProxy extends Thread {
         // Create the proxy list
         proxies = new ProxyList(state);
                 
-        proxyAcceptor = new ProxyAcceptor(state, proxies, factory);        
+        proxyAcceptor = new ProxyAcceptor(state, proxies, factory, connections);        
         proxyConnector = new ProxyConnector(state, proxies, factory);
         
         VirtualSocketAddress local = proxyAcceptor.getLocal();         
@@ -46,7 +48,7 @@ public class GossipProxy extends Thread {
         logger.info("GossipAcceptor listning at " + local);
         
         // Create a description for the local machine. 
-        ProxyDescription localDesc = new ProxyDescription(local, state);        
+        ProxyDescription localDesc = new ProxyDescription(local, state, true);        
         localDesc.setReachable();
         localDesc.setCanReachMe();
         

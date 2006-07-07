@@ -17,10 +17,16 @@ public class ProxyAcceptor extends CommunicationThread {
     private VirtualServerSocket server;
     private boolean done = false;
     
+    private ClientConnections connections; 
+    private int number = 0;
+    
     ProxyAcceptor(StateCounter state, ProxyList knownProxies, 
-            VirtualSocketFactory factory) throws IOException {
+            VirtualSocketFactory factory, ClientConnections connections) 
+            throws IOException {
         
-        super("ProxyAcceptor", state, knownProxies, factory);
+        super("ProxyAcceptor", state, knownProxies, factory);        
+        this.connections = connections;
+        
         server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
         setLocal(server.getLocalSocketAddress());        
     }
@@ -79,18 +85,11 @@ public class ProxyAcceptor extends CommunicationThread {
         // Add client to list of clients we know...
         ProxyDescription tmp = knownProxies.getLocalDescription();
         tmp.addClient(clientAsString);
-        
-        // First check if we known the target ourselves:
-        if (tmp.clients.contains(targetAsString)) {
-            logger.info("We know target " + targetAsString + " ourselves!");            
-            
-            if (connectToClient(s, out, in)) { 
-                return true;
-            }
-        }
-                
-        // Next, see if we known any proxies that know the target machine...
-        LinkedList proxies = knownProxies.findClient(targetAsString, false);
+             
+        // See if we known any proxies that know the target machine. Note that 
+        // if the local proxy is able to connect to the client, it will be
+        // returned at the head of the list (so we try it first).    
+        LinkedList proxies = knownProxies.findClient(targetAsString);
         
         if (proxies.size() == 0) {
             // Nobody knows the target, so we give up for now...
@@ -103,31 +102,17 @@ public class ProxyAcceptor extends CommunicationThread {
         logger.info("Found " + proxies.size() + " proxies that know " 
                 + targetAsString);            
         
-        for (int i=0;i<proxies.size();i++) { 
-            ProxyDescription p = (ProxyDescription) proxies.removeFirst();          
-            logger.info("  trying proxy " + i + " -> " + p.proxyAddress);            
-            
-            if (connectViaProxy(s, out, in)) { 
-                return true;
-            }
-        }
+        Connection c = new Connection(clientAsString, targetAsString, number, 
+                s, in, out);
         
-        // Failed to connect, so give up....
-        out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_DENIED);
-        out.flush();                
-        return false;
+        ConnectionSetup cs = new ConnectionSetup(factory, connections, c, proxies);
+        
+        // TODO threadpool ? 
+        new Thread(cs, "ConnectionSetup: " + c.id).start();                
+                        
+        return true;
     }
-
-    private boolean connectViaProxy(VirtualSocket s, DataOutputStream out, DataInputStream in) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    private boolean connectToClient(VirtualSocket s, DataOutputStream out, DataInputStream in) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
+   
     private boolean handleClientRegistration(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
 
         // Read the clients address. 
