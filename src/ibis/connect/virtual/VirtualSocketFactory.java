@@ -194,6 +194,7 @@ public class VirtualSocketFactory {
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
               
+        int refusedCount = 0;
         int notSuitableCount = 0;
         
         if (timeout < 0) { 
@@ -207,28 +208,21 @@ public class VirtualSocketFactory {
         // try modules here
         for (int i=0;i<modules.size();i++) {
             
-            boolean skip = false;
-            
             ConnectModule m = (ConnectModule) modules.get(i);
             
-            if (properties != null) {
-                String tmp = (String) properties.get(
-                        "connect.module." + m.name + ".skip");
+            if (m.matchRequirements(properties)) {
                 
-                skip = (tmp != null && tmp.equalsIgnoreCase("true")); 
-            }
-
-            if (!skip) {
-                
-                logger.debug("Using module " + m.name + " to set up connection to " + target);
+                logger.info("Using module " + m.name + " to set up " +
+                        "connection to " + target);
                 
                 try { 
                     VirtualSocket vs = m.connect(target, timeout, properties);
-                    // TODO: move to ibis ?
-                    
+
+                    // TODO: move to ibis ?                    
                     if (vs != null) {                     
                         vs.setTcpNoDelay(true);                    
-                        logger.debug("Sucess with module " + m.name + " connected to " + target);                    
+                        logger.debug("Sucess with module " + m.name 
+                                + " connected to " + target);                    
                         return vs;
                     } 
                 } catch (ModuleNotSuitableException e) {
@@ -237,16 +231,24 @@ public class VirtualSocketFactory {
                     notSuitableCount++;
                 }            
                 // NOTE: other exceptions are forwarded to the user!
-            } 
+            } else { 
+                logger.info("Module " + m.name + " may not be used to set " +
+                        "up connection to " + target);
+                
+            }
         }        
         
         if (notSuitableCount == modules.size()) {
+            logger.info("No suitable module found to connect to " + target);
+                    
             // No suitable modules found...
             throw new ConnectException("No suitable module found to connect to "
                     + target);
         } else { 
             // Apparently, some modules where suitable but failed to connect. 
-            // This is treated as a timeout 
+            // This is treated as a timeout            
+            logger.info("None of the modules could to connect to " + target);
+                        
             // TODO: is this right ?
             throw new SocketTimeoutException("Timeout during connect to " 
                     + target);

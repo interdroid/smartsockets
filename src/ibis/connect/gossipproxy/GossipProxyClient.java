@@ -45,7 +45,7 @@ public class GossipProxyClient {
         
     public GossipProxyClient(VirtualSocketAddress client) throws IOException {
                 
-        CONNECT_PROPERTIES.put("allowed.modules", "direct");
+        CONNECT_PROPERTIES.put("connect.module.type.allow", "direct");
         
         factory = VirtualSocketFactory.getSocketFactory();
     
@@ -148,9 +148,11 @@ public class GossipProxyClient {
             out = new DataOutputStream(s.getOutputStream());
             in = new DataInputStream(s.getInputStream());
                     
-            out.write(Protocol.PROXY_CLIENT_CONNECT);
+            out.write(Protocol.PROXY_CLIENT_CONNECT);            
             out.writeUTF(localClientAddress.toString());
             out.writeUTF(target.toString());
+            out.writeInt(0);            
+            
             out.flush();            
                 
             int result = in.readByte();

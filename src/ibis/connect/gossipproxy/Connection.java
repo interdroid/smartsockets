@@ -3,12 +3,15 @@
  */
 package ibis.connect.gossipproxy;
 
+import ibis.connect.util.Forwarder;
 import ibis.connect.virtual.VirtualSocket;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 
 class Connection { 
+    
+    int number; 
     
     String id; 
     
@@ -27,9 +30,11 @@ class Connection {
     
     Connection(String clientAsString, String targetAsString, int number, 
             VirtualSocket s, InputStream in, OutputStream out) { 
+       
+        id = "[" + number + ": " + clientAsString + " <--> " + targetAsString + "]";
 
-        id = "[" + number + ":" + clientAsString + "->" + targetAsString + "]";
-            
+        this.number = number;
+        
         this.clientAsString = clientAsString;
         this.targetAsString = targetAsString;
             
@@ -38,6 +43,7 @@ class Connection {
         this.outA = out;    
     }
             
-            
-    
+    public String toString() { 
+        return id;         
+    }    
 }

@@ -31,8 +31,9 @@ abstract class CommunicationThread extends Thread {
         this.state = state;
         this.knownProxies = knownProxies;
         this.factory = factory;        
-        logger = GetLogger.getLogger(this.getClass().getName());                
-        CONNECT_PROPERTIES.put("allowed.modules", "direct");            
+        logger = GetLogger.getLogger(this.getClass().getName());
+        
+        CONNECT_PROPERTIES.put("connect.module.type.allow", "direct");            
     }
     
     protected void setLocal(VirtualSocketAddress local) { 

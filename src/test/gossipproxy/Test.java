@@ -30,8 +30,7 @@ public class Test {
     VirtualSocket s = null;                
     DataInputStream in = null;
     DataOutputStream out = null;
-    
-    
+        
     private Test(int port, LinkedList proxies) throws IOException {         
         factory = VirtualSocketFactory.getSocketFactory();        
         ss = factory.createServerSocket(port, 10, false, null);        
@@ -48,35 +47,46 @@ public class Test {
         DataInputStream in = null;
         DataOutputStream out = null;
         
-        try { 
-            s = ss.accept();                
-            
-            in = new DataInputStream(new BufferedInputStream(s.getInputStream()));
-            out = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
-        
-            out.writeUTF(ss.toString());
-            
-            String conn = in.readUTF();
-            
-            System.out.println("Got connection from " + conn + " bouncing...");
-
-            while (true) { 
+        while (true) {         
+            try { 
+                s = ss.accept();                
                 
-                String tmp = in.readUTF();
+                in = new DataInputStream(
+                        new BufferedInputStream(s.getInputStream()));
+                out = new DataOutputStream(
+                        new BufferedOutputStream(s.getOutputStream()));
                 
-                out.writeUTF(tmp);
-                out.flush();                    
+                out.writeUTF(ss.toString());
+                out.flush();
+                
+                String conn = in.readUTF();
+                
+                System.out.println("Got connection from " + conn + " bouncing...");
 
-                if (tmp == null) { 
-                    return;
+                boolean done = false;
+                
+                while (!done) { 
+                    
+                    String tmp = in.readUTF();
+                    
+                    System.out.println("Bouncer got: " + tmp);
+                    
+                    out.writeUTF("I got " + tmp);
+                    out.flush();                    
+                    
+                    if (tmp.equals("")) {
+                        // empty string equals disconnect!
+                        System.out.println("Client disconnected...");
+                        done = true;
+                    }
                 }
+                
+            } catch (Exception e) {
+                System.out.println("Lost connection " + e);
+            } finally { 
+                VirtualSocketFactory.close(s, out, in);
             }
-            
-        } catch (Exception e) {
-            System.out.println("Lost connection " + e);
-        } finally { 
-            VirtualSocketFactory.close(s, out, in);
-        }
+        } 
     }
     
     private void directConnect(String target) { 
@@ -121,18 +131,19 @@ public class Test {
             in = new DataInputStream(new BufferedInputStream(s.getInputStream()));
             out = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
         
-            out.writeUTF(ss.toString());            
             String conn = in.readUTF();
             
             System.out.println("Connected to " + conn);
 
+            out.writeUTF(ss.toString());            
+            out.flush();
+            
             connected = true;
         } catch (Exception e) {
             System.out.println("Connection setup failed " + e);
             VirtualSocketFactory.close(s, out, in);
         } 
     }
-
     
     private void disconnect() { 
         if (!connected) { 
@@ -141,11 +152,12 @@ public class Test {
         } 
 
         try { 
-            out.writeUTF(null);            
+            out.writeUTF("");    
+            out.flush();
             
             String tmp = in.readUTF();
             
-            if (tmp != null) {             
+            if (!tmp.equals("")) {             
                 System.out.println("Disconnect returned: " + tmp);
             } 
         } catch (Exception e) {
@@ -157,7 +169,22 @@ public class Test {
     }
     
     private void send(String line) { 
-        
+        try { 
+            if (line == null && line.length() == 0) {
+                System.out.println("Nothing to send!");
+            } 
+            
+            out.writeUTF(line);
+            out.flush();
+            
+            String tmp = in.readUTF();
+            System.out.println("Reply: " + tmp);                       
+            
+        } catch (Exception e) {
+            System.out.println("Lost connection " + e);
+            VirtualSocketFactory.close(s, out, in);
+            connected = false;
+        }           
     }
     
     private void proxy(String proxy) { 
@@ -196,7 +223,7 @@ public class Test {
                 System.out.print("> ");
                 System.out.flush(); 
                 
-                String line = clin.readLine();
+                String line = clin.readLine().trim();
                 
                 if (line.startsWith("help")) {
                     usage();

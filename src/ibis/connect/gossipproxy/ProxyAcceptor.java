@@ -75,25 +75,36 @@ public class ProxyAcceptor extends CommunicationThread {
    
     private boolean handleClientConnect(VirtualSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
+       
+        LinkedList skipProxies = new LinkedList();
         
         String clientAsString = in.readUTF();
         String targetAsString = in.readUTF();
                         
-        logger.info("Got request client " + clientAsString 
-                + " to connect to " + targetAsString);
+        int skipProxiesCount = in.readInt();
+
+        if (skipProxiesCount > 0) {
+            skipProxies.add(in.readUTF());
+        } 
         
-        // Add client to list of clients we know...
-        ProxyDescription tmp = knownProxies.getLocalDescription();
-        tmp.addClient(clientAsString);
-             
+        logger.info("Got request to connect " + clientAsString 
+                + " to " + targetAsString);
+                          
         // See if we known any proxies that know the target machine. Note that 
         // if the local proxy is able to connect to the client, it will be
         // returned at the head of the list (so we try it first).    
-        LinkedList proxies = knownProxies.findClient(targetAsString);
+        LinkedList proxies = knownProxies.findClient(targetAsString, skipProxies);
         
         if (proxies.size() == 0) {
-            // Nobody knows the target, so we give up for now...
-            logger.info("Nobody seems to know " + targetAsString);            
+            
+            if (skipProxies.size() == 0) { 
+                // Nobody knows the target, so we give up for now...
+                logger.info("Nobody seems to know " + targetAsString);            
+            } else { 
+                // All proxies have been tried already, so we give up...
+                logger.info("All proxies have been tried " + targetAsString);                            
+            }
+                
             out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
             out.flush();
             return false;                
@@ -104,9 +115,12 @@ public class ProxyAcceptor extends CommunicationThread {
         
         Connection c = new Connection(clientAsString, targetAsString, number, 
                 s, in, out);
+                      
+        ConnectionSetup cs = new ConnectionSetup(factory, connections, c, 
+                proxies, skipProxies);
         
-        ConnectionSetup cs = new ConnectionSetup(factory, connections, c, proxies);
-        
+        logger.info("Starting thread to create " + c);
+                
         // TODO threadpool ? 
         new Thread(cs, "ConnectionSetup: " + c.id).start();                
                         

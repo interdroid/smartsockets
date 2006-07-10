@@ -267,5 +267,10 @@ public class Direct extends ConnectModule {
         s.setSoTimeout(0);
         
         return tmp;
+    }
+
+    public boolean matchAdditionalRequirements(Map requirements) {
+        // No additional properties, so always matches requirements.
+        return true;
     }   
 }

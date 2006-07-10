@@ -84,4 +84,8 @@ public class Routed extends ConnectModule {
     
     }
 
+    public boolean matchAdditionalRequirements(Map requirements) {
+        // This doesn't work yet, so never matches unless explicitly named!
+        return false;
+    }
 }

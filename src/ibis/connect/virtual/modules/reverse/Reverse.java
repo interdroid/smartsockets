@@ -9,9 +9,7 @@ import ibis.connect.virtual.modules.ConnectModule;
 import ibis.connect.virtual.modules.direct.Direct;
 import ibis.connect.virtual.modules.direct.DirectVirtualSocket;
 
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.net.SocketException;
 import java.util.Map;
 
 public class Reverse extends ConnectModule {
@@ -162,5 +160,10 @@ public class Reverse extends ConnectModule {
         } else { 
             setupConnection(ss, target);
         }
+    }
+
+    public boolean matchAdditionalRequirements(Map requirements) {
+  
+        return true;
     }
 }

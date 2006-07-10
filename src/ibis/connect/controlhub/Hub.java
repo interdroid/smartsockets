@@ -235,18 +235,22 @@ public class Hub extends Thread implements Protocol {
         }        
     }
 
-    public static Hub createHub(int port) throws IOException { 
+    public static Hub createHub(int port, boolean daemon) throws IOException { 
         logger.info("Creating hub on port: " + port);
             
         Hub h = new Hub(port);
-        h.setDaemon(true);
+        
+        if (daemon) { 
+            h.setDaemon(true);
+        } 
+        
         h.start();
         return h;
     
     }
     
     public static Hub createHub() throws IOException {
-        return createHub(DEFAULT_PORT);
+        return createHub(DEFAULT_PORT, true);
     }
         
     public static void main(String [] args) { 
@@ -258,7 +262,7 @@ public class Hub extends Thread implements Protocol {
         }
 
         try { 
-            createHub(port);
+            createHub(port, false);
         } catch (Exception e) {
             System.err.println("Failed to start hub: " + e);
         }
