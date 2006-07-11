@@ -1,8 +1,10 @@
-package ibis.connect.controlhub;
+package ibis.connect.gossipproxy.servicelink;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+
+import ibis.connect.gossipproxy.ProxyProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -20,10 +22,10 @@ public class ServiceLink {
     
     private static ServiceLink serviceLink;
         
-    private final DirectSocketFactory directFactory;
+    private final DirectSocketFactory factory;
     private final SocketAddressSet myAddress; 
         
-    private DirectSocket hub;               
+    private DirectSocket proxy;               
     private DataOutputStream out; 
     private DataInputStream in; 
     
@@ -41,49 +43,49 @@ public class ServiceLink {
         }        
     }
           
-    private ServiceLink(SocketAddressSet hub, SocketAddressSet myAddress) 
+    private ServiceLink(SocketAddressSet proxy, SocketAddressSet myAddress) 
         throws IOException { 
         
-        directFactory = DirectSocketFactory.getSocketFactory();
+        factory = DirectSocketFactory.getSocketFactory();
         this.myAddress = myAddress;
                 
-        connectToHub(hub);
+        connectToProxy(proxy);
         
         new Reader().start();       
     }
         
-    private void connectToHub(SocketAddressSet address) throws IOException { 
+    private void connectToProxy(SocketAddressSet address) throws IOException { 
         try {            
-            hub = directFactory.createSocket(address, TIMEOUT, null);
+            proxy = factory.createSocket(address, TIMEOUT, null);
             
-            out = new DataOutputStream(hub.getOutputStream());
-            in = new DataInputStream(hub.getInputStream());
+            out = new DataOutputStream(proxy.getOutputStream());
+            in = new DataInputStream(proxy.getInputStream());
                            
-            out.write(Protocol.CONNECT);
+            out.write(ProxyProtocol.PROXY_SERVICELINK_CONNECT);
             out.writeUTF(myAddress.toString());        
             out.flush();
                 
             int reply = in.read();
         
-            if (reply != Protocol.CONNECT_ACCEPTED) {
-                throw new IOException("ControlHub denied connection request");                
+            if (reply != ProxyProtocol.REPLY_SERVICELINK_ACCEPTED) {
+                throw new IOException("Proxy denied connection request");                
             }
         
-            logger.info("Hub at " + address + " accepted connection");            
+            logger.info("Proxy at " + address + " accepted connection");            
 
-            hub.setSoTimeout(0);
+            proxy.setSoTimeout(0);
             
         } catch (IOException e) {
             
-            logger.warn("Connection setup to control hub at " + address 
+            logger.warn("Connection setup to proxy at " + address 
                     + " failed: ", e);
             
-            DirectSocketFactory.close(hub, out, in);                    
+            DirectSocketFactory.close(proxy, out, in);                    
             throw e;
         } 
     }
        
-    public synchronized void register(String identifier, CallBack callback) { 
+    public synchronized void register(String identifier, MessageCallback callback) { 
     
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override callback " 
@@ -94,8 +96,8 @@ public class ServiceLink {
         callbacks.put(identifier, callback);        
     }
     
-    private synchronized CallBack getCallBack(String identifier) {         
-        return (CallBack) callbacks.get(identifier);        
+    private synchronized MessageCallback getCallBack(String identifier) {         
+        return (MessageCallback) callbacks.get(identifier);        
     }
         
     void receiveMessages() { 
@@ -105,7 +107,7 @@ public class ServiceLink {
             try { 
                 int header = in.read();
                 
-                if (header != Protocol.MESSAGE) {
+                if (header != ServiceLinkProtocol.MESSAGE) {
                     logger.warn("ServiceLink: Received unknown opcode!");
                     break;
                 } 
@@ -117,7 +119,7 @@ public class ServiceLink {
                     
                 logger.info("ServiceLink: Received message for " + targetID);
                                 
-                CallBack target = getCallBack(targetID);
+                MessageCallback target = getCallBack(targetID);
                     
                 if (target == null) { 
                     logger.warn("ServiceLink: Callback " + targetID 
@@ -137,22 +139,22 @@ public class ServiceLink {
     public synchronized void send(SocketAddressSet target, String targetModule, 
             int opcode, String message) { 
 
-        logger.info("Sending message to hub: [" + target.toString() + ", " +
+        logger.info("Sending message to proxy: [" + target.toString() + ", " +
                 targetModule + ", " + opcode + ", " + message + "]");
         
         try { 
-            out.write(Protocol.MESSAGE);
+            out.write(ServiceLinkProtocol.MESSAGE);
             out.writeUTF(target.toString());
             out.writeUTF(targetModule);
             out.writeInt(opcode);
             out.writeUTF(message);
             out.flush();
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to hub!", e);
+            logger.warn("ServiceLink: Exception while writing to proxy!", e);
             // TODO: some form of fault tolerance ??            
         }        
     }
-    
+           
     public static ServiceLink getServiceLink(SocketAddressSet address, 
             SocketAddressSet myAddress) { 
         
@@ -160,7 +162,7 @@ public class ServiceLink {
             try { 
                 serviceLink = new ServiceLink(address, myAddress);                 
             } catch (Exception e) {
-                logger.warn("ServiceLink: Failed to connect to hub!", e);
+                logger.warn("ServiceLink: Failed to connect to proxy!", e);
                 return null;
             }                        
         }

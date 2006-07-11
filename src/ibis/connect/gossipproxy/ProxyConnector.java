@@ -1,7 +1,7 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectSocket;
+import ibis.connect.direct.DirectSocketFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -14,7 +14,7 @@ class ProxyConnector extends CommunicationThread {
     private boolean done = false;
     
     ProxyConnector(StateCounter state, ProxyList knownProxies, 
-            VirtualSocketFactory factory) {
+            DirectSocketFactory factory) {
         
         super("ProxyConnector", state, knownProxies, factory);
     }
@@ -24,17 +24,17 @@ class ProxyConnector extends CommunicationThread {
 
         logger.info("Sending connection request");
                 
-        out.write(Protocol.PROXY_CONNECT);
+        out.write(ProxyProtocol.PROXY_CONNECT);
         out.writeUTF(localAsString);
         out.flush();
 
         int opcode = in.read();
 
         switch (opcode) {
-        case Protocol.REPLY_CONNECTION_ACCEPTED:
+        case ProxyProtocol.REPLY_CONNECTION_ACCEPTED:
             logger.info("Connection request accepted");            
             return true;
-        case Protocol.REPLY_CONNECTION_REFUSED:
+        case ProxyProtocol.REPLY_CONNECTION_REFUSED:
             logger.info("Connection request refused (duplicate)");
             return false;
         default:
@@ -45,7 +45,7 @@ class ProxyConnector extends CommunicationThread {
 
     private void testConnection(ProxyDescription d) {
 
-        VirtualSocket s = null;
+        DirectSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
         
@@ -54,8 +54,7 @@ class ProxyConnector extends CommunicationThread {
         logger.info("Creating test connection to " + d.proxyAddress);
                 
         try { 
-            s = factory.createClientSocket(d.proxyAddress, 
-                    DEFAULT_TIMEOUT, CONNECT_PROPERTIES);
+            s = factory.createSocket(d.proxyAddress, DEFAULT_TIMEOUT, null);
             
             out = new DataOutputStream(
                     new BufferedOutputStream(s.getOutputStream()));
@@ -63,7 +62,7 @@ class ProxyConnector extends CommunicationThread {
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
-            out.write(Protocol.PROXY_PING);
+            out.write(ProxyProtocol.PROXY_PING);
             out.writeUTF(localAsString);
             out.flush();            
             
@@ -76,13 +75,13 @@ class ProxyConnector extends CommunicationThread {
             d.setUnreachable();
             
         } finally {             
-            close(s, in, out);
+            DirectSocketFactory.close(s, out, in);
         } 
     }
     
     private void createConnection(ProxyDescription d) { 
                 
-        VirtualSocket s = null;
+        DirectSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
         boolean result = false;
@@ -104,8 +103,8 @@ class ProxyConnector extends CommunicationThread {
         logger.info("Creating connection to " + d.proxyAddress);
                 
         try { 
-            s = factory.createClientSocket(d.proxyAddress, 
-                    DEFAULT_TIMEOUT, CONNECT_PROPERTIES);
+            s = factory.createSocket(d.proxyAddress, 
+                    DEFAULT_TIMEOUT, null);
             
             out = new DataOutputStream(
                     new BufferedOutputStream(s.getOutputStream()));
@@ -133,14 +132,14 @@ class ProxyConnector extends CommunicationThread {
             if (master) { 
                 logger.info("I am master during connection setup");
                 
-                c = new ProxyConnection(s, in, out, d, knownProxies, state);                
+                c = new ProxyConnection(s, in, out, d, knownProxies);                
                 result = d.createConnection(c);                
                 
                 if (!result) {
                     logger.info("Connection was already created!");
                     
                     // never mind...
-                    out.write(Protocol.PROXY_PING);
+                    out.write(ProxyProtocol.PROXY_PING);
                     out.writeUTF(localAsString);
                     out.flush();
                 } else {
@@ -152,7 +151,7 @@ class ProxyConnector extends CommunicationThread {
                 result = sendConnect(out, in);
 
                 if (result) {                 
-                    c = new ProxyConnection(s, in, out, d, knownProxies, state);                
+                    c = new ProxyConnection(s, in, out, d, knownProxies);                
                     result = d.createConnection(c);
                     
                     if (!result) { 
@@ -174,7 +173,7 @@ class ProxyConnector extends CommunicationThread {
             c.activate();
         } else { 
             logger.info("Failed to set up connection!");
-            close(s, in, out);
+            DirectSocketFactory.close(s, out, in);
         }
     }
     

@@ -1,17 +1,18 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectSocket;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 
-class ProxyConnection implements Runnable {
+public class ProxyConnection implements Runnable {
 
-    private final VirtualSocket s;
+    private final DirectSocket s;
     private final DataInputStream in;
     private final DataOutputStream out; 
     
@@ -19,24 +20,39 @@ class ProxyConnection implements Runnable {
     private final ProxyDescription local;    
             
     private final ProxyList knownProxies; 
- //   private final StateCounter state;
     
     private boolean done = false;
           
-    ProxyConnection(VirtualSocket s, DataInputStream in, DataOutputStream out, 
-            ProxyDescription peer, ProxyList knownProxies, StateCounter state) {
+    ProxyConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
+            ProxyDescription peer, ProxyList knownProxies) {
         
         this.s = s;
         this.in = in;
         this.out = out;
         this.peer = peer;
         this.knownProxies = knownProxies;
-     //   this.state = state;
         
         local = knownProxies.getLocalDescription();
     }
     
-    public void writeProxies(long currentState) { 
+    public synchronized void writeMessage(String source, String target, 
+            String module, int code, String message) { 
+        
+        try { 
+            out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
+            out.writeUTF(source);
+            out.writeUTF(target);
+            out.writeUTF(module);
+            out.writeInt(code);
+            out.writeUTF(message);
+            out.flush();
+        } catch (IOException e) {
+            System.err.println("Unhandled exception in writeMessage!!" + e);            
+            // TODO: handle exception
+        }        
+    }
+    
+    public synchronized void writeProxies(long currentState) { 
         
         long lastSendState = peer.getLastSendState();
         
@@ -71,6 +87,7 @@ class ProxyConnection implements Runnable {
             GossipProxy.logger.info("==============================\n");
             
         } catch (Exception e) {
+            System.err.println("Unhandled exception in ProxyConnection!!" + e);
             // TODO: handle exception
         }
         
@@ -80,26 +97,26 @@ class ProxyConnection implements Runnable {
     
     private void writePing() throws IOException {        
         System.err.println("Sending ping to " + peer.proxyAddress);
-        out.write(Protocol.PROXY_PING);
+        out.write(ProxyProtocol.PROXY_PING);
     } 
     
     private void writeProxy(ProxyDescription d) throws IOException {        
-        out.write(Protocol.PROXY_GOSSIP);
+        out.write(ProxyProtocol.PROXY_GOSSIP);
+        
         out.writeUTF(d.proxyAddress.toString());
         out.writeInt(d.getHops());
-        
-        // TODO: fix race condition here!
-        int size = d.clients.size();        
-        out.writeInt(size); 
 
-        for (int i=0;i<size;i++) {         
-            out.writeUTF((String) d.clients.get(i));
-        } 
+        ArrayList clients = d.getClients();        
+        out.writeInt(clients.size()); 
+
+        for (int i=0;i<clients.size();i++) {         
+            out.writeUTF((String) clients.get(i));
+        }    
     } 
         
     private void readProxy() throws IOException {
                 
-        VirtualSocketAddress address = new VirtualSocketAddress(in.readUTF());                
+        SocketAddressSet address = new SocketAddressSet(in.readUTF());                
         ProxyDescription tmp = knownProxies.add(address);
                
         int hops = in.readInt();
@@ -138,9 +155,22 @@ class ProxyConnection implements Runnable {
         peer.setContactTimeStamp(false);
     }
         
-    private void handlePing() {
-        System.err.println("Got ping from " + peer.proxyAddress);
+    private void handlePing() {        
+        GossipProxy.logger.debug("Got ping from " + peer.proxyAddress);
         peer.setContactTimeStamp(false);
+    }
+    
+    private void handleClientMessage() throws IOException {
+        
+        String source = in.readUTF();
+        String target = in.readUTF();
+        String module = in.readUTF();
+        int code = in.readInt();
+        String message = in.readUTF();
+
+        GossipProxy.logger.debug("Got client message [" + source + ", " 
+                + target + ", " + module + ", " + code + ", " + message 
+                + "] NOT FORWARDED YET!!!");   
     }
     
     private void receive() {
@@ -155,25 +185,29 @@ class ProxyConnection implements Runnable {
                 done = true;
                 break; 
             
-            case Protocol.PROXY_GOSSIP:
+            case ProxyProtocol.PROXY_GOSSIP:
                 readProxy();
                 break;
     
-            case Protocol.PROXY_PING:
+            case ProxyProtocol.PROXY_PING:
                 handlePing();
                 break;
-                                
+
+            case ProxyProtocol.CLIENT_MESSAGE:
+                handleClientMessage();
+                break;
+                
             default:
                 GossipProxy.logger.info("ProxyConnection got junk!");
                 done = true;                
             }
                         
         } catch (Exception e) {
-            GossipProxy.logger.info("ProxyConnection got exception!", e);
+            GossipProxy.logger.warn("ProxyConnection got exception!", e);
             done = true;
         }
     }
-    
+
     public void activate() {
         // TODO: Use pool ?         
         new Thread(this, "ProxyConnection").start();
@@ -185,6 +219,6 @@ class ProxyConnection implements Runnable {
             receive();
         }
         
-        VirtualSocketFactory.close(s, out, in);        
+        DirectSocketFactory.close(s, out, in);        
     }
 }

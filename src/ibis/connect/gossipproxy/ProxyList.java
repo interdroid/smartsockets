@@ -1,18 +1,20 @@
 package ibis.connect.gossipproxy;
 
-//import java.io.DataInputStream;
-//import java.io.DataOutputStream;
-//import java.io.IOException;
-import ibis.connect.virtual.VirtualSocketAddress;
+import ibis.connect.direct.SocketAddressSet;
 
 import java.util.List;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-class ProxyList {
-    
+import org.apache.log4j.Logger;
+
+public class ProxyList {
+        
     private static int RETRY_DELAY = 10000;
+    
+    protected static Logger logger = 
+        ibis.util.GetLogger.getLogger(ProxyList.class.getName());
     
     private final StateCounter state; 
     
@@ -46,7 +48,7 @@ class ProxyList {
             // Get the first one from the list. 
             ProxyDescription tmp = (ProxyDescription) mustCheck.getFirst();
             
-            if (tmp.lastContact == 0) {
+            if (tmp.getLastContact() == 0) {
                 
                 System.out.println("@@@@@@@@@@@@@ return new");
                 
@@ -57,7 +59,7 @@ class ProxyList {
             // it's an old entry, so check it we have to wait for a while. 
             long now = System.currentTimeMillis();
 
-            if (tmp.lastConnect+RETRY_DELAY < now) {
+            if (tmp.getLastConnect()+RETRY_DELAY < now) {
 
                 System.out.println("@@@@@@@@@@@@@ return old");
                 
@@ -65,7 +67,7 @@ class ProxyList {
                 return (ProxyDescription) mustCheck.removeFirst();
             }
             
-            long waitTime = (tmp.lastConnect+RETRY_DELAY) - now;
+            long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;
             
             try {
                 System.out.println("@@@@@@@@@@@@@ old wait " + waitTime);                
@@ -93,11 +95,11 @@ class ProxyList {
         return localDescription;
     }
                   
-    public synchronized boolean contains(VirtualSocketAddress m) {         
+    public synchronized boolean contains(SocketAddressSet m) {         
         return map.containsKey(m); 
     }
            
-    private ProxyDescription get(VirtualSocketAddress m) {                        
+    private ProxyDescription get(SocketAddressSet m) {                        
         return (ProxyDescription) map.get(m);
     }
             
@@ -120,7 +122,7 @@ class ProxyList {
         } 
     }
     
-    public synchronized ProxyDescription add(VirtualSocketAddress a) { 
+    public synchronized ProxyDescription add(SocketAddressSet a) { 
         
         ProxyDescription tmp = get(a);
         
@@ -163,7 +165,7 @@ class ProxyList {
                 System.out.println("@@@@@@@@@@@@@ Skipping proxy: " 
                         + tmp.proxyAddress);                 
             
-            } else if (tmp.clients.contains(client)) {
+            } else if (tmp.containsClient(client)) {
 
                 System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
                         + client + ":\n" + tmp + "\n");
@@ -185,7 +187,84 @@ class ProxyList {
         
         return good;
     }
+    
+    private boolean sendMessage(ProxyDescription proxy, String src, 
+            String target, String module, int code, String message) {
         
+        logger.info("Attempting to forward message to proxy " 
+                + proxy.proxyAddress);
+        
+        ProxyConnection conn = proxy.getConnection();
+
+        if (conn != null) {
+            // We have a direct connection, so forward the message 
+            conn.writeMessage(src, target, module, code, message);
+            
+            logger.info("Succesfully forwarded message to proxy " 
+                    + proxy.proxyAddress + " using direct link");
+                        
+            return true;
+        } 
+
+        logger.info("Failed to forward message to proxy " 
+                + proxy.proxyAddress + " using direct link, using indirection");
+        
+        // We don't have a direct connection, but we should be able to reach the
+        // proxy indirectly
+        SocketAddressSet addr = proxy.getIndirection();
+            
+        if (addr == null) {
+            // Oh dear, we don't have an indirection!
+            logger.warn("Indirection address of " + proxy.proxyAddress 
+                    + " is null!");
+            return false;
+        } 
+        
+        ProxyDescription proxy2 = get(addr);
+        
+        if (proxy2 == null) {
+            // Oh dear, we don't know the proxy to indirect to!
+            logger.warn("No proxy description found for indirection " + addr 
+                    + " to proxy " + proxy.proxyAddress);  
+            return false;
+        } 
+
+        // Get the connection to the indirection
+        conn = proxy2.getConnection();
+
+        if (conn == null) {            
+            // Oh dear, we are not connected to the indirection!
+            logger.warn("No connection found in proxy description for " +
+                    "indirection " + addr + " to proxy " + proxy.proxyAddress);  
+            return false;
+        } 
+          
+        // We have a direct connection, so forward the message 
+        conn.writeMessage(src, target, module, code, message);
+        return true;
+    }
+        
+    public synchronized boolean sendMessage(String src, String target, 
+            String module, int code, String message) { 
+    
+        boolean result = false;
+        
+        Iterator itt = map.values().iterator();
+        
+        while (itt.hasNext()) { 
+            
+            ProxyDescription tmp = (ProxyDescription) itt.next();
+            
+            if (tmp != localDescription && tmp.containsClient(target)) {                
+                // This proxy claims it knows the target!
+                boolean r = sendMessage(tmp, src, target, module, code, message);
+                result |= r;
+            } 
+        }
+        
+        return result;   
+    } 
+    
     public String toString() {
         
         StringBuffer result = new StringBuffer();

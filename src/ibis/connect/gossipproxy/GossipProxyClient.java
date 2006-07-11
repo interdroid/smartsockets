@@ -1,9 +1,8 @@
 package ibis.connect.gossipproxy;
 
-
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectSocket;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -21,40 +20,35 @@ public class GossipProxyClient {
         ibis.util.GetLogger.getLogger(GossipProxyClient.class.getName());
     
     private static final int DEFAULT_TIMEOUT = 1000;
-    private static final HashMap CONNECT_PROPERTIES = new HashMap();    
-    
-    private VirtualSocketFactory factory;
-    //private VirtualServerSocket server;
-    
-    private VirtualSocketAddress localClientAddress; 
+        
+    private DirectSocketFactory factory;
+    private SocketAddressSet localClientAddress; 
     
     private HashMap knownProxies = new HashMap();
     private List reachableProxies = new ArrayList();
     
     private class ProxyInfo { 
-        final VirtualSocketAddress address; 
+        final SocketAddressSet address; 
         boolean reachable; 
         boolean canReachMe;
         
-        ProxyInfo(VirtualSocketAddress address, boolean reachable, boolean canReachMe) { 
+        ProxyInfo(SocketAddressSet address, boolean reachable, boolean canReachMe) { 
             this.address = address;
             this.reachable = reachable;
             this.canReachMe = canReachMe;
         }
     }
         
-    public GossipProxyClient(VirtualSocketAddress client) throws IOException {
+    public GossipProxyClient(SocketAddressSet client) throws IOException {
                 
-        CONNECT_PROPERTIES.put("connect.module.type.allow", "direct");
-        
-        factory = VirtualSocketFactory.getSocketFactory();
+        factory = DirectSocketFactory.getSocketFactory();
     
         this.localClientAddress = client;
 
         logger.info("Created GossipProxyClient for " + client);
     }
             
-    public boolean [] addProxy(VirtualSocketAddress [] proxies) {
+    public boolean [] addProxy(SocketAddressSet [] proxies) {
 
         boolean [] result = new boolean[proxies.length];
         
@@ -67,7 +61,7 @@ public class GossipProxyClient {
         return result;
     }
     
-    public boolean addProxy(VirtualSocketAddress proxy) {
+    public boolean addProxy(SocketAddressSet proxy) {
 
         logger.info("Adding proxy " + proxy);
         
@@ -84,18 +78,17 @@ public class GossipProxyClient {
             knownProxies.put(proxy, info);
         } 
         
-        VirtualSocket s = null;
+        DirectSocket s = null;
         DataOutputStream out = null;
         DataInputStream in = null;
         
         // Otherwise, try to set up a connection
         try { 
-            s = factory.createClientSocket(proxy, DEFAULT_TIMEOUT,
-                    CONNECT_PROPERTIES);
+            s = factory.createSocket(proxy, DEFAULT_TIMEOUT, null);
             
             out = new DataOutputStream(s.getOutputStream());
                         
-            out.write(Protocol.PROXY_CLIENT_REGISTER);
+            out.write(ProxyProtocol.PROXY_CLIENT_REGISTER);
             out.writeUTF(localClientAddress.toString());
             out.flush();            
             
@@ -103,11 +96,11 @@ public class GossipProxyClient {
             int reply = in.readByte();
             
             switch (reply) {
-            case Protocol.REPLY_CLIENT_REGISTRATION_ACCEPTED:
+            case ProxyProtocol.REPLY_CLIENT_REGISTRATION_ACCEPTED:
                 logger.info("Proxy " + proxy + " accepted our registration.");
                 break;
                 
-            case Protocol.REPLY_CLIENT_REGISTRATION_REFUSED:
+            case ProxyProtocol.REPLY_CLIENT_REGISTRATION_REFUSED:
                 logger.info("Proxy " + proxy + " refused our registration.");
                 return false;                 
                                 
@@ -120,7 +113,7 @@ public class GossipProxyClient {
             logger.warn("Could not contact Proxy " + proxy, e);
             return false;
         } finally { 
-            VirtualSocketFactory.close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
         }
         
         synchronized (this) {
@@ -132,23 +125,22 @@ public class GossipProxyClient {
         return true;
     }
 
-    private VirtualSocket connectViaProxy(VirtualSocketAddress proxy, 
-            VirtualSocketAddress target, int timeout) throws IOException { 
+    private DirectSocket connectViaProxy(SocketAddressSet proxy, 
+            SocketAddressSet target, int timeout) throws IOException { 
         
-        VirtualSocket s = null;
+        DirectSocket s = null;
         DataOutputStream out = null;
         DataInputStream in = null;
                 
         boolean succes = false;
         
         try {
-            s = factory.createClientSocket(proxy, timeout,
-                    CONNECT_PROPERTIES);
+            s = factory.createSocket(proxy, timeout, null);
         
             out = new DataOutputStream(s.getOutputStream());
             in = new DataInputStream(s.getInputStream());
                     
-            out.write(Protocol.PROXY_CLIENT_CONNECT);            
+            out.write(ProxyProtocol.PROXY_CLIENT_CONNECT);            
             out.writeUTF(localClientAddress.toString());
             out.writeUTF(target.toString());
             out.writeInt(0);            
@@ -158,16 +150,16 @@ public class GossipProxyClient {
             int result = in.readByte();
             
             switch (result) { 
-            case Protocol.REPLY_CLIENT_CONNECTION_ACCEPTED:
+            case ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED:
                 logger.info("Connection to " + target + " via proxy " 
                         + proxy + " accepted!");                
                 succes = true;
                 break;
-            case Protocol.REPLY_CLIENT_CONNECTION_DENIED:
+            case ProxyProtocol.REPLY_CLIENT_CONNECTION_DENIED:
                 logger.info("Connection to " + target + " via proxy " 
                         + proxy + " failed (connection denied)!");                                
                 break;
-            case Protocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST:
+            case ProxyProtocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST:
                 logger.info("Connection to " + target + " via proxy " 
                         + proxy + " failed (unknown host)!");                                                
                 break;
@@ -180,7 +172,7 @@ public class GossipProxyClient {
                     + " failed (got exception " + e.getMessage() + ")!");            
         } finally {                      
             if (!succes) { 
-                VirtualSocketFactory.close(s, out, in);
+                DirectSocketFactory.close(s, out, in);
                 s = null;            
             }          
         } 
@@ -188,7 +180,7 @@ public class GossipProxyClient {
         return s;
     }
     
-    public VirtualSocket connect(VirtualSocketAddress target, int timeout) { 
+    public DirectSocket connect(SocketAddressSet target, int timeout) { 
         
         Iterator itt = reachableProxies.iterator();
         
@@ -209,10 +201,10 @@ public class GossipProxyClient {
     }
     
     /*
-    private void handleProxyTestConnect(VirtualSocket s, DataInputStream in) 
+    private void handleProxyTestConnect(DirectSocket s, DataInputStream in) 
         throws IOException { 
         
-        VirtualSocketAddress proxy = new VirtualSocketAddress(in.readUTF()); 
+        SocketAddressSet proxy = new SocketAddressSet(in.readUTF()); 
         
         logger.info("Got connection test from " + proxy);
         
@@ -226,7 +218,7 @@ public class GossipProxyClient {
         
         while (!done) { 
             try {
-                VirtualSocket s = server.accept();                
+                 s = server.accept();                
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 
                 int opcode = in.read();
@@ -255,7 +247,7 @@ public class GossipProxyClient {
 
         
         
-        VirtualSocketAddress [] proxies = null;
+        SocketAddressSet [] proxies = null;
         String [] clients = null;
 
         int proxyCount = 0; 
@@ -271,7 +263,7 @@ public class GossipProxyClient {
             }
         }         
         
-        proxies = new VirtualSocketAddress[proxyCount];
+        proxies = new SocketAddressSet[proxyCount];
         clients = new String[clientCount];
           
         clientCount = proxyCount = 0;
@@ -283,7 +275,7 @@ public class GossipProxyClient {
             
             if (args[i].equals("-p")) {                
                 try { 
-                    proxies[proxyCount++] = new VirtualSocketAddress(args[++i]);
+                    proxies[proxyCount++] = new SocketAddressSet(args[++i]);
                 } catch (Exception e) {
                     logger.warn("Skipping proxy address: " + args[i], e);              
                 }

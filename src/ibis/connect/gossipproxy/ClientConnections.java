@@ -1,13 +1,13 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.util.Callback;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.util.ForwarderDoneCallback;
 
 import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
-class ClientConnections implements Callback {
+class ClientConnections implements ForwarderDoneCallback {
     
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(ClientConnections.class.getName());
@@ -34,8 +34,8 @@ class ClientConnections implements Callback {
             logger.info("Removing connection " + id + " since it is done!");
             connections.remove(id);
             
-            VirtualSocketFactory.close(c.socketA, c.outA, c.inA);
-            VirtualSocketFactory.close(c.socketB, c.outB, c.inB);
+            DirectSocketFactory.close(c.socketA, c.outA, c.inA);
+            DirectSocketFactory.close(c.socketB, c.outB, c.inB);
         } else { 
             logger.info("Cannot remove connection " + id + " yet!");
         }

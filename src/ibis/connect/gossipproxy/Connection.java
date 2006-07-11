@@ -3,8 +3,8 @@
  */
 package ibis.connect.gossipproxy;
 
+import ibis.connect.direct.DirectSocket;
 import ibis.connect.util.Forwarder;
-import ibis.connect.virtual.VirtualSocket;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,12 +16,12 @@ class Connection {
     String id; 
     
     String clientAsString;
-    VirtualSocket socketA;
+    DirectSocket socketA;
     InputStream inA;
     OutputStream outA;        
     
     String targetAsString;
-    VirtualSocket socketB;        
+    DirectSocket socketB;        
     InputStream inB;
     OutputStream outB;
     
@@ -29,7 +29,7 @@ class Connection {
     Forwarder forwarder2; // forwards from inB to outA
     
     Connection(String clientAsString, String targetAsString, int number, 
-            VirtualSocket s, InputStream in, OutputStream out) { 
+            DirectSocket s, InputStream in, OutputStream out) { 
        
         id = "[" + number + ": " + clientAsString + " <--> " + targetAsString + "]";
 

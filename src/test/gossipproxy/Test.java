@@ -9,41 +9,42 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 
+import ibis.connect.direct.DirectServerSocket;
+import ibis.connect.direct.DirectSocket;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
+
 import ibis.connect.gossipproxy.GossipProxyClient;
-import ibis.connect.virtual.VirtualServerSocket;
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
 
 public class Test {
 
     private static final int DEFAULT_PORT = 14567;
     
-    VirtualSocketFactory factory;
-    VirtualServerSocket ss; 
+    DirectSocketFactory factory;
+    DirectServerSocket ss; 
     
     GossipProxyClient gpc; 
             
     boolean connected = false;
     
-    VirtualSocketAddress target = null;        
-    VirtualSocket s = null;                
+    SocketAddressSet target = null;        
+    DirectSocket s = null;                
     DataInputStream in = null;
     DataOutputStream out = null;
         
     private Test(int port, LinkedList proxies) throws IOException {         
-        factory = VirtualSocketFactory.getSocketFactory();        
-        ss = factory.createServerSocket(port, 10, false, null);        
-        gpc = new GossipProxyClient(ss.getLocalSocketAddress()); 
+        factory = DirectSocketFactory.getSocketFactory();        
+        ss = factory.createServerSocket(port, 10, null);        
+        gpc = new GossipProxyClient(ss.getAddressSet()); 
         
         while (proxies.size() > 0) { 
-            gpc.addProxy((VirtualSocketAddress) proxies.removeFirst());
+            gpc.addProxy((SocketAddressSet) proxies.removeFirst());
         }
     }
     
     private void bounce() {
     
-        VirtualSocket s = null;                
+        DirectSocket s = null;                
         DataInputStream in = null;
         DataOutputStream out = null;
         
@@ -84,7 +85,7 @@ public class Test {
             } catch (Exception e) {
                 System.out.println("Lost connection " + e);
             } finally { 
-                VirtualSocketFactory.close(s, out, in);
+                DirectSocketFactory.close(s, out, in);
             }
         } 
     }
@@ -97,9 +98,9 @@ public class Test {
         }
         
         try { 
-            VirtualSocketAddress address = new VirtualSocketAddress(target);
+            SocketAddressSet address = new SocketAddressSet(target);
                         
-            s = factory.createClientSocket(address, 10000, null);                
+            s = factory.createSocket(address, 10000, null);                
             
             in = new DataInputStream(new BufferedInputStream(s.getInputStream()));
             out = new DataOutputStream(new BufferedOutputStream(s.getOutputStream()));
@@ -112,7 +113,7 @@ public class Test {
             connected = true;
         } catch (Exception e) {
             System.out.println("Connection setup failed " + e);
-            VirtualSocketFactory.close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
         } 
     }
 
@@ -124,7 +125,7 @@ public class Test {
         }
         
         try { 
-            VirtualSocketAddress address = new VirtualSocketAddress(target);
+            SocketAddressSet address = new SocketAddressSet(target);
                         
             s = gpc.connect(address, 10000);                
             
@@ -141,7 +142,7 @@ public class Test {
             connected = true;
         } catch (Exception e) {
             System.out.println("Connection setup failed " + e);
-            VirtualSocketFactory.close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
         } 
     }
     
@@ -164,7 +165,7 @@ public class Test {
             System.out.println("Disconnect troublesome: " + e);
         } 
         
-        VirtualSocketFactory.close(s, out, in);        
+        DirectSocketFactory.close(s, out, in);        
         connected = false;
     }
     
@@ -182,17 +183,17 @@ public class Test {
             
         } catch (Exception e) {
             System.out.println("Lost connection " + e);
-            VirtualSocketFactory.close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
             connected = false;
         }           
     }
     
     private void proxy(String proxy) { 
         
-        VirtualSocketAddress address = null;
+        SocketAddressSet address = null;
         
         try { 
-            address = new VirtualSocketAddress(proxy);        
+            address = new SocketAddressSet(proxy);        
         } catch (Exception e) {
             System.out.println("Failed to parse proxy address!");
             return;
@@ -251,7 +252,7 @@ public class Test {
         } catch (Exception e) {
             System.out.println("Got exception! " + e);
         } finally { 
-            VirtualSocketFactory.close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
         }
     }
         
@@ -277,7 +278,7 @@ public class Test {
                 interactive = true;
             } else if (args[i].equals("-proxy")) {
                 try { 
-                    proxies.add(new VirtualSocketAddress(args[++i]));
+                    proxies.add(new SocketAddressSet(args[++i]));
                 } catch (Exception e) {
                     System.err.println("Failed to parse proxy: " 
                             + args[i] + " (ignoring)");

@@ -1,6 +1,6 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.virtual.VirtualSocketAddress;
+import ibis.connect.direct.SocketAddressSet;
 
 import java.util.ArrayList;
 
@@ -11,11 +11,11 @@ class ProxyDescription {
     static final byte UNREACHABLE = 1;
     static final byte REACHABLE   = 2;
     
-    final VirtualSocketAddress proxyAddress;    
+    final SocketAddressSet proxyAddress;    
     final StateCounter state;        
     final boolean local;
     
-    VirtualSocketAddress indirection;     
+    private SocketAddressSet indirection;     
         
     // Value of the local state the last time anything was changed in this 
     // description.  
@@ -33,26 +33,26 @@ class ProxyDescription {
     private int hops = Integer.MAX_VALUE/2; 
         
     // Last time that there was any contact with this machine.  
-    long lastContact;    
+    private long lastContact;    
     
     // Last time that we tried to connect to this machine.      
-    long lastConnect;    
+    private long lastConnect;    
         
-    byte reachable  = UNKNOWN;
-    byte canReachMe = UNKNOWN;
+    private byte reachable  = UNKNOWN;
+    private byte canReachMe = UNKNOWN;
 
     // Maintain a list of machines that have registered themselves as clients. 
     // Note that this is probably a very bad idea from a scalabitly point of 
     // view...
-    ArrayList clients = new ArrayList(); 
+    private ArrayList clients = new ArrayList(); 
 
     private ProxyConnection connection;
   
-    ProxyDescription(VirtualSocketAddress address, StateCounter state) {
+    ProxyDescription(SocketAddressSet address, StateCounter state) {
         this(address, state, false);
     } 
     
-    ProxyDescription(VirtualSocketAddress address, StateCounter state, 
+    ProxyDescription(SocketAddressSet address, StateCounter state, 
             boolean local) {
         
         this.state = state;        
@@ -65,19 +65,35 @@ class ProxyDescription {
         this.local = local;
     }
     
-  //  void addClient(VirtualSocketAddress client) { 
+  //  void addClient(SocketAddressSet client) { 
   //      clients.add(client);
   //  }
 
-    void addClient(String clientAsString) {        
-        // TODO: optimize!!!
-        if (!clients.contains(clientAsString)) {   
-            this.lastLocalUpdate = state.increment();            
-            clients.add(clientAsString);
+    void addClient(String client) {
+        
+        synchronized (clients) {
+            // TODO optimize!!!
+            if (!clients.contains(client)) {   
+                this.lastLocalUpdate = state.increment();            
+                clients.add(client);
+            }
         } 
     }
     
-    void setContactTimeStamp(boolean connect) { 
+    boolean containsClient(String client) {
+        synchronized (client) {
+            return clients.contains(client);
+        } 
+    }
+    
+    ArrayList getClients() {         
+        synchronized (clients) {
+            return new ArrayList(clients);           
+        }
+    }
+    
+    
+    synchronized void setContactTimeStamp(boolean connect) { 
         lastContact = System.currentTimeMillis();
         
         if (connect) { 
@@ -85,23 +101,31 @@ class ProxyDescription {
         }
     }
     
-    public long getLastLocalUpdate() { 
+    synchronized long getLastLocalUpdate() { 
         return lastLocalUpdate;
     }
     
-    public long getLastSendState() { 
+    synchronized long getLastSendState() { 
         return lastSendState;
     }
 
-    public void setLastSendState() {
+    synchronized long getLastConnect() {
+        return lastConnect;
+    }
+    
+    synchronized long getLastContact() {
+        return lastContact;
+    }
+            
+    synchronized void setLastSendState() {
         lastSendState = state.get();
     }
     
-    public int getHops() { 
+    synchronized int getHops() { 
         return hops;
     }
     
-    void setReachable() {
+    synchronized void setReachable() {
 
         if (reachable != REACHABLE) { 
             reachable = REACHABLE;                     
@@ -113,7 +137,7 @@ class ProxyDescription {
         setContactTimeStamp(true);
     } 
         
-    void setUnreachable() { 
+    synchronized void setUnreachable() { 
         
         if (reachable != UNREACHABLE) { 
             reachable = UNREACHABLE;
@@ -123,7 +147,7 @@ class ProxyDescription {
         setContactTimeStamp(true);        
     } 
         
-    void setCanReachMe() { 
+    synchronized void setCanReachMe() { 
         
         if (canReachMe != REACHABLE) { 
             canReachMe = REACHABLE;                      
@@ -136,7 +160,7 @@ class ProxyDescription {
         setContactTimeStamp(false);        
     }
     
-    void setCanNotReachMe() {
+    synchronized void setCanNotReachMe() {
 
         if (canReachMe != UNREACHABLE) { 
             canReachMe = UNREACHABLE;                      
@@ -146,7 +170,7 @@ class ProxyDescription {
         setContactTimeStamp(false);
     }
     
-    void addIndirection(VirtualSocketAddress indirection, int hops) {
+    synchronized void addIndirection(SocketAddressSet indirection, int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;
@@ -155,31 +179,31 @@ class ProxyDescription {
         } 
     }
     
-    boolean isStable() {         
-        return reachableKnown() && canReachMeKnown();        
+    synchronized SocketAddressSet getIndirection() {
+        return indirection;
     }
+        
+ //   boolean isStable() {         
+ //       return reachableKnown() && canReachMeKnown();        
+ //   }
     
-    boolean reachableKnown() {         
+    synchronized boolean reachableKnown() {         
         return (reachable != UNKNOWN);        
     }
     
-    boolean canReachMeKnown() {         
-        return (canReachMe != UNKNOWN);        
-    }
+//    boolean canReachMeKnown() {         
+//        return (canReachMe != UNKNOWN);        
+//    }
         
-    boolean canReachMe() { 
+    synchronized boolean canReachMe() { 
         return canReachMe == REACHABLE;
     }
     
-    boolean isReachable() { 
+    synchronized boolean isReachable() { 
         return reachable == REACHABLE;
     }
         
-    boolean haveConnection() { 
-        return (connection != null);        
-    }
-    
-    boolean isLocal() { 
+    synchronized boolean isLocal() { 
         return local;
     }
     
@@ -197,6 +221,10 @@ class ProxyDescription {
     synchronized ProxyConnection getConnection() { 
         return connection;
     }
+
+    synchronized boolean haveConnection() { 
+        return (connection != null);        
+    }
     
     private String reachableToString(byte r) { 
         switch (r) { 
@@ -212,7 +240,7 @@ class ProxyDescription {
             return "unknown";
         }
     }
-    
+           
     public String toString() { 
     
         StringBuffer buffer = new StringBuffer();

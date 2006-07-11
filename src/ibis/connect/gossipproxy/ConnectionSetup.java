@@ -3,10 +3,9 @@
  */
 package ibis.connect.gossipproxy;
 
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.util.Forwarder;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -14,19 +13,19 @@ import org.apache.log4j.Logger;
 
 class ConnectionSetup implements Runnable {
 
-    protected static final HashMap CONNECT_PROPERTIES = new HashMap();    
-    
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(ConnectionSetup.class.getName());
+
+    protected static int DEFAULT_TIMEOUT = 10000;
     
-    private VirtualSocketFactory factory; 
+    private DirectSocketFactory factory; 
     private ClientConnections connections; 
     private Connection c; 
     
     private LinkedList proxies; 
     private LinkedList skipProxies;        
     
-    ConnectionSetup(VirtualSocketFactory factory, ClientConnections connections,
+    ConnectionSetup(DirectSocketFactory factory, ClientConnections connections,
             Connection c, LinkedList proxies, LinkedList skipProxies) {
         
         this.factory = factory;
@@ -34,8 +33,6 @@ class ConnectionSetup implements Runnable {
         this.c = c;
         this.proxies = proxies;
         this.skipProxies = skipProxies;
-        
-        CONNECT_PROPERTIES.put("connect.module.type.allow", "direct");           
     }
 
     private boolean connectViaProxy(Connection c, ProxyDescription p) {                
@@ -43,18 +40,17 @@ class ConnectionSetup implements Runnable {
         try {
             logger.info("Attempting to connect to client " + c.targetAsString);
             
-            VirtualSocketAddress target = new VirtualSocketAddress(c.targetAsString);
+            SocketAddressSet target = new SocketAddressSet(c.targetAsString);
             
             // Create the connection
-            c.socketB = factory.createClientSocket(target, 10000, 
-                    CONNECT_PROPERTIES);
+            c.socketB = factory.createSocket(target, DEFAULT_TIMEOUT, null); 
             
             c.outB = c.socketB.getOutputStream();            
             c.inB = c.socketB.getInputStream();
 
             logger.info("Connection " + c.id + " created!");
                         
-            c.outA.write(Protocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
+            c.outA.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
             c.outA.flush();
                                    
             String label1 = "[" + c.number + ": " + c.clientAsString + " --> "
@@ -78,7 +74,7 @@ class ConnectionSetup implements Runnable {
         
         } catch (Exception e) {
             logger.info("Connection setup to " + c.targetAsString + " failed", e);            
-            VirtualSocketFactory.close(c.socketB, c.outB, c.inB);            
+            DirectSocketFactory.close(c.socketB, c.outB, c.inB);            
         }
         
         return false;
@@ -89,18 +85,17 @@ class ConnectionSetup implements Runnable {
         try {
             logger.info("Attempting to connect to client " + c.targetAsString);
             
-            VirtualSocketAddress target = new VirtualSocketAddress(c.targetAsString);
+            SocketAddressSet target = new SocketAddressSet(c.targetAsString);
             
             // Create the connection
-            c.socketB = factory.createClientSocket(target, 10000, 
-                    CONNECT_PROPERTIES);
+            c.socketB = factory.createSocket(target, DEFAULT_TIMEOUT, null); 
             
             c.outB = c.socketB.getOutputStream();            
             c.inB = c.socketB.getInputStream();
 
             logger.info("Connection " + c.id + " created!");
                         
-            c.outA.write(Protocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
+            c.outA.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
             c.outA.flush();
                                    
             String label1 = "[" + c.number + ": " + c.clientAsString + " --> "
@@ -124,7 +119,7 @@ class ConnectionSetup implements Runnable {
         
         } catch (Exception e) {
             logger.info("Connection setup to " + c.targetAsString + " failed", e);            
-            VirtualSocketFactory.close(c.socketB, c.outB, c.inB);            
+            DirectSocketFactory.close(c.socketB, c.outB, c.inB);            
         }
         
         return false;
@@ -159,12 +154,12 @@ class ConnectionSetup implements Runnable {
         
         try { 
             // Failed to connect, so give up....
-            c.outA.write(Protocol.REPLY_CLIENT_CONNECTION_DENIED);
+            c.outA.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_DENIED);
             c.outA.flush();
         } catch (Exception e) {
             logger.error("Failed to send reply to client!", e);
         } finally { 
-            VirtualSocketFactory.close(c.socketA, c.outA, c.inA);
+            DirectSocketFactory.close(c.socketA, c.outA, c.inA);
         }
     } 
 }

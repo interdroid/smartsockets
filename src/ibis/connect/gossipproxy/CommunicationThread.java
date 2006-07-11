@@ -1,13 +1,8 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
 import ibis.util.GetLogger;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
@@ -15,58 +10,34 @@ abstract class CommunicationThread extends Thread {
 
     protected static final int DEFAULT_PORT    = 17878;    
     protected static final int DEFAULT_TIMEOUT = 1000;
-    protected static final HashMap CONNECT_PROPERTIES = new HashMap();    
-            
+       
     protected final StateCounter state;         
     protected final Logger logger;     
     protected final ProxyList knownProxies;
-    protected final VirtualSocketFactory factory;    
+    protected final DirectSocketFactory factory;    
     
-    protected VirtualSocketAddress local;
+    protected SocketAddressSet local;
     protected String localAsString;
     
     protected CommunicationThread(String name, StateCounter state, 
-            ProxyList knownProxies, VirtualSocketFactory factory) {                 
+            ProxyList knownProxies, DirectSocketFactory factory) {                 
         super(name);        
         this.state = state;
         this.knownProxies = knownProxies;
         this.factory = factory;        
-        logger = GetLogger.getLogger(this.getClass().getName());
-        
-        CONNECT_PROPERTIES.put("connect.module.type.allow", "direct");            
+        logger = GetLogger.getLogger(this.getClass().getName());                   
     }
     
-    protected void setLocal(VirtualSocketAddress local) { 
+    protected void setLocal(SocketAddressSet local) { 
         this.local = local;
         this.localAsString = local.toString();        
     }
     
-    protected VirtualSocketAddress getLocal() {
+    protected SocketAddressSet getLocal() {
         return local;
     }
     
     protected String getLocalAsString() {
         return localAsString;
     }
-        
-    protected void close(VirtualSocket s, InputStream in, OutputStream out) { 
-        
-        try { 
-            in.close();
-        } catch (Exception e) {
-            // ignore
-        }
-                
-        try { 
-            in.close();
-        } catch (Exception e) {
-            // ignore
-        }
-        
-        try { 
-            s.close();
-        } catch (Exception e) {
-            // ignore
-        }
-    }  
 }

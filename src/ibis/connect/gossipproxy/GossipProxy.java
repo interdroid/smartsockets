@@ -1,7 +1,7 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -27,13 +27,13 @@ public class GossipProxy extends Thread {
         this(null);
     }
     
-    public GossipProxy(VirtualSocketAddress [] proxyAds) throws IOException { 
+    public GossipProxy(SocketAddressSet [] proxyAds) throws IOException { 
 
         super("GossipProxy");
         
         logger.info("Creating GossipProxy");
                 
-        VirtualSocketFactory factory = VirtualSocketFactory.getSocketFactory();
+        DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
         
         // Create the proxy list
         proxies = new ProxyList(state);
@@ -41,7 +41,7 @@ public class GossipProxy extends Thread {
         proxyAcceptor = new ProxyAcceptor(state, proxies, factory, connections);        
         proxyConnector = new ProxyConnector(state, proxies, factory);
         
-        VirtualSocketAddress local = proxyAcceptor.getLocal();         
+        SocketAddressSet local = proxyAcceptor.getLocal();         
         
         proxyConnector.setLocal(local);
                 
@@ -64,7 +64,7 @@ public class GossipProxy extends Thread {
         start();
     }
 
-    void addProxies(VirtualSocketAddress [] proxyAds) { 
+    void addProxies(SocketAddressSet [] proxyAds) { 
         
         if (proxyAds == null || proxyAds.length == 0) { 
             return;
@@ -108,27 +108,13 @@ public class GossipProxy extends Thread {
         }        
     }
     
-    /*
-    public synchronized void addClient(VirtualSocketAddress address) {         
-        // TODO: Check if we can actually reach the client directly ? 
-        localDescription.addClient(address);                
-    }
-    */
-    
-    /*
-    void activateConnection(ProxyConnection c) {
-        // TODO: Should use threadpool
-        new Thread(c).start();
-    }    
-    */
-    
     public static void main(String [] args) { 
         
-        VirtualSocketAddress [] proxies = new VirtualSocketAddress[args.length];
+        SocketAddressSet [] proxies = new SocketAddressSet[args.length];
             
         for (int i=0;i<args.length;i++) {                
             try { 
-                proxies[i] = new VirtualSocketAddress(args[i]);
+                proxies[i] = new SocketAddressSet(args[i]);
             } catch (Exception e) {
                 logger.warn("Skipping proxy address: " + args[i], e);              
             }

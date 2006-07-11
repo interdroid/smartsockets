@@ -1,9 +1,10 @@
 package ibis.connect.gossipproxy;
 
-import ibis.connect.virtual.VirtualServerSocket;
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.direct.DirectServerSocket;
+import ibis.connect.direct.DirectSocket;
+import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.servicelink.ServiceLinkHandler;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -13,50 +14,54 @@ import java.io.IOException;
 import java.util.LinkedList;
 
 public class ProxyAcceptor extends CommunicationThread {
-        
-    private VirtualServerSocket server;
+    
+    private DirectServerSocket server;
     private boolean done = false;
     
     private ClientConnections connections; 
     private int number = 0;
     
+    private ServiceLinkHandler serviceLinkHandler;
+    
     ProxyAcceptor(StateCounter state, ProxyList knownProxies, 
-            VirtualSocketFactory factory, ClientConnections connections) 
+            DirectSocketFactory factory, ClientConnections connections) 
             throws IOException {
         
         super("ProxyAcceptor", state, knownProxies, factory);        
         this.connections = connections;
         
         server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
-        setLocal(server.getLocalSocketAddress());        
-    }
+        setLocal(server.getAddressSet());        
         
-    private boolean handleIncomingProxyConnect(VirtualSocket s, 
-            DataInputStream in, DataOutputStream out) throws IOException { 
+        serviceLinkHandler = new ServiceLinkHandler(knownProxies);         
+    }
     
+    private boolean handleIncomingProxyConnect(DirectSocket s, 
+            DataInputStream in, DataOutputStream out) throws IOException { 
+        
         String otherAsString = in.readUTF();        
-        VirtualSocketAddress addr = new VirtualSocketAddress(otherAsString); 
-                
+        SocketAddressSet addr = new SocketAddressSet(otherAsString); 
+        
         logger.info("Got connection from " + addr);
         
         ProxyDescription d = knownProxies.add(addr);        
         d.setCanReachMe();
         
         ProxyConnection c = 
-            new ProxyConnection(s, in, out, d, knownProxies, state);
+            new ProxyConnection(s, in, out, d, knownProxies);
         
         if (!d.createConnection(c)) { 
             // There already was a connection with this proxy...            
             logger.info("Connection from " + addr + " refused (duplicate)");
             
-            out.write(Protocol.REPLY_CONNECTION_REFUSED);
+            out.write(ProxyProtocol.REPLY_CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                         
             // We just created a connection to this proxy.
             logger.info("Connection from " + addr + " accepted");
             
-            out.write(Protocol.REPLY_CONNECTION_ACCEPTED);            
+            out.write(ProxyProtocol.REPLY_CONNECTION_ACCEPTED);            
             out.flush();
             
             // Now activate it. 
@@ -65,31 +70,31 @@ public class ProxyAcceptor extends CommunicationThread {
         }     
     }
     
-    private boolean handlePing(VirtualSocket s, 
+    private boolean handlePing(DirectSocket s, 
             DataInputStream in, DataOutputStream out) throws IOException {
-     
+        
         String sender = in.readUTF();         
         logger.info("Got ping from: " + sender);      
         return false;
     }    
-   
-    private boolean handleClientConnect(VirtualSocket s, DataInputStream in, 
+    
+    private boolean handleClientConnect(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
-       
+        
         LinkedList skipProxies = new LinkedList();
         
         String clientAsString = in.readUTF();
         String targetAsString = in.readUTF();
-                        
+        
         int skipProxiesCount = in.readInt();
-
+        
         if (skipProxiesCount > 0) {
             skipProxies.add(in.readUTF());
         } 
         
         logger.info("Got request to connect " + clientAsString 
                 + " to " + targetAsString);
-                          
+        
         // See if we known any proxies that know the target machine. Note that 
         // if the local proxy is able to connect to the client, it will be
         // returned at the head of the list (so we try it first).    
@@ -104,44 +109,44 @@ public class ProxyAcceptor extends CommunicationThread {
                 // All proxies have been tried already, so we give up...
                 logger.info("All proxies have been tried " + targetAsString);                            
             }
-                
-            out.writeByte(Protocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
+            
+            out.writeByte(ProxyProtocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
             out.flush();
             return false;                
         }
-
+        
         logger.info("Found " + proxies.size() + " proxies that know " 
                 + targetAsString);            
         
         Connection c = new Connection(clientAsString, targetAsString, number, 
                 s, in, out);
-                      
+        
         ConnectionSetup cs = new ConnectionSetup(factory, connections, c, 
                 proxies, skipProxies);
         
         logger.info("Starting thread to create " + c);
-                
+        
         // TODO threadpool ? 
         new Thread(cs, "ConnectionSetup: " + c.id).start();                
-                        
+        
         return true;
     }
-   
-    private boolean handleClientRegistration(VirtualSocket s, DataInputStream in, DataOutputStream out) throws IOException {
-
+    
+    private boolean handleClientRegistration(DirectSocket s, 
+            DataInputStream in, DataOutputStream out) throws IOException {
+        
         // Read the clients address. 
         String clientAsString = in.readUTF();        
-        // VirtualSocketAddress client = new VirtualSocketAddress(clientAsString); 
-                        
+        
         logger.info("Got connection from client: " + clientAsString);
         
         ProxyDescription tmp = knownProxies.getLocalDescription();
         tmp.addClient(clientAsString);
-
+        
         // Always accept the connection for now.              
-        out.writeByte(Protocol.REPLY_CLIENT_REGISTRATION_ACCEPTED);
+        out.writeByte(ProxyProtocol.REPLY_CLIENT_REGISTRATION_ACCEPTED);
         out.flush();       
-
+        
         // TODO: should check here is we can reach the client. If so then 
         // all is well, if not, then we should refuse the connection or keep it 
         // open (which doesn't really scale) ...  
@@ -149,10 +154,10 @@ public class ProxyAcceptor extends CommunicationThread {
         // Always return false, so the main thread will close the connection. 
         return false;
     }
-
-  private void doAccept() {
+    
+    private void doAccept() {
         
-        VirtualSocket s = null;
+        DirectSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
         boolean result = false;
@@ -170,21 +175,26 @@ public class ProxyAcceptor extends CommunicationThread {
             int opcode = in.read();
             
             switch (opcode) {
-            case Protocol.PROXY_CONNECT:
+            case ProxyProtocol.PROXY_CONNECT:
                 result = handleIncomingProxyConnect(s, in, out);                   
                 break;
                 
-            case Protocol.PROXY_PING:
+            case ProxyProtocol.PROXY_PING:
                 result = handlePing(s, in, out);                   
                 break;
-        
-            case Protocol.PROXY_CLIENT_REGISTER:
+                
+                // TODO: remove!                
+            case ProxyProtocol.PROXY_CLIENT_REGISTER:
                 result = handleClientRegistration(s, in, out);
                 break;
                 
-            case Protocol.PROXY_CLIENT_CONNECT:
+            case ProxyProtocol.PROXY_CLIENT_CONNECT:
                 result = handleClientConnect(s, in, out);
                 break;
+                
+            case ProxyProtocol.PROXY_SERVICELINK_CONNECT:
+                result = serviceLinkHandler.handleConnection(s, in, out);
+                break;                
                 
             default:
                 break;
@@ -195,7 +205,7 @@ public class ProxyAcceptor extends CommunicationThread {
         }
         
         if (!result) { 
-            close(s, in, out);
+            DirectSocketFactory.close(s, out, in);
         }   
     }
     

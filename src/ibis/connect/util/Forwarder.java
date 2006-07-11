@@ -13,7 +13,7 @@ public class Forwarder extends Thread {
     
     private int bytes;    
     
-    private final Callback cb;
+    private final ForwarderDoneCallback cb;
     private final Object id;    
     private final String label;
     
@@ -23,13 +23,13 @@ public class Forwarder extends Thread {
         this(in, out, null, null, "unknown", DEFAULT_BUFFER_SIZE);
     }
     
-    public Forwarder(InputStream in, OutputStream out, Callback cb, Object id, 
+    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, Object id, 
             String label) { 
         
         this(in, out, cb, id, label, DEFAULT_BUFFER_SIZE);
     }
 
-    public Forwarder(InputStream in, OutputStream out, Callback cb, Object id, 
+    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, Object id, 
             String label, int bufferSize) {
         
         this.in = in;

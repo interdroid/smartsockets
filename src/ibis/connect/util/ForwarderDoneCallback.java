@@ -1,5 +1,5 @@
 package ibis.connect.util;
 
-public interface Callback {    
+public interface ForwarderDoneCallback {    
     public void done(Object id);
 }
