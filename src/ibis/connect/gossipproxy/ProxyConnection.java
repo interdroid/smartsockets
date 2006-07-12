@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class ProxyConnection extends BaseConnection {
+public class ProxyConnection extends MessageForwardingConnection {
 
     private final ProxyDescription peer;
     private final ProxyDescription local;    
@@ -25,7 +25,7 @@ public class ProxyConnection extends BaseConnection {
     }
     
     public synchronized void writeMessage(String source, String target, 
-            String module, int code, String message) { 
+            String module, int code, String message, int hopsLeft) { 
         
         try { 
             out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
@@ -34,6 +34,7 @@ public class ProxyConnection extends BaseConnection {
             out.writeUTF(module);
             out.writeInt(code);
             out.writeUTF(message);
+            out.writeInt(hopsLeft);
             out.flush();
         } catch (IOException e) {
             System.err.println("Unhandled exception in writeMessage!!" + e);            
@@ -148,7 +149,60 @@ public class ProxyConnection extends BaseConnection {
         logger.debug("Got ping from " + peer.proxyAddress);
         peer.setContactTimeStamp(false);
     }
+    /*
+    private boolean forwardMessage(String proxy, String src, String target, 
+            String module, int code, String message, int hopsLeft) {
+
+        BaseConnection c = connections.getConnection(proxy); 
+        
+        if (c != null && c instanceof ProxyConnection) {             
+            ProxyConnection tmp = (ProxyConnection) c;            
+            tmp.writeMessage(src, target, module, code, message, hopsLeft);
+            return true;
+        }   
+
+        return false;
+    }
     
+    private void forwardMessage(ProxyDescription p, String src, String target, 
+            String module, int code, String message, int hopsLeft) {
+        
+        logger.info("Attempting to forward message to proxy "
+                + p.proxyAddress);
+        
+        String proxy = p.proxyAddress.toString();
+        
+        if (forwardMessage(proxy, src, target, module, code, message, hopsLeft)) { 
+            logger.info("Succesfully forwarded message to proxy " 
+                    + proxy + " using direct link");
+            return;            
+        } 
+         
+        logger.info("Failed to forward message to proxy " + proxy 
+                + " using direct link, using indirection");
+        
+        // We don't have a direct connection, but we should be able to reach the
+        // proxy indirectly
+        SocketAddressSet addr = p.getIndirection();
+            
+        if (addr == null) {
+            // Oh dear, we don't have an indirection!
+            logger.warn("Indirection address of " + proxy + " is null!");
+            return;
+        } 
+        
+        String proxy2 = addr.toString();
+        
+        if (forwardMessage(proxy2, src, target, module, code, message, hopsLeft)) { 
+            logger.info("Succesfully forwarded message to proxy " 
+                    + proxy2 + " using direct link");
+            return;            
+        } 
+
+        logger.info("Failed to forward message to proxy " + proxy 
+                + " or it's indirection " + proxy2);
+    }
+    */
     private void handleClientMessage() throws IOException {
         
         String source = in.readUTF();
@@ -156,10 +210,13 @@ public class ProxyConnection extends BaseConnection {
         String module = in.readUTF();
         int code = in.readInt();
         String message = in.readUTF();
-
+        int hopsLeft = in.readInt();
+        
         logger.debug("Got client message [" + source + ", " 
                 + target + ", " + module + ", " + code + ", " + message 
-                + "] NOT FORWARDED YET!!!");   
+                + ", " + hopsLeft + "]");
+               
+        forwardMessage(source, target, module, code, message, hopsLeft);          
     }
     
     protected String getName() { 

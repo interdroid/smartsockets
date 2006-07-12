@@ -170,6 +170,7 @@ class ProxyConnector extends CommunicationThread {
         
         if (result) {
             logger.info("Succesfully created connection!");
+            connections.addConnection(d.proxyAddress.toString(), c);
             c.activate();
         } else { 
             logger.info("Failed to set up connection!");

@@ -235,7 +235,7 @@ public class ProxyList {
         return result;
     }
     
-    
+    /*
     private boolean sendMessage(ProxyDescription proxy, String src, 
             String target, String module, int code, String message) {
         
@@ -312,6 +312,7 @@ public class ProxyList {
         
         return result;   
     } 
+    */
     
     public String toString() {
         
