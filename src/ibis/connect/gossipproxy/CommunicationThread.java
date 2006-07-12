@@ -12,17 +12,23 @@ abstract class CommunicationThread extends Thread {
     protected static final int DEFAULT_TIMEOUT = 1000;
        
     protected final StateCounter state;         
-    protected final Logger logger;     
+    protected final Logger logger;
+    
+    protected final Connections connections;     
     protected final ProxyList knownProxies;
+    
     protected final DirectSocketFactory factory;    
     
     protected SocketAddressSet local;
     protected String localAsString;
     
     protected CommunicationThread(String name, StateCounter state, 
-            ProxyList knownProxies, DirectSocketFactory factory) {                 
+            Connections connections, ProxyList knownProxies, 
+            DirectSocketFactory factory) {
+        
         super(name);        
         this.state = state;
+        this.connections = connections;
         this.knownProxies = knownProxies;
         this.factory = factory;        
         logger = GetLogger.getLogger(this.getClass().getName());                   

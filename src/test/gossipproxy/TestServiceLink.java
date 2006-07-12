@@ -4,8 +4,8 @@ import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 
-import ibis.connect.gossipproxy.servicelink.MessageCallback;
-import ibis.connect.gossipproxy.servicelink.ServiceLink;
+import ibis.connect.gossipproxy.MessageCallback;
+import ibis.connect.gossipproxy.ServiceLink;
 
 import java.io.BufferedReader;
 import java.io.IOException;

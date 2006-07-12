@@ -10,29 +10,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-public class ProxyConnection implements Runnable {
+public class ProxyConnection extends BaseConnection {
 
-    private final DirectSocket s;
-    private final DataInputStream in;
-    private final DataOutputStream out; 
-    
     private final ProxyDescription peer;
     private final ProxyDescription local;    
-            
-    private final ProxyList knownProxies; 
-    
-    private boolean done = false;
-          
+                      
     ProxyConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
-            ProxyDescription peer, ProxyList knownProxies) {
+            ProxyDescription peer, Connections connections, ProxyList proxies) {
         
-        this.s = s;
-        this.in = in;
-        this.out = out;
-        this.peer = peer;
-        this.knownProxies = knownProxies;
+        super(s, in, out, connections, proxies);
         
-        local = knownProxies.getLocalDescription();
+        this.peer = peer;        
+        local = proxies.getLocalDescription();
     }
     
     public synchronized void writeMessage(String source, String target, 
@@ -52,15 +41,15 @@ public class ProxyConnection implements Runnable {
         }        
     }
     
-    public synchronized void writeProxies(long currentState) { 
+    public synchronized void gossip(long currentState) { 
         
         long lastSendState = peer.getLastSendState();
         
         try {
             int writes = 0;
 
-            GossipProxy.logger.info("=============================="); 
-            GossipProxy.logger.info("Gossiping with: " + peer.proxyAddress); 
+            logger.info("=============================="); 
+            logger.info("Gossiping with: " + peer.proxyAddress); 
             
             Iterator itt = knownProxies.iterator();
             
@@ -69,7 +58,7 @@ public class ProxyConnection implements Runnable {
                 
                 if (tmp.getLastLocalUpdate() > lastSendState) {
                     
-                    GossipProxy.logger.info("Writing proxy:\n" 
+                    logger.info("Writing proxy:\n" 
                             + tmp.toString() + "\n\n");
                     
                     writeProxy(tmp);                    
@@ -84,7 +73,7 @@ public class ProxyConnection implements Runnable {
             
             out.flush();
         
-            GossipProxy.logger.info("==============================\n");
+            logger.info("==============================\n");
             
         } catch (Exception e) {
             System.err.println("Unhandled exception in ProxyConnection!!" + e);
@@ -156,7 +145,7 @@ public class ProxyConnection implements Runnable {
     }
         
     private void handlePing() {        
-        GossipProxy.logger.debug("Got ping from " + peer.proxyAddress);
+        logger.debug("Got ping from " + peer.proxyAddress);
         peer.setContactTimeStamp(false);
     }
     
@@ -168,12 +157,16 @@ public class ProxyConnection implements Runnable {
         int code = in.readInt();
         String message = in.readUTF();
 
-        GossipProxy.logger.debug("Got client message [" + source + ", " 
+        logger.debug("Got client message [" + source + ", " 
                 + target + ", " + module + ", " + code + ", " + message 
                 + "] NOT FORWARDED YET!!!");   
     }
     
-    private void receive() {
+    protected String getName() { 
+        return "ProxyConnection(" + peer.proxyAddress + ")";
+    }
+    
+    protected boolean runConnection() {
     
         try { 
             int opcode = in.read();
@@ -181,44 +174,33 @@ public class ProxyConnection implements Runnable {
             switch (opcode) { 
         
             case -1:
-                GossipProxy.logger.info("ProxyConnection got EOF!");
-                done = true;
-                break; 
-            
+                logger.info("ProxyConnection got EOF!");
+                DirectSocketFactory.close(s, out, in);
+                return false;
+                
             case ProxyProtocol.PROXY_GOSSIP:
                 readProxy();
-                break;
+                return true;
     
             case ProxyProtocol.PROXY_PING:
                 handlePing();
-                break;
+                return true;
 
             case ProxyProtocol.CLIENT_MESSAGE:
                 handleClientMessage();
-                break;
+                return true;
                 
             default:
-                GossipProxy.logger.info("ProxyConnection got junk!");
-                done = true;                
+                logger.info("ProxyConnection got junk!");
+                DirectSocketFactory.close(s, out, in);
+                return false;
             }
                         
         } catch (Exception e) {
-            GossipProxy.logger.warn("ProxyConnection got exception!", e);
-            done = true;
-        }
-    }
-
-    public void activate() {
-        // TODO: Use pool ?         
-        new Thread(this, "ProxyConnection").start();
-    }
-        
-    public void run() { 
-
-        while (!done) { 
-            receive();
+            logger.warn("ProxyConnection got exception!", e);
+            DirectSocketFactory.close(s, out, in);
         }
         
-        DirectSocketFactory.close(s, out, in);        
+        return false;
     }
 }

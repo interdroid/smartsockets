@@ -13,10 +13,10 @@ class ProxyConnector extends CommunicationThread {
     
     private boolean done = false;
     
-    ProxyConnector(StateCounter state, ProxyList knownProxies, 
-            DirectSocketFactory factory) {
+    ProxyConnector(StateCounter state, Connections connections,
+            ProxyList knownProxies, DirectSocketFactory factory) {
         
-        super("ProxyConnector", state, knownProxies, factory);
+        super("ProxyConnector", state, connections, knownProxies, factory);
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
@@ -132,7 +132,7 @@ class ProxyConnector extends CommunicationThread {
             if (master) { 
                 logger.info("I am master during connection setup");
                 
-                c = new ProxyConnection(s, in, out, d, knownProxies);                
+                c = new ProxyConnection(s, in, out, d, connections, knownProxies);                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -151,7 +151,7 @@ class ProxyConnector extends CommunicationThread {
                 result = sendConnect(out, in);
 
                 if (result) {                 
-                    c = new ProxyConnection(s, in, out, d, knownProxies);                
+                    c = new ProxyConnection(s, in, out, d, connections, knownProxies);                
                     result = d.createConnection(c);
                     
                     if (!result) { 

@@ -4,7 +4,6 @@ import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.servicelink.ServiceLinkHandler;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -18,22 +17,16 @@ public class ProxyAcceptor extends CommunicationThread {
     private DirectServerSocket server;
     private boolean done = false;
     
-    private ClientConnections connections; 
     private int number = 0;
-    
-    private ServiceLinkHandler serviceLinkHandler;
-    
-    ProxyAcceptor(StateCounter state, ProxyList knownProxies, 
-            DirectSocketFactory factory, ClientConnections connections) 
+        
+    ProxyAcceptor(StateCounter state, Connections connections, 
+            ProxyList knownProxies, DirectSocketFactory factory) 
             throws IOException {
         
-        super("ProxyAcceptor", state, knownProxies, factory);        
-        this.connections = connections;
+        super("ProxyAcceptor", state, connections, knownProxies, factory);        
         
         server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
         setLocal(server.getAddressSet());        
-        
-        serviceLinkHandler = new ServiceLinkHandler(knownProxies);         
     }
     
     private boolean handleIncomingProxyConnect(DirectSocket s, 
@@ -48,7 +41,7 @@ public class ProxyAcceptor extends CommunicationThread {
         d.setCanReachMe();
         
         ProxyConnection c = 
-            new ProxyConnection(s, in, out, d, knownProxies);
+            new ProxyConnection(s, in, out, d, connections, knownProxies);
         
         if (!d.createConnection(c)) { 
             // There already was a connection with this proxy...            
@@ -95,41 +88,14 @@ public class ProxyAcceptor extends CommunicationThread {
         logger.info("Got request to connect " + clientAsString 
                 + " to " + targetAsString);
         
-        // See if we known any proxies that know the target machine. Note that 
-        // if the local proxy is able to connect to the client, it will be
-        // returned at the head of the list (so we try it first).    
-        LinkedList proxies = knownProxies.findClient(targetAsString, skipProxies);
+        ForwarderConnection c = new ForwarderConnection(s, in, out, connections, 
+                knownProxies, clientAsString, targetAsString, number++, 
+                skipProxies);
         
-        if (proxies.size() == 0) {
-            
-            if (skipProxies.size() == 0) { 
-                // Nobody knows the target, so we give up for now...
-                logger.info("Nobody seems to know " + targetAsString);            
-            } else { 
-                // All proxies have been tried already, so we give up...
-                logger.info("All proxies have been tried " + targetAsString);                            
-            }
-            
-            out.writeByte(ProxyProtocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
-            out.flush();
-            return false;                
-        }
-        
-        logger.info("Found " + proxies.size() + " proxies that know " 
-                + targetAsString);            
-        
-        Connection c = new Connection(clientAsString, targetAsString, number, 
-                s, in, out);
-        
-        ConnectionSetup cs = new ConnectionSetup(factory, connections, c, 
-                proxies, skipProxies);
-        
-        logger.info("Starting thread to create " + c);
-        
-        // TODO threadpool ? 
-        new Thread(cs, "ConnectionSetup: " + c.id).start();                
-        
-        return true;
+        connections.addConnection(c.getName(), c);
+        c.activate();
+                        
+        return true;        
     }
     
     private boolean handleClientRegistration(DirectSocket s, 
@@ -152,6 +118,47 @@ public class ProxyAcceptor extends CommunicationThread {
         // open (which doesn't really scale) ...  
         
         // Always return false, so the main thread will close the connection. 
+        return false;
+    }
+    
+    private boolean handleServiceLinkConnect(DirectSocket s, DataInputStream in,
+            DataOutputStream out) {
+        
+        try { 
+            String src = in.readUTF();
+                
+            if (connections.getConnection(src) != null) { 
+                if (logger.isDebugEnabled()) { 
+                    logger.debug("Incoming connection from " + src + 
+                            " refused, since it already exists!"); 
+                } 
+            
+                out.write(ProxyProtocol.REPLY_SERVICELINK_REFUSED);
+                out.flush();
+                DirectSocketFactory.close(s, out, in);
+                return false;
+            }
+        
+            if (logger.isDebugEnabled()) { 
+                logger.debug("Incoming connection from " + src 
+                        + " accepted"); 
+            } 
+
+            out.write(ProxyProtocol.REPLY_SERVICELINK_ACCEPTED);
+            out.flush();
+            
+            ClientConnection c = new ClientConnection(src, s, in, out, 
+                    connections, knownProxies);
+            connections.addConnection(src, c);                                               
+            c.activate();
+     
+            return true;
+            
+        } catch (IOException e) { 
+            logger.warn("Got exception while handling connect!", e);
+            DirectSocketFactory.close(s, out, in);
+        }  
+        
         return false;
     }
     
@@ -193,7 +200,7 @@ public class ProxyAcceptor extends CommunicationThread {
                 break;
                 
             case ProxyProtocol.PROXY_SERVICELINK_CONNECT:
-                result = serviceLinkHandler.handleConnection(s, in, out);
+                result = handleServiceLinkConnect(s, in, out);
                 break;                
                 
             default:
@@ -209,6 +216,8 @@ public class ProxyAcceptor extends CommunicationThread {
         }   
     }
     
+   
+
     public void run() { 
         
         while (!done) {           

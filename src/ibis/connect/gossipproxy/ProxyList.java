@@ -25,6 +25,30 @@ public class ProxyList {
     
     private ProxyDescription localDescription;
     
+    private class PartialIterator implements Iterator {
+
+        private LinkedList elements = null; 
+
+        void add(Object o) { 
+            if (elements == null) { 
+                elements = new LinkedList();
+            }
+            elements.add(o);
+        }
+        
+        public boolean hasNext() {
+            return (elements != null && elements.size() > 0);
+        }
+
+        public Object next() {
+            return (elements == null ? null : elements.removeFirst());            
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("ProxyList.remove not supported!");
+        } 
+    }
+    
     public ProxyList(StateCounter state) { 
         this.state = state; 
     }
@@ -188,6 +212,30 @@ public class ProxyList {
         return good;
     }
     
+    public Iterator findProxiesForTarget(String target, boolean includeLocal) { 
+        
+        PartialIterator result = new PartialIterator();
+        
+        Iterator itt = map.values().iterator();
+        
+        while (itt.hasNext()) { 
+            
+            ProxyDescription tmp = (ProxyDescription) itt.next();
+            
+            if (tmp.containsClient(target)) {
+
+                // Alway add remote proxies, but only add the local one if 
+                // specified!
+                if (!tmp.isLocal() || includeLocal) { 
+                    result.add(tmp);
+                } 
+            } 
+        }
+        
+        return result;
+    }
+    
+    
     private boolean sendMessage(ProxyDescription proxy, String src, 
             String target, String module, int code, String message) {
         
@@ -244,7 +292,7 @@ public class ProxyList {
         return true;
     }
         
-    public synchronized boolean sendMessage(String src, String target, 
+    public synchronized boolean forwardMessage(String src, String target, 
             String module, int code, String message) { 
     
         boolean result = false;

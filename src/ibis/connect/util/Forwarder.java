@@ -3,7 +3,7 @@ package ibis.connect.util;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class Forwarder extends Thread {
+public class Forwarder implements Runnable {
 
     private static final int DEFAULT_BUFFER_SIZE = 16*1024;
 
@@ -14,27 +14,25 @@ public class Forwarder extends Thread {
     private int bytes;    
     
     private final ForwarderDoneCallback cb;
-    private final Object id;    
     private final String label;
     
     private boolean done = false;
     
     public Forwarder(InputStream in, OutputStream out) { 
-        this(in, out, null, null, "unknown", DEFAULT_BUFFER_SIZE);
+        this(in, out, null, "unknown", DEFAULT_BUFFER_SIZE);
     }
     
-    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, Object id, 
+    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, 
             String label) { 
         
-        this(in, out, cb, id, label, DEFAULT_BUFFER_SIZE);
+        this(in, out, cb, label, DEFAULT_BUFFER_SIZE);
     }
 
-    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, Object id, 
+    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, 
             String label, int bufferSize) {
         
         this.in = in;
         this.out = out;
-        this.id = id;
         this.cb = cb;
         this.label = label;
         this.buffer = new byte[bufferSize];        
@@ -43,21 +41,7 @@ public class Forwarder extends Thread {
     public synchronized boolean isDone() {
         return done;
     }
-    
-    private void close() {
-        try { 
-            in.close();
-        } catch (Exception e) {
-            // ignore
-        }
         
-        try { 
-            out.close();
-        } catch (Exception e) {
-            // ignore
-        }
-    }
-    
     public void run() {
         
         System.out.println("Forwarder " + label + " running!");
@@ -69,8 +53,6 @@ public class Forwarder extends Thread {
                 System.out.println("Forwarder " + label + " read " + n + " bytes");                                    
                 
                 if (n == -1) {
-                    close();
-                    
                     synchronized (this) {
                         done = true;
                     } 
@@ -90,7 +72,7 @@ public class Forwarder extends Thread {
         } 
                        
         if (cb != null) {            
-            cb.done(id);
+            cb.done(label);
         }
     }    
 }

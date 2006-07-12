@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy.servicelink;
+package ibis.connect.gossipproxy;
 
 import ibis.connect.direct.SocketAddressSet;
 

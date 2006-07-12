@@ -15,14 +15,14 @@ public class GossipProxy extends Thread {
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(GossipProxy.class.getName());
                
-    private ProxyList proxies;     
+    private ProxyList proxies;    
+    private Connections connections;
+    
     private ProxyAcceptor proxyAcceptor;
     private ProxyConnector proxyConnector;
             
     private StateCounter state = new StateCounter();
-        
-    private ClientConnections connections = new ClientConnections();
-    
+            
     public GossipProxy() throws IOException { 
         this(null);
     }
@@ -38,8 +38,10 @@ public class GossipProxy extends Thread {
         // Create the proxy list
         proxies = new ProxyList(state);
                 
-        proxyAcceptor = new ProxyAcceptor(state, proxies, factory, connections);        
-        proxyConnector = new ProxyConnector(state, proxies, factory);
+        connections = new Connections();
+        
+        proxyAcceptor = new ProxyAcceptor(state, connections, proxies, factory);        
+        proxyConnector = new ProxyConnector(state, connections, proxies, factory);
         
         SocketAddressSet local = proxyAcceptor.getLocal();         
         
@@ -89,7 +91,7 @@ public class GossipProxy extends Thread {
             ProxyConnection c = d.getConnection();
             
             if (c != null) {               
-                c.writeProxies(state.get());
+                c.gossip(state.get());
             }            
         }               
     }
