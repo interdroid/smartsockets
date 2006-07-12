@@ -186,6 +186,10 @@ class ProxyDescription {
  //   boolean isStable() {         
  //       return reachableKnown() && canReachMeKnown();        
  //   }
+  
+    synchronized boolean directlyReachable() {
+        return (reachable == REACHABLE || canReachMe == REACHABLE);               
+    }
     
     synchronized boolean reachableKnown() {         
         return (reachable != UNKNOWN);        

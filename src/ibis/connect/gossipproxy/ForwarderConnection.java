@@ -98,32 +98,44 @@ class ForwarderConnection extends BaseConnection implements ForwarderDoneCallbac
         logger.info("Connection forwarders started!");
     }
     
+    
+    private DirectSocket connectToProxy(ProxyDescription p)  { 
+
+        /*
+        if (p.isReachable()) {             
+            factory.createSocket(target, timeout, properties)
+            
+            
+        }*/
+        return null;
+        
+        
+    }
+    
     private boolean connectViaProxy(ProxyDescription p) {                
 
         try {
             logger.info("Attempting to connect to client " + targetAsString 
                     + " via proxy " + p.proxyAddress);
-            
-            /* This is the client implementation ....
 
-            SocketAddressSet target = new SocketAddressSet(targetAsString);
-            
-            // Create the connection
-            socketB = factory.createSocket(target, DEFAULT_TIMEOUT, null); 
-            
-            outB = socketB.getOutputStream();            
-            inB = socketB.getInputStream();
+            // Try to set up a connection if we can directly reach the proxy
+            // in some way, or if we don't known if it is reachable yet ...             
+            if (p.directlyReachable() || !p.reachableKnown()) { 
+                // Create the connection
+                socketB = connectToProxy(p); 
 
-            logger.info("Connection " + id + " created!");
+                outB = socketB.getOutputStream();            
+                inB = socketB.getInputStream();
+
+                logger.info("Connection " + id + " created!");
                         
-            out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
-            out.flush();
+                out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
+                out.flush();
     
-            startForwarding();
+                startForwarding();
                         
-            return true;
-             */
-                        
+                return true;
+            } 
         } catch (Exception e) {
             logger.info("Connection setup to " + targetAsString + " failed", e);            
             DirectSocketFactory.close(socketB, outB, inB);            
@@ -168,32 +180,9 @@ class ForwarderConnection extends BaseConnection implements ForwarderDoneCallbac
         // returned at the head of the list (so we try it first).    
         LinkedList proxies = knownProxies.findClient(targetAsString, skipProxies);
         
-        if (proxies.size() == 0) {
-            
-            if (skipProxies.size() == 0) { 
-                // Nobody knows the target, so we give up for now...
-                logger.info("Nobody seems to know " + targetAsString);            
-            } else { 
-                // All proxies have been tried already, so we give up...
-                logger.info("All proxies have been tried " + targetAsString);                            
-            }
-            
-            try { 
-                out.writeByte(ProxyProtocol.REPLY_CLIENT_CONNECTION_UNKNOWN_HOST);
-                out.flush();
-            } catch (Exception e) {
-                logger.warn("Failed to inform client " + clientAsString, e);
-            } finally {             
-                DirectSocketFactory.close(s, out, in);         
-            } 
-            
-            return false;                
-        }
-        
         logger.info("Found " + proxies.size() + " proxies that know " 
                 + targetAsString);            
         
-        // This should be in a seperate thread, since it may take a while!        
         for (int i=0;i<proxies.size();i++) { 
             ProxyDescription p = (ProxyDescription) proxies.removeFirst();
             
@@ -226,7 +215,7 @@ class ForwarderConnection extends BaseConnection implements ForwarderDoneCallbac
             out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_DENIED);
             out.flush();
         } catch (Exception e) {
-            logger.error("Failed to send reply to client!", e);
+            logger.warn("Failed to send reply to client!", e);
         } finally { 
             DirectSocketFactory.close(s, out, in);
         }
