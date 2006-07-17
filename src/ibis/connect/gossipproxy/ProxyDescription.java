@@ -8,11 +8,13 @@ import java.util.ArrayList;
 public class ProxyDescription {
         
     // Note: order is important here, we always want the highest possible value!
-    static final byte UNKNOWN     = 0;    
-    static final byte UNREACHABLE = 1;
-    static final byte REACHABLE   = 2;
+    public static final byte UNKNOWN     = 0;    
+    public static final byte UNREACHABLE = 1;
+    public static final byte REACHABLE   = 2;
     
-    public final SocketAddressSet proxyAddress;    
+    public final SocketAddressSet proxyAddress;
+    public final String proxyAddressAsString;
+    
     final StateCounter state;        
     final boolean local;
     
@@ -58,6 +60,7 @@ public class ProxyDescription {
         
         this.state = state;        
         this.proxyAddress = address;
+        this.proxyAddressAsString = address.toString();
         this.lastLocalUpdate = state.increment();
         
         this.reachable = UNKNOWN;
@@ -200,10 +203,14 @@ public class ProxyDescription {
 //        return (canReachMe != UNKNOWN);        
 //    }
         
-    synchronized boolean canReachMe() { 
+    public synchronized boolean canReachMe() { 
         return canReachMe == REACHABLE;
     }
     
+    public synchronized boolean canReachMeKnown() {         
+        return (canReachMe != UNKNOWN);        
+    }
+        
     synchronized boolean isReachable() { 
         return reachable == REACHABLE;
     }

@@ -9,9 +9,8 @@ public interface ProxyProtocol {
     public static final byte PROXY_PING   = 10;
     public static final byte PROXY_GOSSIP = 11;
 
-    
-    
-    
+    public static final byte PROXY_MESSAGE = 20;
+            
     public static final byte CLIENT_MESSAGE = 30;
     
     public static final byte PROXY_SERVICELINK_CONNECT  = 40;       

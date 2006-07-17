@@ -30,7 +30,7 @@ public class ClientConnection extends MessageForwardingConnection {
         logger.debug("Incoming message: [" + target + ", " 
                 + module + ", " + code + ", " + message); 
 
-        forwardMessage(clientAddress, target, module, code, message);
+        forwardClientMessage(clientAddress, target, module, code, message);
     } 
                 
     private void disconnect() { 

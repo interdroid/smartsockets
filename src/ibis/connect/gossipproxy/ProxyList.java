@@ -2,6 +2,7 @@ package ibis.connect.gossipproxy;
 
 import ibis.connect.direct.SocketAddressSet;
 
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -123,10 +124,20 @@ public class ProxyList {
         return map.containsKey(m); 
     }
            
-    private ProxyDescription get(SocketAddressSet m) {                        
+    public ProxyDescription get(SocketAddressSet m) {                        
         return (ProxyDescription) map.get(m);
     }
             
+    public ProxyDescription get(String target) {        
+        // TODO: not very efficient ....        
+        try {
+            return get(new SocketAddressSet(target));
+        } catch (UnknownHostException e) {
+            return null;
+        }
+    }
+    
+    
     public synchronized Iterator iterator() { 
         return map.values().iterator();
     }
@@ -327,4 +338,5 @@ public class ProxyList {
         
         return result.toString();
     }
+    
 }

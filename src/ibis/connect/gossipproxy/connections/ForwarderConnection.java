@@ -14,6 +14,7 @@ import ibis.connect.util.ForwarderDoneCallback;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -176,32 +177,88 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
         return false;
     }
     
-    private boolean connectViaProxy(ProxyDescription p) {                
-
-        try {
-            logger.info("Attempting to connect to client " + targetAsString 
-                    + " via proxy " + p.proxyAddress);
-
-            // Try to set up a connection if we can directly reach the proxy
-            // in some way, or if we don't known if it is reachable yet ...             
-            if (p.directlyReachable() || !p.reachableKnown()) { 
-                // Create the connection
-                if (connectToProxy(p)) {  
-                    logger.info("Connection " + id + " created!");
-                    
-                    out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
-                    out.flush();
+    private boolean directConnection(ProxyDescription p, int currentHops) {  
     
-                    startForwarding();                        
-                    return true;
-                } else {
-                    logger.info("Connection setup to " + targetAsString + " failed");
-                    return false;
-                }
-            } 
+        // Create the connection
+        if (connectToProxy(p)) {  
+            logger.info("Connection " + id + " created!");
+            
+            try {                
+                out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
+                out.flush();
+                startForwarding();                        
+                return true;
+
+            } catch (Exception e) {
+                logger.info("Connection setup to " + targetAsString + " failed", e);            
+                DirectSocketFactory.close(socketB, outB, inB);            
+            }
+        } 
+          
+        logger.info("Connection setup to " + targetAsString + " failed");
+        return false;
+    }
+    
+    private boolean reverseConnection(ProxyDescription p, int currentHops) {
+        
+        try {
+            String target = p.proxyAddressAsString;
+            
+            ProxyConnection conn = 
+                (ProxyConnection) connections.getConnection(target);
+
+            if (conn == null) { 
+                return false;
+            }
+            
+            String a = knownProxies.getLocalDescription().proxyAddressAsString;             
+            conn.writeMessage(false, a, target, "module", 42, "message", 1);
+                        
         } catch (Exception e) {
-            logger.info("Connection setup to " + targetAsString + " failed", e);            
-            DirectSocketFactory.close(socketB, outB, inB);            
+            logger.debug("Reverse connection failed!", e);
+        }
+        
+        return false;
+    } 
+        
+    private boolean connectViaProxy(ProxyDescription p, int currentHops, 
+            boolean allowIndirection) {                
+        
+        logger.info("Attempting to connect to client " + targetAsString 
+                + " via proxy " + p.proxyAddress);
+
+        // Check if we can directly reach the proxy, or if we don't known if it 
+        // is reachable yet ... If so, we try a direct connection. 
+        if (p.directlyReachable() || !p.reachableKnown()) {             
+            if (directConnection(p, currentHops)) { 
+                return true;
+            } 
+        }
+
+        // If a direct connection was not possible or failed, a reverse 
+        // connection may be work. 
+        if (p.canReachMe() || !p.canReachMeKnown()) { 
+            if (reverseConnection(p, currentHops)) { 
+                return true;
+            }
+        }
+
+        // If neither a direct or reverse connection was possible, we try an 
+        // indirect connection, but only if we are allowed to do so... 
+        if (allowIndirection) { 
+            SocketAddressSet indirection = p.getIndirection();
+        
+            if (indirection == null) { 
+                return false;
+            }
+            
+            ProxyDescription p2 = knownProxies.get(indirection);
+            
+            if (p2 == null) { 
+                return false;                
+            }
+            
+            return connectViaProxy(p2, currentHops, false);                        
         }
         
         return false;
@@ -260,7 +317,7 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
                             + targetAsString);                    
                 }
             } else {
-                if (connectViaProxy(p)) { 
+                if (connectViaProxy(p, 0, true)) { 
                     logger.info("Succesfully created indirect connection to " 
                             + targetAsString + " via proxy " + p.proxyAddress);
                     return false;                        

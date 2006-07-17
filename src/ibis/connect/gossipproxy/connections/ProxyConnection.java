@@ -27,11 +27,16 @@ public class ProxyConnection extends MessageForwardingConnection {
         local = proxies.getLocalDescription();
     }
     
-    public synchronized void writeMessage(String source, String target, 
-            String module, int code, String message, int hopsLeft) { 
+    public synchronized void writeMessage(boolean client, String source, 
+            String target, String module, int code, String message, 
+            int hopsLeft) { 
         
-        try { 
-            out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
+        try {
+            if (client) { 
+                out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
+            } else { 
+                out.writeByte(ProxyProtocol.PROXY_MESSAGE);
+            }
             out.writeUTF(source);
             out.writeUTF(target);
             out.writeUTF(module);
@@ -215,13 +220,50 @@ public class ProxyConnection extends MessageForwardingConnection {
         String message = in.readUTF();
         int hopsLeft = in.readInt();
         
-        logger.debug("Got client message [" + source + ", " 
+        logger.debug("Got message [" + source + ", " 
                 + target + ", " + module + ", " + code + ", " + message 
                 + ", " + hopsLeft + "]");
                
-        forwardMessage(source, target, module, code, message, hopsLeft);          
+        forwardClientMessage(source, target, module, code, message, hopsLeft);          
     }
     
+    private void handleProxyMessage() throws IOException {
+        
+        String source = in.readUTF();
+        String target = in.readUTF();
+        String module = in.readUTF();
+        int code = in.readInt();
+        String message = in.readUTF();
+        int hopsLeft = in.readInt();
+        
+        logger.debug("Got message [" + source + ", " 
+                + target + ", " + module + ", " + code + ", " + message 
+                + ", " + hopsLeft + "]");
+               
+        if (local.proxyAddressAsString.equals(target)) { 
+            // deliver message locally
+            logger.debug("Message should be delivered locally!");            
+        } else { 
+            // forward message to other proxies
+            hopsLeft--;
+            
+            if (hopsLeft == 0) { 
+                logger.debug("Message should be forwarded, but ran out of hops!");
+                return;
+            } 
+            
+            ProxyDescription p = knownProxies.get(target);
+            
+            if (p == null) {
+                logger.debug("Got message for unknown proxy: " + target);
+                return;
+            } 
+                
+            forwardAnyMessage(false, p, source, target, module, code, message, 
+                    hopsLeft);
+        } 
+    }
+        
     protected String getName() { 
         return "ProxyConnection(" + peer.proxyAddress + ")";
     }
@@ -248,6 +290,10 @@ public class ProxyConnection extends MessageForwardingConnection {
 
             case ProxyProtocol.CLIENT_MESSAGE:
                 handleClientMessage();
+                return true;
+            
+            case ProxyProtocol.PROXY_MESSAGE:
+                handleProxyMessage();
                 return true;
                 
             default:
