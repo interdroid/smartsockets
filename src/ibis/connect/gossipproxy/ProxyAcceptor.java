@@ -80,6 +80,8 @@ public class ProxyAcceptor extends CommunicationThread {
     private boolean handleClientConnect(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
 
+        logger.info("Got request for client connect");
+        
         LinkedList skipProxies = new LinkedList();
 
         String clientAsString = in.readUTF();
@@ -87,13 +89,14 @@ public class ProxyAcceptor extends CommunicationThread {
 
         int skipProxiesCount = in.readInt();
 
-        if (skipProxiesCount > 0) {
+        logger.info("Got request to connect " + clientAsString 
+                + " to " + targetAsString + " skipping " + skipProxiesCount + 
+                " proxies");
+        
+        for (int i=0;i<skipProxiesCount;i++) { 
             skipProxies.add(in.readUTF());
         } 
-
-        logger.info("Got request to connect " + clientAsString 
-                + " to " + targetAsString);
-
+        
         ForwarderConnection c = new ForwarderConnection(s, in, out, connections, 
                 knownProxies, clientAsString, targetAsString, number++, 
                 skipProxies);
