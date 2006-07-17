@@ -14,8 +14,9 @@ public class Forwarder implements Runnable {
     private int bytes;    
     
     private final ForwarderDoneCallback cb;
-    private final String label;
     
+    private final String label;
+        
     private boolean done = false;
     
     public Forwarder(InputStream in, OutputStream out) { 

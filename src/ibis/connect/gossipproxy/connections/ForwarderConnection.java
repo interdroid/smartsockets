@@ -36,8 +36,11 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
     private InputStream inB;
     private OutputStream outB;
     
-    private Forwarder forwarder1; // forwards from inA to outB         
+    private Forwarder forwarder1; // forwards from inA to outB
+    private String label1;
+        
     private Forwarder forwarder2; // forwards from inB to outA
+    private String label2;
     
     private LinkedList skipProxies;
     
@@ -67,11 +70,33 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
     public String getName() {
         return "ForwarderConnection(" + id + ")";
     }
-
+   
     public synchronized void done(String label) {
         
         logger.info("Received callback for forwarder " + label);
         
+        // Check which forwarder thread produced the callback. Should be a 
+        // real reference to label, so we don't have to use equals.
+        if (label == label1) {
+            try { 
+                outB.flush();
+                socketB.shutdownOutput();            
+                s.shutdownInput();
+            } catch (Exception e) {
+                logger.warn("Failed to properly shutdown " + label1, e);                    
+            }
+        }
+        
+        if (label == label2) {
+            try { 
+                out.flush();
+                s.shutdownOutput();            
+                socketB.shutdownInput();
+            } catch (Exception e) {
+                logger.warn("Failed to properly shutdown " + label2, e);
+            }
+        }
+                
         if (forwarder1.isDone() && forwarder2.isDone()) {
             logger.info("Removing connection " + id + " since it is done!");
             
@@ -85,10 +110,10 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
     }          
     
     private void startForwarding() { 
-        String label1 = "[" + number + ": " + clientAsString + " --> "
+        label1 = "[" + number + ": " + clientAsString + " --> "
             + targetAsString + "]";
     
-        String label2 = "[" + number + ": " + clientAsString + " <-- "
+        label2 = "[" + number + ": " + clientAsString + " <-- "
             + targetAsString + "]";
             
         // Create the forwarders and start them
