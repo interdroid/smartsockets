@@ -102,25 +102,49 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
     }
     
     
-    private DirectSocket connectToProxy(ProxyDescription p)  { 
+    private boolean connectToProxy(ProxyDescription p)  { 
 
-        DirectSocket result = null;
-        
         logger.info("Attempting to connect to proxy " + p.proxyAddress);
         
         try { 
-            result = factory.createSocket(p.proxyAddress, DEFAULT_TIMEOUT, null);            
+            socketB = factory.createSocket(p.proxyAddress, DEFAULT_TIMEOUT, null);  
+            
+            if (socketB == null) { 
+                logger.info("Failed to connect to proxy " + p.proxyAddress);
+                return false;
+            }     
+            
+            outB = socketB.getOutputStream();            
+            inB = socketB.getInputStream();
+
+            DataOutputStream dout = new DataOutputStream(outB);
+            out.writeByte(ProxyProtocol.PROXY_CLIENT_CONNECT);
+            out.writeUTF(clientAsString);
+            out.writeUTF(targetAsString);
+            out.writeInt(0);
+            out.flush();
+            
+            int result = inB.read();
+            
+            if (result == ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED) { 
+                logger.info("Remote proxy connected to client!");
+                return true;
+            } else { 
+                logger.info("Remote proxy failed to connected to client!");
+            }
+            
         } catch (Exception e) {
             logger.info("Got exception: " + e, e);                
         }
+
+        // We can only end up here if the connection setup failed!
+        DirectSocketFactory.close(socketB, outB, inB);
         
-        if (result == null) { 
-            logger.info("Failed to connect to proxy " + p.proxyAddress);            
-        } else { 
-            logger.info("Succesfully connected to proxy " + p.proxyAddress);
-        }
+        socketB = null;
+        outB = null;
+        inB = null;
         
-        return result;
+        return false;
     }
     
     private boolean connectViaProxy(ProxyDescription p) {                
@@ -133,19 +157,18 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
             // in some way, or if we don't known if it is reachable yet ...             
             if (p.directlyReachable() || !p.reachableKnown()) { 
                 // Create the connection
-                socketB = connectToProxy(p); 
-
-                outB = socketB.getOutputStream();            
-                inB = socketB.getInputStream();
-
-                logger.info("Connection " + id + " created!");
-                        
-                out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
-                out.flush();
+                if (connectToProxy(p)) {  
+                    logger.info("Connection " + id + " created!");
+                    
+                    out.write(ProxyProtocol.REPLY_CLIENT_CONNECTION_ACCEPTED);
+                    out.flush();
     
-                startForwarding();
-                        
-                return true;
+                    startForwarding();                        
+                    return true;
+                } else {
+                    logger.info("Connection setup to " + targetAsString + " failed");
+                    return false;
+                }
             } 
         } catch (Exception e) {
             logger.info("Connection setup to " + targetAsString + " failed", e);            
