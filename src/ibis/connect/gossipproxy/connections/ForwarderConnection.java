@@ -104,15 +104,23 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
     
     private DirectSocket connectToProxy(ProxyDescription p)  { 
 
-        /*
-        if (p.isReachable()) {             
-            factory.createSocket(target, timeout, properties)
-            
-            
-        }*/
-        return null;
+        DirectSocket result = null;
         
+        logger.info("Attempting to connect to proxy " + p.proxyAddress);
         
+        try { 
+            result = factory.createSocket(p.proxyAddress, DEFAULT_TIMEOUT, null);            
+        } catch (Exception e) {
+            logger.info("Got exception: " + e, e);                
+        }
+        
+        if (result == null) { 
+            logger.info("Failed to connect to proxy " + p.proxyAddress);            
+        } else { 
+            logger.info("Succesfully connected to proxy " + p.proxyAddress);
+        }
+        
+        return result;
     }
     
     private boolean connectViaProxy(ProxyDescription p) {                
