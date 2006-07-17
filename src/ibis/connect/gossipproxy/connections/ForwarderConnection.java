@@ -118,11 +118,11 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
             inB = socketB.getInputStream();
 
             DataOutputStream dout = new DataOutputStream(outB);
-            out.writeByte(ProxyProtocol.PROXY_CLIENT_CONNECT);
-            out.writeUTF(clientAsString);
-            out.writeUTF(targetAsString);
-            out.writeInt(0);
-            out.flush();
+            dout.writeByte(ProxyProtocol.PROXY_CLIENT_CONNECT);
+            dout.writeUTF(clientAsString);
+            dout.writeUTF(targetAsString);
+            dout.writeInt(0);
+            dout.flush();
             
             int result = inB.read();
             
