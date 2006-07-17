@@ -1,11 +1,14 @@
 /**
  * 
  */
-package ibis.connect.gossipproxy;
+package ibis.connect.gossipproxy.connections;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.ProxyDescription;
+import ibis.connect.gossipproxy.ProxyList;
+import ibis.connect.gossipproxy.ProxyProtocol;
 import ibis.connect.util.Forwarder;
 import ibis.connect.util.ForwarderDoneCallback;
 
@@ -15,7 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
 
-class ForwarderConnection extends BaseConnection implements ForwarderDoneCallback { 
+public class ForwarderConnection extends BaseConnection implements ForwarderDoneCallback { 
     
     private static final int DEFAULT_TIMEOUT = 10000;
 
@@ -40,7 +43,7 @@ class ForwarderConnection extends BaseConnection implements ForwarderDoneCallbac
     
     private DirectSocketFactory factory;
     
-    ForwarderConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
+    public ForwarderConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
             Connections connections, ProxyList proxies, String clientAsString, 
             String targetAsString, int number, LinkedList skipProxies) { 
        
@@ -61,7 +64,7 @@ class ForwarderConnection extends BaseConnection implements ForwarderDoneCallbac
         return id;         
     }
     
-    protected String getName() {
+    public String getName() {
         return "ForwarderConnection(" + id + ")";
     }
 

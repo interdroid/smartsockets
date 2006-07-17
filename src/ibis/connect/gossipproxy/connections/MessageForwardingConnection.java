@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.gossipproxy.connections;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -6,6 +6,8 @@ import java.util.Iterator;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.ProxyDescription;
+import ibis.connect.gossipproxy.ProxyList;
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 

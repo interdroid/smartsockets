@@ -1,17 +1,18 @@
 package ibis.connect.gossipproxy;
 
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.connections.ProxyConnection;
 
 import java.util.ArrayList;
 
-class ProxyDescription {
+public class ProxyDescription {
         
     // Note: order is important here, we always want the highest possible value!
     static final byte UNKNOWN     = 0;    
     static final byte UNREACHABLE = 1;
     static final byte REACHABLE   = 2;
     
-    final SocketAddressSet proxyAddress;    
+    public final SocketAddressSet proxyAddress;    
     final StateCounter state;        
     final boolean local;
     
@@ -69,7 +70,7 @@ class ProxyDescription {
   //      clients.add(client);
   //  }
 
-    void addClient(String client) {
+    public void addClient(String client) {
         
         synchronized (clients) {
             // TODO optimize!!!
@@ -86,14 +87,14 @@ class ProxyDescription {
         } 
     }
     
-    ArrayList getClients() {         
+    public ArrayList getClients() {         
         synchronized (clients) {
             return new ArrayList(clients);           
         }
     }
     
     
-    synchronized void setContactTimeStamp(boolean connect) { 
+    public synchronized void setContactTimeStamp(boolean connect) { 
         lastContact = System.currentTimeMillis();
         
         if (connect) { 
@@ -101,11 +102,11 @@ class ProxyDescription {
         }
     }
     
-    synchronized long getLastLocalUpdate() { 
+    public synchronized long getLastLocalUpdate() { 
         return lastLocalUpdate;
     }
     
-    synchronized long getLastSendState() { 
+    public synchronized long getLastSendState() { 
         return lastSendState;
     }
 
@@ -117,11 +118,11 @@ class ProxyDescription {
         return lastContact;
     }
             
-    synchronized void setLastSendState() {
+    public synchronized void setLastSendState() {
         lastSendState = state.get();
     }
     
-    synchronized int getHops() { 
+    public synchronized int getHops() { 
         return hops;
     }
     
@@ -147,7 +148,7 @@ class ProxyDescription {
         setContactTimeStamp(true);        
     } 
         
-    synchronized void setCanReachMe() { 
+    public synchronized void setCanReachMe() { 
         
         if (canReachMe != REACHABLE) { 
             canReachMe = REACHABLE;                      
@@ -160,7 +161,7 @@ class ProxyDescription {
         setContactTimeStamp(false);        
     }
     
-    synchronized void setCanNotReachMe() {
+    public synchronized void setCanNotReachMe() {
 
         if (canReachMe != UNREACHABLE) { 
             canReachMe = UNREACHABLE;                      
@@ -170,7 +171,7 @@ class ProxyDescription {
         setContactTimeStamp(false);
     }
     
-    synchronized void addIndirection(SocketAddressSet indirection, int hops) {
+    public synchronized void addIndirection(SocketAddressSet indirection, int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;
@@ -179,7 +180,7 @@ class ProxyDescription {
         } 
     }
     
-    synchronized SocketAddressSet getIndirection() {
+    public synchronized SocketAddressSet getIndirection() {
         return indirection;
     }
         
@@ -187,11 +188,11 @@ class ProxyDescription {
  //       return reachableKnown() && canReachMeKnown();        
  //   }
   
-    synchronized boolean directlyReachable() {
+    public synchronized boolean directlyReachable() {
         return (reachable == REACHABLE || canReachMe == REACHABLE);               
     }
     
-    synchronized boolean reachableKnown() {         
+    public synchronized boolean reachableKnown() {         
         return (reachable != UNKNOWN);        
     }
     
@@ -207,7 +208,7 @@ class ProxyDescription {
         return reachable == REACHABLE;
     }
         
-    synchronized boolean isLocal() { 
+    public synchronized boolean isLocal() { 
         return local;
     }
     

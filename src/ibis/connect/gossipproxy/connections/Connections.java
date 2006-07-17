@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.gossipproxy.connections;
 
 import java.util.HashMap;
 

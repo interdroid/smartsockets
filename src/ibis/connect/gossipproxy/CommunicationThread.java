@@ -2,6 +2,7 @@ package ibis.connect.gossipproxy;
 
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.connections.Connections;
 import ibis.util.GetLogger;
 
 import org.apache.log4j.Logger;

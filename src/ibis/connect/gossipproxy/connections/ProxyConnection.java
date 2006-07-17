@@ -1,8 +1,11 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.gossipproxy.connections;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.ProxyDescription;
+import ibis.connect.gossipproxy.ProxyList;
+import ibis.connect.gossipproxy.ProxyProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,7 +18,7 @@ public class ProxyConnection extends MessageForwardingConnection {
     private final ProxyDescription peer;
     private final ProxyDescription local;    
                       
-    ProxyConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
+    public ProxyConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
             ProxyDescription peer, Connections connections, ProxyList proxies) {
         
         super(s, in, out, connections, proxies);

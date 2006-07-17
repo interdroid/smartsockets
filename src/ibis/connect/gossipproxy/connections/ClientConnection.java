@@ -1,19 +1,19 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.gossipproxy.connections;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
-import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.ProxyList;
+import ibis.connect.gossipproxy.ServiceLinkProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 
 public class ClientConnection extends MessageForwardingConnection {
 
     private final String clientAddress;
     
-    ClientConnection(String clientAddress, DirectSocket s, DataInputStream in, 
+    public ClientConnection(String clientAddress, DirectSocket s, DataInputStream in, 
             DataOutputStream out, Connections connections, ProxyList proxies) {
      
         super(s, in, out, connections, proxies);        

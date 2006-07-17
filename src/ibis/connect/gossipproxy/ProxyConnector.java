@@ -2,6 +2,8 @@ package ibis.connect.gossipproxy;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.gossipproxy.connections.Connections;
+import ibis.connect.gossipproxy.connections.ProxyConnection;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
