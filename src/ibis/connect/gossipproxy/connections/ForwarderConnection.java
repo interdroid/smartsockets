@@ -42,6 +42,8 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
     private Forwarder forwarder2; // forwards from inB to outA
     private String label2;
     
+    private int done = 0;
+    
     private LinkedList skipProxies;
     
     private DirectSocketFactory factory;
@@ -96,8 +98,10 @@ public class ForwarderConnection extends BaseConnection implements ForwarderDone
                 logger.warn("Failed to properly shutdown " + label2, e);
             }
         }
-                
-        if (forwarder1.isDone() && forwarder2.isDone()) {
+    
+        done++; 
+        
+        if (done == 2) { 
             logger.info("Removing connection " + id + " since it is done!");
             
             DirectSocketFactory.close(s, out, in);
