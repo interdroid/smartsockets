@@ -79,6 +79,7 @@ public class Test {
                         // empty string equals disconnect!
                         System.out.println("Client disconnected...");
                         done = true;
+                        DirectSocketFactory.close(s, out, in);
                     }
                 }
                 
