@@ -3,14 +3,12 @@ package test.gossipproxy;
 import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-
 import ibis.connect.gossipproxy.MessageCallback;
 import ibis.connect.gossipproxy.ServiceLink;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.UnknownHostException;
 import java.util.LinkedList;
 
 public class TestServiceLink implements MessageCallback {
@@ -98,7 +96,7 @@ public class TestServiceLink implements MessageCallback {
                 System.out.println(i + ": " + result[i]);
             }
                 
-        } catch (UnknownHostException e) {
+        } catch (IOException e) {
             System.out.println("Failed to retrieve proxy list!" + e);
         }
     }

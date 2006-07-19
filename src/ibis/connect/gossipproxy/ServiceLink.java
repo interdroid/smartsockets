@@ -4,16 +4,14 @@ import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
-public class ServiceLink {
+public class ServiceLink implements Runnable {
     
     private static final int TIMEOUT = 5000;
     
@@ -24,26 +22,17 @@ public class ServiceLink {
         
     private final DirectSocketFactory factory;
     private final SocketAddressSet myAddress; 
-        
-    private DirectSocket proxy;               
+    
+    private boolean connected = false;
+    
+    private SocketAddressSet proxyAddress; 
+    private DirectSocket proxy;
     private DataOutputStream out; 
     private DataInputStream in; 
     
     private int nextCallbackID = 0;    
     private final HashMap callbacks = new HashMap(); 
-    
-    private class Reader extends Thread { 
-        
-        Reader() { 
-            super("ServiceLink Message Reader");
-            setDaemon(true);
-        }
-        
-        public void run() { 
-            receiveMessages();                
-        }        
-    }
-    
+       
     private class SimpleCallBack { 
         
         private boolean haveResult = false;
@@ -69,17 +58,32 @@ public class ServiceLink {
         } 
     }
     
-    private ServiceLink(SocketAddressSet proxy, SocketAddressSet myAddress) 
+    private ServiceLink(SocketAddressSet proxyAddress, SocketAddressSet myAddress) 
         throws IOException { 
         
         factory = DirectSocketFactory.getSocketFactory();
-        this.myAddress = myAddress;
+        
+        this.proxyAddress = proxyAddress;
+        this.myAddress = myAddress;               
                 
-        connectToProxy(proxy);
-        
-        new Reader().start();       
+        Thread t = new Thread(this, "ServiceLink Message Reader");
+        t.setDaemon(true);
+        t.start();
     }
-        
+               
+    private synchronized void setConnected(boolean value) {
+        connected = value;
+    }
+    
+    private synchronized boolean getConnected() {
+        return connected;
+    }
+    
+    private void closeConnection() {
+        setConnected(false);
+        DirectSocketFactory.close(proxy, out, in);                               
+    }
+    
     private void connectToProxy(SocketAddressSet address) throws IOException { 
         try {            
             proxy = factory.createSocket(address, TIMEOUT, null);
@@ -101,12 +105,11 @@ public class ServiceLink {
 
             proxy.setSoTimeout(0);
             
-        } catch (IOException e) {
-            
+            setConnected(true);
+        } catch (IOException e) {            
             logger.warn("Connection setup to proxy at " + address 
-                    + " failed: ", e);
-            
-            DirectSocketFactory.close(proxy, out, in);                    
+                    + " failed: ", e);            
+            closeConnection();
             throw e;
         } 
     }
@@ -183,13 +186,17 @@ public class ServiceLink {
     }
     
     void receiveMessages() { 
-        
-        while (true) { 
+                        
+        while (getConnected()) { 
          
             try { 
                 int header = in.read();
                 
                 switch (header) { 
+                case -1: 
+                    closeConnection();
+                    break;
+                
                 case ServiceLinkProtocol.MESSAGE:
                     handleMessage();
                     break;
@@ -200,12 +207,13 @@ public class ServiceLink {
                     
                 default:                     
                     logger.warn("ServiceLink: Received unknown opcode!");
+                    closeConnection();                
                     break;                    
                 }
                                                                    
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while receiving!", e);
-                // TODO: some form of fault tolerance ??            
+                closeConnection();
             }               
         }               
     }
@@ -213,6 +221,11 @@ public class ServiceLink {
     public synchronized void send(SocketAddressSet target, String targetModule, 
             int opcode, String message) { 
 
+        if (!connected) {
+            logger.info("Cannot send message: not connected to proxy");            
+            return;
+        }
+                
         logger.info("Sending message to proxy: [" + target.toString() + ", " +
                 targetModule + ", " + opcode + ", " + message + "]");
         
@@ -225,7 +238,7 @@ public class ServiceLink {
             out.flush();
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
-            // TODO: some form of fault tolerance ??            
+            closeConnection();
         }        
     }
     
@@ -233,8 +246,13 @@ public class ServiceLink {
         return nextCallbackID++;
     }
                  
-    public String [] clients() {
+    public String [] clients() throws IOException {
         
+        if (!getConnected()) {
+            logger.info("Cannot get clients: not connected to proxy");            
+            throw new IOException("No connection to proxy!");
+        }
+                
         logger.info("Requesting client list from proxy");
     
         String id = "GetAllClients" + getNextSimpleCallbackID();
@@ -250,8 +268,8 @@ public class ServiceLink {
             } 
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
-            // TODO: some form of fault tolerance ??            
-            return null;
+            closeConnection();
+            throw new IOException("Connection to proxy lost!");            
         } finally { 
             removeCallback(id);
         }
@@ -259,8 +277,13 @@ public class ServiceLink {
         return (String []) tmp.getReply();        
     }
     
-    public String [] localClients() {
+    public String [] localClients() throws IOException {
 
+        if (!getConnected()) {
+            logger.info("Cannot get clients: not connected to proxy");            
+            throw new IOException("No connection to proxy!");
+        }
+                
         logger.info("Requesting local client list from proxy");
         
         String id = "GetLocalClients" + getNextSimpleCallbackID();
@@ -276,8 +299,8 @@ public class ServiceLink {
             } 
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
-            // TODO: some form of fault tolerance ??            
-            return null;
+            closeConnection();
+            throw new IOException("Connection to proxy lost!");
         } finally { 
             removeCallback(id);
         }
@@ -285,7 +308,12 @@ public class ServiceLink {
         return (String []) tmp.getReply();        
     }
     
-    public synchronized SocketAddressSet [] proxies() throws UnknownHostException {
+    public synchronized SocketAddressSet [] proxies() throws IOException {
+        
+        if (!getConnected()) {
+            logger.info("Cannot get list of proxies: not connected to proxy");            
+            throw new IOException("No connection to proxy!");
+        }        
         
         logger.info("Requesting proxy list from proxy");
         
@@ -302,8 +330,8 @@ public class ServiceLink {
             } 
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
-            // TODO: some form of fault tolerance ??            
-            return null;
+            closeConnection();
+            throw new IOException("Connection to proxy lost!");
         } finally { 
             removeCallback(id);
         }
@@ -325,5 +353,27 @@ public class ServiceLink {
         }
         
         return serviceLink;
+    }
+
+    public void run() {
+        
+        // Connect to the proxy and processes the messages it gets. When the 
+        // connection is lost, it will try to reconnect.         
+        while (true) { 
+            do {            
+                try { 
+                    connectToProxy(proxyAddress);
+                } catch (IOException e) {
+                    try { 
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        // ignore
+                    }
+                }
+            } while (!connected);
+            
+            receiveMessages();
+        }
+        
     }
 }
