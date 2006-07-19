@@ -269,7 +269,9 @@ public class ServiceLink implements Runnable {
                 out.write(ServiceLinkProtocol.CLIENTS);
                 out.writeUTF(id);
                 out.flush();            
-            } 
+            }
+            
+            return (String []) tmp.getReply();        
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
             closeConnection();
@@ -277,8 +279,6 @@ public class ServiceLink implements Runnable {
         } finally { 
             removeCallback(id);
         }
-
-        return (String []) tmp.getReply();        
     }
     
     public String [] localClients() throws IOException {
@@ -299,8 +299,10 @@ public class ServiceLink implements Runnable {
             synchronized (this) {         
                 out.write(ServiceLinkProtocol.LOCAL_CLIENTS);
                 out.writeUTF(id);
-                out.flush();            
+                out.flush();                                
             } 
+            
+            return (String []) tmp.getReply();            
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
             closeConnection();
@@ -308,8 +310,6 @@ public class ServiceLink implements Runnable {
         } finally { 
             removeCallback(id);
         }
-
-        return (String []) tmp.getReply();        
     }
     
     public SocketAddressSet [] proxies() throws IOException {
@@ -332,6 +332,10 @@ public class ServiceLink implements Runnable {
                 out.writeUTF(id);
                 out.flush();            
             } 
+            
+            String [] reply = (String []) tmp.getReply();        
+            return SocketAddressSet.convertToSocketAddressSet(reply);        
+                        
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to proxy!", e);
             closeConnection();
@@ -339,9 +343,6 @@ public class ServiceLink implements Runnable {
         } finally { 
             removeCallback(id);
         }
-
-        String [] reply = (String []) tmp.getReply();        
-        return SocketAddressSet.convertToSocketAddressSet(reply);        
     }
                 
     public static ServiceLink getServiceLink(SocketAddressSet address, 
