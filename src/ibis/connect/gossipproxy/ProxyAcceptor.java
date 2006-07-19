@@ -135,7 +135,7 @@ public class ProxyAcceptor extends CommunicationThread {
 
         try { 
             String src = in.readUTF();
-
+            
             if (connections.getConnection(src) != null) { 
                 if (logger.isDebugEnabled()) { 
                     logger.debug("Incoming connection from " + src + 
@@ -149,8 +149,7 @@ public class ProxyAcceptor extends CommunicationThread {
             }
 
             if (logger.isDebugEnabled()) { 
-                logger.debug("Incoming connection from " + src 
-                        + " accepted"); 
+                logger.debug("Incoming connection from " + src + " accepted"); 
             } 
 
             out.write(ProxyProtocol.REPLY_SERVICELINK_ACCEPTED);

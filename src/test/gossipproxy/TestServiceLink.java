@@ -160,7 +160,7 @@ public class TestServiceLink implements MessageCallback {
                     send(line.substring(5).trim());
                 } else if (line.startsWith("proxies")) {
                     proxies();
-                } else if (line.startsWith("all clients")) {
+                } else if (line.startsWith("clients")) {
                     allClients();                
                 } else if (line.startsWith("local clients")) {
                     localClients();                                

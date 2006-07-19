@@ -262,8 +262,10 @@ public class ProxyConnection extends MessageForwardingConnection {
             
             if (p == null) {
                 logger.debug("Got message for unknown proxy: " + target);
-                logger.debug("[" + source + ", " + target + ", " + module + ", "
-                        + code + ", " + message + ", " + hopsLeft + "]");               
+                logger.debug("[" + source + ", " 
+                        + target + ", " + module + ", " + code + ", " + message 
+                        + ", " + hopsLeft + "]");
+               
                 return;
             } 
                 

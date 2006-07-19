@@ -58,14 +58,14 @@ public class ServiceLink implements Runnable {
         } 
     }
     
-    private ServiceLink(SocketAddressSet proxyAddress, SocketAddressSet myAddress) 
-        throws IOException { 
+    private ServiceLink(SocketAddressSet proxyAddress, 
+            SocketAddressSet myAddress) throws IOException { 
         
         factory = DirectSocketFactory.getSocketFactory();
         
         this.proxyAddress = proxyAddress;
-        this.myAddress = myAddress;               
-                
+        this.myAddress = myAddress;              
+               
         Thread t = new Thread(this, "ServiceLink Message Reader");
         t.setDaemon(true);
         t.start();
@@ -92,7 +92,7 @@ public class ServiceLink implements Runnable {
             in = new DataInputStream(proxy.getInputStream());
                            
             out.write(ProxyProtocol.PROXY_SERVICELINK_CONNECT);
-            out.writeUTF(myAddress.toString());        
+            out.writeUTF(myAddress.toString());
             out.flush();
                 
             int reply = in.read();
