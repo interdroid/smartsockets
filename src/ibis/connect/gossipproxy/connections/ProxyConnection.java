@@ -157,60 +157,7 @@ public class ProxyConnection extends MessageForwardingConnection {
         logger.debug("Got ping from " + peer.proxyAddress);
         peer.setContactTimeStamp(false);
     }
-    /*
-    private boolean forwardMessage(String proxy, String src, String target, 
-            String module, int code, String message, int hopsLeft) {
-
-        BaseConnection c = connections.getConnection(proxy); 
-        
-        if (c != null && c instanceof ProxyConnection) {             
-            ProxyConnection tmp = (ProxyConnection) c;            
-            tmp.writeMessage(src, target, module, code, message, hopsLeft);
-            return true;
-        }   
-
-        return false;
-    }
-    
-    private void forwardMessage(ProxyDescription p, String src, String target, 
-            String module, int code, String message, int hopsLeft) {
-        
-        logger.info("Attempting to forward message to proxy "
-                + p.proxyAddress);
-        
-        String proxy = p.proxyAddress.toString();
-        
-        if (forwardMessage(proxy, src, target, module, code, message, hopsLeft)) { 
-            logger.info("Succesfully forwarded message to proxy " 
-                    + proxy + " using direct link");
-            return;            
-        } 
-         
-        logger.info("Failed to forward message to proxy " + proxy 
-                + " using direct link, using indirection");
-        
-        // We don't have a direct connection, but we should be able to reach the
-        // proxy indirectly
-        SocketAddressSet addr = p.getIndirection();
-            
-        if (addr == null) {
-            // Oh dear, we don't have an indirection!
-            logger.warn("Indirection address of " + proxy + " is null!");
-            return;
-        } 
-        
-        String proxy2 = addr.toString();
-        
-        if (forwardMessage(proxy2, src, target, module, code, message, hopsLeft)) { 
-            logger.info("Succesfully forwarded message to proxy " 
-                    + proxy2 + " using direct link");
-            return;            
-        } 
-
-        logger.info("Failed to forward message to proxy " + proxy 
-                + " or it's indirection " + proxy2);
-    }
-    */
+  
     private void handleClientMessage() throws IOException {
         
         String source = in.readUTF();
@@ -241,6 +188,10 @@ public class ProxyConnection extends MessageForwardingConnection {
                 + ", " + hopsLeft + "]");
        */        
         if (local.proxyAddressAsString.equals(target)) { 
+            
+            
+            
+            
             // deliver message locally
             logger.debug("This message should be delivered locally:");
             logger.debug("[" + source + ", " + target + ", " + module + ", " 
