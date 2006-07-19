@@ -62,6 +62,8 @@ public class ClientConnection extends MessageForwardingConnection {
         
         String id = in.readUTF();
         
+        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        
         String [] proxies = knownProxies.proxiesAsString();
 
         out.write(ServiceLinkProtocol.INFO);           

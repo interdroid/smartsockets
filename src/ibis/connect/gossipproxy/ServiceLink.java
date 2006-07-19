@@ -168,14 +168,18 @@ public class ServiceLink implements Runnable {
         String targetID = in.readUTF();        
         int count = in.readInt();        
         
-        logger.info("ServiceLink: Received info for " + targetID);
+        logger.info("ServiceLink: Received info for " + targetID + ". " 
+                + " Receiving " + count + " strings....");
         
         String [] info = new String[count];
         
         for (int i=0;i<count;i++) { 
             info[i] = in.readUTF();
+            logger.info(i + ": " + info[i]);
         }        
-                        
+
+        logger.info("done receiving info");
+        
         SimpleCallBack target = (SimpleCallBack) findCallback(targetID);
             
         if (target == null) { 
