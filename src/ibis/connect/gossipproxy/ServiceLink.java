@@ -312,7 +312,7 @@ public class ServiceLink implements Runnable {
         return (String []) tmp.getReply();        
     }
     
-    public synchronized SocketAddressSet [] proxies() throws IOException {
+    public SocketAddressSet [] proxies() throws IOException {
         
         if (!getConnected()) {
             logger.info("Cannot get list of proxies: not connected to proxy");            
