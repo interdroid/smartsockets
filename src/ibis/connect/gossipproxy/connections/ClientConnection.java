@@ -80,6 +80,8 @@ public class ClientConnection extends MessageForwardingConnection {
     private void localClients() throws IOException { 
         String id = in.readUTF();
         
+        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        
         String [] clients = knownProxies.localClientsAsString();
 
         out.write(ServiceLinkProtocol.INFO);           
@@ -96,21 +98,27 @@ public class ClientConnection extends MessageForwardingConnection {
     private void clients() throws IOException { 
         String id = in.readUTF();
         
+        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        
         String [] clients = knownProxies.clientsAsString();
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(clients.length);
 
-        for (int i=0;i<clients.length;i++) { 
+        logger.debug("Connection " + clientAddress + " returning : " 
+                + clients.length + " clients");         
+        
+        for (int i=0;i<clients.length;i++) {
+            
+            logger.debug(i + " " + clients[i]);                 
+            
             out.writeUTF(clients[i]);
         } 
             
         out.flush();        
 
     } 
-    
-    
     
     protected String getName() {
         return "ServiceLink(" + clientAddress + ")";

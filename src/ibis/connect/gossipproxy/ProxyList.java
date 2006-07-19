@@ -275,7 +275,7 @@ public class ProxyList {
         
         while (itt.hasNext()) { 
             ProxyDescription tmp = (ProxyDescription) itt.next();           
-            result.add(tmp.getClients());
+            result.addAll(tmp.getClients());
         }
         
         return (String []) result.toArray(new String[result.size()]);
