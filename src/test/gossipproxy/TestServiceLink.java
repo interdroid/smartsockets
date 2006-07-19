@@ -10,6 +10,7 @@ import ibis.connect.gossipproxy.ServiceLink;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 
 public class TestServiceLink implements MessageCallback {
@@ -47,7 +48,7 @@ public class TestServiceLink implements MessageCallback {
             System.exit(1);
         }
         
-        serviceLink.register("TEST", this);
+        serviceLink.registerCallback("TEST", this);
     }
     
     public void gotMessage(SocketAddressSet src, int opcode, String message) {
@@ -85,7 +86,55 @@ public class TestServiceLink implements MessageCallback {
             System.out.println("Failed to parse target address!" + e);
         }           
     }
-       
+    
+    private void proxies() { 
+        
+        try {
+            SocketAddressSet [] result = serviceLink.proxies();
+        
+            System.out.println("Known proxies:" + result.length);
+            
+            for (int i=0;i<result.length;i++) { 
+                System.out.println(i + ": " + result[i]);
+            }
+                
+        } catch (UnknownHostException e) {
+            System.out.println("Failed to retrieve proxy list!" + e);
+        }
+    }
+
+    private void allClients() { 
+        
+        try {
+            String [] result = serviceLink.clients();
+        
+            System.out.println("Known clients:" + result.length);
+            
+            for (int i=0;i<result.length;i++) { 
+                System.out.println(i + ": " + result[i]);
+            }
+                
+        } catch (Exception e) {
+            System.out.println("Failed to retrieve client list!" + e);
+        }
+    }
+
+    private void localClients() { 
+        
+        try {
+            String [] result = serviceLink.localClients();
+        
+            System.out.println("Clients sharing proxy:" + result.length);
+            
+            for (int i=0;i<result.length;i++) { 
+                System.out.println(i + ": " + result[i]);
+            }
+                
+        } catch (Exception e) {
+            System.out.println("Failed to retrieve local client list!" + e);
+        }
+    }
+    
     private void usage() {         
         System.out.println("help                - this help");
         System.out.println("send <target> <txt> - send text <txt> to <target>");        
@@ -111,6 +160,12 @@ public class TestServiceLink implements MessageCallback {
                     usage();
                 } else if (line.startsWith("send ")) {
                     send(line.substring(5).trim());
+                } else if (line.startsWith("proxies")) {
+                    proxies();
+                } else if (line.startsWith("all clients")) {
+                    allClients();                
+                } else if (line.startsWith("local clients")) {
+                    localClients();                                
                 } else if (line.startsWith("exit")) {                    
                     done = true;
                 } else {

@@ -333,4 +333,81 @@ public class SocketAddressSet extends SocketAddress {
         
         return new SocketAddressSet(as, sa);
     } 
+    
+    /**
+     * Converts an array of SocketAddressSets to a String array.
+     * 
+     * @param s the array of {@link SocketAddressSet}
+     * @return a new String array containing the {@link String} representations 
+     * of the {@link SocketAddressSet}s, or <code>null</code> if 
+     * s was <code>null</code> 
+     */
+    public static String [] convertToStrings(SocketAddressSet [] s) {
+
+        if (s == null) { 
+            return null;
+        }
+        
+        String [] result = new String[s.length];
+        
+        for (int i=0;i<s.length;i++) {            
+            if (s[i] != null) {             
+                result[i] = s[i].toString();
+            }
+        }
+        
+        return result;
+    } 
+
+    /**
+     * Converts an array of Strings into an array of SocketAddressSets.  
+     * 
+     * @param s the array of {@link String} to convert
+     * @param ignoreProblems indicates if conversion problems should be silently 
+     * ignored. 
+     * @return a new array containing the {@link SocketAddressSet}s 
+     * or <code>null</code> if s was <code>null</code> 
+     * @throws UnknownHostException when any of the Strings cannot be converted 
+     * and ignoreProblems is false 
+     */
+    public static SocketAddressSet [] convertToSocketAddressSet(String [] s, 
+            boolean ignoreProblems) throws UnknownHostException {
+
+        if (s == null) { 
+            return null;
+        }
+        
+        SocketAddressSet [] result = new SocketAddressSet[s.length];
+        
+        for (int i=0;i<s.length;i++) {            
+            if (s[i] != null) { 
+                if (ignoreProblems) {                 
+                    try {                   
+                        result[i] = new SocketAddressSet(s[i]);
+                    } catch (UnknownHostException e) {
+                        // ignore
+                    }
+                } else { 
+                    result[i] = new SocketAddressSet(s[i]);
+                } 
+            }
+        }
+        
+        return result;
+    } 
+
+    /**
+     * Converts an array of Strings into an array of SocketAddressSets.  
+     * 
+     * @param s the array of {@link String} to convert
+     * @return a new array containing the {@link SocketAddressSet}s 
+     * or <code>null</code> if s was <code>null</code> 
+     * @throws UnknownHostException when any of the Strings cannot be converted 
+     */
+    public static SocketAddressSet [] convertToSocketAddressSet(String [] s) 
+        throws UnknownHostException {
+        return convertToSocketAddressSet(s, false);
+    } 
+
+    
 }

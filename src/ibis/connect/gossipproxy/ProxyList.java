@@ -3,12 +3,16 @@ package ibis.connect.gossipproxy;
 import ibis.connect.direct.SocketAddressSet;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
+
+import sun.security.krb5.internal.p;
 
 public class ProxyList {
         
@@ -245,85 +249,39 @@ public class ProxyList {
         
         return result;
     }
-    
-    /*
-    private boolean sendMessage(ProxyDescription proxy, String src, 
-            String target, String module, int code, String message) {
+               
+    public synchronized String [] proxiesAsString() {
         
-        logger.info("Attempting to forward message to proxy " 
-                + proxy.proxyAddress);
+        int proxies = map.size();
         
-        ProxyConnection conn = proxy.getConnection();
-
-        if (conn != null) {
-            // We have a direct connection, so forward the message 
-            conn.writeMessage(src, target, module, code, message);
-            
-            logger.info("Succesfully forwarded message to proxy " 
-                    + proxy.proxyAddress + " using direct link");
-                        
-            return true;
-        } 
-
-        logger.info("Failed to forward message to proxy " 
-                + proxy.proxyAddress + " using direct link, using indirection");
-        
-        // We don't have a direct connection, but we should be able to reach the
-        // proxy indirectly
-        SocketAddressSet addr = proxy.getIndirection();
-            
-        if (addr == null) {
-            // Oh dear, we don't have an indirection!
-            logger.warn("Indirection address of " + proxy.proxyAddress 
-                    + " is null!");
-            return false;
-        } 
-        
-        ProxyDescription proxy2 = get(addr);
-        
-        if (proxy2 == null) {
-            // Oh dear, we don't know the proxy to indirect to!
-            logger.warn("No proxy description found for indirection " + addr 
-                    + " to proxy " + proxy.proxyAddress);  
-            return false;
-        } 
-
-        // Get the connection to the indirection
-        conn = proxy2.getConnection();
-
-        if (conn == null) {            
-            // Oh dear, we are not connected to the indirection!
-            logger.warn("No connection found in proxy description for " +
-                    "indirection " + addr + " to proxy " + proxy.proxyAddress);  
-            return false;
-        } 
-          
-        // We have a direct connection, so forward the message 
-        conn.writeMessage(src, target, module, code, message);
-        return true;
-    }
-        
-    public synchronized boolean forwardMessage(String src, String target, 
-            String module, int code, String message) { 
-    
-        boolean result = false;
+        String [] result = new String[proxies]; 
         
         Iterator itt = map.values().iterator();
         
+        for (int i=0;i<proxies;i++) { 
+            result[i] = ((ProxyDescription) itt.next()).proxyAddressAsString;                                               
+        }
+
+        return result;
+    }
+
+    public synchronized String[] localClientsAsString() {       
+        ArrayList tmp = localDescription.getClients();      
+        return (String []) tmp.toArray(new String[tmp.size()]);
+    }
+
+    public synchronized String[] clientsAsString() {
+        
+        TreeSet result = new TreeSet();        
+        Iterator itt = map.values().iterator();
+        
         while (itt.hasNext()) { 
-            
-            ProxyDescription tmp = (ProxyDescription) itt.next();
-            
-            if (tmp != localDescription && tmp.containsClient(target)) {                
-                // This proxy claims it knows the target!
-                boolean r = sendMessage(tmp, src, target, module, code, message);
-                result |= r;
-            } 
+            ProxyDescription tmp = (ProxyDescription) itt.next();           
+            result.add(tmp.getClients());
         }
         
-        return result;   
-    } 
-    */
+        return (String []) result.toArray(new String[result.size()]);
+    }
     
     public String toString() {
         
@@ -338,5 +296,4 @@ public class ProxyList {
         
         return result.toString();
     }
-    
 }

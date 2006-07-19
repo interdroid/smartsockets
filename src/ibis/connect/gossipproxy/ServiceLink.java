@@ -8,6 +8,7 @@ import ibis.connect.direct.SocketAddressSet;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 
 import org.apache.log4j.Logger;
@@ -28,6 +29,7 @@ public class ServiceLink {
     private DataOutputStream out; 
     private DataInputStream in; 
     
+    private int nextCallbackID = 0;    
     private final HashMap callbacks = new HashMap(); 
     
     private class Reader extends Thread { 
@@ -41,7 +43,32 @@ public class ServiceLink {
             receiveMessages();                
         }        
     }
-          
+    
+    private class SimpleCallBack { 
+        
+        private boolean haveResult = false;
+        private Object result; 
+        
+        synchronized Object getReply() {
+            
+            while (!haveResult) { 
+                try { 
+                    wait();
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+            
+            return result;
+        } 
+            
+        synchronized void storeReply(Object result) {            
+            this.result = result;
+            haveResult = true;
+            notifyAll();
+        } 
+    }
+    
     private ServiceLink(SocketAddressSet proxy, SocketAddressSet myAddress) 
         throws IOException { 
         
@@ -84,7 +111,7 @@ public class ServiceLink {
         } 
     }
        
-    public synchronized void register(String identifier, MessageCallback callback) { 
+    public synchronized void registerCallback(String identifier, MessageCallback cb) { 
     
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override callback " 
@@ -92,13 +119,69 @@ public class ServiceLink {
             return;
         }
         
-        callbacks.put(identifier, callback);        
+        callbacks.put(identifier, cb);        
     }
     
-    private synchronized MessageCallback getCallBack(String identifier) {         
-        return (MessageCallback) callbacks.get(identifier);        
+    private synchronized void registerCallback(String identifier, SimpleCallBack cb) { 
+        
+        if (callbacks.containsKey(identifier)) { 
+            logger.warn("ServiceLink: refusing to override callback " 
+                    + identifier);
+            return;
+        }
+        
+        callbacks.put(identifier, cb);        
     }
         
+    private synchronized Object findCallback(String identifier) {         
+        return callbacks.get(identifier);        
+    }
+    
+    public synchronized void removeCallback(String identifier) {         
+        callbacks.remove(identifier);        
+    }
+        
+    private void handleMessage() throws IOException { 
+        
+        String source = in.readUTF();
+        String targetID = in.readUTF();
+        int opcode = in.readInt();
+        String message = in.readUTF();
+            
+        logger.info("ServiceLink: Received message for " + targetID);
+                        
+        MessageCallback target = (MessageCallback) findCallback(targetID);
+            
+        if (target == null) { 
+            logger.warn("ServiceLink: Callback " + targetID + " not found");                                       
+        } else { 
+            SocketAddressSet src = new SocketAddressSet(source);
+            target.gotMessage(src, opcode, message);
+        } 
+    }
+
+    private void handleInfo() throws IOException { 
+        
+        String targetID = in.readUTF();        
+        int count = in.readInt();        
+        
+        logger.info("ServiceLink: Received info for " + targetID);
+        
+        String [] info = new String[count];
+        
+        for (int i=0;i<count;i++) { 
+            info[i] = in.readUTF();
+        }        
+                        
+        SimpleCallBack target = (SimpleCallBack) findCallback(targetID);
+            
+        if (target == null) { 
+            logger.warn("ServiceLink: Callback " + targetID + " not found");                                       
+        } else {             
+            target.storeReply(info);
+        } 
+    }
+    
     void receiveMessages() { 
         
         while (true) { 
@@ -106,28 +189,20 @@ public class ServiceLink {
             try { 
                 int header = in.read();
                 
-                if (header != ServiceLinkProtocol.MESSAGE) {
-                    logger.warn("ServiceLink: Received unknown opcode!");
+                switch (header) { 
+                case ServiceLinkProtocol.MESSAGE:
+                    handleMessage();
                     break;
-                } 
                     
-                String source = in.readUTF();
-                String targetID = in.readUTF();
-                int opcode = in.readInt();
-                String message = in.readUTF();
+                case ServiceLinkProtocol.INFO:
+                    handleInfo();
+                    break;
                     
-                logger.info("ServiceLink: Received message for " + targetID);
-                                
-                MessageCallback target = getCallBack(targetID);
-                    
-                if (target == null) { 
-                    logger.warn("ServiceLink: Callback " + targetID 
-                            + " not found");                                       
-                } else { 
-                    SocketAddressSet src = new SocketAddressSet(source);
-                    target.gotMessage(src, opcode, message);
-                } 
-                    
+                default:                     
+                    logger.warn("ServiceLink: Received unknown opcode!");
+                    break;                    
+                }
+                                                                   
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while receiving!", e);
                 // TODO: some form of fault tolerance ??            
@@ -153,7 +228,90 @@ public class ServiceLink {
             // TODO: some form of fault tolerance ??            
         }        
     }
-           
+    
+    private synchronized int getNextSimpleCallbackID() { 
+        return nextCallbackID++;
+    }
+                 
+    public String [] clients() {
+        
+        logger.info("Requesting client list from proxy");
+    
+        String id = "GetAllClients" + getNextSimpleCallbackID();
+                
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.CLIENTS);
+                out.writeUTF(id);
+                out.flush();            
+            } 
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            // TODO: some form of fault tolerance ??            
+            return null;
+        } finally { 
+            removeCallback(id);
+        }
+
+        return (String []) tmp.getReply();        
+    }
+    
+    public String [] localClients() {
+
+        logger.info("Requesting local client list from proxy");
+        
+        String id = "GetLocalClients" + getNextSimpleCallbackID();
+                
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.LOCAL_CLIENTS);
+                out.writeUTF(id);
+                out.flush();            
+            } 
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            // TODO: some form of fault tolerance ??            
+            return null;
+        } finally { 
+            removeCallback(id);
+        }
+
+        return (String []) tmp.getReply();        
+    }
+    
+    public synchronized SocketAddressSet [] proxies() throws UnknownHostException {
+        
+        logger.info("Requesting proxy list from proxy");
+        
+        String id = "GetProxies" + getNextSimpleCallbackID();
+                
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.PROXIES);
+                out.writeUTF(id);
+                out.flush();            
+            } 
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            // TODO: some form of fault tolerance ??            
+            return null;
+        } finally { 
+            removeCallback(id);
+        }
+
+        String [] reply = (String []) tmp.getReply();        
+        return SocketAddressSet.convertToSocketAddressSet(reply);        
+    }
+                
     public static ServiceLink getServiceLink(SocketAddressSet address, 
             SocketAddressSet myAddress) { 
         
