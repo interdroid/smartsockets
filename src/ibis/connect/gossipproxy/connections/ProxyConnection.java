@@ -235,20 +235,26 @@ public class ProxyConnection extends MessageForwardingConnection {
         int code = in.readInt();
         String message = in.readUTF();
         int hopsLeft = in.readInt();
-        
+      /*  
         logger.debug("Got message [" + source + ", " 
                 + target + ", " + module + ", " + code + ", " + message 
                 + ", " + hopsLeft + "]");
-               
+       */        
         if (local.proxyAddressAsString.equals(target)) { 
             // deliver message locally
-            logger.debug("Message should be delivered locally!");            
+            logger.debug("This message should be delivered locally:");
+            logger.debug("[" + source + ", " + target + ", " + module + ", " 
+                    + code + ", " + message + ", " + hopsLeft + "]");
+           
         } else { 
             // forward message to other proxies
             hopsLeft--;
             
             if (hopsLeft == 0) { 
-                logger.debug("Message should be forwarded, but ran out of hops!");
+                logger.debug("This message should be forwarded, but ran out of hops!");
+                logger.debug("[" + source + ", " + target + ", " + module + ", "
+                        + code + ", " + message + ", " + hopsLeft + "]");
+               
                 return;
             } 
             
@@ -256,6 +262,8 @@ public class ProxyConnection extends MessageForwardingConnection {
             
             if (p == null) {
                 logger.debug("Got message for unknown proxy: " + target);
+                logger.debug("[" + source + ", " + target + ", " + module + ", "
+                        + code + ", " + message + ", " + hopsLeft + "]");               
                 return;
             } 
                 
