@@ -7,6 +7,8 @@ public interface ServiceLinkProtocol {
     public final byte PROXIES          = 3;
     public final byte LOCAL_CLIENTS    = 4;
     public final byte CLIENTS          = 5;
+    public final byte DIRECTION        = 6;
     
-    public final byte INFO             = 6;
+    public final byte INFO             = 99;
+    
 }

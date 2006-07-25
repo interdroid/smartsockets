@@ -1,11 +1,12 @@
 package ibis.connect.virtual;
 
-import ibis.connect.controlhub.ServiceLink;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.ServiceLinkImpl;
 import ibis.connect.virtual.modules.ConnectModule;
 import ibis.connect.virtual.modules.direct.Direct;
 import ibis.connect.virtual.modules.reverse.Reverse;
 import ibis.connect.virtual.modules.routed.Routed;
+import ibis.connect.virtual.service.ServiceLink;
 import ibis.util.TypedProperties;
 
 import java.io.IOException;
@@ -73,7 +74,7 @@ public class VirtualSocketFactory {
         
         try { 
             SocketAddressSet address = new SocketAddressSet(host);            
-            serviceLink = ServiceLink.getServiceLink(address, myAddresses);                 
+            serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses);                 
         } catch (Exception e) {
             logger.warn("ServiceLink: Failed to connect to hub!", e);
             return;
@@ -328,6 +329,10 @@ public class VirtualSocketFactory {
         
         // TODO: REMOVE this at some point ?
         throw new RuntimeException("createBrokeredSocket not implemented");
+    }
+
+    public ServiceLink getServiceLink() { 
+        return serviceLink;        
     }
     
     public SocketAddressSet getLocalHost() { 

@@ -246,20 +246,14 @@ public class ForwarderConnection extends BaseConnection
 
         // If neither a direct or reverse connection was possible, we try an 
         // indirect connection, but only if we are allowed to do so... 
-        if (allowIndirection) { 
-            SocketAddressSet indirection = p.getIndirection();
+        if (allowIndirection) {
+            ProxyDescription indirection = p.getIndirection();
         
             if (indirection == null) { 
                 return false;
             }
             
-            ProxyDescription p2 = knownProxies.get(indirection);
-            
-            if (p2 == null) { 
-                return false;                
-            }
-            
-            return connectViaProxy(p2, currentHops, false);                        
+            return connectViaProxy(indirection, currentHops, false);                        
         }
         
         return false;

@@ -142,7 +142,7 @@ public class ProxyConnection extends MessageForwardingConnection {
             // We got information about a 'third party'.              
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
-                tmp.addIndirection(peer.proxyAddress, hops+1);
+                tmp.addIndirection(peer, hops+1);
             } 
             
             for (int i=0;i<clients;i++) { 

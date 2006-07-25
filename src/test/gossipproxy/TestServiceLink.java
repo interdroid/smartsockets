@@ -3,15 +3,18 @@ package test.gossipproxy;
 import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.MessageCallback;
-import ibis.connect.gossipproxy.ServiceLink;
+
+import ibis.connect.gossipproxy.ServiceLinkImpl;
+
+import ibis.connect.virtual.service.ServiceLink;
+import ibis.connect.virtual.service.CallBack;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 
-public class TestServiceLink implements MessageCallback {
+public class TestServiceLink implements CallBack {
     
     private static final int DEFAULT_PORT = 14567;
     
@@ -32,7 +35,7 @@ public class TestServiceLink implements MessageCallback {
         ss = factory.createServerSocket(port, 10, null);        
         
         while (proxies.size() > 0) {
-            serviceLink = ServiceLink.getServiceLink(
+            serviceLink = ServiceLinkImpl.getServiceLink(
                     (SocketAddressSet) proxies.removeFirst(), 
                     ss.getAddressSet());
             
@@ -46,7 +49,7 @@ public class TestServiceLink implements MessageCallback {
             System.exit(1);
         }
         
-        serviceLink.registerCallback("TEST", this);
+        serviceLink.register("TEST", this);
     }
     
     public void gotMessage(SocketAddressSet src, int opcode, String message) {

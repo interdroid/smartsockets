@@ -135,6 +135,7 @@ public class ProxyAcceptor extends CommunicationThread {
 
         try { 
             String src = in.readUTF();
+            String tag = in.readUTF();
             
             if (connections.getConnection(src) != null) { 
                 if (logger.isDebugEnabled()) { 

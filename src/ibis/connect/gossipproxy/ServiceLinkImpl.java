@@ -4,6 +4,10 @@ import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 
+import ibis.connect.virtual.service.ServiceLink;
+import ibis.connect.virtual.service.CallBack;
+import ibis.connect.virtual.service.SimpleCallBack;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,17 +15,18 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
-public class ServiceLink implements Runnable {
+public class ServiceLinkImpl extends ServiceLink implements Runnable {
     
     private static final int TIMEOUT = 5000;
     
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger(ServiceLink.class.getName());
+        ibis.util.GetLogger.getLogger(ServiceLinkImpl.class.getName());
     
-    private static ServiceLink serviceLink;
+    private static ServiceLinkImpl serviceLink;
         
     private final DirectSocketFactory factory;
     private final SocketAddressSet myAddress; 
+    private final String tag;
     
     private boolean connected = false;
     
@@ -31,40 +36,17 @@ public class ServiceLink implements Runnable {
     private DataInputStream in; 
     
     private int nextCallbackID = 0;    
-    private final HashMap callbacks = new HashMap(); 
        
-    private class SimpleCallBack { 
-        
-        private boolean haveResult = false;
-        private Object result; 
-        
-        synchronized Object getReply() {
-            
-            while (!haveResult) { 
-                try { 
-                    wait();
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-            }
-            
-            return result;
-        } 
-            
-        synchronized void storeReply(Object result) {            
-            this.result = result;
-            haveResult = true;
-            notifyAll();
-        } 
-    }
+   
     
-    private ServiceLink(SocketAddressSet proxyAddress, 
-            SocketAddressSet myAddress) throws IOException { 
+    private ServiceLinkImpl(SocketAddressSet proxyAddress, 
+            SocketAddressSet myAddress, String tag) throws IOException { 
         
         factory = DirectSocketFactory.getSocketFactory();
         
         this.proxyAddress = proxyAddress;
         this.myAddress = myAddress;              
+        this.tag = tag;
                
         Thread t = new Thread(this, "ServiceLink Message Reader");
         t.setDaemon(true);
@@ -93,6 +75,7 @@ public class ServiceLink implements Runnable {
                            
             out.write(ProxyProtocol.PROXY_SERVICELINK_CONNECT);
             out.writeUTF(myAddress.toString());
+            out.writeUTF(tag);
             out.flush();
                 
             int reply = in.read();
@@ -113,37 +96,9 @@ public class ServiceLink implements Runnable {
             throw e;
         } 
     }
-       
-    public synchronized void registerCallback(String identifier, MessageCallback cb) { 
+              
     
-        if (callbacks.containsKey(identifier)) { 
-            logger.warn("ServiceLink: refusing to override callback " 
-                    + identifier);
-            return;
-        }
-        
-        callbacks.put(identifier, cb);        
-    }
-    
-    private synchronized void registerCallback(String identifier, SimpleCallBack cb) { 
-        
-        if (callbacks.containsKey(identifier)) { 
-            logger.warn("ServiceLink: refusing to override callback " 
-                    + identifier);
-            return;
-        }
-        
-        callbacks.put(identifier, cb);        
-    }
-        
-    private synchronized Object findCallback(String identifier) {         
-        return callbacks.get(identifier);        
-    }
-    
-    public synchronized void removeCallback(String identifier) {         
-        callbacks.remove(identifier);        
-    }
-        
+         
     private void handleMessage() throws IOException { 
         
         String source = in.readUTF();
@@ -153,7 +108,7 @@ public class ServiceLink implements Runnable {
             
         logger.info("ServiceLink: Received message for " + targetID);
                         
-        MessageCallback target = (MessageCallback) findCallback(targetID);
+        CallBack target = (CallBack) findCallback(targetID);
             
         if (target == null) { 
             logger.warn("ServiceLink: Callback " + targetID + " not found");                                       
@@ -344,13 +299,52 @@ public class ServiceLink implements Runnable {
             removeCallback(id);
         }
     }
-                
+    
+    public SocketAddressSet [] directionToClient(String client) throws IOException {
+
+        if (!getConnected()) {
+            logger.info("Cannot get direction to client: not connected to proxy");            
+            throw new IOException("No connection to proxy!");
+        }        
+        
+        logger.info("Requesting direction to client " + client + " from proxy");
+        
+        String id = "GetDirection" + getNextSimpleCallbackID();
+        
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.DIRECTION);
+                out.writeUTF(id);
+                out.writeUTF(client);
+                out.flush();            
+            } 
+            
+            String [] reply = (String []) tmp.getReply();        
+            return SocketAddressSet.convertToSocketAddressSet(reply);        
+                        
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            closeConnection();
+            throw new IOException("Connection to proxy lost!");
+        } finally { 
+            removeCallback(id);
+        }
+    }
+        
     public static ServiceLink getServiceLink(SocketAddressSet address, 
-            SocketAddressSet myAddress) { 
+            SocketAddressSet myAddress) {        
+        return getServiceLink(address, myAddress, "default");        
+    }
+    
+    public static ServiceLink getServiceLink(SocketAddressSet address, 
+            SocketAddressSet myAddress, String tag) { 
         
         if (serviceLink == null) {
             try { 
-                serviceLink = new ServiceLink(address, myAddress);                 
+                serviceLink = new ServiceLinkImpl(address, myAddress, tag);                 
             } catch (Exception e) {
                 logger.warn("ServiceLink: Failed to connect to proxy!", e);
                 return null;
@@ -381,4 +375,6 @@ public class ServiceLink implements Runnable {
         }
         
     }
+
+    
 }

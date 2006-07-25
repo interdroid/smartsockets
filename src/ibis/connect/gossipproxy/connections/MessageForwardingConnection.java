@@ -1,13 +1,12 @@
 package ibis.connect.gossipproxy.connections;
 
+import ibis.connect.direct.DirectSocket;
+import ibis.connect.gossipproxy.ProxyDescription;
+import ibis.connect.gossipproxy.ProxyList;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Iterator;
-
-import ibis.connect.direct.DirectSocket;
-import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.ProxyDescription;
-import ibis.connect.gossipproxy.ProxyList;
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 
@@ -54,24 +53,22 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
         // We don't have a direct connection, but we should be able to reach the
         // proxy indirectly
-        SocketAddressSet addr = p.getIndirection();
-
-        if (addr == null) {
+        ProxyDescription p2 = p.getIndirection();
+        
+        if (p2 == null) {
             // Oh dear, we don't have an indirection!
             logger.warn("Indirection address of " + p.proxyAddressAsString + " is null!");
             return;
         } 
 
-        String proxy2 = addr.toString();
-
-        if (forwardAnyMessage(client, proxy2, src, target, module, code, message, hopsLeft)) { 
+        if (forwardAnyMessage(client, p2.proxyAddressAsString, src, target, module, code, message, hopsLeft)) { 
             logger.info("Succesfully forwarded message to proxy " 
-                    + proxy2 + " using direct link");
+                    + p2.proxyAddressAsString + " using direct link");
             return;            
         } 
 
         logger.info("Failed to forward message to proxy " + p.proxyAddressAsString 
-                + " or it's indirection " + proxy2);
+                + " or it's indirection " + p2.proxyAddressAsString);
     }
        
     protected void forwardClientMessage(String src, String target, String module, 

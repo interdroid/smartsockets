@@ -1,12 +1,14 @@
 package ibis.connect.virtual.modules;
 
-import ibis.connect.controlhub.CallBack;
-import ibis.connect.controlhub.ServiceLink;
 import ibis.connect.direct.SocketAddressSet;
+
 import ibis.connect.virtual.ModuleNotSuitableException;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
+
+import ibis.connect.virtual.service.ServiceLink;
+import ibis.connect.virtual.service.CallBack;
 
 import java.io.IOException;
 import java.util.HashMap;

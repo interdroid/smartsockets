@@ -15,7 +15,10 @@
    sodipodi:version="0.32"
    inkscape:version="0.43"
    sodipodi:docbase="/home/jason/workspace/new-connect/illustrations"
-   sodipodi:docname="scenario1.svg">
+   sodipodi:docname="scenario1.svg"
+   inkscape:export-filename="/home/jason/workspace/new-connect/illustrations/scenario1.png"
+   inkscape:export-xdpi="72"
+   inkscape:export-ydpi="72">
   <defs
      id="defs1547">
     <marker
@@ -3364,15 +3367,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.99743401"
-     inkscape:cx="499.41847"
-     inkscape:cy="450.30679"
-     inkscape:current-layer="layer1"
+     inkscape:cx="501.60945"
+     inkscape:cy="375.77389"
+     inkscape:current-layer="layer2"
      id="namedview1549"
      showgrid="true"
      inkscape:window-width="1086"
      inkscape:window-height="819"
-     inkscape:window-x="3"
-     inkscape:window-y="24" />
+     inkscape:window-x="27"
+     inkscape:window-y="89" />
   <metadata
      id="metadata1551">
     <rdf:RDF>
@@ -3385,9 +3388,25 @@
     </rdf:RDF>
   </metadata>
   <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="background">
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#fffeff;stroke-width:1.4026438;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:1.40264356, 1.40264356;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2363"
+       width="883.79755"
+       height="418.93115"
+       x="29.042479"
+       y="71.5728" />
+  </g>
+  <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1" />
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="foreground">
     <g
        id="g1667"
        transform="matrix(0.26372,0,0,0.26372,93.5871,276.8139)">
@@ -8680,7 +8699,7 @@
        sodipodi:nodetypes="cc" />
     <g
        id="g13560"
-       transform="translate(-4.957512,-0.540739)">
+       transform="translate(-4.957512,-0.65955)">
       <path
          transform="translate(-7.280332,36.18027)"
          d="M 171.43992 139.04192 A 25.565603 18.547594 0 1 1  120.30871,139.04192 A 25.565603 18.547594 0 1 1  171.43992 139.04192 z"

@@ -11,16 +11,20 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
-public class ServiceLink {
+import ibis.connect.virtual.service.CallBack;
+import ibis.connect.virtual.service.ServiceLink;
+
+public class ServiceLinkImpl extends ServiceLink {
     
     private static final int TIMEOUT = 5000;
     
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger(ServiceLink.class.getName());
+        ibis.util.GetLogger.getLogger(ServiceLinkImpl.class.getName());
     
-    private static ServiceLink serviceLink;
+    private static ServiceLinkImpl serviceLink;
         
     private final DirectSocketFactory directFactory;
+    private final SocketAddressSet hubAddress;
     private final SocketAddressSet myAddress; 
         
     private DirectSocket hub;               
@@ -41,11 +45,13 @@ public class ServiceLink {
         }        
     }
           
-    private ServiceLink(SocketAddressSet hub, SocketAddressSet myAddress) 
+    private ServiceLinkImpl(SocketAddressSet hub, SocketAddressSet myAddress) 
         throws IOException { 
         
-        directFactory = DirectSocketFactory.getSocketFactory();
+        this.hubAddress = hub;
         this.myAddress = myAddress;
+        
+        directFactory = DirectSocketFactory.getSocketFactory();
                 
         connectToHub(hub);
         
@@ -153,12 +159,12 @@ public class ServiceLink {
         }        
     }
     
-    public static ServiceLink getServiceLink(SocketAddressSet address, 
+    public static ServiceLinkImpl getServiceLink(SocketAddressSet address, 
             SocketAddressSet myAddress) { 
         
         if (serviceLink == null) {
             try { 
-                serviceLink = new ServiceLink(address, myAddress);                 
+                serviceLink = new ServiceLinkImpl(address, myAddress);                 
             } catch (Exception e) {
                 logger.warn("ServiceLink: Failed to connect to hub!", e);
                 return null;
@@ -166,5 +172,23 @@ public class ServiceLink {
         }
         
         return serviceLink;
+    }
+
+    public String[] clients() throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String[] localClients() throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public SocketAddressSet[] proxies() throws IOException {
+        return new SocketAddressSet [] { hubAddress }; 
+    }
+
+    public SocketAddressSet[] directionToClient(String client) throws IOException {
+        return new SocketAddressSet [] { hubAddress };                
     }
 }

@@ -18,7 +18,7 @@ public class ProxyDescription {
     final StateCounter state;        
     final boolean local;
     
-    private SocketAddressSet indirection;     
+    private ProxyDescription indirection;     
         
     // Value of the local state the last time anything was changed in this 
     // description.  
@@ -174,7 +174,7 @@ public class ProxyDescription {
         setContactTimeStamp(false);
     }
     
-    public synchronized void addIndirection(SocketAddressSet indirection, int hops) {
+    public synchronized void addIndirection(ProxyDescription indirection, int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;
@@ -183,7 +183,7 @@ public class ProxyDescription {
         } 
     }
     
-    public synchronized SocketAddressSet getIndirection() {
+    public synchronized ProxyDescription getIndirection() {
         return indirection;
     }
         

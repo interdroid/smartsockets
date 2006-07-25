@@ -8,6 +8,8 @@ import ibis.connect.gossipproxy.ServiceLinkProtocol;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 public class ClientConnection extends MessageForwardingConnection {
 
@@ -118,6 +120,33 @@ public class ClientConnection extends MessageForwardingConnection {
         out.flush();        
 
     } 
+
+    private void directions() throws IOException { 
+        String id = in.readUTF();
+        String client = in.readUTF();
+                
+        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        
+        LinkedList result = knownProxies.directionToClient(client);
+        
+        out.write(ServiceLinkProtocol.INFO);           
+        out.writeUTF(id);            
+        out.writeInt(result.size());
+
+        logger.debug("Connection " + clientAddress + " returning : " 
+                + result.size() + " possible directions!");         
+        
+        Iterator itt = result.iterator();
+       
+        while (itt.hasNext()) {             
+            String tmp = (String) itt.next();                       
+            logger.debug(" -> " + tmp);                             
+            out.writeUTF(tmp);
+        } 
+            
+        out.flush();        
+    } 
+
     
     protected String getName() {
         return "ServiceLink(" + clientAddress + ")";
@@ -166,7 +195,16 @@ public class ClientConnection extends MessageForwardingConnection {
                 }
                 clients();
                 return true;
-                            
+            
+            case ServiceLinkProtocol.DIRECTION:
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Connection " + clientAddress + " requests" 
+                            + " direction to other client");
+                }
+                directions();
+                return true;
+            
+                
             default:
                 logger.warn("Connection " + clientAddress + " got unknown "
                         + "opcode " + opcode + " -- disconnecting");

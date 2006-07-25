@@ -177,6 +177,69 @@ public class ProxyList {
         return tmp;
     }
     
+    public synchronized LinkedList directionToClient(String client) {
+
+        // Collect the addresses of all proxies that claim to known this client 
+        // and are reachable from our location in a single hop. For all proxies 
+        // that we can only reach in multiple hops, we return the address of the
+        // referring proxy instead (i.e., the 'reachable proxy' that informed us
+        // of the existance of the 'unreachable proxy').   
+        // 
+        // We return the results in list, sorted by how 'good an option' they 
+        // are. The order is as follows: 
+        // 
+        //  1. local proxy
+        //
+        //  2. proxies that can reach the client directly and, 
+        //      a. we can connect to directly
+        //      b. can connect directly to us
+        //
+        //  3. indirections for proxies that can reach the client directly, but 
+        //     which we cannot reach and,  
+        //      a. we can connect to directly
+        //      b. can connect directly to us
+        
+        LinkedList good = new LinkedList();
+        LinkedList bad = new LinkedList();
+        LinkedList ugly = new LinkedList();
+                
+        Iterator itt = map.values().iterator();
+        
+        while (itt.hasNext()) { 
+            
+            ProxyDescription tmp = (ProxyDescription) itt.next();
+            
+            if (tmp.containsClient(client)) {
+
+                System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
+                        + client + ":\n" + tmp + "\n");
+                
+                if (tmp == localDescription) {
+                    good.addFirst(tmp.proxyAddressAsString);                    
+                } else if (tmp.isReachable()) {
+                    good.addLast(tmp.proxyAddressAsString);
+                } else if (tmp.canReachMe()) { 
+                    bad.addLast(tmp.proxyAddressAsString);
+                } else {                                         
+                    ProxyDescription indi = tmp.getIndirection();
+                    
+                    if (indi != null) { 
+                        if (indi.isReachable()) { 
+                            ugly.addFirst(indi.proxyAddressAsString);
+                        } else if (indi.canReachMe()) {  
+                            ugly.addLast(indi.proxyAddressAsString);
+                        }
+                    }
+                }
+            }
+        }
+        
+        good.addAll(bad);
+        good.addAll(ugly);
+        
+        return good;
+    }
+    
     public LinkedList findClient(String client) {
         return findClient(client, null);
     }

@@ -1,21 +1,25 @@
 package test.router;
 
+import ibis.connect.gossipproxy.router.Router;
+import ibis.connect.gossipproxy.router.RouterClient;
+import ibis.connect.virtual.VirtualServerSocket;
+import ibis.connect.virtual.VirtualSocket;
+import ibis.connect.virtual.VirtualSocketAddress;
+import ibis.connect.virtual.VirtualSocketFactory;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-import ibis.connect.router.simple.Router;
-import ibis.connect.router.simple.RouterConnection;
-import ibis.connect.virtual.VirtualSocketAddress;
-
 public class RouterTest {
     
-    private static int timeout = 60000;
+    private static long timeout = 60000;
     private static boolean startRouter = false;
-    private static boolean startClient = true;
+    private static boolean startClient = false;
     private static boolean serverSide  = false;
-    private static String key = null;    
         
+    private static VirtualSocketFactory factory;
     private static VirtualSocketAddress routerAddress;
+    private static VirtualSocketAddress serverAddress;     
             
     private static void parseOptions(String [] args) { 
     
@@ -23,13 +27,13 @@ public class RouterTest {
         
         while (index < args.length) { 
          
-            if (args[index].equals("-startRouter")) { 
+            if (args[index].equals("-router")) { 
                 startRouter = true;
-            } else if (args[index].equals("-noClient")) { 
-                startClient = false;
+            } else if (args[index].equals("-client")) { 
+                startClient = true;
             } else if (args[index].equals("-server")) { 
                 serverSide = true;
-            } else if (args[index].equals("-router")) { 
+            } else if (args[index].equals("-targetRouter")) { 
                 try {
                     routerAddress = new VirtualSocketAddress(args[++index]);
                 } catch (UnknownHostException e) {
@@ -37,8 +41,12 @@ public class RouterTest {
                 }
             } else if (args[index].equals("-timeout")) { 
                 timeout = Integer.parseInt(args[++index]);
-            } else if (args[index].equals("-key")) { 
-                key = args[++index];
+            } else if (args[index].equals("-targetServer")) { 
+                try { 
+                    serverAddress = new VirtualSocketAddress(args[++index]);
+                } catch (Exception e) {
+                    System.out.println("Failed to parse server address " + e);
+                }
             }              
             
             index++;
@@ -50,6 +58,8 @@ public class RouterTest {
         Router r = null;
         
         parseOptions(args);
+                
+        factory = VirtualSocketFactory.getSocketFactory();
         
         if (startRouter) { 
             try {
@@ -71,37 +81,40 @@ public class RouterTest {
             System.out.println("Cannot start client without router address!");
             System.exit(1);        
         }
-        
-        if (startClient) {         
-            try { 
-                RouterConnection c = RouterConnection.connect(routerAddress);
+
+        if (startClient && serverAddress== null) {
+            System.out.println("Cannot start client without server address!");
+            System.exit(1);        
+        }
+
+        try {
+            if (serverSide) {
+            
+                VirtualServerSocket ss = factory.createServerSocket(5555, 1, null);
                 
-                if (serverSide) {                
-                    System.out.println("My KEY is : " + c.key);                
-                    c.sendAccept(timeout);                    
-                    c.out.writeUTF("Hello world!");
-                    c.out.flush();
-                    
-                    c.close();
+                System.out.println("Server accepting at " + ss);
+                                
+                VirtualSocket s = ss.accept();
+            
+                System.out.println("Server got connection from " + s);
+                VirtualSocketFactory.close(s, null, null);
+                                
+            } else if (startClient) {         
+                
+                RouterClient c = RouterClient.connect(routerAddress);
+         
+                if (c.connect(serverAddress, timeout)) { 
+                    System.out.println("Connected to " + serverAddress);                                
                 } else { 
+                    System.out.println("Failed to connected to " + serverAddress);
+                }
                     
-                    if (key == null) { 
-                        System.out.println("Client-side must have key to connect to!");
-                        System.exit(1);
-                    }
-                    
-                    c.sendConnect(key, timeout);
-                    
-                    String message = c.in.readUTF();
-                    
-                    System.out.println("Server says: " + message);
-                    c.close();
-                }            
+                c.close();
+            }            
                 
-            } catch (Exception e) {
-                System.err.println("Oops: " + e);
-                e.printStackTrace(System.err);
-            }
+        } catch (Exception e) {
+            System.err.println("Oops: " + e);
+            e.printStackTrace(System.err);
         } 
     }
 }

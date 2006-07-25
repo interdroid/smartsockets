@@ -1,7 +1,7 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.virtual.service;
 
 import ibis.connect.direct.SocketAddressSet;
 
-public interface MessageCallback {
+public interface CallBack {
     void gotMessage(SocketAddressSet src, int opcode, String message);        
 }
