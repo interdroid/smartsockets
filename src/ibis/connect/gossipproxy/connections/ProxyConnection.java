@@ -104,7 +104,7 @@ public class ProxyConnection extends MessageForwardingConnection {
         out.writeUTF(d.proxyAddress.toString());
         out.writeInt(d.getHops());
 
-        ArrayList clients = d.getClients();        
+        ArrayList clients = d.getClients(null);        
         out.writeInt(clients.size()); 
 
         for (int i=0;i<clients.size();i++) {         

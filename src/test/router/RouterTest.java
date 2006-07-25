@@ -1,7 +1,7 @@
 package test.router;
 
-import ibis.connect.gossipproxy.router.Router;
-import ibis.connect.gossipproxy.router.RouterClient;
+import ibis.connect.router.simple.Router;
+import ibis.connect.router.simple.RouterClient;
 import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;

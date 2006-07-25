@@ -162,7 +162,7 @@ public class ProxyAcceptor extends CommunicationThread {
             c.activate();
 
             // TODO: Not very nice ... refactor ? 
-            knownProxies.getLocalDescription().addClient(src);
+            knownProxies.getLocalDescription().addClient(src + "#" +  tag);
             return true;
 
         } catch (IOException e) { 

@@ -13,6 +13,7 @@ public class Properties {
     // These are used by the RoutedMessagesSocketFactory
     //public static final String HUB_PORT = PREFIX + "hub.port";
     public static final String HUB_HOST = PREFIX + "hub.host";
+    public static final String HUB_TAG = PREFIX + "hub.tag";
     //public static final String HUB_STATS = PREFIX + "hub.stats";
     
     public static final String ROUTERS = PREFIX + "routers";  
@@ -40,8 +41,8 @@ public class Properties {
     public static int outputBufferSize = 64 * 1024;
       
     private static final String[] sysprops = { 
-            /*PAR_NUMWAYS, PAR_BLOCKSIZE, HUB_PORT,*/ HUB_HOST, /*HUB_STATS,*/ 
-            /*SPLICE_PORT, SPLICE_TIMEOUT,*/ DEBUG_PROP, VERBOSE_PROP,
+            /*PAR_NUMWAYS, PAR_BLOCKSIZE, HUB_PORT,*/ HUB_HOST, HUB_TAG, 
+            /*HUB_STATS, SPLICE_PORT, SPLICE_TIMEOUT,*/ DEBUG_PROP, VERBOSE_PROP,
             ISIZE, OSIZE };
 
     static {

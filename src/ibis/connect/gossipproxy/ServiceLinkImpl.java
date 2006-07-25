@@ -11,7 +11,6 @@ import ibis.connect.virtual.service.SimpleCallBack;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
@@ -204,9 +203,57 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     private synchronized int getNextSimpleCallbackID() { 
         return nextCallbackID++;
     }
-                 
-    public String [] clients() throws IOException {
+    
+    public String [] localClients() throws IOException {
+        return clients(proxyAddress, "");
+    }
+    
+    public String [] localClients(String tag) throws IOException {
+        return clients(proxyAddress, tag);
+    }
+    
+    public String[] clients(SocketAddressSet proxy) throws IOException {
+        return clients(proxy, "");
+    }
+    
+    public String[] clients(SocketAddressSet proxy, String tag) throws IOException {
+
+        if (!getConnected()) {
+            logger.info("Cannot get clients: not connected to proxy");            
+            throw new IOException("No connection to proxy!");
+        }
+                
+        logger.info("Requesting client list from proxy");
+    
+        String id = "GetClientsForProxy" + getNextSimpleCallbackID();
+    
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
         
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.CLIENTS_FOR_PROXY);
+                out.writeUTF(id);
+                out.writeUTF(proxy.toString());
+                out.writeUTF(tag);                
+                out.flush();            
+            }
+            
+            return (String []) tmp.getReply();        
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            closeConnection();
+            throw new IOException("Connection to proxy lost!");            
+        } finally { 
+            removeCallback(id);
+        }
+    }
+    
+    public String [] clients() throws IOException {
+        return clients("");
+    }
+
+    public String[] clients(String tag) throws IOException {        
         if (!getConnected()) {
             logger.info("Cannot get clients: not connected to proxy");            
             throw new IOException("No connection to proxy!");
@@ -221,8 +268,9 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         
         try {
             synchronized (this) {         
-                out.write(ServiceLinkProtocol.CLIENTS);
+                out.write(ServiceLinkProtocol.ALL_CLIENTS);
                 out.writeUTF(id);
+                out.writeUTF(tag);
                 out.flush();            
             }
             
@@ -235,37 +283,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
             removeCallback(id);
         }
     }
-    
-    public String [] localClients() throws IOException {
-
-        if (!getConnected()) {
-            logger.info("Cannot get clients: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
-        }
-                
-        logger.info("Requesting local client list from proxy");
-        
-        String id = "GetLocalClients" + getNextSimpleCallbackID();
-                
-        SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
-        
-        try {
-            synchronized (this) {         
-                out.write(ServiceLinkProtocol.LOCAL_CLIENTS);
-                out.writeUTF(id);
-                out.flush();                                
-            } 
-            
-            return (String []) tmp.getReply();            
-        } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
-            closeConnection();
-            throw new IOException("Connection to proxy lost!");
-        } finally { 
-            removeCallback(id);
-        }
-    }
+   
     
     public SocketAddressSet [] proxies() throws IOException {
         
@@ -300,14 +318,15 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }
     }
     
-    public SocketAddressSet [] directionToClient(String client) throws IOException {
+    public SocketAddressSet [] directionToClient(String client, String tag) throws IOException {
 
         if (!getConnected()) {
             logger.info("Cannot get direction to client: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }        
         
-        logger.info("Requesting direction to client " + client + " from proxy");
+        logger.info("Requesting direction to client " + client + "#" + tag 
+                + " from proxy");
         
         String id = "GetDirection" + getNextSimpleCallbackID();
         
@@ -319,6 +338,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
                 out.write(ServiceLinkProtocol.DIRECTION);
                 out.writeUTF(id);
                 out.writeUTF(client);
+                out.writeUTF(tag);
                 out.flush();            
             } 
             
@@ -333,10 +353,10 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
             removeCallback(id);
         }
     }
-        
-    public static ServiceLink getServiceLink(SocketAddressSet address, 
-            SocketAddressSet myAddress) {        
-        return getServiceLink(address, myAddress, "default");        
+
+
+    public SocketAddressSet getAddress() {
+        return proxyAddress;
     }
     
     public static ServiceLink getServiceLink(SocketAddressSet address, 
@@ -375,6 +395,4 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }
         
     }
-
-    
 }

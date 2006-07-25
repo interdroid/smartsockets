@@ -44,13 +44,22 @@ public abstract class ServiceLink {
         callbacks.remove(identifier);        
     }
     
+    public abstract SocketAddressSet getAddress(); 
+    
     public abstract void send(SocketAddressSet target, String targetModule, 
             int opcode, String message);
-    
+
     public abstract String [] clients() throws IOException;    
+    public abstract String [] clients(SocketAddressSet proxy) throws IOException;
+    public abstract String [] clients(String tag) throws IOException;    
+    public abstract String [] clients(SocketAddressSet proxy, String tag) throws IOException;
+    
     public abstract String [] localClients() throws IOException;    
+    public abstract String [] localClients(String tag) throws IOException;    
+    
     public abstract SocketAddressSet [] proxies() throws IOException;    
     
-    public abstract SocketAddressSet [] directionToClient(String client) throws IOException;    
+    public abstract SocketAddressSet [] directionToClient(String client, 
+            String tag) throws IOException;    
     
 }

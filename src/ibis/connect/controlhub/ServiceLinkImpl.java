@@ -188,7 +188,32 @@ public class ServiceLinkImpl extends ServiceLink {
         return new SocketAddressSet [] { hubAddress }; 
     }
 
-    public SocketAddressSet[] directionToClient(String client) throws IOException {
-        return new SocketAddressSet [] { hubAddress };                
+    public SocketAddressSet getAddress() {
+        return hubAddress;
+    }
+
+    public SocketAddressSet[] directionToClient(String client, String tag) throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String[] clients(SocketAddressSet proxy) throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String[] clients(String tag) throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String[] clients(SocketAddressSet proxy, String tag) throws IOException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public String[] localClients(String tag) throws IOException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

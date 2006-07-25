@@ -3,7 +3,6 @@ package ibis.connect.gossipproxy;
 import ibis.connect.direct.SocketAddressSet;
 
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -325,20 +324,15 @@ public class ProxyList {
 
         return result;
     }
-
-    public synchronized String[] localClientsAsString() {       
-        ArrayList tmp = localDescription.getClients();      
-        return (String []) tmp.toArray(new String[tmp.size()]);
-    }
-
-    public synchronized String[] clientsAsString() {
+  
+    public synchronized String[] clientsAsString(String tag) {
         
         TreeSet result = new TreeSet();        
         Iterator itt = map.values().iterator();
         
         while (itt.hasNext()) { 
             ProxyDescription tmp = (ProxyDescription) itt.next();           
-            result.addAll(tmp.getClients());
+            result.addAll(tmp.getClients(tag));
         }
         
         return (String []) result.toArray(new String[result.size()]);

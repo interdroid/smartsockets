@@ -2,12 +2,14 @@ package ibis.connect.gossipproxy.connections;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.gossipproxy.ProxyDescription;
 import ibis.connect.gossipproxy.ProxyList;
 import ibis.connect.gossipproxy.ServiceLinkProtocol;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -78,19 +80,29 @@ public class ClientConnection extends MessageForwardingConnection {
         out.flush();        
     } 
     
-    private void localClients() throws IOException { 
+    private void clientsForProxy() throws IOException { 
         String id = in.readUTF();
+        String proxy = in.readUTF();
+        String tag = in.readUTF();
         
         logger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        String [] clients = knownProxies.localClientsAsString();
-
+        ProxyDescription p = knownProxies.get(proxy); 
+        
+        ArrayList tmp = null;
+        
+        if (p != null) {
+            tmp = p.getClients(tag);      
+        } else { 
+            tmp = new ArrayList();
+        }
+        
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
-        out.writeInt(clients.length);
+        out.writeInt(tmp.size());
 
-        for (int i=0;i<clients.length;i++) { 
-            out.writeUTF(clients[i]);
+        for (int i=0;i<tmp.size();i++) { 
+            out.writeUTF((String) tmp.get(i));
         } 
             
         out.flush();        
@@ -98,10 +110,11 @@ public class ClientConnection extends MessageForwardingConnection {
 
     private void clients() throws IOException { 
         String id = in.readUTF();
+        String tag = in.readUTF();
         
         logger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        String [] clients = knownProxies.clientsAsString();
+        String [] clients = knownProxies.clientsAsString(tag);
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
@@ -124,10 +137,11 @@ public class ClientConnection extends MessageForwardingConnection {
     private void directions() throws IOException { 
         String id = in.readUTF();
         String client = in.readUTF();
+        String tag = in.readUTF();
                 
         logger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        LinkedList result = knownProxies.directionToClient(client);
+        LinkedList result = knownProxies.directionToClient(client + "#" + tag);
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
@@ -180,15 +194,15 @@ public class ClientConnection extends MessageForwardingConnection {
                 proxies();
                 return true;
             
-            case ServiceLinkProtocol.LOCAL_CLIENTS:
+            case ServiceLinkProtocol.CLIENTS_FOR_PROXY:
                 if (logger.isDebugEnabled()) {
                     logger.debug("Connection " + clientAddress + " requests" 
                             + " local clients");
                 } 
-                localClients();
+                clientsForProxy();
                 return true;
             
-            case ServiceLinkProtocol.CLIENTS:
+            case ServiceLinkProtocol.ALL_CLIENTS:
                 if (logger.isDebugEnabled()) {
                     logger.debug("Connection " + clientAddress + " requests" 
                             + " all clients");

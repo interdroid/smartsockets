@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy.router;
+package ibis.connect.router.simple;
 
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
@@ -45,8 +45,6 @@ public class RouterClient implements Protocol {
         logger.info("Waiting for router reply...");
                 
         // TODO set timeout!!!
-        
-        
         int result = in.readByte();
         
         switch (result) {

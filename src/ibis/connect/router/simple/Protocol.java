@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy.router;
+package ibis.connect.router.simple;
 
 public interface Protocol {
     public final int CONNECT = 1;

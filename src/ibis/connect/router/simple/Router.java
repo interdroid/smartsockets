@@ -1,5 +1,6 @@
-package ibis.connect.gossipproxy.router;
+package ibis.connect.router.simple;
 
+import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
@@ -20,10 +21,13 @@ public class Router extends Thread {
     private static int ACCEPT_TIMEOUT = 1000; 
         
     private boolean done = false;
-    
-    private VirtualServerSocket ssc;
+
     private VirtualSocketFactory factory; 
 
+    private VirtualServerSocket ssc;
+   
+    private VirtualSocketAddress local; 
+    
     private HashMap properties = new HashMap();
     
     private ServiceLink serviceLink;
@@ -44,13 +48,30 @@ public class Router extends Thread {
         
         ssc = factory.createServerSocket(0, 50, properties);
         
-        logger.info("Router listening on " + 
-                ssc.getLocalSocketAddress().toString());
+        local = ssc.getLocalSocketAddress();
         
-        System.out.println("Router listening on " + 
-                ssc.getLocalSocketAddress().toString());        
+        logger.info("Router listening on " + local.toString());                 
+
+        System.out.println("Router listening on " + local.toString());
     } 
                
+    synchronized SocketAddressSet [] getDirections(SocketAddressSet machine) 
+        throws IOException {
+        
+        return serviceLink.directionToClient(machine.toString(), "none");
+    }
+    
+    synchronized String[] findClients(SocketAddressSet proxy, String tag) 
+        throws IOException {
+        
+        return serviceLink.clients(proxy, tag);
+    }
+    
+    VirtualSocket connect(VirtualSocketAddress target, long timeout) 
+        throws IOException {        
+        return factory.createClientSocket(target, (int) timeout, properties);
+    }
+    
     
     private final synchronized boolean getDone() { 
         return done;
@@ -76,7 +97,11 @@ public class Router extends Thread {
             } 
         } 
     }
-    
+        
+    public SocketAddressSet getProxyAddress() { 
+        return serviceLink.getAddress();
+    }
+        
     public VirtualSocketAddress getAddress() { 
         return ssc.getLocalSocketAddress();
     }
@@ -106,5 +131,7 @@ public class Router extends Thread {
             System.err.println("Router throws exception!");
             e.printStackTrace(System.err);
         }
-    }    
+    }
+
+        
 }

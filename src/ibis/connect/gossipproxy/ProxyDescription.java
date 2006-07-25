@@ -90,9 +90,26 @@ public class ProxyDescription {
         } 
     }
     
-    public ArrayList getClients() {         
+    public ArrayList getClients(String tag) {
+        
+        String suffix = "#" + tag;
+        
         synchronized (clients) {
-            return new ArrayList(clients);           
+            if (tag == null || tag.length() == 0) {             
+                return new ArrayList(clients);
+            } else { 
+                ArrayList result = new ArrayList();  
+                
+                for (int i=0;i<clients.size();i++) { 
+                    String client = (String) clients.get(i);
+                    
+                    if (client.endsWith(suffix)) {
+                        result.add(client);
+                    }
+                }
+                
+                return result;
+            }
         }
     }
     
