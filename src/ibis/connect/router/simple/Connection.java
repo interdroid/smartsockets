@@ -11,6 +11,7 @@ import ibis.connect.virtual.VirtualSocketFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.UnknownHostException;
 
 class Connection extends Thread implements Protocol {       
 
@@ -52,7 +53,59 @@ class Connection extends Thread implements Protocol {
         }
     }
     
+    private VirtualSocketAddress getAddress(String router) throws UnknownHostException {        
+        String tmp = router.substring(0, router.lastIndexOf('#'));        
+        return new VirtualSocketAddress(tmp);
+    }
     
+    private boolean connectViaRouter(String router, VirtualSocketAddress target,
+            long timeout) {
+
+        boolean succes = false;
+        
+        try {
+            Router.logger.debug("Connecting to router: " + router);
+                        
+            VirtualSocketAddress r = getAddress(router);            
+           
+            if (connect(r, timeout)) {
+                Router.logger.debug("Connection to router created!!");
+                Router.logger.debug("Forwarding target: " + target.toString());
+                                
+                outToTarget.writeUTF(target.toString());                
+                outToTarget.writeLong(timeout);
+                outToTarget.flush();
+
+                Router.logger.debug("Waiting for router reply...");
+                        
+                // TODO set timeout!!!
+                int result = inFromTarget.readByte();
+                
+                switch (result) {
+                case REPLY_OK:
+                    Router.logger.debug("Connection setup succesfull!");            
+                    succes = true;
+                    break;
+
+                case REPLY_FAILED:
+                    Router.logger.debug("Connection setup failed!");
+                    break;
+                
+                default:
+                    Router.logger.debug("Connection setup returned junk!");
+                }
+            }            
+        } catch (IOException e) {
+            Router.logger.debug("Connection setup resulted in exception!", e);
+        }
+            
+        if (!succes) { 
+            VirtualSocketFactory.close(socketToTarget, outToTarget, inFromTarget);
+        }
+        
+        return succes;
+    }
+
     
     private boolean connectToTarget(VirtualSocketAddress target, long timeout, 
             SocketAddressSet [] directions) { 
@@ -91,31 +144,36 @@ class Connection extends Thread implements Protocol {
         // routers...        
         for (int i=startIndex;i<directions.length;i++) {
             
+            String [] result = null;
+            
             try { 
-                String [] result = parent.findClients(directions[i], "router");
-
-                if (result == null || result.length == 0) { 
-                    Router.logger.debug("Proxy " + directions[i] + " does not "
-                            + "know any routers!");                    
-                } else { 
-                    Router.logger.debug("Proxy " + directions[i] + " knows the"
-                            + " following routers:");
-                    
-                    for (int x=0;x<result.length;x++) { 
-                        Router.logger.debug(" " + i + " - " + result[x]);                            
-                    }
-                    
-                    /// HIERO!!!
-                    
-                }
+                result = parent.findClients(directions[i], "router");
             } catch (Exception e) {
-                Router.logger.debug("Failed to get info from proxy!", e); 
-            }            
+                Router.logger.debug("Failed to contact proxy!", e);                                
+            }
+
+            if (result == null || result.length == 0) { 
+                Router.logger.debug("Proxy " + directions[i] + " does not "
+                        + "know any routers!");                    
+            } else { 
+                Router.logger.debug("Proxy " + directions[i] + " knows the"
+                        + " following routers:");
+                    
+                for (int x=0;x<result.length;x++) { 
+                    Router.logger.debug(" " + i + " - " + result[x]);                            
+                }
+                
+                for (int x=0;x<result.length;x++) {
+                    if (connectViaRouter(result[i], target, timeout)) { 
+                        return true;                        
+                    }
+                } 
+            } 
         }
         
         return false;
     }
-    
+       
     private boolean connect() throws IOException { 
          
         boolean succes = false;
