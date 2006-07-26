@@ -3,6 +3,7 @@ package ibis.connect.gossipproxy.connections;
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.gossipproxy.ClientDescription;
 import ibis.connect.gossipproxy.ProxyDescription;
 import ibis.connect.gossipproxy.ProxyList;
 import ibis.connect.gossipproxy.ProxyProtocol;
@@ -11,6 +12,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class ProxyConnection extends MessageForwardingConnection {
@@ -107,8 +109,8 @@ public class ProxyConnection extends MessageForwardingConnection {
         ArrayList clients = d.getClients(null);        
         out.writeInt(clients.size()); 
 
-        for (int i=0;i<clients.size();i++) {         
-            out.writeUTF((String) clients.get(i));
+        for (int i=0;i<clients.size();i++) {                 
+            ClientDescription.write((ClientDescription) clients.get(i), out);            
         }    
     } 
         
@@ -119,11 +121,12 @@ public class ProxyConnection extends MessageForwardingConnection {
                
         int hops = in.readInt();
         
-        int clients = in.readInt();
-        String [] c = new String[clients];
+        int clients = in.readInt();        
         
-        for (int i=0;i<clients;i++) {  
-            c[i] = in.readUTF();
+        ClientDescription [] c = new ClientDescription[clients];
+        
+        for (int i=0;i<clients;i++) {
+            c[i] = ClientDescription.read(in);                        
         }
                         
         if (local.proxyAddress.equals(address)) {
@@ -136,7 +139,7 @@ public class ProxyConnection extends MessageForwardingConnection {
         } else if (tmp == peer) {
             // The peer send information about itself. 
             for (int i=0;i<clients;i++) { 
-                tmp.addClient(c[i]);
+                tmp.addOrUpdateClient(c[i]);
             }  
         } else {
             // We got information about a 'third party'.              
@@ -146,7 +149,7 @@ public class ProxyConnection extends MessageForwardingConnection {
             } 
             
             for (int i=0;i<clients;i++) { 
-                tmp.addClient(c[i]);
+                tmp.addOrUpdateClient(c[i]);
             }  
         }
         

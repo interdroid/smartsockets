@@ -135,7 +135,6 @@ public class ProxyAcceptor extends CommunicationThread {
 
         try { 
             String src = in.readUTF();
-            String tag = in.readUTF();
             
             if (connections.getConnection(src) != null) { 
                 if (logger.isDebugEnabled()) { 
@@ -161,8 +160,7 @@ public class ProxyAcceptor extends CommunicationThread {
             connections.addConnection(src, c);                                               
             c.activate();
 
-            // TODO: Not very nice ... refactor ? 
-            knownProxies.getLocalDescription().addClient(src + "#" +  tag);
+            knownProxies.getLocalDescription().addClient(src);
             return true;
 
         } catch (IOException e) { 

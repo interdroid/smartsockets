@@ -4,28 +4,33 @@
 package ibis.connect.router.simple;
 
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.util.Forwarder;
+import ibis.connect.util.ForwarderDoneCallback;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.virtual.service.Client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.UnknownHostException;
 
-class Connection extends Thread implements Protocol {       
+class Connection implements Runnable, Protocol, ForwarderDoneCallback {       
 
     private final Router parent;
     
     private VirtualSocket socketToClient;
     private DataOutputStream outToClient;
-    private DataInputStream inFromClient;
+    private DataInputStream inFromClient;    
     
     private VirtualSocket socketToTarget;
     private DataOutputStream outToTarget;
     private DataInputStream inFromTarget;
-        
-    private boolean done = false;
+    
+    private String label1;    
+    private String label2;    
+    
+    private int forwarderDone = 0;
    
     Connection(VirtualSocket sc, Router parent) throws IOException {
         
@@ -38,7 +43,7 @@ class Connection extends Thread implements Protocol {
         outToClient = new DataOutputStream(sc.getOutputStream());
         inFromClient = new DataInputStream(sc.getInputStream());
     }
-       
+    
     private boolean connect(VirtualSocketAddress target, long timeout) {  
     
         try { 
@@ -52,13 +57,8 @@ class Connection extends Thread implements Protocol {
             return false;
         }
     }
-    
-    private VirtualSocketAddress getAddress(String router) throws UnknownHostException {        
-        String tmp = router.substring(0, router.lastIndexOf('#'));        
-        return new VirtualSocketAddress(tmp);
-    }
-    
-    private boolean connectViaRouter(String router, VirtualSocketAddress target,
+       
+    private boolean connectViaRouter(Client router, VirtualSocketAddress target,
             long timeout) {
 
         boolean succes = false;
@@ -66,7 +66,7 @@ class Connection extends Thread implements Protocol {
         try {
             Router.logger.debug("Connecting to router: " + router);
                         
-            VirtualSocketAddress r = getAddress(router);            
+            VirtualSocketAddress r = router.getService("router");            
            
             if (connect(r, timeout)) {
                 Router.logger.debug("Connection to router created!!");
@@ -128,15 +128,14 @@ class Connection extends Thread implements Protocol {
             
             startIndex++;
             
-        } else { 
-            
-            Router.logger.debug("Client is NOT local to my proxy!!");  
-            Router.logger.debug("Directions to client machine: "); 
-
-            for (int i=0;i<directions.length;i++) {
-                Router.logger.debug(" " + i + " : " + directions[i]);
-            }
         } 
+                
+        Router.logger.debug("Client is NOT local to my proxy!!");  
+        Router.logger.debug("Directions to client machine: "); 
+
+        for (int i=0;i<directions.length;i++) {
+            Router.logger.debug(" " + i + " : " + directions[i]);
+        }
         
         // The target wasn't local. We now traverse each of the proxies one by
         // one, and check if we can find any router processes associated with 
@@ -144,7 +143,7 @@ class Connection extends Thread implements Protocol {
         // routers...        
         for (int i=startIndex;i<directions.length;i++) {
             
-            String [] result = null;
+            Client [] result = null;
             
             try { 
                 result = parent.findClients(directions[i], "router");
@@ -217,7 +216,76 @@ class Connection extends Thread implements Protocol {
         
         return succes;        
     }
-            
+                
+    public void done(String label) {
+        Router.logger.info("Received callback for forwarder " + label);
+        
+        // Check which forwarder thread produced the callback. Should be a 
+        // real reference to label, so we don't have to use "equals".
+        if (label == label1) {
+            try { 
+                outToTarget.flush();
+                socketToTarget.shutdownOutput();            
+                socketToClient.shutdownInput();
+            } catch (Exception e) {
+                Router.logger.warn("Failed to properly shutdown " + label1, e);                    
+            }
+        }
+        
+        if (label == label2) {
+            try { 
+                outToClient.flush();
+                socketToClient.shutdownOutput();            
+                socketToTarget.shutdownInput();
+            } catch (Exception e) {
+                Router.logger.warn("Failed to properly shutdown " + label2, e);
+            }
+        }
+    
+        synchronized (this) {          
+            forwarderDone++; 
+        
+            if (forwarderDone == 2) { 
+                Router.logger.info("Removing connections since they are done!");
+                
+                VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
+                VirtualSocketFactory.close(socketToTarget, outToTarget, inFromTarget);
+            } else { 
+                Router.logger.info("Cannot remove connections yet!");
+            }
+        }         
+    }
+
+    private void startForwarders() { 
+        
+        label1 = "[" 
+            + socketToClient.getRemoteSocketAddress() 
+            + ":" 
+            + socketToClient.getPort() 
+            + " --> " 
+            + socketToTarget.getRemoteSocketAddress() 
+            + ":" 
+            + socketToTarget.getPort() 
+            + "]";
+        
+        label2 = "[" 
+            + socketToTarget.getRemoteSocketAddress() 
+            + ":" 
+            + socketToTarget.getPort()         
+            + " --> " 
+            + socketToClient.getRemoteSocketAddress() 
+            + ":"
+            + socketToClient.getPort()         
+            + "]";
+    
+        // TODO: thread pool ? 
+        new Thread(new Forwarder(inFromClient, outToTarget, this, label1), 
+                "ForwarderThread" + label1).start();
+        
+        new Thread(new Forwarder(inFromTarget, outToClient, this, label2), 
+                "ForwarderThread" + label2).start();
+    }
+    
     public void run() { 
         
         try {            
@@ -226,9 +294,9 @@ class Connection extends Thread implements Protocol {
                 VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
                 return;
             }              
-         
-            
-            
+
+            // We have a connnection, so start forwarding!!
+            startForwarders();
         } catch (Exception e) {
             // TODO: handle exception
             VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
@@ -239,6 +307,7 @@ class Connection extends Thread implements Protocol {
     public String toString() { 
         return "Connection from " + socketToClient; 
     }
+
     
 
 }

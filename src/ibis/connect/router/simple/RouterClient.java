@@ -28,12 +28,8 @@ public class RouterClient implements Protocol {
         out = new DataOutputStream(s.getOutputStream());
         in = new DataInputStream(s.getInputStream());               
     }
-
-    public void close() { 
-        VirtualSocketFactory.close(s, out, in);
-    }
     
-    public boolean connect(VirtualSocketAddress target, long timeout) 
+    public VirtualSocket connect(VirtualSocketAddress target, long timeout) 
         throws IOException {
                         
         logger.info("Sending connect request to router!");
@@ -50,15 +46,15 @@ public class RouterClient implements Protocol {
         switch (result) {
         case REPLY_OK:
             logger.info("Connection setup succesfull!");            
-            return true;
+            return s;
 
         case REPLY_FAILED:
             logger.info("Connection setup failed!");
-            return false;
+            return null;
         
         default:
             logger.info("Connection setup returned junk!");
-            return false;
+            return null;
         }
     }
                

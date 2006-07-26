@@ -72,12 +72,9 @@ public class VirtualSocketFactory {
             return;
         }  
         
-        String tag = TypedProperties.stringProperty(Properties.HUB_TAG, "none");
-        
         try { 
             SocketAddressSet address = new SocketAddressSet(host);            
-            serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses, 
-                    tag);                 
+            serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses); 
         } catch (Exception e) {
             logger.warn("ServiceLink: Failed to connect to hub!", e);
             return;

@@ -6,6 +6,7 @@ import ibis.connect.direct.SocketAddressSet;
 
 import ibis.connect.gossipproxy.ServiceLinkImpl;
 
+import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;
 import ibis.connect.virtual.service.CallBack;
 
@@ -37,7 +38,7 @@ public class TestServiceLink implements CallBack {
         while (proxies.size() > 0) {
             serviceLink = ServiceLinkImpl.getServiceLink(
                     (SocketAddressSet) proxies.removeFirst(), 
-                    ss.getAddressSet(), "test");
+                    ss.getAddressSet());
             
             if (serviceLink != null) { 
                 break;
@@ -107,7 +108,7 @@ public class TestServiceLink implements CallBack {
     private void allClients() { 
         
         try {
-            String [] result = serviceLink.clients();
+            Client [] result = serviceLink.clients();
         
             System.out.println("Known clients:" + result.length);
             
@@ -123,7 +124,7 @@ public class TestServiceLink implements CallBack {
     private void localClients() { 
         
         try {
-            String [] result = serviceLink.localClients();
+            Client [] result = serviceLink.localClients();
         
             System.out.println("Clients sharing proxy:" + result.length);
             

@@ -5,6 +5,7 @@ import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
+import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;
 
 import java.io.IOException;
@@ -49,22 +50,24 @@ public class Router extends Thread {
         ssc = factory.createServerSocket(0, 50, properties);
         
         local = ssc.getLocalSocketAddress();
-        
-        logger.info("Router listening on " + local.toString());                 
 
-        System.out.println("Router listening on " + local.toString());
+        logger.info("Router listening on " + local.toString());                 
+        
+        boolean register = serviceLink.registerService("router", local);
+        
+        logger.info("Router registration: " + register);                 
     } 
                
     synchronized SocketAddressSet [] getDirections(SocketAddressSet machine) 
         throws IOException {
         
-        return serviceLink.directionToClient(machine.toString(), "none");
+        return serviceLink.directionToClient(machine.toString());
     }
     
-    synchronized String[] findClients(SocketAddressSet proxy, String tag) 
+    synchronized Client [] findClients(SocketAddressSet proxy, String service) 
         throws IOException {
         
-        return serviceLink.clients(proxy, tag);
+        return serviceLink.clients(proxy, service);
     }
     
     VirtualSocket connect(VirtualSocketAddress target, long timeout) 
@@ -90,8 +93,9 @@ public class Router extends Thread {
             System.err.println("Router waiting for connections....");
             
             try { 
-                VirtualSocket vs = ssc.accept();
-                new Connection(vs, this).start();
+                VirtualSocket vs = ssc.accept();                
+                // TODO: thread pool ? 
+                new Thread(new Connection(vs, this)).start();
             } catch (SocketTimeoutException e) {
                 // ignore
             } 

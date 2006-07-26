@@ -4,6 +4,8 @@ import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.gossipproxy.connections.ProxyConnection;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.TreeMap;
 
 public class ProxyDescription {
         
@@ -47,7 +49,7 @@ public class ProxyDescription {
     // Maintain a list of machines that have registered themselves as clients. 
     // Note that this is probably a very bad idea from a scalabitly point of 
     // view...
-    private ArrayList clients = new ArrayList(); 
+    private TreeMap clients = new TreeMap(); 
 
     private ProxyConnection connection;
   
@@ -73,44 +75,67 @@ public class ProxyDescription {
   //      clients.add(client);
   //  }
 
-    public void addClient(String client) {
-        
-        synchronized (clients) {
-            // TODO optimize!!!
-            if (!clients.contains(client)) {   
-                this.lastLocalUpdate = state.increment();            
-                clients.add(client);
-            }
+    public boolean addClient(String client) {        
+        synchronized (clients) {            
+            if (clients.containsKey(client)) {
+                return false;
+            } 
+
+            this.lastLocalUpdate = state.increment();
+            clients.put(client, new ClientDescription(client));
+            return true;
         } 
+    }
+
+    public void addOrUpdateClient(ClientDescription c) {        
+        synchronized (clients) {            
+            if (!clients.containsKey(c.clientAddress)) {
+                clients.put(c.clientAddress, c);                                
+            } else { 
+                ((ClientDescription) clients.get(c.clientAddress)).update(c);
+            }
+             
+            this.lastLocalUpdate = state.increment();
+        } 
+    }
+
+    
+    public boolean addService(String client, String tag, String address) {
+        synchronized (clients) {
+            
+            if (!clients.containsKey(client)) {
+                return false;
+            } 
+
+            ClientDescription c = (ClientDescription) clients.get(client);
+            return c.addService(tag, address);
+        }
     }
     
     boolean containsClient(String client) {
         synchronized (client) {
-            return clients.contains(client);
+            return clients.containsKey(client);
         } 
     }
     
     public ArrayList getClients(String tag) {
         
-        String suffix = "#" + tag;
+        ArrayList result = new ArrayList();
         
-        synchronized (clients) {
-            if (tag == null || tag.length() == 0) {             
-                return new ArrayList(clients);
-            } else { 
-                ArrayList result = new ArrayList();  
+        synchronized (clients) {           
+            Iterator itt = clients.values().iterator();
+            
+            while (itt.hasNext()) {
                 
-                for (int i=0;i<clients.size();i++) { 
-                    String client = (String) clients.get(i);
-                    
-                    if (client.endsWith(suffix)) {
-                        result.add(client);
-                    }
-                }
+                ClientDescription c = (ClientDescription) itt.next();
                 
-                return result;
+                if (c.containsService(tag)) { 
+                    result.add(c);
+                } 
             }
         }
+        
+        return result;
     }
     
     
@@ -302,12 +327,15 @@ public class ProxyDescription {
         buffer.append(clients.size());
         buffer.append("\n");
                 
-        for (int i=0;i<clients.size();i++) { 
+        Iterator itt = clients.values().iterator();
+        
+        while (itt.hasNext()) { 
             buffer.append("             : ");
-            buffer.append(clients.get(i));
+            buffer.append((ClientDescription) itt.next());
             buffer.append("\n");                
         } 
         
         return buffer.toString();        
-    }     
+    }
+         
 }

@@ -11,7 +11,9 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 
+import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.service.CallBack;
+import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;
 
 public class ServiceLinkImpl extends ServiceLink {
@@ -173,17 +175,7 @@ public class ServiceLinkImpl extends ServiceLink {
         
         return serviceLink;
     }
-
-    public String[] clients() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public String[] localClients() throws IOException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
+       
     public SocketAddressSet[] proxies() throws IOException {
         return new SocketAddressSet [] { hubAddress }; 
     }
@@ -192,28 +184,39 @@ public class ServiceLinkImpl extends ServiceLink {
         return hubAddress;
     }
 
-    public SocketAddressSet[] directionToClient(String client, String tag) throws IOException {
+    public SocketAddressSet[] directionToClient(String client) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public String[] clients(SocketAddressSet proxy) throws IOException {
+    public Client [] clients() throws IOException {
+        return clients("");
+    }
+    
+    public Client [] clients(String tag) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public String[] clients(String tag) throws IOException {
+    public Client [] clients(SocketAddressSet proxy) throws IOException {
+        return clients(proxy, "");
+    }
+    
+    public Client [] clients(SocketAddressSet proxy, String tag) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }
 
-    public String[] clients(SocketAddressSet proxy, String tag) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+    public Client [] localClients() throws IOException {
+        return clients(hubAddress, "");
+    }
+    
+    public Client [] localClients(String tag) throws IOException {
+        return clients(hubAddress, tag);
     }
 
-    public String[] localClients(String tag) throws IOException {
+    public boolean registerService(String tag, VirtualSocketAddress address) throws IOException {
         // TODO Auto-generated method stub
-        return null;
+        return false;
     }
 }

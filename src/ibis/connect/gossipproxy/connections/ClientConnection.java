@@ -2,6 +2,7 @@ package ibis.connect.gossipproxy.connections;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
+import ibis.connect.gossipproxy.ClientDescription;
 import ibis.connect.gossipproxy.ProxyDescription;
 import ibis.connect.gossipproxy.ProxyList;
 import ibis.connect.gossipproxy.ServiceLinkProtocol;
@@ -101,33 +102,31 @@ public class ClientConnection extends MessageForwardingConnection {
         out.writeUTF(id);            
         out.writeInt(tmp.size());
 
-        for (int i=0;i<tmp.size();i++) { 
-            out.writeUTF((String) tmp.get(i));
+        for (int i=0;i<tmp.size();i++) {
+            out.writeUTF(((ClientDescription) tmp.get(i)).toString());
         } 
             
         out.flush();        
     } 
 
     private void clients() throws IOException { 
+        
         String id = in.readUTF();
         String tag = in.readUTF();
         
         logger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        String [] clients = knownProxies.clientsAsString(tag);
+        ArrayList clients = knownProxies.allClients(tag);
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
-        out.writeInt(clients.length);
+        out.writeInt(clients.size());
 
         logger.debug("Connection " + clientAddress + " returning : " 
-                + clients.length + " clients");         
+                + clients.size() + " clients");         
         
-        for (int i=0;i<clients.length;i++) {
-            
-            logger.debug(i + " " + clients[i]);                 
-            
-            out.writeUTF(clients[i]);
+        for (int i=0;i<clients.size();i++) {
+            out.writeUTF(((ClientDescription) clients.get(i)).toString());
         } 
             
         out.flush();        
@@ -137,11 +136,10 @@ public class ClientConnection extends MessageForwardingConnection {
     private void directions() throws IOException { 
         String id = in.readUTF();
         String client = in.readUTF();
-        String tag = in.readUTF();
                 
         logger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        LinkedList result = knownProxies.directionToClient(client + "#" + tag);
+        LinkedList result = knownProxies.directionToClient(client);
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
@@ -160,7 +158,30 @@ public class ClientConnection extends MessageForwardingConnection {
             
         out.flush();        
     } 
+    
+    private void registerService() throws IOException { 
+        
+        String id = in.readUTF();
+        String tag = in.readUTF();
+        String address = in.readUTF();
 
+        logger.debug("Connection " + clientAddress + " return id: " + id +  
+                " adding " + tag + " " + address + " to services!");         
+               
+        ProxyDescription localProxy = knownProxies.getLocalDescription();
+        
+        out.write(ServiceLinkProtocol.INFO);           
+        out.writeUTF(id);            
+        out.writeInt(1);
+        
+        if (localProxy.addService(clientAddress, tag, address)) { 
+            out.writeUTF("OK");
+        } else { 
+            out.writeUTF("DENIED");
+        }
+            
+        out.flush();        
+    } 
     
     protected String getName() {
         return "ServiceLink(" + clientAddress + ")";
@@ -218,6 +239,13 @@ public class ClientConnection extends MessageForwardingConnection {
                 directions();
                 return true;
             
+            case ServiceLinkProtocol.REGISTER_SERVICE:
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Connection " + clientAddress + " requests" 
+                            + " service registration");
+                }
+                registerService();
+                return true;
                 
             default:
                 logger.warn("Connection " + clientAddress + " got unknown "
