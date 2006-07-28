@@ -322,9 +322,9 @@ public class ProxyDescription {
         StringBuffer buffer = new StringBuffer();
         buffer.append("Address      : ").append(proxyAddress).append('\n');  
         
-        if (local) {                 
-            buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
-        } else { 
+        buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
+        
+        if (!local) {                 
             buffer.append("Home State   : ").append(homeState).append('\n');
                 
             long time = (System.currentTimeMillis() - lastContact) / 1000;
