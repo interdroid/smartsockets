@@ -114,6 +114,12 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         // address should be in the first entry of the directions array.
         SocketAddressSet proxy = parent.getProxyAddress();
 
+        if (proxy == null) { 
+            Router.logger.debug("Cannot forward connection: failed to get " +
+                    "local proxy address!");
+            return false;
+        }
+        
         int startIndex = 0;
         
         if (directions[0].equals(proxy)) {

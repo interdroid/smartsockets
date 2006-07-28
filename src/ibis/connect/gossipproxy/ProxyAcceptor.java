@@ -153,6 +153,7 @@ public class ProxyAcceptor extends CommunicationThread {
             } 
 
             out.write(ProxyProtocol.REPLY_SERVICELINK_ACCEPTED);
+            out.writeUTF(server.getAddressSet().toString());            
             out.flush();
 
             ClientConnection c = new ClientConnection(src, s, in, out, 

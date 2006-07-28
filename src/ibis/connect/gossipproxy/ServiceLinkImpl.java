@@ -31,6 +31,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     
     private boolean connected = false;
     
+    private SocketAddressSet userSuppliedAddress;
     private SocketAddressSet proxyAddress; 
     private DirectSocket proxy;
     private DataOutputStream out; 
@@ -45,7 +46,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         
         factory = DirectSocketFactory.getSocketFactory();
         
-        this.proxyAddress = proxyAddress;
+        this.userSuppliedAddress = proxyAddress;
         this.myAddress = myAddress;              
                
         Thread t = new Thread(this, "ServiceLink Message Reader");
@@ -81,23 +82,32 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     }
     
     private void connectToProxy(SocketAddressSet address) throws IOException { 
-        try {            
+        try {
+            // Create a connection to the proxy
             proxy = factory.createSocket(address, TIMEOUT, null);
             
             out = new DataOutputStream(proxy.getOutputStream());
             in = new DataInputStream(proxy.getInputStream());
                            
+            // Ask if we are allowed to join
             out.write(ProxyProtocol.PROXY_SERVICELINK_CONNECT);
             out.writeUTF(myAddress.toString());
             out.flush();
                 
+            // Get the result
             int reply = in.read();
         
+            // Throw an exception if the proxy refuses our conenction
             if (reply != ProxyProtocol.REPLY_SERVICELINK_ACCEPTED) {
                 throw new IOException("Proxy denied connection request");                
             }
         
-            logger.info("Proxy at " + address + " accepted connection");            
+            // If the connection is accepted, the proxy will give us its full 
+            // address (since the user supplied one may be a partial).  
+            proxyAddress = new SocketAddressSet(in.readUTF());
+            
+            logger.info("Proxy at " + address + " accepted connection, " +
+                    "it's real address is: " + proxyAddress);            
 
             proxy.setSoTimeout(0);
             
@@ -377,7 +387,13 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }
     }
 
-    public SocketAddressSet getAddress() {
+    public SocketAddressSet getAddress() throws IOException {
+        
+        if (!waitConnected(maxWaitTime)) {
+            logger.info("Cannot get proxy address: not connected to proxy");            
+            throw new IOException("No connection to proxy!");
+        }
+        
         return proxyAddress;
     }
     
@@ -439,7 +455,11 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         while (true) { 
             do {            
                 try { 
-                    connectToProxy(proxyAddress);
+                    if (proxyAddress == null) {                     
+                        connectToProxy(userSuppliedAddress);
+                    } else { 
+                        connectToProxy(proxyAddress);
+                    }
                 } catch (IOException e) {
                     try { 
                         Thread.sleep(1000);

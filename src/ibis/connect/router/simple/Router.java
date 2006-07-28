@@ -102,8 +102,13 @@ public class Router extends Thread {
         } 
     }
         
-    public SocketAddressSet getProxyAddress() { 
-        return serviceLink.getAddress();
+    public SocketAddressSet getProxyAddress() {
+        try { 
+            return serviceLink.getAddress();
+        } catch (IOException e) {
+            logger.warn("Router failed to retrieve proxy address!", e);
+            return null;
+        }
     }
         
     public VirtualSocketAddress getAddress() { 

@@ -45,7 +45,7 @@ public abstract class ServiceLink {
         callbacks.remove(identifier);        
     }
     
-    public abstract SocketAddressSet getAddress(); 
+    public abstract SocketAddressSet getAddress() throws IOException; 
     
     public abstract void send(SocketAddressSet target, String targetModule, 
             int opcode, String message);
