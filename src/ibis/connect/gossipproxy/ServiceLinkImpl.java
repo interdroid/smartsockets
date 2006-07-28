@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 public class ServiceLinkImpl extends ServiceLink implements Runnable {
     
     private static final int TIMEOUT = 5000;
+    private static final int DEFAULT_WAIT_TIME = 10000;
     
     private static Logger logger = 
         ibis.util.GetLogger.getLogger(ServiceLinkImpl.class.getName());
@@ -36,7 +37,9 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     private DataInputStream in; 
     
     private int nextCallbackID = 0;    
-       
+    
+    private int maxWaitTime = DEFAULT_WAIT_TIME;
+    
     private ServiceLinkImpl(SocketAddressSet proxyAddress, 
             SocketAddressSet myAddress) throws IOException { 
         
@@ -240,7 +243,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     
     public Client [] clients(SocketAddressSet proxy, String tag) throws IOException {
 
-        if (!getConnected()) {
+        if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot get clients: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }
@@ -276,7 +279,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     }
 
     public Client [] clients(String tag) throws IOException {        
-        if (!getConnected()) {
+        if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot get clients: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }
@@ -309,7 +312,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     
     public SocketAddressSet [] proxies() throws IOException {
         
-        if (!getConnected()) {
+        if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot get list of proxies: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }        
@@ -342,7 +345,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     
     public SocketAddressSet [] directionToClient(String client) throws IOException {
 
-        if (!getConnected()) {
+        if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot get direction to client: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }        
@@ -381,7 +384,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
     public boolean registerService(String tag, VirtualSocketAddress address) 
         throws IOException {
 
-        if (!waitConnected(10000)) {
+        if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot register service: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }        
