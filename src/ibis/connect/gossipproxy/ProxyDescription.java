@@ -118,7 +118,7 @@ public class ProxyDescription {
             clients.clear();
 
             for (int i=0;i<c.length;i++) {
-                clients.put(c[i].clientAddress, c);                                
+                clients.put(c[i].clientAddress, c[i]);                                
             }   
         }            
         
