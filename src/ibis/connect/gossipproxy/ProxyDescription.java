@@ -120,7 +120,7 @@ public class ProxyDescription {
             for (int i=0;i<c.length;i++) {
                 clients.put(c[i].clientAddress, c[i]);                                
             }   
-        }            
+        }             
         
         homeState = remoteState;
         lastLocalUpdate = state.increment();
