@@ -39,7 +39,14 @@ public class ClientConnection extends MessageForwardingConnection {
         forwardClientMessage(clientAddress, target, module, code, message);
     } 
                 
-    private void disconnect() { 
+    private void disconnect() {
+        
+        if (knownProxies.getLocalDescription().removeClient(clientAddress)) { 
+            logger.debug("Removed client " + clientAddress + " from local proxy"); 
+        } else { 
+            logger.debug("Failed to removed client " + clientAddress + " from local proxy");
+        }
+        
         connections.removeConnection(clientAddress);
         DirectSocketFactory.close(s, out, in);            
     } 
@@ -256,7 +263,7 @@ public class ClientConnection extends MessageForwardingConnection {
             
         } catch (Exception e) { 
             logger.warn("Connection to " + clientAddress + " is broken!", e);
-            DirectSocketFactory.close(s, out, in);            
+            disconnect();
         }
         
         return false;

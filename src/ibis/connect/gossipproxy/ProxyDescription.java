@@ -71,11 +71,8 @@ public class ProxyDescription {
         this.local = local;
     }
     
-  //  void addClient(SocketAddressSet client) { 
-  //      clients.add(client);
-  //  }
-
-    public boolean addClient(String client) {        
+    public boolean addClient(String client) {
+        
         synchronized (clients) {            
             if (clients.containsKey(client)) {
                 return false;
@@ -87,6 +84,19 @@ public class ProxyDescription {
         } 
     }
 
+    public boolean removeClient(String client) {
+        
+        synchronized (clients) {            
+            if (!clients.containsKey(client)) {
+                return false;
+            } 
+            
+            this.lastLocalUpdate = state.increment();
+            clients.remove(client);
+            return true;
+        } 
+    }
+    
     public void addOrUpdateClient(ClientDescription c) {        
         synchronized (clients) {            
             if (!clients.containsKey(c.clientAddress)) {
