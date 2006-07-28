@@ -23,14 +23,14 @@ public class RouterClient implements Protocol {
     public final DataOutputStream out;
     public final DataInputStream in;   
                
-    RouterClient(VirtualSocket s) throws IOException {
+    RouterClient(VirtualSocket s, DataOutputStream out, DataInputStream in) {         
         this.s = s;        
-        out = new DataOutputStream(s.getOutputStream());
-        in = new DataInputStream(s.getInputStream());               
+        this.out = out;
+        this.in = in;
     }
     
-    public VirtualSocket connect(VirtualSocketAddress target, long timeout) 
-        throws IOException {
+    public VirtualSocket connectToClient(VirtualSocketAddress target, 
+            int timeout) throws IOException {
                         
         logger.info("Sending connect request to router!");
         
@@ -58,7 +58,8 @@ public class RouterClient implements Protocol {
         }
     }
                
-    public static RouterClient connect(VirtualSocketAddress router) throws IOException {
+    public static RouterClient connectToRouter(VirtualSocketAddress router, 
+            int timeout) throws IOException {
         
         if (properties == null) {            
             logger.info("Initializing client-side router code");
@@ -69,14 +70,19 @@ public class RouterClient implements Protocol {
         }
         
         VirtualSocket s = null;
-        
+        DataOutputStream out = null;
+        DataInputStream in = null;   
+            
         try { 
-            s = factory.createClientSocket(router, 0, properties);
+            s = factory.createClientSocket(router, timeout, properties);
+            out = new DataOutputStream(s.getOutputStream());
+            in = new DataInputStream(s.getInputStream());                                   
         } catch (IOException e) {
             logger.info("Failed to connect to router at " + router);
+            VirtualSocketFactory.close(s, out, in);
             throw e;
         }
         
-        return new RouterClient(s);                 
+        return new RouterClient(s, out, in);
     }
 }

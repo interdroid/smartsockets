@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
 
 public class RouterTest {
     
-    private static long timeout = 1000;
+    private static int timeout = 1000;
     private static boolean startRouter = false;
     private static boolean startClient = false;
     private static boolean serverSide  = false;
@@ -110,9 +110,9 @@ public class RouterTest {
                                 
             } else if (startClient) {         
                 
-                RouterClient c = RouterClient.connect(routerAddress);
+                RouterClient c = RouterClient.connectToRouter(routerAddress, timeout);
          
-                VirtualSocket s = c.connect(serverAddress, timeout);
+                VirtualSocket s = c.connectToClient(serverAddress, timeout);
                 
                 if (s != null) { 
                     System.out.println("Connected to " + serverAddress);
