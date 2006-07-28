@@ -31,9 +31,7 @@ public class ConnectTest {
                 out.writeUTF("Hello server!");
                 out.flush();
                            
-                in.close();
-                out.close();                
-                s.close();
+                VirtualSocketFactory.close(s, out, in);
             }
         } else {                         
             System.out.println("Creating server socket");
@@ -57,10 +55,8 @@ public class ConnectTest {
                 out.flush();
                 
                 System.out.println("Client says: " + in.readUTF());
-                                
-                in.close();
-                out.close();
-                s.close();
+
+                VirtualSocketFactory.close(s, out, in);
             }
         }
     }
