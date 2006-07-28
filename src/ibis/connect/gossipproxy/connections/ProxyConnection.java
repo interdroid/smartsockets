@@ -115,7 +115,12 @@ public class ProxyConnection extends MessageForwardingConnection {
         
         out.writeUTF(d.proxyAddress.toString());
         out.writeInt(d.getHops());
-        out.writeLong(d.getHomeState());
+        
+        if (d.isLocal()) { 
+            out.writeLong(d.getLastLocalUpdate());
+        } else { 
+            out.writeLong(d.getHomeState());
+        } 
         
         ArrayList clients = d.getClients(null);        
         out.writeInt(clients.size()); 
