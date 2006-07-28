@@ -326,28 +326,28 @@ public class ProxyDescription {
             buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
         } else { 
             buffer.append("Home State   : ").append(homeState).append('\n');
-        }
                 
-        long time = (System.currentTimeMillis() - lastContact) / 1000;
+            long time = (System.currentTimeMillis() - lastContact) / 1000;
         
-        buffer.append("Last Update  : ").append(time).append(" seconds ago\n");
-        buffer.append("Reachable    : ").append(reachableToString(reachable)).append('\n');
+            buffer.append("Last Contact : ").append(time).append(" seconds ago\n");
+            buffer.append("Reachable    : ").append(reachableToString(reachable)).append('\n');
                 
-        if (reachable == UNREACHABLE && indirection != null) { 
-            buffer.append("Reachable Via: ").append(indirection).append('\n');
-        }        
+            if (reachable == UNREACHABLE && indirection != null) { 
+                buffer.append("Reachable Via: ").append(indirection).append('\n');
+            }        
 
-        buffer.append("Required Hops: ").append(hops).append('\n');
+            buffer.append("Required Hops: ").append(hops).append('\n');
         
-        buffer.append("Can Reach Me : ").append(reachableToString(canReachMe)).append('\n');
+            buffer.append("Can Reach Me : ").append(reachableToString(canReachMe)).append('\n');
         
-        buffer.append("Connection   : ");
-                
-        if (haveConnection()) {         
-            buffer.append("yes\n");
-        } else { 
-            buffer.append("no\n");
-        }
+            buffer.append("Connection   : ");
+                       
+            if (haveConnection()) {         
+                buffer.append("yes\n");
+            } else { 
+                buffer.append("no\n");
+            }
+        } 
         
         buffer.append("Clients      : ");
         buffer.append(clients.size());
