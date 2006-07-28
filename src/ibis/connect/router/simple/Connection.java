@@ -128,9 +128,12 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             
             startIndex++;
             
-        } 
-                
-        Router.logger.debug("Client is NOT local to my proxy!!");  
+        } else { 
+            Router.logger.debug("Client is NOT local to my proxy!!");
+            Router.logger.debug("I am         : " + proxy);
+            Router.logger.debug("First hop is : " + directions[0]);
+        }
+          
         Router.logger.debug("Directions to client machine: "); 
 
         for (int i=0;i<directions.length;i++) {

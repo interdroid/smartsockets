@@ -69,7 +69,7 @@ public class Routed extends ConnectModule {
             }
             
         } catch (IOException e) {
-            logger.warn("Failed to retrieve routers from service link!");
+            logger.warn("Failed to retrieve routers from service link!", e);
         }
     
         lastUpdate = System.currentTimeMillis();        
@@ -147,7 +147,7 @@ public class Routed extends ConnectModule {
             try { 
                 c = RouterClient.connectToRouter(r, timeout);
             } catch (Exception e) {
-                logger.info("Failed to conenct to router \"" + r + "\"", e);
+                logger.info("Failed to connect to router \"" + r + "\"", e);
                 removeRouter(r);
                 r = getRouter(false);
             }                        
