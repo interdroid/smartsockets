@@ -123,7 +123,7 @@ public class ProxyDescription {
         }            
         
         homeState = remoteState;
-        lastLocalUpdate = state.get();
+        lastLocalUpdate = state.increment();
     }
    
     public long getHomeState() { 
