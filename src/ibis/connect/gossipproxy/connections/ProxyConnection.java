@@ -7,38 +7,47 @@ import ibis.connect.gossipproxy.ClientDescription;
 import ibis.connect.gossipproxy.ProxyDescription;
 import ibis.connect.gossipproxy.ProxyList;
 import ibis.connect.gossipproxy.ProxyProtocol;
+import ibis.connect.gossipproxy.StateCounter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 
 public class ProxyConnection extends MessageForwardingConnection {
 
     private final ProxyDescription peer;
     private final ProxyDescription local;    
-                      
-    public ProxyConnection(DirectSocket s, DataInputStream in, DataOutputStream out, 
-            ProxyDescription peer, Connections connections, ProxyList proxies) {
+    
+    // Keeps the current state of the system. 
+    private final StateCounter state;        
+                         
+    // Indicates the value of the local state the last time any data was send 
+    // to the peer. Remembering this allows us to send delta's. 
+    private long lastSendState;    
+            
+    public ProxyConnection(DirectSocket s, DataInputStream in, 
+            DataOutputStream out, ProxyDescription peer, 
+            Connections connections, ProxyList proxies, StateCounter state) {
         
         super(s, in, out, connections, proxies);
         
         this.peer = peer;        
+        this.state = state;
         local = proxies.getLocalDescription();
     }
+        
+    public synchronized void setLastSendState() {
+        lastSendState = state.get();
+    }
     
-    public synchronized void writeMessage(boolean client, String source, 
-            String target, String module, int code, String message, 
-            int hopsLeft) { 
+    public synchronized void writeMessage(String source, String target, 
+            String module, int code, String message, int hopsLeft) { 
         
         try {
-            if (client) { 
-                out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
-            } else { 
-                out.writeByte(ProxyProtocol.PROXY_MESSAGE);
-            }
+            out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
+            
             out.writeUTF(source);
             out.writeUTF(target);
             out.writeUTF(module);
@@ -54,7 +63,7 @@ public class ProxyConnection extends MessageForwardingConnection {
     
     public synchronized void gossip(long currentState) { 
         
-        long lastSendState = peer.getLastSendState();
+        long newSendState = state.get(); 
         
         try {
             int writes = 0;
@@ -91,7 +100,8 @@ public class ProxyConnection extends MessageForwardingConnection {
             // TODO: handle exception
         }
         
-        peer.setLastSendState();        
+        lastSendState = newSendState;
+        
         peer.setContactTimeStamp(false);        
     }
     
@@ -105,7 +115,8 @@ public class ProxyConnection extends MessageForwardingConnection {
         
         out.writeUTF(d.proxyAddress.toString());
         out.writeInt(d.getHops());
-
+        out.writeLong(d.getHomeState());
+        
         ArrayList clients = d.getClients(null);        
         out.writeInt(clients.size()); 
 
@@ -120,6 +131,8 @@ public class ProxyConnection extends MessageForwardingConnection {
         ProxyDescription tmp = knownProxies.add(address);
                
         int hops = in.readInt();
+        
+        long state = in.readLong();
         
         int clients = in.readInt();        
         
@@ -137,20 +150,31 @@ public class ProxyConnection extends MessageForwardingConnection {
                 peer.setCanNotReachMe();
             }
         } else if (tmp == peer) {
-            // The peer send information about itself. 
-            for (int i=0;i<clients;i++) { 
-                tmp.addOrUpdateClient(c[i]);
-            }  
+            // The peer send information about itself. This should 
+            // always be up-to-date.
+            if (state > tmp.getHomeState()) { 
+                tmp.update(c, state);
+            } else { 
+                logger.warn("EEK: got information directly from " 
+                        + peer.proxyAddressAsString + " which seems to be "
+                        + "out of date! " + state + " " + tmp.getHomeState());
+            }
         } else {
-            // We got information about a 'third party'.              
+            // We got information about a 'third party'.               
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
                 tmp.addIndirection(peer, hops+1);
             } 
             
-            for (int i=0;i<clients;i++) { 
-                tmp.addOrUpdateClient(c[i]);
-            }  
+            // Check if the information is more recent than what I know...
+            if (state > tmp.getHomeState()) { 
+                tmp.update(c, state);
+            } else {
+                logger.info("Ignoring outdated information about " + 
+                        tmp.proxyAddressAsString + " from "  
+                        + peer.proxyAddressAsString + " " + state + " " 
+                        + tmp.getHomeState());                
+            }
         }
         
         peer.setContactTimeStamp(false);
@@ -174,60 +198,9 @@ public class ProxyConnection extends MessageForwardingConnection {
                 + target + ", " + module + ", " + code + ", " + message 
                 + ", " + hopsLeft + "]");
                
-        forwardClientMessage(source, target, module, code, message, hopsLeft);          
+        forwardMessage(source, target, module, code, message, hopsLeft);          
     }
     
-    private void handleProxyMessage() throws IOException {
-        
-        String source = in.readUTF();
-        String target = in.readUTF();
-        String module = in.readUTF();
-        int code = in.readInt();
-        String message = in.readUTF();
-        int hopsLeft = in.readInt();
-      /*  
-        logger.debug("Got message [" + source + ", " 
-                + target + ", " + module + ", " + code + ", " + message 
-                + ", " + hopsLeft + "]");
-       */        
-        if (local.proxyAddressAsString.equals(target)) { 
-            
-            
-            
-            
-            // deliver message locally
-            logger.debug("This message should be delivered locally:");
-            logger.debug("[" + source + ", " + target + ", " + module + ", " 
-                    + code + ", " + message + ", " + hopsLeft + "]");
-           
-        } else { 
-            // forward message to other proxies
-            hopsLeft--;
-            
-            if (hopsLeft == 0) { 
-                logger.debug("This message should be forwarded, but ran out of hops!");
-                logger.debug("[" + source + ", " + target + ", " + module + ", "
-                        + code + ", " + message + ", " + hopsLeft + "]");
-               
-                return;
-            } 
-            
-            ProxyDescription p = knownProxies.get(target);
-            
-            if (p == null) {
-                logger.debug("Got message for unknown proxy: " + target);
-                logger.debug("[" + source + ", " 
-                        + target + ", " + module + ", " + code + ", " + message 
-                        + ", " + hopsLeft + "]");
-               
-                return;
-            } 
-                
-            forwardAnyMessage(false, p, source, target, module, code, message, 
-                    hopsLeft);
-        } 
-    }
-        
     protected String getName() { 
         return "ProxyConnection(" + peer.proxyAddress + ")";
     }
@@ -255,11 +228,7 @@ public class ProxyConnection extends MessageForwardingConnection {
             case ProxyProtocol.CLIENT_MESSAGE:
                 handleClientMessage();
                 return true;
-            
-            case ProxyProtocol.PROXY_MESSAGE:
-                handleProxyMessage();
-                return true;
-                
+               
             default:
                 logger.info("ProxyConnection got junk!");
                 DirectSocketFactory.close(s, out, in);

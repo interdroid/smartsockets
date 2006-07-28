@@ -15,41 +15,48 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         super(s, in, out, connections, proxies);
     }
     
-    private boolean forwardAnyMessage(boolean client, String proxy, String src, 
-            String target, String module, int code, String message, 
-            int hopsLeft) {
+    // Send a message over a proxy connection.
+    private boolean forwardMessage(String proxy, String src, String target, 
+            String module, int code, String message, int hopsLeft) {
 
         BaseConnection c = connections.getConnection(proxy); 
         
         if (c != null && c instanceof ProxyConnection) {             
             ProxyConnection tmp = (ProxyConnection) c;            
-            tmp.writeMessage(client, src, target, module, code, message, hopsLeft);
+            tmp.writeMessage(src, target, module, code, message, hopsLeft);
             return true;
         }   
 
         return false;
     }
     
-    protected void forwardAnyMessage(boolean client, ProxyDescription p, String src, String target, 
+    // Tries to forward a message to a given proxy, directly or indirectly.  
+    private void forwardMessage(ProxyDescription p, String src, String target, 
             String module, int code, String message, int hopsLeft) {
+        
+        String address = p.proxyAddressAsString;
         
         logger.info("Attempting to forward message to proxy "
                 + p.proxyAddress);
         
-        if (forwardAnyMessage(client, p.proxyAddressAsString, src, target, module, code, message, hopsLeft)) { 
+        if (forwardMessage(address, src, target, module, code, 
+                message, hopsLeft)) {
+            
             logger.info("Succesfully forwarded message to proxy " 
-                    + p.proxyAddressAsString + " using direct link");
+                    + address + " using direct link");
             return;            
         } 
          
         if (hopsLeft == 0) {
-            logger.info("Failed to forward message to proxy " + p.proxyAddressAsString 
-                    + " and we are not allowed to use an indirection!");
+            logger.info("Failed to forward message to proxy " 
+                    + address + " and we are not allowed to use" 
+                    +" an indirection!");
             return;
         } 
             
-        logger.info("Failed to forward message to proxy " + p.proxyAddressAsString 
-                + " using direct link, using indirection");
+        logger.info("Failed to forward message to proxy " 
+                + address + " using direct link, " 
+                + "trying indirection");
 
         // We don't have a direct connection, but we should be able to reach the
         // proxy indirectly
@@ -57,21 +64,27 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (p2 == null) {
             // Oh dear, we don't have an indirection!
-            logger.warn("Indirection address of " + p.proxyAddressAsString + " is null!");
+            logger.warn("Indirection address of " + address + " is null!");
             return;
         } 
 
-        if (forwardAnyMessage(client, p2.proxyAddressAsString, src, target, module, code, message, hopsLeft)) { 
+        if (forwardMessage(p2.proxyAddressAsString, src, target, module, code, 
+                message, hopsLeft)) { 
+
             logger.info("Succesfully forwarded message to proxy " 
                     + p2.proxyAddressAsString + " using direct link");
             return;            
         } 
 
-        logger.info("Failed to forward message to proxy " + p.proxyAddressAsString 
+        logger.info("Failed to forward message to proxy " + address 
                 + " or it's indirection " + p2.proxyAddressAsString);
     }
        
-    protected void forwardClientMessage(String src, String target, String module, 
+    // Forwards a message to a certain target client. If the target is 
+    // directly reachable the message is forwarded using the client connection. 
+    // otherwise, it is forwarded to all proxies that claim to know the client.
+    // If hopsleft reaches 0, the forwarding will stop.
+    protected void forwardMessage(String src, String target, String module, 
             int code, String message, int hopsLeft) {     
     
         // First check if we can find the target locally             
@@ -95,14 +108,17 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
             while (itt.hasNext()) { 
                 ProxyDescription p = (ProxyDescription) itt.next();
-                forwardAnyMessage(true, p, src, target, module, code, message, hopsLeft);
+                forwardMessage(p, src, target, module, code, message, hopsLeft);
             }        
         } 
             
         logger.info("No more proxy available that know " + target);        
     } 
-    
-    protected void forwardClientMessage(String src, String target, String module, 
+
+    // Forwards a message to a certain target client. If the target is 
+    // directly reachable the message is forwarded using the client connection. 
+    // otherwise, it is forwarded to all proxies that claim to know the client.
+    protected void forwardMessage(String src, String target, String module, 
             int code, String message) {
         
         // First check if we can find the target locally             
@@ -122,7 +138,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             
         while (itt.hasNext()) { 
             ProxyDescription p = (ProxyDescription) itt.next();
-            forwardAnyMessage(true, p, src, target, module, code, message, p.getHops());
+            forwardMessage(p, src, target, module, code, message, p.getHops());
         }        
             
         logger.info("No more proxy available that know " + target); 

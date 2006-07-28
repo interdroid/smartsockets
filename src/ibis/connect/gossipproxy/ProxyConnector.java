@@ -134,7 +134,8 @@ class ProxyConnector extends CommunicationThread {
             if (master) { 
                 logger.info("I am master during connection setup");
                 
-                c = new ProxyConnection(s, in, out, d, connections, knownProxies);                
+                c = new ProxyConnection(s, in, out, d, connections, 
+                        knownProxies, state);                                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -153,7 +154,8 @@ class ProxyConnector extends CommunicationThread {
                 result = sendConnect(out, in);
 
                 if (result) {                 
-                    c = new ProxyConnection(s, in, out, d, connections, knownProxies);                
+                    c = new ProxyConnection(s, in, out, d, connections, 
+                            knownProxies, state);                
                     result = d.createConnection(c);
                     
                     if (!result) { 

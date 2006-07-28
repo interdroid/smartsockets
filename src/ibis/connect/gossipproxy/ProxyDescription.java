@@ -26,9 +26,9 @@ public class ProxyDescription {
     // description.  
     private long lastLocalUpdate;
     
-    // Indicates the value of the local state the last time any data was send 
-    // to this machine. This allows us to send delta's instead of all info. 
-    private long lastSendState;    
+    // Value of the remote state the last time anything was changed in original
+    // copy of this description.  
+    private long homeState;
         
     // Number of hops required to reach this machine. A value of '0' indicates 
     // that a direct connection is possible. A value of 'Integer.MAX_VALUE/2'
@@ -73,12 +73,17 @@ public class ProxyDescription {
     
     public boolean addClient(String client) {
         
+        if (!local) { 
+            throw new IllegalStateException("Cannot add clients to remote"
+                    + " proxy descriptions!");
+        }
+        
         synchronized (clients) {            
             if (clients.containsKey(client)) {
                 return false;
             } 
 
-            this.lastLocalUpdate = state.increment();
+            lastLocalUpdate = state.increment();
             clients.put(client, new ClientDescription(client));
             return true;
         } 
@@ -86,29 +91,44 @@ public class ProxyDescription {
 
     public boolean removeClient(String client) {
         
+        if (!local) { 
+            throw new IllegalStateException("Cannot remove clients from remote"
+                    + " proxy descriptions!");
+        }
+                
         synchronized (clients) {            
             if (!clients.containsKey(client)) {
                 return false;
             } 
             
-            this.lastLocalUpdate = state.increment();
+            lastLocalUpdate = state.increment();
             clients.remove(client);
             return true;
         } 
     }
     
-    public void addOrUpdateClient(ClientDescription c) {        
+    public void update(ClientDescription [] c, long remoteState) {
+        
+        if (local) { 
+            throw new IllegalStateException("Cannot update clients of local"
+                    + " proxy description!");
+        }
+                
         synchronized (clients) {            
-            if (!clients.containsKey(c.clientAddress)) {
-                clients.put(c.clientAddress, c);                                
-            } else { 
-                ((ClientDescription) clients.get(c.clientAddress)).update(c);
-            }
-             
-            this.lastLocalUpdate = state.increment();
-        } 
-    }
+            clients.clear();
 
+            for (int i=0;i<c.length;i++) {
+                clients.put(c[i].clientAddress, c);                                
+            }   
+        }            
+        
+        homeState = remoteState;
+        lastLocalUpdate = state.get();
+    }
+   
+    public long getHomeState() { 
+        return homeState;
+    }
     
     public boolean addService(String client, String tag, String address) {
         synchronized (clients) {
@@ -159,22 +179,14 @@ public class ProxyDescription {
     
     public synchronized long getLastLocalUpdate() { 
         return lastLocalUpdate;
-    }
+    }    
     
-    public synchronized long getLastSendState() { 
-        return lastSendState;
-    }
-
     synchronized long getLastConnect() {
         return lastConnect;
     }
     
     synchronized long getLastContact() {
         return lastContact;
-    }
-            
-    public synchronized void setLastSendState() {
-        lastSendState = state.get();
     }
     
     public synchronized int getHops() { 
@@ -310,7 +322,6 @@ public class ProxyDescription {
         StringBuffer buffer = new StringBuffer();
         buffer.append("Address      : ").append(proxyAddress).append('\n');                      
         buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
-        buffer.append("Last Gossip  : ").append(lastSendState).append('\n');
                 
         long time = (System.currentTimeMillis() - lastContact) / 1000;
         

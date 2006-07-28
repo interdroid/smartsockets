@@ -6,7 +6,7 @@ import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.gossipproxy.connections.ClientConnection;
 import ibis.connect.gossipproxy.connections.Connections;
-import ibis.connect.gossipproxy.connections.ForwarderConnection;
+//import ibis.connect.gossipproxy.connections.ForwarderConnection;
 import ibis.connect.gossipproxy.connections.ProxyConnection;
 
 import java.io.BufferedInputStream;
@@ -14,7 +14,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.LinkedList;
+//import java.util.LinkedList;
 
 public class ProxyAcceptor extends CommunicationThread {
 
@@ -45,7 +45,7 @@ public class ProxyAcceptor extends CommunicationThread {
         d.setCanReachMe();
 
         ProxyConnection c = 
-            new ProxyConnection(s, in, out, d, connections, knownProxies);
+            new ProxyConnection(s, in, out, d, connections, knownProxies, state);
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this proxy...            
@@ -76,7 +76,7 @@ public class ProxyAcceptor extends CommunicationThread {
         logger.info("Got ping from: " + sender);      
         return false;
     }    
-
+/*
     private boolean handleClientConnect(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
 
@@ -106,7 +106,8 @@ public class ProxyAcceptor extends CommunicationThread {
 
         return true;        
     }
-
+*/
+    /*
     private boolean handleClientRegistration(DirectSocket s, 
             DataInputStream in, DataOutputStream out) throws IOException {
 
@@ -128,7 +129,8 @@ public class ProxyAcceptor extends CommunicationThread {
 
         // Always return false, so the main thread will close the connection. 
         return false;
-    }
+    }*/
+    
 
     private boolean handleServiceLinkConnect(DirectSocket s, DataInputStream in,
             DataOutputStream out) {
@@ -199,16 +201,7 @@ public class ProxyAcceptor extends CommunicationThread {
             case ProxyProtocol.PROXY_PING:
                 result = handlePing(s, in, out);                   
                 break;
-
-                // TODO: remove!                
-            case ProxyProtocol.PROXY_CLIENT_REGISTER:
-                result = handleClientRegistration(s, in, out);
-                break;
-
-            case ProxyProtocol.PROXY_CLIENT_CONNECT:
-                result = handleClientConnect(s, in, out);
-                break;
-
+              
             case ProxyProtocol.PROXY_SERVICELINK_CONNECT:
                 result = handleServiceLinkConnect(s, in, out);
                 break;                
