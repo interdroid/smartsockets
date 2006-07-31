@@ -11,15 +11,19 @@ X  Proxy should retry connecting to unreachable proxies (may be passed
 
   Create Factory for service links 
 
-  Add ssh tunneling to DirectSocketFactory
-
   Add TCP splicing to Virtual  
 
   Add support for multiple proxy addresses to VirtualSocketFactory
 
   Check if timeout make any sence....
 
+  Icing on cake: have the VirtualSocket transparently move from Routed 
+                  to splice/stun type connection....
+
 Think about: 
+
+  Add ssh tunneling to DirectSocketFactory ? 
+    - How do you known where to tunnel to ? 
 
   Think of smart way to use bouncers ? 
 
