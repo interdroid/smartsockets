@@ -79,61 +79,6 @@ public class ProxyAcceptor extends CommunicationThread {
         logger.info("Got ping from: " + sender);      
         return false;
     }    
-/*
-    private boolean handleClientConnect(DirectSocket s, DataInputStream in, 
-            DataOutputStream out) throws IOException {
-
-        logger.info("Got request for client connect");
-        
-        LinkedList skipProxies = new LinkedList();
-
-        String clientAsString = in.readUTF();
-        String targetAsString = in.readUTF();
-
-        int skipProxiesCount = in.readInt();
-
-        logger.info("Got request to connect " + clientAsString 
-                + " to " + targetAsString + " skipping " + skipProxiesCount + 
-                " proxies");
-        
-        for (int i=0;i<skipProxiesCount;i++) { 
-            skipProxies.add(in.readUTF());
-        } 
-        
-        ForwarderConnection c = new ForwarderConnection(s, in, out, connections, 
-                knownProxies, clientAsString, targetAsString, number++, 
-                skipProxies);
-
-        connections.addConnection(c.getName(), c);
-        c.activate();
-
-        return true;        
-    }
-*/
-    /*
-    private boolean handleClientRegistration(DirectSocket s, 
-            DataInputStream in, DataOutputStream out) throws IOException {
-
-        // Read the clients address. 
-        String clientAsString = in.readUTF();        
-
-        logger.info("Got connection from client: " + clientAsString);
-
-        ProxyDescription tmp = knownProxies.getLocalDescription();
-        tmp.addClient(clientAsString);
-
-        // Always accept the connection for now.              
-        out.writeByte(ProxyProtocol.REPLY_CLIENT_REGISTRATION_ACCEPTED);
-        out.flush();       
-
-        // TODO: should check here is we can reach the client. If so then 
-        // all is well, if not, then we should refuse the connection or keep it 
-        // open (which doesn't really scale) ...  
-
-        // Always return false, so the main thread will close the connection. 
-        return false;
-    }*/
-    
 
     private boolean handleServiceLinkConnect(DirectSocket s, DataInputStream in,
             DataOutputStream out) {
@@ -221,8 +166,6 @@ public class ProxyAcceptor extends CommunicationThread {
             DirectSocketFactory.close(s, out, in);
         }   
     }
-
-
 
     public void run() { 
 

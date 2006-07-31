@@ -1,6 +1,8 @@
 package ibis.connect.virtual;
 
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.discovery.Callback;
+import ibis.connect.discovery.Discovery;
 import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 import ibis.connect.virtual.modules.ConnectModule;
 import ibis.connect.virtual.modules.direct.Direct;
@@ -15,6 +17,7 @@ import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -37,7 +40,59 @@ public class VirtualSocketFactory {
     
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
-
+          
+    private static class DiscoveryReceiver implements Callback {
+        
+        private SocketAddressSet result;
+        private boolean cont = true;
+        
+        private synchronized SocketAddressSet get(long time) { 
+            
+            long end = System.currentTimeMillis() + time;
+            long left = time;
+            
+            while (result == null) {
+                try { 
+                    wait(left);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+                
+                left = end - System.currentTimeMillis();
+                
+                if (left <= 0) { 
+                    break;
+                }                
+            }
+            
+            cont = false;
+            return result;
+        }
+        
+        public synchronized boolean gotMessage(String message) {
+                        
+            if (message != null && message.startsWith("Proxy at: ")) {
+            
+                logger.info("Received proxy advert: \"" + message + "\"");            
+                
+                try {                    
+                    String addr = message.substring(10);                  
+                    logger.info("Addr: \"" + addr + "\"");                                                        
+                    
+                    result = new SocketAddressSet(addr);
+                    notifyAll();
+                    return false;                    
+                } catch (UnknownHostException e) {
+                    logger.info("Failed to parse advert!", e);
+                    return cont;
+                }                               
+            } else {
+                logger.info("Discarding message: \"" + message + "\"");
+                return cont;
+            }
+        }          
+    }
+        
     protected static VirtualSocketFactory factory; 
         
     private HashMap serverSockets = new HashMap();        
@@ -49,12 +104,12 @@ public class VirtualSocketFactory {
     
     private ServiceLink serviceLink;
     
-    private VirtualSocketFactory() throws Exception {
+    private VirtualSocketFactory(Map properties) throws Exception {
                 
         logger.info("Creating VirtualSocketFactory");    
         
-        loadModules();
-        createServiceLink();
+        loadModules(properties);
+        createServiceLink(properties);
         passServiceLinkToModules();        
         
         if (modules.size() == 0) { 
@@ -63,25 +118,54 @@ public class VirtualSocketFactory {
         }       
     } 
     
-    private void createServiceLink(){ 
-        String host = TypedProperties.stringProperty(Properties.HUB_HOST);
+    private void createServiceLink(Map properties){ 
         
-        if (host == null) { 
+        SocketAddressSet address = null;
+        
+        // Check if the poxy address was passed as a parameter.
+        if (properties != null) {
+            address = 
+                (SocketAddressSet) properties.get("connect.proxy.address");           
+        }
+       
+        // Check if the proxy address was passed as a command line property.
+        if (address == null) { 
+            String host = TypedProperties.stringProperty(Properties.HUB_HOST);
+        
+            if (host != null) { 
+                try { 
+                    logger.info("Got addr \"" + host + "\""); 
+                    address = new SocketAddressSet(host);
+                } catch (Exception e) {
+                    logger.warn("Failed to understand proxy address " + host 
+                            + "!", e);                    
+                }
+            }
+        } 
+
+        // Check if the proxy address is broadcast using UDP. 
+        if (address == null) {
+            DiscoveryReceiver r = new DiscoveryReceiver();            
+            Discovery.listnen(0, r);                    
+            address = r.get(10000);
+        }
+            
+        // Still no address ? Give up...         
+        if (address == null) { 
             // properties not set, so no central hub is available
-            logger.info("ServiceLink not created: no hub address available!");                
+            logger.info("ServiceLink not created: no proxy address available!");                
             return;
         }  
         
         try { 
-            SocketAddressSet address = new SocketAddressSet(host);            
             serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses); 
         } catch (Exception e) {
-            logger.warn("ServiceLink: Failed to connect to hub!", e);
+            logger.warn("Failed to connect service link to proxy!", e);
             return;
         }                        
     }
     
-    private void loadModules() throws Exception { 
+    private void loadModules(Map properties) throws Exception { 
         logger.info("Loading modules:");
         
         // TODO: Hardcoded for now. Should implement some configurable 
@@ -195,7 +279,7 @@ public class VirtualSocketFactory {
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
               
-        int refusedCount = 0;
+        //int refusedCount = 0;
         int notSuitableCount = 0;
         
         if (timeout < 0) { 
@@ -344,12 +428,16 @@ public class VirtualSocketFactory {
             serverSockets.remove(new Integer(port));           
         }                
     }
-    
+        
     public static VirtualSocketFactory getSocketFactory() {
+        return getSocketFactory(null);        
+    }
+    
+    public static VirtualSocketFactory getSocketFactory(Map properties) {
         
         if (factory == null) { 
             try { 
-                factory = new VirtualSocketFactory();                
+                factory = new VirtualSocketFactory(properties);                
             } catch (Exception e) {
                 logger.warn("Failed to create VirtualSocketFactory!", e);
             }                       

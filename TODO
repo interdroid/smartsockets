@@ -1,6 +1,10 @@
 Todo:
 
-  Create single app to start proxy + router
+X Create single app to start proxy + router
+
+  Use UDP mcast to find local routers
+
+  Merge bouncer into proxy
 
   Proxy should retry connecting to addresses passed by user
 
@@ -10,9 +14,16 @@ Todo:
 
   Add TCP splicing to Virtual  
 
-     
+  Add support for multiple proxy addresses to VirtualSocketFactory
+
+  Check if timeout make any sence....
+
 Think about: 
 
+  Cache info in servicelink instances ? 
+
+  Have multiple instances of VirtualSocketFactory based on properties ?
+     
   Web interface to proxies to make it easier to add addresses ? 
 
   Make up unique ID for machines that only have local IP's (UUID ?)

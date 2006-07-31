@@ -3,12 +3,11 @@ package ibis.connect.proxy.servicelink;
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-
 import ibis.connect.proxy.ProxyProtocol;
 import ibis.connect.virtual.VirtualSocketAddress;
+import ibis.connect.virtual.service.CallBack;
 import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;
-import ibis.connect.virtual.service.CallBack;
 import ibis.connect.virtual.service.SimpleCallBack;
 
 import java.io.DataInputStream;
@@ -26,7 +25,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         ibis.util.GetLogger.getLogger(ServiceLinkImpl.class.getName());
     
     private static ServiceLinkImpl serviceLink;
-        
+    
     private final DirectSocketFactory factory;
     private final SocketAddressSet myAddress; 
     
@@ -54,7 +53,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         t.setDaemon(true);
         t.start();
     }
-               
+                   
     private synchronized void setConnected(boolean value) {
         connected = value;
         notifyAll();
@@ -120,9 +119,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
             throw e;
         } 
     }
-              
-    
-         
+                           
     private void handleMessage() throws IOException { 
         
         String source = in.readUTF();
@@ -388,6 +385,8 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }
     }
 
+    
+    
     public SocketAddressSet getAddress() throws IOException {
         
         if (!waitConnected(maxWaitTime)) {
@@ -434,10 +433,20 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }
     }
     
+   
+    
     public static ServiceLink getServiceLink(SocketAddressSet address, 
             SocketAddressSet myAddress) { 
+                                       
+        if (address == null) {  
+            throw new NullPointerException("Proxy address is null!");
+        }
+                
+        if (myAddress == null) { 
+            throw new NullPointerException("Local address is null!");
+        }
         
-        if (serviceLink == null) {
+        if (serviceLink == null) {            
             try { 
                 serviceLink = new ServiceLinkImpl(address, myAddress);                 
             } catch (Exception e) {
@@ -456,7 +465,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         while (true) { 
             do {            
                 try { 
-                    if (proxyAddress == null) {                     
+                    if (proxyAddress == null) {
                         connectToProxy(userSuppliedAddress);
                     } else { 
                         connectToProxy(proxyAddress);
@@ -473,5 +482,5 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
             receiveMessages();
         }
         
-    }  
+    }
 }

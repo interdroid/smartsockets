@@ -33,13 +33,21 @@ public class Router extends Thread {
     
     private ServiceLink serviceLink;
     
-    public Router() throws IOException {         
+    public Router() throws IOException {
+        this(null);        
+    }
+    
+    public Router(SocketAddressSet proxy) throws IOException {         
         
         properties.put("connect.module.skip", "routed"); 
         
+        if (proxy != null) { 
+            properties.put("connect.proxy.address", proxy);
+        }
+                
         logger.debug("Router creating VirtualSocketFactory");
         
-        factory = VirtualSocketFactory.getSocketFactory();        
+        factory = VirtualSocketFactory.getSocketFactory(properties);        
         serviceLink = factory.getServiceLink();
         
         if (serviceLink == null) { 
@@ -112,7 +120,7 @@ public class Router extends Thread {
     }
         
     public VirtualSocketAddress getAddress() { 
-        return ssc.getLocalSocketAddress();
+        return local;
     }
     
     public void run() { 

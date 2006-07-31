@@ -2,6 +2,8 @@ package ibis.connect.proxy;
 
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.discovery.Discovery;
+import ibis.connect.discovery.Sender;
 import ibis.connect.proxy.connections.Connections;
 import ibis.connect.proxy.connections.ProxyConnection;
 import ibis.connect.proxy.state.ProxyDescription;
@@ -23,8 +25,8 @@ public class GossipProxy extends Thread {
     private ProxyList proxies;    
     private Connections connections;
     
-    private ProxyAcceptor proxyAcceptor;
-    private ProxyConnector proxyConnector;
+    private ProxyAcceptor acceptor;
+    private ProxyConnector connector;
             
     private StateCounter state = new StateCounter();
             
@@ -45,12 +47,12 @@ public class GossipProxy extends Thread {
                 
         connections = new Connections();
         
-        proxyAcceptor = new ProxyAcceptor(state, connections, proxies, factory);        
-        proxyConnector = new ProxyConnector(state, connections, proxies, factory);
+        acceptor = new ProxyAcceptor(state, connections, proxies, factory);        
+        connector = new ProxyConnector(state, connections, proxies, factory);
         
-        SocketAddressSet local = proxyAcceptor.getLocal();         
+        SocketAddressSet local = acceptor.getLocal();         
         
-        proxyConnector.setLocal(local);
+        connector.setLocal(local);
                 
         logger.info("GossipAcceptor listning at " + local);
         
@@ -65,13 +67,19 @@ public class GossipProxy extends Thread {
         
         logger.info("Starting Gossip connector/acceptor");
                 
-        proxyAcceptor.start();
-        proxyConnector.start();
+        acceptor.start();
+        connector.start();
+
+        logger.info("Starting LAN advertisement");
+        
+        Discovery.advertise(0, 0, "Proxy at: " + local);
+
+        logger.info("Start Gossiping!");
         
         start();
     }
 
-    void addProxies(SocketAddressSet [] proxyAds) { 
+    public void addProxies(SocketAddressSet [] proxyAds) { 
         
         if (proxyAds == null || proxyAds.length == 0) { 
             return;
@@ -98,9 +106,13 @@ public class GossipProxy extends Thread {
             if (c != null) {               
                 c.gossip(state.get());
             }            
-        }               
+        }                   
     }
     
+    public SocketAddressSet getProxyAddres() { 
+        return acceptor.getLocal();
+    }
+        
     public void run() { 
         
         while (true) { 

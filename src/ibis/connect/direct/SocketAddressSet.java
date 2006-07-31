@@ -192,7 +192,7 @@ public class SocketAddressSet extends SocketAddress {
             }
         
             // Now convert the address and port strings to real values ...
-            IPAddressSet tA = IPAddressSet.getFromString(a);            
+            IPAddressSet tA = IPAddressSet.getFromString(a);
             int tP = Integer.parseInt(p);
      
             // ... do a sanity check on the port value ...
