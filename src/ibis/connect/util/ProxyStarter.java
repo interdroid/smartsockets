@@ -1,14 +1,14 @@
 package ibis.connect.util;
 
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.proxy.GossipProxy;
+import ibis.connect.proxy.Proxy;
 import ibis.connect.router.simple.Router;
 
 import java.io.IOException;
 
 public class ProxyStarter {
     
-    private static GossipProxy p;
+    private static Proxy p;
     private static Router r;
         
     public static void main(String [] args) { 
@@ -34,7 +34,7 @@ public class ProxyStarter {
         
         try {            
             System.out.println("Starting proxy....");            
-            p = new GossipProxy(proxies);            
+            p = new Proxy(proxies);            
             System.out.println("Proxy running on: " + p.getProxyAddres());            
         } catch (IOException e) {
             System.err.println("Oops: failed to start proxy");

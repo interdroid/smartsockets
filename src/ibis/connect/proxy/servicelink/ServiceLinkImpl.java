@@ -90,7 +90,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
             in = new DataInputStream(proxy.getInputStream());
                            
             // Ask if we are allowed to join
-            out.write(ProxyProtocol.PROXY_SERVICELINK_CONNECT);
+            out.write(ProxyProtocol.SERVICELINK_CONNECT);
             out.writeUTF(myAddress.toString());
             out.flush();
                 
@@ -98,7 +98,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
             int reply = in.read();
         
             // Throw an exception if the proxy refuses our conenction
-            if (reply != ProxyProtocol.REPLY_SERVICELINK_ACCEPTED) {
+            if (reply != ProxyProtocol.SERVICELINK_ACCEPTED) {
                 throw new IOException("Proxy denied connection request");                
             }
         

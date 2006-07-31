@@ -14,11 +14,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-class ProxyConnector extends CommunicationThread {
+class Connector extends CommunicationThread {
     
     private boolean done = false;
     
-    ProxyConnector(StateCounter state, Connections connections,
+    Connector(StateCounter state, Connections connections,
             ProxyList knownProxies, DirectSocketFactory factory) {
         
         super("ProxyConnector", state, connections, knownProxies, factory);
@@ -29,17 +29,17 @@ class ProxyConnector extends CommunicationThread {
 
         logger.info("Sending connection request");
                 
-        out.write(ProxyProtocol.PROXY_CONNECT);
+        out.write(ProxyProtocol.CONNECT);
         out.writeUTF(localAsString);
         out.flush();
 
         int opcode = in.read();
 
         switch (opcode) {
-        case ProxyProtocol.REPLY_CONNECTION_ACCEPTED:
+        case ProxyProtocol.CONNECTION_ACCEPTED:
             logger.info("Connection request accepted");            
             return true;
-        case ProxyProtocol.REPLY_CONNECTION_REFUSED:
+        case ProxyProtocol.CONNECTION_REFUSED:
             logger.info("Connection request refused (duplicate)");
             return false;
         default:
@@ -67,7 +67,7 @@ class ProxyConnector extends CommunicationThread {
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
-            out.write(ProxyProtocol.PROXY_PING);
+            out.write(ProxyProtocol.PING);
             out.writeUTF(localAsString);
             out.flush();            
             
@@ -145,7 +145,7 @@ class ProxyConnector extends CommunicationThread {
                     logger.info("Connection was already created!");
                     
                     // never mind...
-                    out.write(ProxyProtocol.PROXY_PING);
+                    out.write(ProxyProtocol.PING);
                     out.writeUTF(localAsString);
                     out.flush();
                 } else {

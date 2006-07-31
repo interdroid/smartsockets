@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 
 public class ProxyList {
         
-    private static int RETRY_DELAY = 10000;
+    private static int RETRY_DELAY = 15000;
     
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(ProxyList.class.getName());
@@ -149,7 +149,7 @@ public class ProxyList {
     
     public synchronized void putBack(ProxyDescription d) {
         
-        if (d.reachableKnown()) { 
+        if (d.reachableKnown() && d.isReachable()) { 
             checked.addLast(d);        
         } else {
             // Existing entries go to the tail of the list

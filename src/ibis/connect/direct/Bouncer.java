@@ -1,6 +1,7 @@
 package ibis.connect.direct;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
  
@@ -53,22 +54,27 @@ public class Bouncer extends Thread {
     }
     
     private void handleSocket(DirectSocket s) { 
+
+        InputStream in = null;
+        OutputStream out = null;
         
         try { 
-            s.setSoTimeout(1000);
+            s.setSoTimeout(1000);            
             
-            OutputStream out = s.getOutputStream();
-            out.write(s.getLocalAddress().getAddress());
-            out.flush();
-            out.close();                         
+            in = s.getInputStream();
+            
+            int opcode = in.read();
+            
+            if (opcode == 127) { 
+                out = s.getOutputStream();
+                out.write(s.getLocalAddress().getAddress());
+                out.flush();
+            }
+                                 
         } catch (Throwable e) {            
             System.err.println("Failed to handle Socket: " + e);            
-        } finally {             
-            try {
-                s.close();
-            } catch (Throwable t) {
-                // ignore
-            }
+        } finally {
+            DirectSocketFactory.close(s, out, in);
         }
     } 
         

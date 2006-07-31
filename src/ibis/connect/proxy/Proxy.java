@@ -15,26 +15,26 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-public class GossipProxy extends Thread {
+public class Proxy extends Thread {
     
     private static int GOSSIP_SLEEP = 10000;
     
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(GossipProxy.class.getName());
+        ibis.util.GetLogger.getLogger(Proxy.class.getName());
                
     private ProxyList proxies;    
     private Connections connections;
     
-    private ProxyAcceptor acceptor;
-    private ProxyConnector connector;
+    private Acceptor acceptor;
+    private Connector connector;
             
     private StateCounter state = new StateCounter();
             
-    public GossipProxy() throws IOException { 
+    public Proxy() throws IOException { 
         this(null);
     }
     
-    public GossipProxy(SocketAddressSet [] proxyAds) throws IOException { 
+    public Proxy(SocketAddressSet [] proxyAds) throws IOException { 
 
         super("GossipProxy");
         
@@ -47,8 +47,8 @@ public class GossipProxy extends Thread {
                 
         connections = new Connections();
         
-        acceptor = new ProxyAcceptor(state, connections, proxies, factory);        
-        connector = new ProxyConnector(state, connections, proxies, factory);
+        acceptor = new Acceptor(state, connections, proxies, factory);        
+        connector = new Connector(state, connections, proxies, factory);
         
         SocketAddressSet local = acceptor.getLocal();         
         
@@ -140,7 +140,7 @@ public class GossipProxy extends Thread {
         } 
         
         try {
-            new GossipProxy(proxies);
+            new Proxy(proxies);
         } catch (IOException e) {
             logger.warn("Oops: ", e);
         }        

@@ -2,11 +2,12 @@ Todo:
 
 X Create single app to start proxy + router
 
-  Use UDP mcast to find local routers
+X Use UDP mcast to find local routers
 
-  Merge bouncer into proxy
-
-  Proxy should retry connecting to addresses passed by user
+X Merge bouncer into proxy 
+    
+X  Proxy should retry connecting to unreachable proxies (may be passed 
+   by user and not ready yet).  
 
   Create Factory for service links 
 
@@ -19,6 +20,8 @@ X Create single app to start proxy + router
   Check if timeout make any sence....
 
 Think about: 
+
+  Think of smart way to use bouncers ? 
 
   Cache info in servicelink instances ? 
 

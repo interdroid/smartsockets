@@ -107,11 +107,11 @@ public class ProxyConnection extends MessageForwardingConnection {
     
     private void writePing() throws IOException {        
         System.err.println("Sending ping to " + peer.proxyAddress);
-        out.write(ProxyProtocol.PROXY_PING);
+        out.write(ProxyProtocol.PING);
     } 
     
     private void writeProxy(ProxyDescription d) throws IOException {        
-        out.write(ProxyProtocol.PROXY_GOSSIP);
+        out.write(ProxyProtocol.GOSSIP);
         
         out.writeUTF(d.proxyAddress.toString());
         out.writeInt(d.getHops());
@@ -222,11 +222,11 @@ public class ProxyConnection extends MessageForwardingConnection {
                 DirectSocketFactory.close(s, out, in);
                 return false;
                 
-            case ProxyProtocol.PROXY_GOSSIP:
+            case ProxyProtocol.GOSSIP:
                 readProxy();
                 return true;
     
-            case ProxyProtocol.PROXY_PING:
+            case ProxyProtocol.PING:
                 handlePing();
                 return true;
 

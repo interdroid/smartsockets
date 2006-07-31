@@ -19,14 +19,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 //import java.util.LinkedList;
 
-public class ProxyAcceptor extends CommunicationThread {
+public class Acceptor extends CommunicationThread {
 
     private DirectServerSocket server;
     private boolean done = false;
 
     //private int number = 0;
 
-    ProxyAcceptor(StateCounter state, Connections connections, 
+    Acceptor(StateCounter state, Connections connections, 
             ProxyList knownProxies, DirectSocketFactory factory) 
             throws IOException {
 
@@ -54,14 +54,14 @@ public class ProxyAcceptor extends CommunicationThread {
             // There already was a connection with this proxy...            
             logger.info("Connection from " + addr + " refused (duplicate)");
 
-            out.write(ProxyProtocol.REPLY_CONNECTION_REFUSED);
+            out.write(ProxyProtocol.CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                         
             // We just created a connection to this proxy.
             logger.info("Connection from " + addr + " accepted");
 
-            out.write(ProxyProtocol.REPLY_CONNECTION_ACCEPTED);            
+            out.write(ProxyProtocol.CONNECTION_ACCEPTED);            
             out.flush();
 
             // Now activate it. 
@@ -92,7 +92,7 @@ public class ProxyAcceptor extends CommunicationThread {
                     " refused, since it already exists!"); 
                 } 
 
-                out.write(ProxyProtocol.REPLY_SERVICELINK_REFUSED);
+                out.write(ProxyProtocol.SERVICELINK_REFUSED);
                 out.flush();
                 DirectSocketFactory.close(s, out, in);
                 return false;
@@ -102,7 +102,7 @@ public class ProxyAcceptor extends CommunicationThread {
                 logger.debug("Incoming connection from " + src + " accepted"); 
             } 
 
-            out.write(ProxyProtocol.REPLY_SERVICELINK_ACCEPTED);
+            out.write(ProxyProtocol.SERVICELINK_ACCEPTED);
             out.writeUTF(server.getAddressSet().toString());            
             out.flush();
 
@@ -122,6 +122,15 @@ public class ProxyAcceptor extends CommunicationThread {
         return false;
     }
 
+    private boolean handleBounce(DirectSocket s, DataInputStream in, 
+            DataOutputStream out) throws IOException {
+        
+        out.write(s.getLocalAddress().getAddress());
+        out.flush();
+        
+        return false;
+    }
+        
     private void doAccept() {
 
         DirectSocket s = null;
@@ -142,18 +151,22 @@ public class ProxyAcceptor extends CommunicationThread {
             int opcode = in.read();
 
             switch (opcode) {
-            case ProxyProtocol.PROXY_CONNECT:
+            case ProxyProtocol.CONNECT:
                 result = handleIncomingProxyConnect(s, in, out);                   
                 break;
 
-            case ProxyProtocol.PROXY_PING:
+            case ProxyProtocol.PING:
                 result = handlePing(s, in, out);                   
                 break;
               
-            case ProxyProtocol.PROXY_SERVICELINK_CONNECT:
+            case ProxyProtocol.SERVICELINK_CONNECT:
                 result = handleServiceLinkConnect(s, in, out);
                 break;                
 
+            case ProxyProtocol.BOUNCE_IP:
+                result = handleBounce(s, in, out);
+                break;                
+                
             default:
                 break;
             }
