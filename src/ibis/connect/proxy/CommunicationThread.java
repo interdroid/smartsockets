@@ -1,8 +1,10 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy;
 
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.connections.Connections;
+import ibis.connect.proxy.connections.Connections;
+import ibis.connect.proxy.state.ProxyList;
+import ibis.connect.proxy.state.StateCounter;
 import ibis.util.GetLogger;
 
 import org.apache.log4j.Logger;

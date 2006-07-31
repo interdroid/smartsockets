@@ -1,14 +1,9 @@
-package ibis.connect.gossipproxy.connections;
+package ibis.connect.proxy.connections;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
-
 public class Connections {
-
-    private static Logger logger = 
-        ibis.util.GetLogger.getLogger(Connections.class.getName());
-    
+   
     private HashMap connections; 
     
     public Connections()  { 
@@ -26,6 +21,4 @@ public class Connections {
     public synchronized void removeConnection(String key) { 
         connections.remove(key);
     }
-
-  
 }

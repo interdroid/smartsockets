@@ -1,9 +1,10 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy.servicelink;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 
+import ibis.connect.proxy.ProxyProtocol;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;

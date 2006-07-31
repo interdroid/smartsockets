@@ -1,13 +1,13 @@
-package ibis.connect.gossipproxy.connections;
+package ibis.connect.proxy.connections;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.ClientDescription;
-import ibis.connect.gossipproxy.ProxyDescription;
-import ibis.connect.gossipproxy.ProxyList;
-import ibis.connect.gossipproxy.ProxyProtocol;
-import ibis.connect.gossipproxy.StateCounter;
+import ibis.connect.proxy.ProxyProtocol;
+import ibis.connect.proxy.state.ClientDescription;
+import ibis.connect.proxy.state.ProxyDescription;
+import ibis.connect.proxy.state.ProxyList;
+import ibis.connect.proxy.state.StateCounter;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

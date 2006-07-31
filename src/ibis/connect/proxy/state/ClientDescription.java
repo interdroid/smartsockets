@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy.state;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

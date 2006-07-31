@@ -1,7 +1,7 @@
 package ibis.connect.virtual;
 
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.ServiceLinkImpl;
+import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 import ibis.connect.virtual.modules.ConnectModule;
 import ibis.connect.virtual.modules.direct.Direct;
 import ibis.connect.virtual.modules.reverse.Reverse;

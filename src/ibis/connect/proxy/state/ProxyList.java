@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy.state;
 
 import ibis.connect.direct.SocketAddressSet;
 
@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 

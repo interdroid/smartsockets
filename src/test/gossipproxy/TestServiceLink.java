@@ -4,8 +4,8 @@ import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 
-import ibis.connect.gossipproxy.ServiceLinkImpl;
 
+import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;
 import ibis.connect.virtual.service.CallBack;

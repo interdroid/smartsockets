@@ -1,0 +1,22 @@
+Todo:
+
+  Create single app to start proxy + router
+
+  Proxy should retry connecting to addresses passed by user
+
+  Create Factory for service links 
+
+  Add ssh tunneling to DirectSocketFactory
+
+  Add TCP splicing to Virtual  
+
+     
+Think about: 
+
+  Web interface to proxies to make it easier to add addresses ? 
+
+  Make up unique ID for machines that only have local IP's (UUID ?)
+
+  Add UDP/STUN like module to Virtual ?  
+
+  Add parallel streams (where ? Direct ot Virtual) 

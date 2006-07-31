@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy;
 
 public interface ProxyProtocol {
 

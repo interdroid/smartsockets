@@ -1,4 +1,4 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy.servicelink;
 
 public interface ServiceLinkProtocol {
     public final byte MESSAGE           = 1;

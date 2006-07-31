@@ -1,8 +1,8 @@
-package ibis.connect.gossipproxy.connections;
+package ibis.connect.proxy.connections;
 
 import ibis.connect.direct.DirectSocket;
-import ibis.connect.gossipproxy.ProxyDescription;
-import ibis.connect.gossipproxy.ProxyList;
+import ibis.connect.proxy.state.ProxyDescription;
+import ibis.connect.proxy.state.ProxyList;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -94,7 +94,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             // We found the target, so lets forward the message
             boolean result = ((ClientConnection) c).sendMessage(src, module, 
                     code, message);
-            return;
+            
+            if (result) { 
+                return;
+            }                 
         } 
         
         logger.info("Failed to directly forward message to " + target + 
@@ -128,7 +131,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             // We found the target, so lets forward the message
             boolean result = ((ClientConnection) c).sendMessage(src, module, 
                     code, message);
-            return;
+            
+            if (result) { 
+                return;
+            }
         } 
         
         logger.info("Failed to directly forward message to " + target + 

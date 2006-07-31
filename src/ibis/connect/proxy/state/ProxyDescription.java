@@ -1,7 +1,7 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy.state;
 
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.connections.ProxyConnection;
+import ibis.connect.proxy.connections.ProxyConnection;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,11 +53,11 @@ public class ProxyDescription {
 
     private ProxyConnection connection;
   
-    ProxyDescription(SocketAddressSet address, StateCounter state) {
+    public ProxyDescription(SocketAddressSet address, StateCounter state) {
         this(address, state, false);
     } 
     
-    ProxyDescription(SocketAddressSet address, StateCounter state, 
+    public ProxyDescription(SocketAddressSet address, StateCounter state, 
             boolean local) {
         
         this.state = state;        
@@ -193,7 +193,7 @@ public class ProxyDescription {
         return hops;
     }
     
-    synchronized void setReachable() {
+    public synchronized void setReachable() {
 
         if (reachable != REACHABLE) { 
             reachable = REACHABLE;                     
@@ -205,7 +205,7 @@ public class ProxyDescription {
         setContactTimeStamp(true);
     } 
         
-    synchronized void setUnreachable() { 
+    public synchronized void setUnreachable() { 
         
         if (reachable != UNREACHABLE) { 
             reachable = UNREACHABLE;
@@ -283,7 +283,7 @@ public class ProxyDescription {
         return local;
     }
     
-    synchronized boolean createConnection(ProxyConnection c) {
+    public synchronized boolean createConnection(ProxyConnection c) {
         
         if (connection != null) {
             // Already have a connection to this proxy!
@@ -294,11 +294,11 @@ public class ProxyDescription {
         return true;
     }
         
-    synchronized ProxyConnection getConnection() { 
+    public synchronized ProxyConnection getConnection() { 
         return connection;
     }
 
-    synchronized boolean haveConnection() { 
+    public synchronized boolean haveConnection() { 
         return (connection != null);        
     }
     

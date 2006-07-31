@@ -1,13 +1,16 @@
-package ibis.connect.gossipproxy;
+package ibis.connect.proxy;
 
 import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.gossipproxy.connections.ClientConnection;
-import ibis.connect.gossipproxy.connections.Connections;
 //import ibis.connect.gossipproxy.connections.ForwarderConnection;
-import ibis.connect.gossipproxy.connections.ProxyConnection;
+import ibis.connect.proxy.connections.ClientConnection;
+import ibis.connect.proxy.connections.Connections;
+import ibis.connect.proxy.connections.ProxyConnection;
+import ibis.connect.proxy.state.ProxyDescription;
+import ibis.connect.proxy.state.ProxyList;
+import ibis.connect.proxy.state.StateCounter;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -21,7 +24,7 @@ public class ProxyAcceptor extends CommunicationThread {
     private DirectServerSocket server;
     private boolean done = false;
 
-    private int number = 0;
+    //private int number = 0;
 
     ProxyAcceptor(StateCounter state, Connections connections, 
             ProxyList knownProxies, DirectSocketFactory factory) 
