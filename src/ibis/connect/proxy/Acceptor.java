@@ -18,6 +18,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 //import java.util.LinkedList;
+import java.net.InetSocketAddress;
 
 public class Acceptor extends CommunicationThread {
 
@@ -130,7 +131,20 @@ public class Acceptor extends CommunicationThread {
         
         return false;
     }
-        
+    
+    private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
+            DataOutputStream out) throws IOException {
+
+        // Echo the essentials of the connection that we see. Its up to the 
+        // client to decide what to do with it.... 
+        InetSocketAddress tmp = (InetSocketAddress) s.getRemoteSocketAddress();                            
+
+        out.writeUTF(tmp.getAddress().toString());
+        out.writeInt(tmp.getPort());
+
+        return false;        
+    }
+    
     private void doAccept() {
 
         DirectSocket s = null;
@@ -166,7 +180,11 @@ public class Acceptor extends CommunicationThread {
             case ProxyProtocol.BOUNCE_IP:
                 result = handleBounce(s, in, out);
                 break;                
-                
+            
+            case ProxyProtocol.GET_SPLICE_INFO:
+                result = handleSpliceInfo(s, in, out);
+                break;                
+                            
             default:
                 break;
             }

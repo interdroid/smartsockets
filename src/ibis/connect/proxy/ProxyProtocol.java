@@ -15,5 +15,8 @@ public interface ProxyProtocol {
     public static final byte SERVICELINK_ACCEPTED = 41;    
     public static final byte SERVICELINK_REFUSED  = 42;
     
+    public static final byte GET_SPLICE_INFO = 50;
+        
+    // TODO: Is this still needed now we us STUN ? 
     public static final byte BOUNCE_IP = 127;            
 } 

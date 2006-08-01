@@ -13,8 +13,8 @@ public class STUN {
         ibis.util.GetLogger.getLogger(STUN.class.getName());
     
     private static String [] DEFAULT_SERVERS = 
-        new String [] { "stun.xten.net", 
-                        "iphone-stun.freenet.de", 
+        new String [] { "iphone-stun.freenet.de",
+                        "stun.xten.net",
                         "stun.fwdnet.net", 
                         "stun.fwd.org" }; 
     
