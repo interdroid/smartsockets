@@ -8,9 +8,7 @@ import ibis.connect.direct.SocketAddressSet;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 public class SpliceTest {
 
@@ -24,26 +22,31 @@ public class SpliceTest {
  
             SocketAddressSet target = new SocketAddressSet(args[0]);
            
+            DirectSocket s = null;
+            DataInputStream in = null;
+            DataOutputStream out = null;
+            
             for (int i=0;i<100;i++) {
                 try { 
-                    DirectSocket s = sf.createSocket(target, 0, LOCAL_PORT, null);
+                    s = sf.createSocket(target, 0, LOCAL_PORT, null);
                 
                     System.out.println("Created connection to " + target + 
                             " on local address " + s.getLocalSocketAddress() 
                             + " remote address " + s.getRemoteSocketAddress());
 
-                    DataInputStream in = new DataInputStream(s.getInputStream());
-                    DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                    in = new DataInputStream(s.getInputStream());
+                    out = new DataOutputStream(s.getOutputStream());
 
                     out.writeUTF("Hello server!");
                     out.flush();
                 
                     System.out.println("Server says: " + in.readUTF());
 
-                    DirectSocketFactory.close(s, out, in);
                 } catch (Exception e) {
                     System.out.println("Failed to created connection to " 
                             + target);
+                } finally { 
+                    DirectSocketFactory.close(s, out, in);
                 }
             }
         } else {                         
@@ -92,11 +95,12 @@ public class SpliceTest {
                     out.flush();
             
                     System.out.println("Server says: " + in.readUTF());
-
-                    DirectSocketFactory.close(s, out, in);
+                  
                 } catch (Exception e) {
                     System.out.println("Failed to created connection to " 
                             + target); 
+                } finally { 
+                    DirectSocketFactory.close(s, out, in);
                 }
             }
         }
