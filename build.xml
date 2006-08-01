@@ -7,7 +7,7 @@
     <property name="builddir" value="./build"/>
     <property name="distdir" value="./jars"/>
 
-    <property name="external" value="./external/log4j-1.2.9.jar:./external/ibis-util.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar"/>
+    <property name="external" value="./external/jstun-0.6.0.jar:./external/log4j-1.2.9.jar:./external/ibis-util.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar"/>
 	
     <!-- Internal target - Preparations for building. -->
     <target name="prepare"> 

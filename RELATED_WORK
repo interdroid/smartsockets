@@ -1,14 +1,22 @@
-STUNT (Cornell)
+STUN 
+
+  RFC 3489.
+
+  http://en.wikipedia.org/wiki/STUN
+  http://wwwbs.informatik.htw-dresden.de/svortrag/i02/Schoene/stun/
+  http://jstun.javawi.de/
+
+STUNT (STUN + TCP - Cornell)
 
   http://nutss.gforge.cis.cornell.edu/jstunt-faq.php#q1
 
   Basically tcp splicing with single hub. Uses 
   'email like URIs' as addressing for the connections. 
 
-Wikipedia page on STUN: 
+ICE (Interactive Connectivity Establishment)
 
-  http://en.wikipedia.org/wiki/STUN
+  http://www.ietf.org/internet-drafts/draft-ietf-mmusic-ice-09.txt
 
+SIP 
 
-
-
+  

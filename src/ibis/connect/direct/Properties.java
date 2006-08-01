@@ -12,6 +12,7 @@ class Properties {
     
     // These are used by the PlainSocketFactory
     public static final String USE_NIO = PREFIX + "nio";
+    public static final String USE_STUN = PREFIX + "stun";
     public static final String USE_UPNP = PREFIX + "upnp";
     public static final String USE_BOUNCER = PREFIX + "bouncer";
     public static final String PORT_RANGE = PREFIX + "port_range";
@@ -36,8 +37,8 @@ class Properties {
     public static int outputBufferSize = 64 * 1024;
           
     private static final String[] sysprops = { 
-        USE_NIO, USE_UPNP, USE_BOUNCER, PORT_RANGE, EXTERNAL_ADDR, BOUNCERS, 
-        DEBUG_PROP, VERBOSE_PROP, IN_BUF_SIZE, OUT_BUF_SIZE };
+        USE_NIO, USE_STUN, USE_UPNP, USE_BOUNCER, PORT_RANGE, EXTERNAL_ADDR, 
+        BOUNCERS, DEBUG_PROP, VERBOSE_PROP, IN_BUF_SIZE, OUT_BUF_SIZE };
 
     static {
         TypedProperties.checkProperties(PREFIX, sysprops, null);

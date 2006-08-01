@@ -46,7 +46,7 @@ public class ConnectTest {
                 DirectSocket s = ss.accept();
                                 
                 System.out.println("Incoming connection from " 
-                        + s.getRemoteSocketAddress());
+                        + s.getRemoteSocketAddress() + " " + s.getPort());
                 
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());

@@ -9,6 +9,10 @@ X Merge bouncer into proxy
 X  Proxy should retry connecting to unreachable proxies (may be passed 
    by user and not ready yet).  
 
+X Add STUN support to DirectFactory to find external address. 
+
+X Support multiple servers for STUN
+   
   Create Factory for service links 
 
   Add TCP splicing to Virtual  
@@ -16,11 +20,13 @@ X  Proxy should retry connecting to unreachable proxies (may be passed
   Add support for multiple proxy addresses to VirtualSocketFactory
 
   Check if timeout make any sence....
-
+  
   Icing on cake: have the VirtualSocket transparently move from Routed 
                   to splice/stun type connection....
 
 Think about: 
+
+  Machine may have multiple external addresses (multiple networks, each with NAT) ?
 
   Add ssh tunneling to DirectSocketFactory ? 
     - How do you known where to tunnel to ? 

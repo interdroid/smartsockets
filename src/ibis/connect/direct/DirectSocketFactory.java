@@ -1,6 +1,7 @@
 package ibis.connect.direct;
 
 import ibis.connect.util.NetworkUtils;
+import ibis.connect.util.STUN;
 import ibis.connect.util.UPNP;
 import ibis.util.TypedProperties;
 
@@ -42,6 +43,9 @@ public class DirectSocketFactory {
     private static final boolean USE_NIO = TypedProperties.booleanProperty(
             Properties.USE_NIO, false);
 
+    private static final boolean ALLOW_STUN = TypedProperties.booleanProperty(
+            Properties.USE_STUN, true);
+    
     private static final boolean ALLOW_UPNP = TypedProperties.booleanProperty(
             Properties.USE_UPNP, false);
 
@@ -181,6 +185,18 @@ public class DirectSocketFactory {
             return;
         }
 
+        if (ALLOW_STUN) { 
+            if (logger.isDebugEnabled()) {
+                logger.debug("Using STUN to find external address...");
+            }
+   
+            externalNATAddress = STUN.getExternalAddress(null);
+            
+            if (logger.isDebugEnabled()) {
+                logger.debug("STUN lookup result: " + externalNATAddress);
+            }
+        }
+        
         if (ALLOW_UPNP) {
             // Try to obtain the global IP address by using UPNP.
             if (logger.isDebugEnabled()) {
@@ -198,6 +214,7 @@ public class DirectSocketFactory {
             return;
         }
 
+        // TODO: remove ? Replaced by STUN....
         if (ALLOW_BOUNCER) {
             // Try to obtain the global IP address by using an external bouncer.
             if (logger.isDebugEnabled()) {
@@ -491,7 +508,7 @@ public class DirectSocketFactory {
         ServerSocket ss = createUnboundServerSocket();
         ss.bind(new InetSocketAddress(port), backlog);
 
-        SocketAddressSet local = new SocketAddressSet(localAddress, ss
+        SocketAddressSet local = new SocketAddressSet(completeAddress, ss
                 .getLocalPort());
 
         DirectServerSocket smss = new DirectServerSocket(local, ss);
