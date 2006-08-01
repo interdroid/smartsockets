@@ -10,17 +10,18 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-public class SpliceTest {
+public class SimpleSpliceTest {
 
     private static final int LOCAL_PORT = 16889;
     
+    private static DirectSocketFactory sf = 
+        DirectSocketFactory.getSocketFactory();
+    
     public static void main(String [] args) throws IOException { 
-        
-        DirectSocketFactory sf = DirectSocketFactory.getSocketFactory();
-        
+                
         if (args.length > 0) {
- 
-            SocketAddressSet target = new SocketAddressSet(args[0]);
+            
+            SocketAddressSet target = new SocketAddressSet(args[0]); 
            
             DirectSocket s = null;
             DataInputStream in = null;
