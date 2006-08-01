@@ -36,31 +36,39 @@ public class ThreePointSpliceTest {
         
         System.out.println("Server gives me " + addr + " " + port);
         
-        SocketAddressSet target = new SocketAddressSet(addr, port);
         
-        for (int i=0;i<100;i++) {
-            try { 
-                s = sf.createSocket(target, 0, LOCAL_PORT, null);
+        SocketAddressSet [] target = new SocketAddressSet[5];
+        
+        for (int i=0;i<target.length;i++) {
+            target[i] = new SocketAddressSet(addr, port+i);
+        }
+        
+        for (int i=0;i<30;i++) {
             
-                System.out.println("Created connection to " + target + 
-                        " on local address " + s.getLocalSocketAddress() 
-                        + " remote address " + s.getRemoteSocketAddress());
-
-                in = new DataInputStream(s.getInputStream());
-                out = new DataOutputStream(s.getOutputStream());
-
-                out.writeUTF("Hello!");
-                out.flush();
+            for (int t=0;t<target.length;t++) {             
+                try { 
+                    s = sf.createSocket(target[i], 0, LOCAL_PORT, null);
             
-                System.out.println("Other side says: " + in.readUTF());
+                    System.out.println("Created connection to " + target + 
+                            " on local address " + s.getLocalSocketAddress() 
+                            + " remote address " + s.getRemoteSocketAddress());
 
-                // only reached if connection setup worked!
-                return;                
-            } catch (Exception e) {
-                System.out.println("Failed to created connection to " 
-                        + target);
-            } finally { 
-                DirectSocketFactory.close(s, out, in);
+                    in = new DataInputStream(s.getInputStream());
+                    out = new DataOutputStream(s.getOutputStream());
+
+                    out.writeUTF("Hello!");
+                    out.flush();
+            
+                    System.out.println("Other side says: " + in.readUTF());
+                    
+                    // only reached if connection setup worked!
+                    return;                
+                } catch (Exception e) {
+                    System.out.println("Failed to created connection to " 
+                            + target);
+                } finally { 
+                    DirectSocketFactory.close(s, out, in);
+                }
             }
         }        
     }    
@@ -122,11 +130,11 @@ public class ThreePointSpliceTest {
             System.out.println("Keys match, sending reply...");        
 
             out1.writeUTF(address2.getAddress().toString());
-            out1.writeInt(address2.getPort() + 1);
+            out1.writeInt(address2.getPort());
             out1.flush();
 
             out2.writeUTF(address1.getAddress().toString());
-            out2.writeInt(address1.getPort() + 1);
+            out2.writeInt(address1.getPort());
             out2.flush();
 
         } catch (Exception e) {
@@ -141,7 +149,7 @@ public class ThreePointSpliceTest {
         
     public static void main(String [] args) throws IOException { 
                 
-        if (args.length > 1) {
+        if (args.length == 2) {
             client(args[0], new SocketAddressSet(args[1]));
         } else { 
             server();
