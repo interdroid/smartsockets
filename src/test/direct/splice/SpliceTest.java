@@ -58,8 +58,9 @@ public class SpliceTest {
             System.out.println("Created server on " + ss.getAddressSet());
 
             // Get a normal connection first...            
-            DirectSocket s = ss.accept();
-          
+            DirectSocket s = ss.accept();          
+            ss.close();
+            
             InetSocketAddress address = 
                 (InetSocketAddress) s.getRemoteSocketAddress();
 
