@@ -440,6 +440,9 @@ public class DirectSocketFactory {
 
             logger.info("Unbound socket created");
 
+            // TODO: remove!
+            s.bind(new InetSocketAddress(16888));
+            
             s.connect(target, timeout);
 
             // if (logger.isDebugEnabled()) {

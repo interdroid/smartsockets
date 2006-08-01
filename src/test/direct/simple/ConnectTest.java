@@ -21,7 +21,8 @@ public class ConnectTest {
                 SocketAddressSet target = new SocketAddressSet(args[i]);
                 DirectSocket s = sf.createSocket(target, 0, null);
                 
-                System.out.println("Created connection to " + target);
+                System.out.println("Created connection to " + target + 
+                        " on port " + s.getLocalPort());
 
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
