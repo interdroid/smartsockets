@@ -420,7 +420,8 @@ public class DirectSocketFactory {
     }
 
     private DirectSocket attemptConnection(SocketAddressSet sas,
-            InetSocketAddress target, int timeout, boolean mayBlock) {
+            InetSocketAddress target, int timeout, int localPort, 
+            boolean mayBlock) {
 
         // We never want to block, so ensure that timeout > 0
         if (timeout == 0 && !mayBlock) {
@@ -440,9 +441,10 @@ public class DirectSocketFactory {
 
             logger.info("Unbound socket created");
 
-            // TODO: remove!
-            s.bind(new InetSocketAddress(16888));
-            
+            if (localPort > 0) {                 
+                s.bind(new InetSocketAddress(localPort));
+            }
+                
             s.connect(target, timeout);
 
             // if (logger.isDebugEnabled()) {
@@ -649,7 +651,6 @@ public class DirectSocketFactory {
         }        
     } 
     
-    
     /*
      * (non-Javadoc)
      * 
@@ -658,6 +659,18 @@ public class DirectSocketFactory {
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             Map properties) throws IOException {
+        return createSocket(target, timeout, 0, properties);
+    }
+
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
+     *      int, java.util.Map)
+     */
+    public DirectSocket createSocket(SocketAddressSet target, int timeout,
+            int localPort, Map properties) throws IOException {
 
         if (timeout < 0) {
             timeout = TIMEOUT;
@@ -672,7 +685,7 @@ public class DirectSocketFactory {
         if (sas.length == 1) {
             // only one socket left, so allow sleeping for ever...
             DirectSocket result = attemptConnection(target, sas[0], timeout,
-                    true);
+                    localPort, true);
 
             if (result != null) {
                 return result;
@@ -686,7 +699,7 @@ public class DirectSocketFactory {
             for (int i = 0; i < sas.length; i++) {
                 InetSocketAddress sa = sas[i];
                 DirectSocket result = attemptConnection(target, sa, timeout,
-                        false);
+                        localPort, false);
 
                 if (result != null) {
                     return result;

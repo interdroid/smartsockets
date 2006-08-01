@@ -12,6 +12,8 @@ import java.io.IOException;
  
 public class ConnectTest {
     
+    private static final int LOCAL_PORT = 16889;
+    
     public static void main(String [] args) throws IOException { 
         
         DirectSocketFactory sf = DirectSocketFactory.getSocketFactory();
@@ -19,10 +21,11 @@ public class ConnectTest {
         if (args.length > 0) {             
             for (int i=0;i<args.length;i++) { 
                 SocketAddressSet target = new SocketAddressSet(args[i]);
-                DirectSocket s = sf.createSocket(target, 0, null);
+                DirectSocket s = sf.createSocket(target, 0, LOCAL_PORT, null);
                 
                 System.out.println("Created connection to " + target + 
-                        " on port " + s.getLocalPort());
+                        " on local address " + s.getLocalSocketAddress() 
+                        + " remote address " + s.getRemoteSocketAddress());
 
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());

@@ -51,6 +51,16 @@ public class SocketAddressSet extends SocketAddress {
     }        
     
     /**
+     * Construct a new IbisSocketAddress, using InetSocketAddress
+     * 
+     * @param address The InetSocketAddress.
+     */    
+    public SocketAddressSet(InetSocketAddress address) {
+        this(address.getAddress(), address.getPort());
+    }        
+    
+    
+    /**
      * Construct a new IbisSocketAddress, using an IbisInetAddress and a port 
      * number.
      * 
