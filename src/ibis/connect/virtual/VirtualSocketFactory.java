@@ -8,6 +8,7 @@ import ibis.connect.virtual.modules.ConnectModule;
 import ibis.connect.virtual.modules.direct.Direct;
 import ibis.connect.virtual.modules.reverse.Reverse;
 import ibis.connect.virtual.modules.routed.Routed;
+import ibis.connect.virtual.modules.splice.Splice;
 import ibis.connect.virtual.service.ServiceLink;
 import ibis.util.TypedProperties;
 
@@ -201,7 +202,20 @@ public class VirtualSocketFactory {
         }       
         
         try {    
-            // Reverse module 
+            // Splice module 
+            ConnectModule m = new Splice();
+            m.init(this, logger);
+          
+            // TODO: should be 'add to set' operation here...
+            //myAddresses = m.getAddresses(); 
+               
+            modules.add(m);
+        } catch (Exception e) {
+            logger.warn("Failed to load module: Reverse", e);
+        }
+        
+        try {    
+            // Routed module 
             ConnectModule m = new Routed();
             m.init(this, logger);
           
