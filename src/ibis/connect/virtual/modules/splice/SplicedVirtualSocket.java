@@ -1,4 +1,4 @@
-package ibis.connect.virtual.modules.direct;
+package ibis.connect.virtual.modules.splice;
 
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
@@ -15,13 +15,13 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 
-public class DirectVirtualSocket extends VirtualSocket {
+public class SplicedVirtualSocket extends VirtualSocket {
     
     protected final DirectSocket s;
     protected final DataOutputStream out;
     protected final DataInputStream in;
     
-    protected DirectVirtualSocket(VirtualSocketAddress target, DirectSocket s, 
+    protected SplicedVirtualSocket(VirtualSocketAddress target, DirectSocket s, 
             DataOutputStream out, DataInputStream in, Map p) {        
         
         super(target);
@@ -34,7 +34,7 @@ public class DirectVirtualSocket extends VirtualSocket {
     protected void connectionAccepted() throws IOException { 
         
         try { 
-            out.write(Direct.ACCEPT);
+            out.write(Splice.ACCEPT);
             out.flush();        
             
             // Not sure why this is needed...
@@ -50,7 +50,7 @@ public class DirectVirtualSocket extends VirtualSocket {
     public void connectionRejected() { 
         
         try { 
-            out.write(Direct.CONNECTION_REJECTED);
+            out.write(Splice.CONNECTION_REJECTED);
             out.flush();
         } catch (Exception e) {
             // ignore ?
@@ -65,17 +65,17 @@ public class DirectVirtualSocket extends VirtualSocket {
             int result = in.read();
         
             switch (result) {
-            case Direct.ACCEPT:
+            case Splice.ACCEPT:
                 // TODO: find decent port here ?
                 return;
                 
-            case Direct.PORT_NOT_FOUND:
+            case Splice.PORT_NOT_FOUND:
                 throw new SocketException("Remote port not found");                
                 
-            case Direct.WRONG_MACHINE:            
+            case Splice.WRONG_MACHINE:            
                 throw new SocketException("Connection ended up on wrong machine!");
                 
-            case Direct.CONNECTION_REJECTED:
+            case Splice.CONNECTION_REJECTED:
                 throw new SocketException("Connection rejected");
                 
             default:
@@ -229,6 +229,6 @@ public class DirectVirtualSocket extends VirtualSocket {
     }
     
     public String toString() {
-        return "DirectVirtualIbisSocket(" + s.toString() + ")";
+        return "SplicedVirtualIbisSocket(" + s.toString() + ")";
     }   
 }

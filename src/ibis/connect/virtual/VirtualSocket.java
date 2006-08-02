@@ -289,10 +289,10 @@ public abstract class VirtualSocket {
         setTcpNoDelay(true);
     }
       */
-        
+
+    public abstract void waitForAccept() throws IOException;
     protected abstract void connectionAccepted() throws IOException;
     protected abstract void connectionRejected();
-    
-    
+        
     
 }

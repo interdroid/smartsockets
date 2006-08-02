@@ -458,6 +458,18 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         return serviceLink;
     }
 
+    public SocketAddressSet findSharedProxy(SocketAddressSet myMachine, 
+            SocketAddressSet targetMachine) {
+        
+        if (!waitConnected(maxWaitTime)) {
+            logger.info("Cannot find shared proxy: not connected");            
+            return null;
+        }   
+
+        // TODO DUMMY IMPLEMENTATION --- FIX!!!!!        
+        return proxyAddress;
+    }
+    
     public void run() {
         
         // Connect to the proxy and processes the messages it gets. When the 

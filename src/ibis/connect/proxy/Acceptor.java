@@ -4,7 +4,6 @@ import ibis.connect.direct.DirectServerSocket;
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
-//import ibis.connect.gossipproxy.connections.ForwarderConnection;
 import ibis.connect.proxy.connections.ClientConnection;
 import ibis.connect.proxy.connections.Connections;
 import ibis.connect.proxy.connections.ProxyConnection;
@@ -17,16 +16,30 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-//import java.util.LinkedList;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class Acceptor extends CommunicationThread {
 
     private DirectServerSocket server;
     private boolean done = false;
 
-    //private int number = 0;
+    private class SpliceInfo { 
+        
+        String connectID;
+        long bestBefore; 
+        
+        DirectSocket s;
+        DataInputStream in;
+        DataOutputStream out;
 
+    }
+    
+    private long nextInvalidation = -1;
+   
+    private HashMap spliceInfo = new HashMap();
+        
     Acceptor(StateCounter state, Connections connections, 
             ProxyList knownProxies, DirectSocketFactory factory) 
             throws IOException {
@@ -131,18 +144,100 @@ public class Acceptor extends CommunicationThread {
         
         return false;
     }
-    
+        
     private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
 
-        // Echo the essentials of the connection that we see. Its up to the 
-        // client to decide what to do with it.... 
-        InetSocketAddress tmp = (InetSocketAddress) s.getRemoteSocketAddress();                            
+        boolean result = false;
+        
+        String connectID = in.readUTF();
+        int time = in.readInt();
+        
+        SpliceInfo info = (SpliceInfo) spliceInfo.remove(connectID);
+        
+        if (info == null) { 
+            // We're the first...            
+            info = new SpliceInfo();
+            
+            info.connectID = connectID;
+            info.s = s;
+            info.out = out;
+            info.in = in;             
+            info.bestBefore = System.currentTimeMillis() + time;
+            
+            spliceInfo.put(connectID, info);
+            
+            if (nextInvalidation == -1 || info.bestBefore < nextInvalidation) { 
+                nextInvalidation = info.bestBefore;
+            }            
+            
+            // Thats it for now. Return true so the connection is kept open 
+            // until the other side arrives...
+            result = true;        
+        } else { 
+            // The peer is already waiting...
+            
+            // We now echo the essentials of the two connection that we see to 
+            // each client. Its up to them to decide what to do with it....
+            
+            try { 
+                InetSocketAddress tmp = 
+                    (InetSocketAddress) s.getRemoteSocketAddress();
 
-        out.writeUTF(tmp.getAddress().toString());
-        out.writeInt(tmp.getPort());
+                info.out.writeUTF(tmp.getAddress().toString());
+                info.out.writeInt(tmp.getPort());
+                info.out.flush();
+                
+                tmp = (InetSocketAddress) info.s.getRemoteSocketAddress();
 
-        return false;        
+                out.writeUTF(tmp.getAddress().toString());
+                out.writeInt(tmp.getPort());
+                out.flush();
+                
+            } catch (Exception e) {                
+                // The connections may have been closed already....
+                logger.info("Failed to forward splice info!", e);               
+            } finally { 
+                // We should close the first connection. The second will be 
+                // closed for us when we return false
+                DirectSocketFactory.close(info.s, info.out, info.in);
+            }            
+        }
+        
+        // Before we return, we do some garbage collection on the spliceInfo map
+        if (nextInvalidation != -1) {  
+
+            long now = System.currentTimeMillis();
+              
+            if (now >= nextInvalidation) { 
+
+                nextInvalidation = Long.MAX_VALUE;
+                
+                // Traverse the map, removing all entries which are out of date, 
+                // and recording the next time at which we should do a 
+                // traversal.  
+                Iterator itt = spliceInfo.keySet().iterator();
+                
+                while (itt.hasNext()) { 
+                    String key = (String) itt.next();                   
+                    SpliceInfo tmp = (SpliceInfo) spliceInfo.get(key);
+                    
+                    if (tmp.bestBefore < now) { 
+                        spliceInfo.remove(key);
+                    } else { 
+                        if (tmp.bestBefore < nextInvalidation) { 
+                            nextInvalidation = tmp.bestBefore;
+                        } 
+                    } 
+                }
+
+                if (spliceInfo.size() == 0) { 
+                    nextInvalidation = -1;
+                }
+            } 
+        } 
+
+        return result;
     }
     
     private void doAccept() {

@@ -219,4 +219,8 @@ public class ServiceLinkImpl extends ServiceLink {
         // TODO Auto-generated method stub
         return false;
     }
+
+    public SocketAddressSet findSharedProxy(SocketAddressSet myMachine, SocketAddressSet targetMachine) {
+        return myAddress;
+    }
 }

@@ -12,10 +12,12 @@ X  Proxy should retry connecting to unreachable proxies (may be passed
 X Add STUN support to DirectFactory to find external address. 
 
 X Support multiple servers for STUN
-   
-  Create Factory for service links 
+
+  Make sure STUN doesn't take too long ...
 
   Add TCP splicing to Virtual  
+   
+  Create Factory for service links 
 
   Add support for multiple proxy addresses to VirtualSocketFactory
 
@@ -25,6 +27,10 @@ X Support multiple servers for STUN
                   to splice/stun type connection....
 
 Think about: 
+
+  Smart idea: (IS THIS TRUE) ????    
+      If there is no shared third point between two machines, then splicing 
+      will never work because the networks are not directly connected.
 
   Machine may have multiple external addresses (multiple networks, each with NAT) ?
 

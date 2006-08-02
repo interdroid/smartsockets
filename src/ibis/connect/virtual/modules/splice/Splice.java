@@ -1,57 +1,266 @@
 package ibis.connect.virtual.modules.splice;
 
-import java.io.IOException;
-import java.util.Map;
-
+import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.virtual.ModuleNotSuitableException;
+import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.modules.ConnectModule;
-import ibis.connect.virtual.modules.direct.Direct;
+import ibis.connect.virtual.modules.AbstractDirectModule;
 
-public class Splice extends ConnectModule {
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+public class Splice extends AbstractDirectModule {
    
-    private DirectSocketFactory direct;
-       
+    protected static final byte ACCEPT              = 1;
+    protected static final byte PORT_NOT_FOUND      = 2;
+    protected static final byte WRONG_MACHINE       = 3;     
+    protected static final byte CONNECTION_REJECTED = 4;   
+    
+    private static final int PLEASE_CONNECT = 1;
+    
+    private static final int MAX_ATTEMPTS = 30;
+    private static final int DEFAULT_TIMEOUT = 300;
+    private static final int PORT_RANGE = 5;
+        
+    private DirectSocketFactory factory;               
+    
+    private long nextID = 0;
+    
     public Splice() {
         super("ConnectModule(Splice)", true);
     }
         
-    public VirtualSocket connect(VirtualSocketAddress target, int timeout, Map properties) throws ModuleNotSuitableException, IOException {
-        // TODO Auto-generated method stub
+    private synchronized long getID() { 
+        return nextID++;
+    }
+    
+    public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
+            Map properties) throws ModuleNotSuitableException, IOException {
+
+        logger.info(name + ": attempting connection setup to " + target);
+        
+        // Start by extracting the machine address of the target.
+        SocketAddressSet targetMachine = target.machine();
+        
+        // Next we get our own machine address. 
+        SocketAddressSet myMachine = parent.getLocalHost();
+        
+        // Generate a unique ID for this connection setup 
+        String connectID = getID() + "@" + myMachine; 
+        
+        logger.info(name + ": looking for shared proxy between " + myMachine 
+                + " and " + targetMachine);
+        
+        // Now try to find a proxy that both machines can reach.
+        SocketAddressSet shared = 
+            serviceLink.findSharedProxy(myMachine, targetMachine);
+        
+        if (shared == null) {            
+            logger.info(name + ": no shared proxy found!");
+            
+            // No shared proxy was found, so we give up!
+            throw new ModuleNotSuitableException("Could not find shared " + 
+                    "proxy for " + myMachine + " and " + targetMachine);
+        }
+
+        logger.info(name + ": shared proxy found " + shared);
+                
+        // Send a message to the target asking it to participate in the
+        // connection attempt. We will not get a reply. 
+        serviceLink.send(targetMachine, name, PLEASE_CONNECT, 
+                shared + " " + connectID + " " + timeout + " " + target.port());
+        
+        // Now create the connection to the shared proxy, and get the public
+        // IP of the target plus a range of possibly working port....         
+        SocketAddressSet [] a = getInfo(shared, connectID, timeout);
+
+        // Check if proxy returned somethig usefull...
+        if (a == null || a.length == 0) {            
+            logger.info(name + ": failed to contact peer at shared proxy!");            
+            throw new ModuleNotSuitableException("Failed to contact peer at " +                    
+                    "shared proxy " + shared);
+        }
+        
+        // Try to connect to the target
+        DirectSocket s = connect(a, DEFAULT_TIMEOUT);
+                
+        if (s == null) { 
+            throw new ModuleNotSuitableException(name + ": Failed to connect "
+                    + " to " + target);                         
+        }
+
+        // If the connection was succesfull, we hand over the socket to the 
+        // parent for handshakes, checks, etc.
+        return handleConnect(target, s, timeout, properties);
+    }
+    
+    private SocketAddressSet [] getInfo(SocketAddressSet shared,
+            String connectID, int timeout) throws ModuleNotSuitableException { 
+
+        DirectSocket s = null;
+        DataInputStream in = null;
+        DataOutputStream out = null;
+
+        String addr = null;
+        int port = 0;
+                
+        try { 
+            s = factory.createSocket(shared, timeout, null);
+            
+            in = new DataInputStream(s.getInputStream());
+            out = new DataOutputStream(s.getOutputStream());
+
+            out.writeUTF(connectID);
+            out.writeInt(timeout);
+            out.flush();
+
+            addr = in.readUTF();
+            port = in.readInt();
+            
+        } catch (IOException e) {
+            // Failed to create the exception, to the shared proxy 
+            // TODO: try to find other shared proxy ? 
+            throw new ModuleNotSuitableException(name + ": Failed to " +
+                    "connect to shared proxy " + shared + " " + e);                   
+        } finally { 
+            DirectSocketFactory.close(s, out, in);
+        }
+
+        try { 
+            SocketAddressSet [] result = new SocketAddressSet[PORT_RANGE];
+        
+            for (int i=0;i<result.length;i++) {
+                result[i] = new SocketAddressSet(addr, port+i);
+            }
+            
+            return result;
+        } catch (IOException e) {
+            // Failed to create the exception, to the shared proxy 
+            // TODO: try to find other shared proxy ? 
+            throw new ModuleNotSuitableException(name + ": Failed to " +
+                    "parse reply from shared proxy " + shared + " " + e);                   
+        } 
+    }
+    
+    private DirectSocket connect(SocketAddressSet [] target,int timeout) 
+        throws IOException, ModuleNotSuitableException {
+        
+        for (int i=0;i<MAX_ATTEMPTS;i++) {
+            for (int t=0;t<target.length;t++) {             
+                try { 
+                    return factory.createSocket(target[t], timeout, null);
+                } catch (IOException e) {
+                    logger.info(name + ": Connection failed " + target, e);
+                }           
+            }            
+        }
+        
         return null;
     }
-
+    
     public SocketAddressSet getAddresses() {
-        // Nothing to do here...
+        // Nothing to do here, since we don't extend the address in any way... 
         return null;
     }
 
     public void initModule() throws Exception {
         // Create a direct socket factory.
-        direct = DirectSocketFactory.getSocketFactory();
-        
+        factory = DirectSocketFactory.getSocketFactory();       
     }
 
     public boolean matchAdditionalRequirements(Map requirements) {
-        // Alway match the requirements ....
+        // Alway match ? 
         return true;
     }
 
     public void startModule() throws Exception {
+        
         if (serviceLink == null) {
             throw new Exception(name + ": no service link available!");       
         }
         
-       // direct = (Direct) parent.findModule("ConnectModule(Direct)");
+        // Create a direct socket factory. 
+        factory = DirectSocketFactory.getSocketFactory();          
+    }
+    
+    private void setupConnection(SocketAddressSet shared, String connectID, 
+            int timeout) {
+
+        try { 
+            // Create the connection to the shared proxy, and get the required
+            // information on where to connect to
+            SocketAddressSet [] a = getInfo(shared, connectID, 
+                    timeout);
+                        
+            DirectSocket s = connect(a, timeout);
+            
+            if (s == null) {  
+                logger.info(name + ": Incoming connection setup failed!");
+                return;
+            }
+               
+            handleAccept(s);
+                        
+        } catch (Exception e) {
+            logger.info(name + ": Incoming connection setup failed!", e);            
+        }
+    }
+    
+    public void gotMessage(SocketAddressSet src, int opcode, String message) {
+
+        // Check if the opcode makes any sense
+        if (opcode != PLEASE_CONNECT) { 
+            logger.warn(name + ": ignoring message " + src + " " + opcode 
+                    + "\"" +  message + "\"");
+            return;
+        }
+                
+        // Next, check if the message has enough parts
+        StringTokenizer t = new StringTokenizer(message);
         
-      //  if (direct == null) {
-      //      throw new Exception(name + ": no direct module available!");       
-       // }        
-        // TODO Auto-generated method stub
+        if (t.countTokens() != 4) { 
+            logger.warn(name + ": malformed message " + src + " " + opcode 
+                    + "\"" +  message + "\"");
+            return;
+        }
         
+        // Try to extract the necessary info from the message 
+        SocketAddressSet shared = null;
+        String connectID = null;
+        int timeout = 0;
+        int port = 0;
+        
+        try { 
+            shared = new SocketAddressSet(t.nextToken());
+            connectID = t.nextToken();        
+            timeout = Integer.parseInt(t.nextToken());
+            port = Integer.parseInt(t.nextToken());
+        } catch (Exception e) {
+            logger.warn(name + ": failed to parse message " + src + " " + opcode 
+                    + "\"" +  message + "\"", e);
+            return;
+        }
+        
+        // Check if we can find the port that the sender is interrested in
+        VirtualServerSocket ss = parent.getServerSocket(port);
+        
+        if (ss == null) {
+            // TODO: send reply ??
+            logger.info(name + ": port " + port + " not found!");
+            return;            
+        }
+
+        setupConnection(shared, connectID, timeout);
     }
 
+    protected VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
+            DirectSocket s, DataOutputStream out, DataInputStream in) {     
+        return new SplicedVirtualSocket(a, s, out, in, null);
+    }
 }

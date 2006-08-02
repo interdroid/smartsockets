@@ -17,7 +17,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 public abstract class ConnectModule implements CallBack {
-
+            
     public final String name;
     public final boolean requiresServiceLink;
     

@@ -6,32 +6,29 @@ import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.virtual.ModuleNotSuitableException;
 import ibis.connect.virtual.Properties;
-import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.modules.ConnectModule;
+import ibis.connect.virtual.modules.AbstractDirectModule;
 import ibis.util.TypedProperties;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Direct extends ConnectModule {
+public class Direct extends AbstractDirectModule {
+    
+    protected static final byte ACCEPT              = 1;
+    protected static final byte PORT_NOT_FOUND      = 2;
+    protected static final byte WRONG_MACHINE       = 3;     
+    protected static final byte CONNECTION_REJECTED = 4;   
     
     private static final String PREFIX = Properties.PREFIX + "modules.direct.";    
     private static final String PORT = PREFIX + "port";        
         
     private static final int DEFAULT_PORT = 19827;     
-    
-    protected static final byte ACCEPT              = 1;
-    protected static final byte PORT_NOT_FOUND      = 2;
-    protected static final byte WRONG_MACHINE       = 3;     
-    protected static final byte CONNECTION_REJECTED = 4;     
-        
+   
     private DirectSocketFactory direct;   
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
@@ -104,6 +101,7 @@ public class Direct extends ConnectModule {
         return server.getAddressSet();
     }
     
+    /*
     private boolean checkTarget(SocketAddressSet target) {  
         // TODO: implement
         return true;
@@ -133,7 +131,7 @@ public class Direct extends ConnectModule {
             if (!checkTarget(target)) { 
                 out.write(WRONG_MACHINE);
                 out.flush();                
-                close(s, out, in);
+                DirectSocketFactory.close(s, out, in);
                 
                 if (logger.isDebugEnabled()) { 
                     logger.debug(name + ": Connection failed, WRONG machine!");
@@ -148,7 +146,7 @@ public class Direct extends ConnectModule {
             if (vss == null) { 
                 out.write(PORT_NOT_FOUND);
                 out.flush();                
-                close(s, out, in);
+                DirectSocketFactory.close(s, out, in);
                 
                 if (logger.isDebugEnabled()) { 
                     logger.debug(name + ": Connection failed, PORT not found!");
@@ -171,7 +169,7 @@ public class Direct extends ConnectModule {
             if (!accept) {
                 out.write(CONNECTION_REJECTED);
                 out.flush();                
-                close(s, out, in);
+                DirectSocketFactory.close(s, out, in);
                 
                 if (logger.isDebugEnabled()) { 
                     logger.debug(name + ": Connection failed, REJECTED!");
@@ -182,62 +180,37 @@ public class Direct extends ConnectModule {
             
         } catch (Exception e) {            
             logger.warn(name + ": Got exception during connection setup!", e);            
-            close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
         }
     }
+    */
     
     void handleAccept() {    
         try { 
-            handleSocket(server.accept());    
+            handleAccept(server.accept());    
         } catch (IOException e) {
             logger.warn(name + ": Got exception while waiting " +
                     "for connection!", e);
         }                
     }
-            
-    protected static void close(DirectSocket s, OutputStream o, InputStream i) {
-        
-        if (o != null) { 
-            try {
-                o.close();
-            } catch (Exception e) {
-                // ignore
-            }
-        } 
-        
-        if (i != null) { 
-            try { 
-                i.close();
-            } catch (Exception e) {
-                // ignore
-            }
-        } 
-        
-        if (s != null) { 
-            try { 
-                s.close();
-            } catch (Exception e) {
-                // ignore
-            }
-        }        
-    } 
-    
+                
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
             Map properties) throws ModuleNotSuitableException, IOException {
 
         DirectSocket s = null;
-        DataInputStream in = null;
-        DataOutputStream out = null;
 
         try { 
             s = direct.createSocket(target.machine(), timeout, properties);                    
         } catch (IOException e) {
-            // Failed to create the exception, but other modules may be more 
+            // Failed to create the connection, but other modules may be more 
             // succesful.            
             throw new ModuleNotSuitableException(name + ": Failed to " +
                     "connect to " + target + " " + e);           
         }
         
+        return handleConnect(target, s, timeout, properties);
+        
+        /*
         DirectVirtualSocket tmp = null;
         
         try { 
@@ -255,7 +228,7 @@ public class Direct extends ConnectModule {
             // This module worked fine, but we got a 'normal' exception while 
             // connecting (i.e., because the other side refused to connection). 
             // There is no use trying other modules.            
-            close(s, out, in);
+            DirectSocketFactory.close(s, out, in);
             throw e;
         }
                 
@@ -267,10 +240,16 @@ public class Direct extends ConnectModule {
         s.setSoTimeout(0);
         
         return tmp;
+        */
     }
 
     public boolean matchAdditionalRequirements(Map requirements) {
         // No additional properties, so always matches requirements.
         return true;
+    }
+
+    protected VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
+            DirectSocket s, DataOutputStream out, DataInputStream in) {        
+        return new DirectVirtualSocket(a, s, out, in, null); 
     }   
 }
