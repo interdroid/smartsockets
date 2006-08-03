@@ -78,18 +78,19 @@ public class Splice extends AbstractDirectModule {
                 shared + " " + connectID + " " + timeout + " " + target.port());
         
         // Now create the connection to the shared proxy, and get the public
-        // IP of the target plus a range of possibly working port....         
-        SocketAddressSet [] a = getInfo(shared, connectID, timeout);
+        // IP of the target plus a range of possibly working port....
+        SocketAddressSet [] a = new SocketAddressSet[PORT_RANGE];        
+        int localPort = getInfo(shared, connectID, timeout, a);
 
         // Check if proxy returned somethig usefull...
-        if (a == null || a.length == 0) {            
+        if (a[0] == null) {             
             logger.info(name + ": failed to contact peer at shared proxy!");            
             throw new ModuleNotSuitableException("Failed to contact peer at " +                    
                     "shared proxy " + shared);
         }
         
         // Try to connect to the target
-        DirectSocket s = connect(a, DEFAULT_TIMEOUT);
+        DirectSocket s = connect(a, localPort, DEFAULT_TIMEOUT);
                 
         if (s == null) { 
             throw new ModuleNotSuitableException(name + ": Failed to connect "
@@ -101,8 +102,8 @@ public class Splice extends AbstractDirectModule {
         return handleConnect(target, s, timeout, properties);
     }
     
-    private SocketAddressSet [] getInfo(SocketAddressSet shared,
-            String connectID, int timeout) throws ModuleNotSuitableException { 
+    private int getInfo(SocketAddressSet shared, String connectID, int timeout, 
+            SocketAddressSet [] result) throws ModuleNotSuitableException { 
 
         DirectSocket s = null;
         DataInputStream in = null;
@@ -110,9 +111,13 @@ public class Splice extends AbstractDirectModule {
 
         String addr = null;
         int port = 0;
+        int local = 0;
                 
         try { 
             s = factory.createSocket(shared, timeout, null);
+            s.setReuseAddress(true);            
+            
+            local = s.getLocalPort();
             
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
@@ -140,13 +145,11 @@ public class Splice extends AbstractDirectModule {
         }
 
         try { 
-            SocketAddressSet [] result = new SocketAddressSet[PORT_RANGE];
-        
             for (int i=0;i<result.length;i++) {
                 result[i] = new SocketAddressSet(addr, port+i);
             }
             
-            return result;
+            return local;
         } catch (IOException e) {
             // Failed to create the exception, to the shared proxy 
             // TODO: try to find other shared proxy ? 
@@ -155,13 +158,13 @@ public class Splice extends AbstractDirectModule {
         } 
     }
     
-    private DirectSocket connect(SocketAddressSet [] target,int timeout) 
-        throws IOException, ModuleNotSuitableException {
+    private DirectSocket connect(SocketAddressSet [] target, int localPort, 
+            int timeout) throws IOException, ModuleNotSuitableException {
         
         for (int i=0;i<MAX_ATTEMPTS;i++) {
             for (int t=0;t<target.length;t++) {             
                 try { 
-                    return factory.createSocket(target[t], timeout, null);
+                    return factory.createSocket(target[t], localPort, timeout, null);
                 } catch (IOException e) {
                     logger.info(name + ": Connection failed " + target, e);
                 }           
@@ -202,10 +205,10 @@ public class Splice extends AbstractDirectModule {
         try { 
             // Create the connection to the shared proxy, and get the required
             // information on where to connect to
-            SocketAddressSet [] a = getInfo(shared, connectID, 
-                    timeout);
+            SocketAddressSet [] a = new SocketAddressSet[PORT_RANGE];
+            int local = getInfo(shared, connectID, timeout, a);
                         
-            DirectSocket s = connect(a, timeout);
+            DirectSocket s = connect(a, local, timeout);
             
             if (s == null) {  
                 logger.info(name + ": Incoming connection setup failed!");
