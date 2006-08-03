@@ -180,15 +180,14 @@ public class Acceptor extends CommunicationThread {
             // until the other side arrives...
             result = true;        
         } else {
-            logger.info("Request " + connectID + " is second");
-            
+            logger.info("Request " + connectID + " is second");            
             
             // The peer is already waiting...
             
             // We now echo the essentials of the two connection that we see to 
             // each client. Its up to them to decide what to do with it....
             
-            try { 
+            try {                               
                 InetSocketAddress tmp = 
                     (InetSocketAddress) s.getRemoteSocketAddress();
 
@@ -196,11 +195,17 @@ public class Acceptor extends CommunicationThread {
                 info.out.writeInt(tmp.getPort());
                 info.out.flush();
                 
+                logger.info("Reply to first " + tmp.getAddress() + ":" 
+                        + tmp.getPort()); 
+                
                 tmp = (InetSocketAddress) info.s.getRemoteSocketAddress();
 
                 out.writeUTF(tmp.getAddress().toString());
                 out.writeInt(tmp.getPort());
                 out.flush();
+
+                logger.info("Reply to second " + tmp.getAddress() + ":" 
+                        + tmp.getPort()); 
                 
             } catch (Exception e) {                
                 // The connections may have been closed already....

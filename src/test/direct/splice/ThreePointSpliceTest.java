@@ -17,7 +17,8 @@ public class ThreePointSpliceTest {
     private static DirectSocketFactory sf = 
         DirectSocketFactory.getSocketFactory();
 
-    private static void client(String key, SocketAddressSet server) throws IOException {
+    private static void client(String key, SocketAddressSet server) 
+        throws IOException {
     
         DirectSocket s = sf.createSocket(server, 0, LOCAL_PORT, null);
         
