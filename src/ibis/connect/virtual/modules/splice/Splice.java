@@ -3,6 +3,7 @@ package ibis.connect.virtual.modules.splice;
 import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.proxy.ProxyProtocol;
 import ibis.connect.virtual.ModuleNotSuitableException;
 import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
@@ -116,6 +117,8 @@ public class Splice extends AbstractDirectModule {
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
 
+            // TODO: don't like this access here!
+            out.writeByte(ProxyProtocol.GET_SPLICE_INFO);
             out.writeUTF(connectID);
             out.writeInt(timeout);
             out.flush();
@@ -219,7 +222,7 @@ public class Splice extends AbstractDirectModule {
     public void gotMessage(SocketAddressSet src, int opcode, String message) {
 
         logger.info(name + ": got message " + src + " " + opcode 
-                + "\"" +  message + "\"");
+                + " \"" +  message + "\"");
                
         // Check if the opcode makes any sense
         if (opcode != PLEASE_CONNECT) { 
