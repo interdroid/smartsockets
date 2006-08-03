@@ -218,6 +218,9 @@ public class Splice extends AbstractDirectModule {
     
     public void gotMessage(SocketAddressSet src, int opcode, String message) {
 
+        logger.info(name + ": got message " + src + " " + opcode 
+                + "\"" +  message + "\"");
+               
         // Check if the opcode makes any sense
         if (opcode != PLEASE_CONNECT) { 
             logger.warn(name + ": ignoring message " + src + " " + opcode 

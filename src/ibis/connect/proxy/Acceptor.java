@@ -153,9 +153,14 @@ public class Acceptor extends CommunicationThread {
         String connectID = in.readUTF();
         int time = in.readInt();
         
+        logger.info("Got request for splice info: " + connectID + " " + time);
+        
         SpliceInfo info = (SpliceInfo) spliceInfo.remove(connectID);
         
-        if (info == null) { 
+        if (info == null) {
+            
+            logger.info("Request " + connectID + " is first");
+                        
             // We're the first...            
             info = new SpliceInfo();
             
@@ -174,7 +179,10 @@ public class Acceptor extends CommunicationThread {
             // Thats it for now. Return true so the connection is kept open 
             // until the other side arrives...
             result = true;        
-        } else { 
+        } else {
+            logger.info("Request " + connectID + " is second");
+            
+            
             // The peer is already waiting...
             
             // We now echo the essentials of the two connection that we see to 
