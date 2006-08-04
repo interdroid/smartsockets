@@ -164,7 +164,7 @@ public class Splice extends AbstractDirectModule {
         for (int i=0;i<MAX_ATTEMPTS;i++) {
             for (int t=0;t<target.length;t++) {             
                 try { 
-                    return factory.createSocket(target[t], localPort, timeout, null);
+                    return factory.createSocket(target[t], timeout, localPort, null);
                 } catch (IOException e) {
                     logger.info(name + ": Connection failed " + target, e);
                 }           
