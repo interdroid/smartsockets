@@ -18,10 +18,16 @@ public class ConnectTest {
         
         if (args.length > 0) {             
             for (int i=0;i<args.length;i++) { 
+                
+                long time = System.currentTimeMillis();
+                
                 VirtualSocketAddress target = new VirtualSocketAddress(args[i]);
                 VirtualSocket s = sf.createClientSocket(target, 0, null);
                 
-                System.out.println("Created connection to " + target);
+                time = System.currentTimeMillis() - time;
+                                
+                System.out.println("Created connection to " + target + " in " + 
+                        time + " ms.");
 
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
