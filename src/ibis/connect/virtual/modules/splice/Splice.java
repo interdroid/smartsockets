@@ -26,7 +26,7 @@ public class Splice extends AbstractDirectModule {
     private static final int PLEASE_CONNECT = 1;
     
     private static final int MAX_ATTEMPTS = 30;
-    private static final int DEFAULT_TIMEOUT = 300;
+    private static final int DEFAULT_TIMEOUT = 1000;
     private static final int PORT_RANGE = 5;
         
     private DirectSocketFactory factory;               
