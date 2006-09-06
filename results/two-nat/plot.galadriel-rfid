@@ -1,0 +1,9 @@
+set terminal postscript eps "Helvetica" 17
+set output "two-nat.eps"
+set title "SmartSockets connection setup time (both machines behind NAT)
+set xlabel "Connection attempt"
+set ylabel "Time (milliseconds)"
+plot [0:][0:5500] "total-no-cache-galadriel-rfid" with lines title "g->r no cache", \
+"total-no-cache-rfid-galadriel" with lines title "r->g no cache", \
+"total-with-cache-galadriel-rfid" with lines title "g->r with cache", \
+"total-with-cache-rfid-galadriel" with lines title "r->g with cache"

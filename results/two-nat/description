@@ -1,0 +1,28 @@
+Two machines behind a NAT box, the galadriel (at home behind a 3/1 ADSL 
+line), and the rfiddemo (at the VU, behind a WAN router that is 
+connected directly to the internet). The fs0 is used to run a proxy that 
+provide the servicelink to the machines. 
+
+The galadriel has the following IP addresses: 
+
+  192.168.1.35 locally, connected to NAT box 
+  82.161.4.24  at the NAT box
+
+The rfiddemo has the following IP addresses: 
+   
+  192.168.1.10 locally, connected to NAT box
+  10.0.0.2     locally, connected to venus using crossover link.
+  fe80:0:0:0:202:b3ff:fea6:6e%3    locally
+  fe80:0:0:0:202:b3ff:fe64:daa6%2  locally
+  130.37.193.81 at the NAT box
+
+The fs0 has the following IP addresses:
+   
+  130.37.199.2 locally, connected directly to the internet.  
+
+Ping times are as follows: 
+
+              galadriel   rfiddemo   fs0
+  galadriel       X         ?        14.8
+  rfiddemo       17.7       X        2.1
+  fs0            15.7       ?         X
