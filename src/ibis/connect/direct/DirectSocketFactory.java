@@ -683,10 +683,17 @@ public class DirectSocketFactory {
         sas = preference.sort(sas, false);
 
         if (sas.length == 1) {
+            
+            long time = System.currentTimeMillis();
+            
             // only one socket left, so allow sleeping for ever...
             DirectSocket result = attemptConnection(target, sas[0], timeout,
                     localPort, true);
 
+            time = System.currentTimeMillis() -time;
+            
+            logger.info("Connection setup took: "  + time + " ms.");                
+            
             if (result != null) {
                 return result;
             }
@@ -694,13 +701,21 @@ public class DirectSocketFactory {
             throw new ConnectException("Connection setup failed");
         }
 
-        // else, we must try them all.
+        // else, we must try them all, so the connection attempt must return at 
+        // some point, even if timeout == 0
         while (true) {
             for (int i = 0; i < sas.length; i++) {
+                
+                long time = System.currentTimeMillis();
+                               
                 InetSocketAddress sa = sas[i];
                 DirectSocket result = attemptConnection(target, sa, timeout,
                         localPort, false);
 
+                time = System.currentTimeMillis() -time;
+                
+                logger.info("Connection setup took: "  + time + " ms.");                
+                                
                 if (result != null) {
                     return result;
                 }

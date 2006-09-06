@@ -161,12 +161,17 @@ public class Splice extends AbstractDirectModule {
     private DirectSocket connect(SocketAddressSet [] target, int localPort, 
             int timeout) throws IOException, ModuleNotSuitableException {
         
+        // TODO: This will give you very long waiting time before the setup 
+        // fails! Better to fail fast and retry the entire setup ? Or maybe 
+        // change the timeout to something small ? 
+        
         for (int i=0;i<MAX_ATTEMPTS;i++) {
             for (int t=0;t<target.length;t++) {             
                 try { 
                     return factory.createSocket(target[t], timeout, localPort, null);
                 } catch (IOException e) {
-                    logger.info(name + ": Connection failed " + target, e);
+                    logger.info(name + ": Connection failed " 
+                            + target.toString(), e);
                 }           
             }            
         }

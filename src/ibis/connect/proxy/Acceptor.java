@@ -47,7 +47,9 @@ public class Acceptor extends CommunicationThread {
         super("ProxyAcceptor", state, connections, knownProxies, factory);        
 
         server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
-        setLocal(server.getAddressSet());        
+        setLocal(server.getAddressSet());
+        
+        System.err.println("Proxy listnening at: " + localAsString);
     }
 
     private boolean handleIncomingProxyConnect(DirectSocket s, 

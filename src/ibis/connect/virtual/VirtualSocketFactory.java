@@ -39,6 +39,8 @@ public class VirtualSocketFactory {
     private static final int DEFAULT_BACKLOG = 20;     
     private static final int DEFAULT_TIMEOUT = 1000;     
     
+    private static final HashMap connectionSetupCache = new HashMap(); 
+    
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
           
@@ -290,9 +292,67 @@ public class VirtualSocketFactory {
         }        
     }
     
+    private ConnectModule getModule(String name) { 
+        
+        // TODO, not very efficient when number of modules is large ...         
+        for (int i=0;i<modules.size();i++) {            
+            ConnectModule m = (ConnectModule) modules.get(i);
+            
+            if (m.name.equals(name)) { 
+                return m;
+            }            
+        }
+            
+        return null;        
+    }
+    
+    private VirtualSocket createClientSocket(ConnectModule m, 
+            VirtualSocketAddress target, int timeout, Map properties) 
+        throws IOException {
+        
+        if (m.matchRequirements(properties)) {
+            
+            logger.info("Using module " + m.name + " to set up " +
+                    "connection to " + target);
+            
+            long start = System.currentTimeMillis();
+                            
+            try { 
+                                               
+                VirtualSocket vs = m.connect(target, timeout, properties);
+
+                long end = System.currentTimeMillis();
+                                    
+                // TODO: move to ibis ?                    
+                if (vs != null) {                     
+                    vs.setTcpNoDelay(true);                    
+                    logger.debug("Sucess with module " + m.name 
+                            + " connected to " + target + " (time = " + 
+                            (end-start) + " ms.)");
+                    
+                    return vs;
+                } 
+            } catch (ModuleNotSuitableException e) {
+                
+                long end = System.currentTimeMillis();
+                                    
+                // Just print and try the next module...
+                logger.info("Module not suitable (time = " + (end-start) 
+                        + " ms.)", e);
+            }            
+            // NOTE: other exceptions are forwarded to the user!
+        } else { 
+            logger.info("Module " + m.name + " may not be used to set " +
+                    "up connection to " + target);
+            
+        }
+        
+        return null;
+    }
+    
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map properties) throws IOException {
-              
+
         //int refusedCount = 0;
         int notSuitableCount = 0;
         
@@ -303,38 +363,56 @@ public class VirtualSocketFactory {
         if (timeout == 0 && modules.size() > 1) { 
             timeout = DEFAULT_TIMEOUT;
         }
-                               
-        // try modules here
+            
+        // First check if we remember which module was succesfull the last time
+        // we connected to this machine...
+        boolean cache = false;
+        String winner = null;
+        
+        // Check if the user wan't us to use the cache...
+        if (properties != null && properties.containsKey("cache.winner")) { 
+            cache = true;            
+            winner = (String) connectionSetupCache.get(target);
+        }
+
+        // Check if we can reuse the same module...
+        if (winner != null) {             
+            ConnectModule m = getModule(winner);
+            
+            if (m != null) { 
+                VirtualSocket vs = createClientSocket(m, target, timeout, 
+                        properties);
+            
+                if (vs != null) { 
+                    return vs;
+                }
+                
+                notSuitableCount++;
+            }
+        }
+                
+        // Now try the remaining modules (or all of them if we weren't 
+        // using the cache in the first place...) 
         for (int i=0;i<modules.size();i++) {
             
             ConnectModule m = (ConnectModule) modules.get(i);
             
-            if (m.matchRequirements(properties)) {
-                
-                logger.info("Using module " + m.name + " to set up " +
-                        "connection to " + target);
-                
-                try { 
-                    VirtualSocket vs = m.connect(target, timeout, properties);
-
-                    // TODO: move to ibis ?                    
-                    if (vs != null) {                     
-                        vs.setTcpNoDelay(true);                    
-                        logger.debug("Sucess with module " + m.name 
-                                + " connected to " + target);                    
-                        return vs;
-                    } 
-                } catch (ModuleNotSuitableException e) {
-                    // Just print and try the next module...
-                    logger.info("Module not suitable", e);
-                    notSuitableCount++;
-                }            
-                // NOTE: other exceptions are forwarded to the user!
-            } else { 
-                logger.info("Module " + m.name + " may not be used to set " +
-                        "up connection to " + target);
-                
+            if (winner != null && m.name.equals(winner)) {
+                // we already tried this module 
+                break;
             }
+            
+            VirtualSocket vs = createClientSocket(m, target, timeout, properties);
+            
+            if (vs != null) {                 
+                if (cache) { 
+                    connectionSetupCache.put(target, m.name);
+                }
+                                
+                return vs;
+            }
+            
+            notSuitableCount++;
         }        
         
         if (notSuitableCount == modules.size()) {

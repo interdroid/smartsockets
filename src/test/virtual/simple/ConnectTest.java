@@ -8,24 +8,29 @@ import ibis.connect.virtual.VirtualSocketFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 
  
 public class ConnectTest {
     
-    public static void main(String [] args) throws IOException { 
+    private static int REPEAT = 100;
+    private static int TIMEOUT = 5000;
         
-        VirtualSocketFactory sf = VirtualSocketFactory.getSocketFactory();
-        
-        if (args.length > 0) {             
-            for (int i=0;i<args.length;i++) { 
-                
-                long time = System.currentTimeMillis();
-                
-                VirtualSocketAddress target = new VirtualSocketAddress(args[i]);
-                VirtualSocket s = sf.createClientSocket(target, 0, null);
-                
+    private static VirtualSocketFactory sf;
+    
+    private static HashMap connectProperties;
+    
+    public static void connect(VirtualSocketAddress target) { 
+
+        for (int i=0;i<REPEAT;i++) {
+            long time = System.currentTimeMillis();
+
+            try { 
+                VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
+                        connectProperties);
+            
                 time = System.currentTimeMillis() - time;
-                                
+                        
                 System.out.println("Created connection to " + target + " in " + 
                         time + " ms.");
 
@@ -33,37 +38,76 @@ public class ConnectTest {
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
 
                 System.out.println("Server says: " + in.readUTF());
-                                
+                            
                 out.writeUTF("Hello server!");
                 out.flush();
-                           
+                   
                 VirtualSocketFactory.close(s, out, in);
+            } catch (Exception e) {
+                time = System.currentTimeMillis() - time;
+
+                System.out.println("Failed to create connection to " + target + 
+                        " after " + time + " ms.");
             }
-        } else {                         
-            System.out.println("Creating server socket");
+        }
+    }
+    
+    public static void accept() throws IOException {
+        
+        System.out.println("Creating server socket");
+        
+        VirtualServerSocket ss = sf.createServerSocket(0, 0, connectProperties);
+        
+        System.out.println("Created server on " + ss.getLocalSocketAddress());
+                    
+        while (true) {
+            System.out.println("Server waiting for connections"); 
             
-            VirtualServerSocket ss = sf.createServerSocket(0, 0, null);
-            
-            System.out.println("Created server on " + ss.getLocalSocketAddress());
-                        
-            while (true) {
-                System.out.println("Server waiting for connections"); 
-                
+            try { 
                 VirtualSocket s = ss.accept();
-                                
+                            
                 System.out.println("Incoming connection from " 
                         + s.getRemoteSocketAddress());
-                
+            
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
-                
+            
                 out.writeUTF("Hello client!");
                 out.flush();
-                
+            
                 System.out.println("Client says: " + in.readUTF());
 
                 VirtualSocketFactory.close(s, out, in);
+            } catch (Exception e) {
+                System.out.println("Server got exception " + e); 
             }
+        }
+    }
+    
+    public static void main(String [] args) throws IOException { 
+        
+        sf = VirtualSocketFactory.getSocketFactory();
+        
+        connectProperties = new HashMap();
+
+        int targets = args.length;
+                
+        for (int i=0;i<args.length;i++) { 
+            if (args[i].equals("-cache")) {                 
+                connectProperties.put("cache.winner", null);
+                args[i] = null;
+                targets--;
+            }
+        }
+
+        if (targets > 0) {             
+            for (int i=0;i<args.length;i++) {                
+                if (args[i] != null) {                 
+                    connect(new VirtualSocketAddress(args[i]));
+                }
+            }
+        } else {
+            accept();
         }
     }
 }

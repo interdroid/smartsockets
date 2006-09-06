@@ -60,7 +60,7 @@ public class ProxyList {
         // Wait until there are proxies to check.
         while (mustCheck.size() == 0) {            
             try { 
-                System.out.println("@@@@@@@@@@@@@ waiting");
+//                System.out.println("@@@@@@@@@@@@@ waiting");
                 wait();
             } catch (InterruptedException e) {
                 // ignore
@@ -69,14 +69,14 @@ public class ProxyList {
         
         while (true) { 
 
-            System.out.println("@@@@@@@@@@@@@ get proxy");
+            //System.out.println("@@@@@@@@@@@@@ get proxy");
             
             // Get the first one from the list. 
             ProxyDescription tmp = (ProxyDescription) mustCheck.getFirst();
             
             if (tmp.getLastContact() == 0) {
                 
-                System.out.println("@@@@@@@@@@@@@ return new");
+                //System.out.println("@@@@@@@@@@@@@ return new");
                 
                 // it's a new entry, so we can check it immediately
                 return (ProxyDescription) mustCheck.removeFirst();                        
@@ -87,7 +87,7 @@ public class ProxyList {
 
             if (tmp.getLastConnect()+RETRY_DELAY < now) {
 
-                System.out.println("@@@@@@@@@@@@@ return old");
+                //System.out.println("@@@@@@@@@@@@@ return old");
                 
                 // we've passed the deadline and can return the proxy. 
                 return (ProxyDescription) mustCheck.removeFirst();
@@ -96,7 +96,7 @@ public class ProxyList {
             long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;
             
             try {
-                System.out.println("@@@@@@@@@@@@@ old wait " + waitTime);                
+                //System.out.println("@@@@@@@@@@@@@ old wait " + waitTime);                
                 wait(waitTime);
             } catch (InterruptedException e) {
                 // ignore

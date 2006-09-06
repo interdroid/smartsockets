@@ -50,10 +50,12 @@ public class STUN {
             try {
                 logger.info("STUN discovery initiated on: " + iaddress);
                 
+                System.err.println("STUN discovery initiated on: " + iaddress);
+                
                 DiscoveryTest test = new DiscoveryTest(iaddress, server, 3478);
                 result = test.test();
             } catch (Exception e) {
-                // TODO print ?
+                logger.warn("STUN discovery on " + iaddress + " failed!", e);
             }
 
             synchronized (this) {
@@ -88,13 +90,19 @@ public class STUN {
             if (tmp[i] != null) { 
                 DiscoveryInfo info = tmp[i].getResult();
                 
-                logger.info("Result for " + addresses[i] + ":\n"+ info);
+                if (info == null) {
+                    logger.info("STUN failed for " + addresses[i]);            
+                } else {
+                    logger.info("STUN result for " + addresses[i] + ":\n" + info);
                 
-                if (info.isOpenAccess()) { 
-                    external = addresses[i];
-                } else { 
-                    external = info.getPublicIP();
-                } 
+                    // TODO multiple external addresses ??? 
+                    
+                    if (info.isOpenAccess()) {                        
+                        external = addresses[i];
+                    } else { 
+                        external = info.getPublicIP();
+                    }
+                }
             }
         }
         

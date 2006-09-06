@@ -15,7 +15,9 @@ X Support multiple servers for STUN
 
   Make sure STUN doesn't take too long ...
 
-  Add TCP splicing to Virtual  
+X Add TCP splicing to Virtual  
+
+X Add cache to Virtual which remembers best connection setup order 
    
   Create Factory for service links 
 
@@ -25,6 +27,10 @@ X Support multiple servers for STUN
   
   Icing on cake: have the VirtualSocket transparently move from Routed 
                   to splice/stun type connection....
+
+  Check how the connection properties interact with serversockets 
+    (e.g., what happens to reverse setups when I turn winner cache on) 
+
 
 Think about: 
 
@@ -37,7 +43,9 @@ Think about:
   Add ssh tunneling to DirectSocketFactory ? 
     - How do you known where to tunnel to ? 
 
-  Think of smart way to use bouncers ? 
+X Think of smart way to use bouncers ? -> replaced by STUN
+
+X Add UDP/STUN like module to Virtual ? -> using STUN directly  
 
   Cache info in servicelink instances ? 
 
@@ -47,6 +55,4 @@ Think about:
 
   Make up unique ID for machines that only have local IP's (UUID ?)
 
-  Add UDP/STUN like module to Virtual ?  
-
-  Add parallel streams (where ? Direct ot Virtual) 
+  Add parallel streams (where ? Direct or Virtual) 

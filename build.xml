@@ -27,9 +27,9 @@
     <!-- Internal target - Builds the JAR file -->
     <target name="jar" depends="compile">
 
-	<delete failonerror="false" file="${distdir}/ibisConnect.jar" />
+	<delete failonerror="false" file="${distdir}/smart-sockets.jar" />
 
-	<jar 	jarfile="${distdir}/ibisConnect.jar"
+	<jar 	jarfile="${distdir}/smart-sockets.jar"
                 basedir="${builddir}"
 		includes="**">
        		<manifest>
