@@ -173,9 +173,11 @@ public class Splice extends AbstractDirectModule {
                     logger.info(name + ": Connection failed " 
                             + target.toString(), e);
                 }           
-            }            
+            }    
+            
+            logger.debug(name + ": Splice failed (" + i + ")");
         }
-        
+                        
         return null;
     }
     
