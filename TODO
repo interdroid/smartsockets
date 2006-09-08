@@ -34,6 +34,12 @@ X Add cache to Virtual which remembers best connection setup order
 
 Think about: 
 
+  Find a way to get MAC addresses...
+
+  When only a partial address is known, direct connections are no problem. 
+  Sending messages through the proxies fails, however, since the complete 
+  address is required to find the machine... 
+
   Smart idea: (IS THIS TRUE) ????    
       If there is no shared third point between two machines, then splicing 
       will never work because the networks are not directly connected.
