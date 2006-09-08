@@ -8,6 +8,7 @@ import ibis.connect.virtual.VirtualSocketFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.HashMap;
 
 public class Throughput {
@@ -22,13 +23,27 @@ public class Throughput {
     private static VirtualSocketFactory sf;    
     private static HashMap connectProperties;
     
+    private static void configure(VirtualSocket s) throws SocketException { 
+ 
+        s.setSendBufferSize(1024*1024);
+        s.setReceiveBufferSize(1024*1024);
+        s.setTcpNoDelay(true);
+    
+        System.out.println("Configured socket: ");         
+        System.out.println(" sendbuffer     = " + s.getSendBufferSize());
+        System.out.println(" receiverbuffer = " + s.getReceiveBufferSize());
+        System.out.println(" no delay       = " + s.getTcpNoDelay());        
+    }
+    
     public static void client(VirtualSocketAddress target) { 
 
         try { 
             VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
                     connectProperties);
-
+            
             System.out.println("Created connection to " + target);
+                                              
+            configure(s);
                         
             DataInputStream in = new DataInputStream(s.getInputStream());
             DataOutputStream out = new DataOutputStream(s.getOutputStream());
@@ -81,6 +96,8 @@ public class Throughput {
                 System.out.println("Incoming connection from " 
                         + s.getRemoteSocketAddress());
             
+                configure(s);
+                
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
                                            
