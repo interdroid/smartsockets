@@ -52,9 +52,11 @@ public class Throughput {
             
             time = System.currentTimeMillis() - time;
             
-            double tp = (((double) size) * repeat) / (time/1000.0);  
-            
-            System.out.println("Test took " + time + " ms. Throughput = " + tp);
+            double tp = (1000.0 * size * repeat) / (1024.0*1024.0*time);  
+            double mbit = (8000.0 * size * repeat) / (1024.0*1024.0*time);  
+                        
+            System.out.println("Test took " + time + " ms. Throughput = " 
+                    + tp + " MByte/s (" + mbit + " MBit/s)");
             
             VirtualSocketFactory.close(s, out, in);
         } catch (Exception e) {
@@ -87,7 +89,7 @@ public class Throughput {
                 
                 byte [] data = new byte[size];
                 
-                System.out.println("Starting test byte[" + size + "] x " + size); 
+                System.out.println("Starting test byte[" + size + "] x " + count); 
                 
                 for (int i=0;i<count;i++) {
                     in.readFully(data);
@@ -118,12 +120,14 @@ public class Throughput {
                 target = new VirtualSocketAddress(args[++i]);
             } else if (args[i].equals("-size")) {                                 
                 size = Integer.parseInt(args[++i]);
+            } else if (args[i].equals("-repeat")) {                                 
+                repeat = Integer.parseInt(args[++i]);            
             } else { 
                 System.err.println("Unknown option: " + args[i]);                
             }
         }
 
-        if (target != null) { 
+        if (target == null) { 
             server();
         } else { 
             client(target);
