@@ -186,12 +186,12 @@ public class Splice extends AbstractDirectModule {
         return null;
     }
 
-    public void initModule() throws Exception {
+    public void initModule(Map properties) throws Exception {
         // Create a direct socket factory.
         factory = DirectSocketFactory.getSocketFactory();       
     }
 
-    public boolean matchAdditionalRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
         // Alway match ? 
         return true;
     }

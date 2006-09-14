@@ -41,7 +41,9 @@ public class VirtualSocketFactory {
     
     private static final HashMap connectionSetupCache = new HashMap(); 
     
-    protected static Logger logger = 
+    private static final HashMap factories = new HashMap();
+    
+    protected static Logger logger =         
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
           
     private static class DiscoveryReceiver implements Callback {
@@ -181,7 +183,7 @@ public class VirtualSocketFactory {
         try { 
             // Direct module
             ConnectModule m = new Direct();
-            m.init(this, logger);
+            m.init(this, properties, logger);
           
             // TODO: should be 'add to set' operation here...
             myAddresses = m.getAddresses();                 
@@ -193,7 +195,7 @@ public class VirtualSocketFactory {
         try {    
             // Reverse module 
             ConnectModule m = new Reverse();
-            m.init(this, logger);
+            m.init(this, properties,logger);
           
             // TODO: should be 'add to set' operation here...
             //myAddresses = m.getAddresses(); 
@@ -206,7 +208,7 @@ public class VirtualSocketFactory {
         try {    
             // Splice module 
             ConnectModule m = new Splice();
-            m.init(this, logger);
+            m.init(this, properties, logger);
           
             // TODO: should be 'add to set' operation here...
             //myAddresses = m.getAddresses(); 
@@ -219,7 +221,7 @@ public class VirtualSocketFactory {
         try {    
             // Routed module 
             ConnectModule m = new Routed();
-            m.init(this, logger);
+            m.init(this, properties, logger);
           
             // TODO: should be 'add to set' operation here...
             //myAddresses = m.getAddresses(); 
@@ -310,7 +312,7 @@ public class VirtualSocketFactory {
             VirtualSocketAddress target, int timeout, Map properties) 
         throws IOException {
         
-        if (m.matchRequirements(properties)) {
+        if (m.matchRuntimeRequirements(properties)) {
             
             logger.info("Using module " + m.name + " to set up " +
                     "connection to " + target);

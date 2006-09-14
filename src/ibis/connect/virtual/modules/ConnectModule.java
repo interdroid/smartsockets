@@ -53,7 +53,7 @@ public abstract class ConnectModule implements CallBack {
         } 
     }
         
-    public void init(VirtualSocketFactory p, Logger l) throws Exception {
+    public void init(VirtualSocketFactory p, Map properties, Logger l) throws Exception {
         
         parent = p;        
         logger = l;               
@@ -61,7 +61,7 @@ public abstract class ConnectModule implements CallBack {
         l.info("Initializing module: " + name);
                         
         // Now perform the implementation-specific initialization.
-        initModule();
+        initModule(properties);
     }
     
     public void startModule(ServiceLink sl) throws Exception { 
@@ -138,7 +138,7 @@ public abstract class ConnectModule implements CallBack {
     }
         
     
-    public boolean matchRequirements(Map requirements) {
+    public boolean matchRuntimeRequirements(Map requirements) {
         
         if (requirements == null) { 
             return true;
@@ -203,14 +203,14 @@ public abstract class ConnectModule implements CallBack {
         
         // Finally, we allow the module implementations themselves to match 
         // any further requirements that may exist.        
-        return matchAdditionalRequirements(requirements);
+        return matchAdditionalRuntimeRequirements(requirements);
     }
     
-    public abstract void initModule() throws Exception; 
+    public abstract void initModule(Map properties) throws Exception; 
 
     public abstract void startModule() throws Exception; 
 
-    public abstract boolean matchAdditionalRequirements(Map requirements);
+    public abstract boolean matchAdditionalRuntimeRequirements(Map requirements);
     
     public abstract SocketAddressSet getAddresses(); 
     

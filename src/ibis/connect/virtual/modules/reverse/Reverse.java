@@ -40,7 +40,7 @@ public class Reverse extends ConnectModule {
         super("ConnectModule(Reverse)", true);
     }
 
-    public void initModule() throws Exception {
+    public void initModule(Map properties) throws Exception {
         // nothing do do here.
     }
 
@@ -162,7 +162,7 @@ public class Reverse extends ConnectModule {
         }
     }
 
-    public boolean matchAdditionalRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
   
         return true;
     }

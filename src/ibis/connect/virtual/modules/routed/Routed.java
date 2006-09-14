@@ -117,7 +117,7 @@ public class Routed extends ConnectModule {
         }
     }
 
-    public void initModule() throws Exception {
+    public void initModule(Map properties) throws Exception {
         parseRouters(TypedProperties.stringProperty(Properties.ROUTERS));
     }
 
@@ -162,7 +162,7 @@ public class Routed extends ConnectModule {
         return c.connectToClient(target, timeout);
     }
 
-    public boolean matchAdditionalRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
         return true;
     }
 }

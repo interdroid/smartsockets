@@ -5,11 +5,9 @@ import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.virtual.ModuleNotSuitableException;
-import ibis.connect.virtual.Properties;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.modules.AbstractDirectModule;
-import ibis.util.TypedProperties;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -23,12 +21,7 @@ public class Direct extends AbstractDirectModule {
     protected static final byte PORT_NOT_FOUND      = 2;
     protected static final byte WRONG_MACHINE       = 3;     
     protected static final byte CONNECTION_REJECTED = 4;   
-    
-    private static final String PREFIX = Properties.PREFIX + "modules.direct.";    
-    private static final String PORT = PREFIX + "port";        
-        
-    private static final int DEFAULT_PORT = 19827;     
-   
+           
     private DirectSocketFactory direct;   
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
@@ -51,15 +44,22 @@ public class Direct extends AbstractDirectModule {
         super("ConnectModule(Direct)", false);
     } 
     
-    public void initModule() throws Exception {     
+    public void initModule(Map properties) throws Exception {     
 
-        // Check if our properties have been set correctly. 
-        TypedProperties.checkProperties(PREFIX, new String [] { PORT }, null);
+        // Retrieve the value of the port property (if set). Default value 
+        // is '0' (any available port).
+        int port = 0;
         
-        // Retrieve the value of the PORT property (if set). 
-        int port = TypedProperties.intProperty(PORT, DEFAULT_PORT);
-
-        System.err.println("***** PORT SET TO " + port + " -- " + PORT);
+        if (properties != null) { 
+        
+            String tmp = (String) properties.get("modules.direct.port");
+        
+            if (tmp != null) {
+                port = Integer.parseInt(tmp);
+            }
+        }
+        
+        System.err.println("***** PORT SET TO " + port);
         
         // Create a direct socket factory.
         direct = DirectSocketFactory.getSocketFactory();
@@ -243,7 +243,7 @@ public class Direct extends AbstractDirectModule {
         */
     }
 
-    public boolean matchAdditionalRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
         // No additional properties, so always matches requirements.
         return true;
     }
