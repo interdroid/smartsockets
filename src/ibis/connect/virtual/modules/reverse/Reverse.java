@@ -72,6 +72,13 @@ public class Reverse extends ConnectModule {
         // setup has failed and throws an exception. If a connection does come 
         // in, the local socket still has to wait for the remote serversocket to 
         // do an accept.         
+            
+        // First check if we are trying to connect to ourselves (which makes no 
+        // sense for this module... 
+        if (target.machine().sameMachine(parent.getLocalHost())) { 
+            throw new ModuleNotSuitableException(name + ": Cannot set up " +
+                "a connection to myself!"); 
+        }
                 
         if (timeout == 0 || timeout > DEFAULT_TIMEOUT) { 
             timeout = DEFAULT_TIMEOUT; 

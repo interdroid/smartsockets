@@ -419,5 +419,41 @@ public class SocketAddressSet extends SocketAddress {
         return convertToSocketAddressSet(s, false);
     } 
 
+    /**
+     * Returns if the other SocketAddressSet represents the same machine as 
+     * this one.   
+     * 
+     * @param other the SocketAddressSet to compare to
+     * @return if both SocketAddressSets represent the same machine
+     */
+    public boolean sameMachine(SocketAddressSet other) { 
+        return address.equals(other.address);
+    }
+
+    /**
+     * Returns if the other SocketAddressSet represents the same process as 
+     * this one.   
+     * 
+     * @param other the SocketAddressSet to compare to
+     * @return if both SocketAddressSets represent the same process
+     */
+    public boolean sameProcess(SocketAddressSet other) {
+        return equals(other);
+    }
     
+    /**
+     * Returns if the two SocketAddressSets represent the same machine. 
+     * 
+     */
+    public static boolean sameMachine(SocketAddressSet a, SocketAddressSet b) { 
+        return a.sameMachine(b);
+    }
+
+    /**
+     * Returns if the two SocketAddressSets represent the same process. 
+     * 
+     */
+    public static boolean sameProcess(SocketAddressSet a, SocketAddressSet b) {
+        return a.sameProcess(b);
+    }
 }

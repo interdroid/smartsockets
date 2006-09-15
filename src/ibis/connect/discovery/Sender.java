@@ -105,30 +105,35 @@ public class Sender extends Thread {
         return null;     
     }
         
+    public void send() { 
+     
+        if (packet == null) {
+            return;
+        }
+        
+        for (int i=0;i<sockets.length;i++) { 
+            try {
+                Discovery.logger.info("MulticastSender sending data "
+                            + packet.getSocketAddress() + " " 
+                            + packet);
+                
+                if (packet != null) {                         
+                    sockets[i].send(packet);
+                }
+            } catch (Exception e) {
+                Discovery.logger.info("MulticastSender got exception ", e);
+            }                
+        }            
+    }
+    
     public void run() { 
      
         while (true) { 
         
             long time = System.currentTimeMillis();
-                        
-            if (packet == null) {
-                return;
-            }
             
-            for (int i=0;i<sockets.length;i++) { 
-                try {
-                    Discovery.logger.info("MulticastSender sending data "
-                                + packet.getSocketAddress() + " " 
-                                + packet);
-                    
-                    if (packet != null) {                         
-                        sockets[i].send(packet);
-                    }
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }                
-            }            
-                
+            send();
+            
             time = System.currentTimeMillis() - time;
             
             if (time < sleep) { 

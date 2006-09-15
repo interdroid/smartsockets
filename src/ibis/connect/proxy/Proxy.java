@@ -2,6 +2,7 @@ package ibis.connect.proxy;
 
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.discovery.Callback;
 import ibis.connect.discovery.Discovery;
 import ibis.connect.discovery.Sender;
 import ibis.connect.proxy.connections.Connections;
@@ -11,6 +12,7 @@ import ibis.connect.proxy.state.ProxyList;
 import ibis.connect.proxy.state.StateCounter;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -18,6 +20,8 @@ import org.apache.log4j.Logger;
 public class Proxy extends Thread {
     
     private static int GOSSIP_SLEEP = 10000;
+    
+    private static final int DEFAULT_DISCOVERY_PORT = 24545;
     
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(Proxy.class.getName());
@@ -70,10 +74,13 @@ public class Proxy extends Thread {
         acceptor.start();
         connector.start();
 
-        logger.info("Starting LAN advertisement");
+        logger.info("Listning for broadcast on LAN");
         
-        Discovery.advertise(0, 0, "Proxy at: " + local);
+        //Discovery.advertise(0, 0, "Proxy at: " + local);
 
+        Discovery.answeringMachine(DEFAULT_DISCOVERY_PORT, "Any Proxies?", 
+                local.toString());
+                        
         logger.info("Start Gossiping!");
         
         start();

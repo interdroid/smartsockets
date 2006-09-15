@@ -1,7 +1,6 @@
 package ibis.connect.virtual;
 
 import ibis.connect.direct.SocketAddressSet;
-import ibis.connect.discovery.Callback;
 import ibis.connect.discovery.Discovery;
 import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 import ibis.connect.virtual.modules.ConnectModule;
@@ -18,13 +17,14 @@ import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
+import com.sun.org.apache.xpath.internal.operations.Div;
 
 /**
  * This class implements a 'virtual' socket factory.
@@ -39,64 +39,14 @@ public class VirtualSocketFactory {
     private static final int DEFAULT_BACKLOG = 20;     
     private static final int DEFAULT_TIMEOUT = 1000;     
     
+    private static final int DEFAULT_DISCOVERY_PORT = 24545;
+    
     private static final HashMap connectionSetupCache = new HashMap(); 
     
     private static final HashMap factories = new HashMap();
     
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
-          
-    private static class DiscoveryReceiver implements Callback {
-        
-        private SocketAddressSet result;
-        private boolean cont = true;
-        
-        private synchronized SocketAddressSet get(long time) { 
-            
-            long end = System.currentTimeMillis() + time;
-            long left = time;
-            
-            while (result == null) {
-                try { 
-                    wait(left);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                
-                left = end - System.currentTimeMillis();
-                
-                if (left <= 0) { 
-                    break;
-                }                
-            }
-            
-            cont = false;
-            return result;
-        }
-        
-        public synchronized boolean gotMessage(String message) {
-                        
-            if (message != null && message.startsWith("Proxy at: ")) {
-            
-                logger.info("Received proxy advert: \"" + message + "\"");            
-                
-                try {                    
-                    String addr = message.substring(10);                  
-                    logger.info("Addr: \"" + addr + "\"");                                                        
-                    
-                    result = new SocketAddressSet(addr);
-                    notifyAll();
-                    return false;                    
-                } catch (UnknownHostException e) {
-                    logger.info("Failed to parse advert!", e);
-                    return cont;
-                }                               
-            } else {
-                logger.info("Discarding message: \"" + message + "\"");
-                return cont;
-            }
-        }          
-    }
         
     protected static VirtualSocketFactory factory; 
         
@@ -150,9 +100,22 @@ public class VirtualSocketFactory {
 
         // Check if the proxy address is broadcast using UDP. 
         if (address == null) {
-            DiscoveryReceiver r = new DiscoveryReceiver();            
-            Discovery.listnen(0, r);                    
-            address = r.get(10000);
+         
+            logger.info("Attempting to discover proxy using UDP multicast...");                
+                        
+            String result = Discovery.broadcastWithReply("Any Proxies?", 
+                    DEFAULT_DISCOVERY_PORT, 10000);
+            
+            if (result != null) { 
+                try { 
+                    address = new SocketAddressSet(result);                    
+                    logger.info("Proxy found at: " + address.toString());                                    
+                } catch (Exception e) {
+                    logger.info("Got unknown reply to proxy discovery!");                
+                }
+            } else { 
+                logger.info("No proxies found.");
+            }
         }
             
         // Still no address ? Give up...         

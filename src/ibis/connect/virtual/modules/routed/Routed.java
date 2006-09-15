@@ -129,17 +129,23 @@ public class Routed extends ConnectModule {
     }
 
     public SocketAddressSet getAddresses() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
             Map properties) throws ModuleNotSuitableException, IOException {
 
+        // First check if we are trying to connect to ourselves (which makes no 
+        // sense for this module... 
+        if (target.machine().sameMachine(parent.getLocalHost())) { 
+            throw new ModuleNotSuitableException(name + ": Cannot set up " +
+                "a connection to myself!"); 
+        }
+       
         if (timeout == 0 || timeout > DEFAULT_TIMEOUT) { 
             timeout = DEFAULT_TIMEOUT; 
         }
-
+        
         VirtualSocketAddress r = getRouter(true);
         RouterClient c = null;
                 

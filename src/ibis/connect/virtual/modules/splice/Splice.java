@@ -44,6 +44,13 @@ public class Splice extends AbstractDirectModule {
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
             Map properties) throws ModuleNotSuitableException, IOException {
 
+        // First check if we are trying to connect to ourselves (which makes no 
+        // sense for this module... 
+        if (target.machine().sameMachine(parent.getLocalHost())) { 
+            throw new ModuleNotSuitableException(name + ": Cannot set up " +
+                "a connection to myself!"); 
+        }
+        
         logger.info(name + ": attempting connection setup to " + target);
         
         // Start by extracting the machine address of the target.

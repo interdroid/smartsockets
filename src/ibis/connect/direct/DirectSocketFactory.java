@@ -779,7 +779,17 @@ public class DirectSocketFactory {
      * 
      * return s; }
      */
-
+    
+    /**
+     * Returns if an address originated at this process.
+     * 
+     * @return boolean indicating if the address is local.
+     */
+    
+    public static boolean isLocalAddress(IPAddressSet a) {        
+        return (a.equals(factory.completeAddress));
+    }
+              
     /**
      * Returns an instance of PlainSocketFactory.
      * 
