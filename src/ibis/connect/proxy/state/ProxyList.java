@@ -19,7 +19,7 @@ public class ProxyList {
         ibis.util.GetLogger.getLogger(ProxyList.class.getName());
     
     private final StateCounter state; 
-    
+  
     private final LinkedList checked = new LinkedList();     
     private final LinkedList mustCheck = new LinkedList();
         
@@ -144,7 +144,27 @@ public class ProxyList {
     }
     
     public synchronized Iterator connectedProxiesIterator() { 
-        return checked.iterator();
+        
+        PartialIterator result = new PartialIterator();
+        
+        Iterator i = checked.iterator();
+        
+        while (i.hasNext()) { 
+            result.add(i.next());
+        }
+        
+        i = mustCheck.iterator();
+        
+        while (i.hasNext()) {
+            
+            ProxyDescription p = (ProxyDescription) i.next(); 
+            
+            if (p.haveConnection()) {             
+                result.add(p);
+            }               
+        }
+        
+        return result;
     }
     
     public synchronized void putBack(ProxyDescription d) {

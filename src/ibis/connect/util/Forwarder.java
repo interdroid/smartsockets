@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 public class Forwarder implements Runnable {
 
-    private static final int DEFAULT_BUFFER_SIZE = 16*1024;
+    private static final int DEFAULT_BUFFER_SIZE = 128*1024;
 
     public final byte [] buffer;
     public final InputStream in;
@@ -51,7 +51,7 @@ public class Forwarder implements Runnable {
             try {           
                 int n = in.read(buffer);
                 
-                System.out.println("Forwarder " + label + " read " + n + " bytes");                                    
+              //  System.out.println("Forwarder " + label + " read " + n + " bytes");                                    
                 
                 if (n == -1) {
                     synchronized (this) {

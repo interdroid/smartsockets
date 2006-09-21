@@ -29,7 +29,7 @@ public class ProxyDescription {
     // Value of the remote state the last time anything was changed in original
     // copy of this description.  
     private long homeState;
-        
+       
     // Number of hops required to reach this machine. A value of '0' indicates 
     // that a direct connection is possible. A value of 'Integer.MAX_VALUE/2'
     // or large indicates an unreachable machine. NOTE: The '/2' is used to 
@@ -333,7 +333,8 @@ public class ProxyDescription {
             buffer.append("Reachable    : ").append(reachableToString(reachable)).append('\n');
                 
             if (reachable == UNREACHABLE && indirection != null) { 
-                buffer.append("Reachable Via: ").append(indirection).append('\n');
+                buffer.append("Reachable Via: ").append(
+                        indirection.proxyAddressAsString).append('\n');
             }        
 
             buffer.append("Required Hops: ").append(hops).append('\n');

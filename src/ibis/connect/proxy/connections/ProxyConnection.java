@@ -79,10 +79,19 @@ public class ProxyConnection extends MessageForwardingConnection {
                 if (tmp.getLastLocalUpdate() > lastSendState) {
                     
                     logger.info("Writing proxy:\n" 
-                            + tmp.toString() + "\n\n");
+                            + tmp.proxyAddressAsString
+                            + " since lastLocalUpdate=" 
+                            + tmp.getLastLocalUpdate()  
+                            + " > lastSendState= " + lastSendState + "\n\n");
                     
                     writeProxy(tmp);                    
                     writes++;
+                } else { 
+                    logger.info("NOT writing proxy:\n"
+                            + tmp.proxyAddressAsString 
+                            + " since lastLocalUpdate=" 
+                            + tmp.getLastLocalUpdate()  
+                            + " <= lastSendState= " + lastSendState + "\n\n");                    
                 }
             }        
             

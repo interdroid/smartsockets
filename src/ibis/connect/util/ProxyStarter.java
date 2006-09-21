@@ -46,7 +46,8 @@ public class ProxyStarter {
             try {         
                 System.out.println("Starting router...");            
                 r = new Router(p.getProxyAddres());
-                System.out.println("Router running on: " + r.getAddress());                       
+                System.out.println("Router running on: " + r.getAddress());
+                r.start();                                
             } catch (IOException e) {
                 System.err.println("Oops: failed to start router");
                 e.printStackTrace(System.err);

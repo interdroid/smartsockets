@@ -13,10 +13,13 @@ import java.util.HashMap;
 
 public class Throughput {
     
-    private static int DEFAULT_REPEAT = 100;
+    private static int DEFAULT_REPEAT = 10;
+    private static int DEFAULT_COUNT = 100;
+    
     private static int TIMEOUT = 5000;
     private static int DEFAULT_SIZE = 1024*1024;
     
+    private static int count = DEFAULT_COUNT;    
     private static int repeat = DEFAULT_REPEAT;
     private static int size = DEFAULT_SIZE;
     
@@ -49,29 +52,33 @@ public class Throughput {
             DataOutputStream out = new DataOutputStream(s.getOutputStream());
 
             out.writeInt(size);
+            out.writeInt(count);
             out.writeInt(repeat);
             out.flush();                
             
             byte [] data = new byte[size];
             
             System.out.println("Starting test");
+                                    
+            for (int r=0;r<repeat;r++) {
+                
+                long time = System.currentTimeMillis();           
+                                
+                for (int i=0;i<count;i++) {
+                    out.write(data);
+                    out.flush();
+                }
+                
+                in.read();
+            
+                time = System.currentTimeMillis() - time;
+            
+                double tp = (1000.0 * size * count) / (1024.0*1024.0*time);  
+                double mbit = (8000.0 * size * count) / (1024.0*1024.0*time);  
                         
-            long time = System.currentTimeMillis();
-           
-            for (int i=0;i<repeat;i++) {
-                out.write(data);
-                out.flush();
+                System.out.println("Test took " + time + " ms. Throughput = " 
+                        + tp + " MByte/s (" + mbit + " MBit/s)");
             }
-
-            int x = in.read();
-            
-            time = System.currentTimeMillis() - time;
-            
-            double tp = (1000.0 * size * repeat) / (1024.0*1024.0*time);  
-            double mbit = (8000.0 * size * repeat) / (1024.0*1024.0*time);  
-                        
-            System.out.println("Test took " + time + " ms. Throughput = " 
-                    + tp + " MByte/s (" + mbit + " MBit/s)");
             
             VirtualSocketFactory.close(s, out, in);
         } catch (Exception e) {
@@ -101,19 +108,23 @@ public class Throughput {
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
                                            
-                int size = in.readInt();
-                int count = in.readInt();                              
-                
+                size = in.readInt();
+                count = in.readInt();                              
+                repeat = in.readInt();                              
+                                
                 byte [] data = new byte[size];
                 
-                System.out.println("Starting test byte[" + size + "] x " + count); 
+                System.out.println("Starting test byte[" + size + "] x " 
+                        + count + " repeated " + repeat + " times."); 
                 
-                for (int i=0;i<count;i++) {
-                    in.readFully(data);
+                for (int r=0;r<repeat;r++) {                 
+                    for (int i=0;i<count;i++) {
+                        in.readFully(data);
+                    }
+                
+                    out.write((byte) 42); 
+                    out.flush();
                 }
-
-                out.write((byte) 42); 
-                out.flush();
 
                 System.out.println("done!"); 
                 

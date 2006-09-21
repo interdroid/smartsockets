@@ -102,7 +102,7 @@ public class Proxy extends Thread {
     private void gossip() { 
         
         logger.info("Starting gossip round (local state = " + state.get() + ")");        
-        logger.info("I know the following proxies:\n" + proxies.toString());        
+        logger.info("AAP I know the following proxies:\n" + proxies.toString());        
                         
         Iterator itt = proxies.connectedProxiesIterator();
         
@@ -110,9 +110,13 @@ public class Proxy extends Thread {
             ProxyDescription d = (ProxyDescription) itt.next();            
             ProxyConnection c = d.getConnection();
             
-            if (c != null) {               
+            if (c != null) {
+                logger.info("Gossip with " + d.proxyAddressAsString); 
                 c.gossip(state.get());
-            }            
+            } else { 
+                logger.info("Cannot gossip with " + d.proxyAddressAsString 
+                        + ": NO CONNECTION!");
+            }
         }                   
     }
     

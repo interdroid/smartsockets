@@ -167,7 +167,7 @@ public class VirtualSocketFactory {
         } catch (Exception e) {
             logger.warn("Failed to load module: Reverse", e);
         }       
-        
+        /*
         try {    
             // Splice module 
             ConnectModule m = new Splice();
@@ -180,7 +180,7 @@ public class VirtualSocketFactory {
         } catch (Exception e) {
             logger.warn("Failed to load module: Reverse", e);
         }
-        
+        */
         try {    
             // Routed module 
             ConnectModule m = new Routed();

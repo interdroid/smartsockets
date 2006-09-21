@@ -4,6 +4,7 @@ import ibis.connect.util.NetworkUtils;
 
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 import org.apache.log4j.Logger;
 
@@ -110,8 +111,14 @@ public class Discovery {
                 // Do a broadcast and hope we get a reply                
                 sr.send((int)left);
                 
-                // Wait for the reply for 0.5 seconds.
-                String result = sr.receive(500);
+                // Wait for the reply for 0.5 seconds.                
+                String result = null; 
+                
+                try { 
+                    sr.receive(500);
+                } catch (SocketTimeoutException e) {
+                    // ignore
+                }
                 
                 // If we get a reply we're done!
                 if (result != null) { 
