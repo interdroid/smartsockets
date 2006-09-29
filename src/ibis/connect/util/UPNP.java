@@ -48,7 +48,7 @@ public class UPNP {
         "urn:schemas-upnp-org:service:LANHostConfigManagement:1";
         
     private static final int MAX_MAPPING_TRIES = 4;
-    private static final int DISCOVERY_TIMEOUT = 10000;
+    private static final int DISCOVERY_TIMEOUT = 1500;
 
     private static UPNPRootDevice root;
     
