@@ -81,6 +81,7 @@ public class STUN {
 
         logger.info("Network addresses available: " + addresses.length);
         
+        int wait = 25;        
         int count = 0;
         
         // For each network address (except loopback) we start a thread that
@@ -101,6 +102,8 @@ public class STUN {
             for (int i=0;i<tmp.length;i++) {                 
                 if (tmp[i] != null && tmp[i].done()) {
                     DiscoveryInfo info = tmp[i].getResult();
+                    tmp[i] = null;
+                    count--;
                     
                     if (info == null) {
                         logger.info("STUN failed for " + addresses[i]);            
@@ -117,9 +120,6 @@ public class STUN {
                                 + " using server " + server);                        
                         return;
                     }
-
-                    tmp[i] = null;
-                    count--;
                 }
             }
 
@@ -128,16 +128,20 @@ public class STUN {
                 return;
             }
 
-            if (System.currentTimeMillis() > end) {
+            if (timeout > 0 && System.currentTimeMillis() > end) {
                 // Time has exceeded (threads should die automatically).... 
                 return;
             } 
                             
             // Sleep for half a second to prevent busy waiting.
             try { 
-                Thread.sleep(500);
+                Thread.sleep(wait);
             } catch (Exception e) {
                 // ignore
+            }
+            
+            if (wait < 1000) { 
+                wait *= 2;
             }
         }        
     }
@@ -186,6 +190,6 @@ public class STUN {
         long end = System.currentTimeMillis();
         
         System.out.println("Got address " + NetworkUtils.ipToString(ad) 
-                + " after " + ((end-start)/1000) + " seconds...");        
+                + " after " + (end-start) + " ms.");        
     }    
 }
