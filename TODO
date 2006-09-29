@@ -1,5 +1,7 @@
 Todo:
 
+X User friendlyness!!
+
 X Create single app to start proxy + router
 
 X Use UDP mcast to find local routers
@@ -25,7 +27,7 @@ X Add cache to Virtual which remembers best connection setup order
 
   Add support for multiple proxy addresses to VirtualSocketFactory
 
-  Check if timeout make any sence....
+  Check if timeout make any sense....
   
   Icing on cake: have the VirtualSocket transparently move from Routed 
                   to splice/stun type connection....
@@ -33,10 +35,19 @@ X Add cache to Virtual which remembers best connection setup order
   Check how the connection properties interact with serversockets 
     (e.g., what happens to reverse setups when I turn winner cache on) 
 
+  NIO support
+
+  Routing for Mathijs...
+
+  UDP support for Niels
+
+  Check if the UDP mcast discovery works on DAS3.. 
+
+  Check if client info is propagated correctly in proxies ...
 
 Think about: 
 
-  Find a way to get MAC addresses...
+X Find a way to get MAC addresses...
 
   When only a partial address is known, direct connections are no problem. 
   Sending messages through the proxies fails, however, since the complete 
@@ -63,4 +74,4 @@ X Add UDP/STUN like module to Virtual ? -> using STUN directly
 
   Make up unique ID for machines that only have local IP's (UUID ?)
 
-  Add parallel streams (where ? Direct or Virtual) 
+  Add parallel streams (where ? Direct or Virtual or just Routers ?) 
