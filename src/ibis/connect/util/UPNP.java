@@ -48,8 +48,8 @@ public class UPNP {
         "urn:schemas-upnp-org:service:LANHostConfigManagement:1";
         
     private static final int MAX_MAPPING_TRIES = 4;
-    private static final int DISCOVERY_TIMEOUT = 1500;
-           
+    private static final int DISCOVERY_TIMEOUT = 10000;
+
     private static UPNPRootDevice root;
     
     private static UPNPDevice wan;
@@ -71,13 +71,19 @@ public class UPNP {
                 UPNPRootDevice[] devices = Discovery.discover(DISCOVERY_TIMEOUT, 
                         GATEWAY_DEVICE_URN);
     
-                if (logger.isDebugEnabled()) { 
-                    logger.debug("Found "+ devices.length + " UPNP device(s).");
-                }
+                if (devices != null) {
+                    if (logger.isDebugEnabled()) { 
+                        logger.debug("Found "+ devices.length + " UPNP device(s).");
+                    }
 
-                if (devices != null && devices.length > 0) { 
-                    root = devices[0];
-                } 
+                    if (devices.length > 0) { 
+                        root = devices[0];
+                    } 
+                } else {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("No UPNP devices found");
+                    }
+                }
             } catch (IOException e) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("No UPNP devices found");

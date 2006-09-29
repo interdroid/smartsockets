@@ -65,6 +65,7 @@ public class STUN {
             }
 
             synchronized (this) {
+                logger.info("STUN discovery done on: " + iaddress);
                 done = true;
                 notifyAll();
             }
