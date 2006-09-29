@@ -209,34 +209,6 @@ public class DirectSocketFactory {
                 logger.debug("UPNP lookup result: " + externalNATAddress);
             }
         }
-
-        if (externalNATAddress != null) {
-            return;
-        }
-
-        // TODO: remove ? Replaced by STUN....
-        if (ALLOW_BOUNCER) {
-            // Try to obtain the global IP address by using an external bouncer.
-            if (logger.isDebugEnabled()) {
-                logger.debug("Using BOUNCER to find external address...");
-            }
-
-            SocketAddressSet[] bouncers = getBouncerProperty();
-
-            for (int i = 0; i < bouncers.length; i++) {
-                if (bouncers[i] != null) {
-                    externalNATAddress = contactBouncer(bouncers[i], 1500);
-
-                    if (externalNATAddress != null) {
-                        break;
-                    }
-                }
-            }
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("BOUNCER lookup result: " + externalNATAddress);
-            }
-        }
     }
 
     /**

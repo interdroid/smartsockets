@@ -15,7 +15,7 @@ X Add STUN support to DirectFactory to find external address.
 
 X Support multiple servers for STUN
 
-  Make sure STUN doesn't take too long ...
+X Make sure STUN doesn't take too long ...
 
   Allow STUN on a specific network instead of automatically using all.
 
@@ -27,7 +27,7 @@ X Add cache to Virtual which remembers best connection setup order
 
   Add support for multiple proxy addresses to VirtualSocketFactory
 
-  Check if timeout make any sense....
+  Check if timeouts make any sense....
   
   Icing on cake: have the VirtualSocket transparently move from Routed 
                   to splice/stun type connection....
