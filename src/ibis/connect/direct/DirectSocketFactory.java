@@ -93,7 +93,7 @@ public class DirectSocketFactory {
 
         portRange = new PortRange();
 
-        preference = new NetworkPreference(completeAddress);
+        preference = NetworkPreference.getPreference(completeAddress);
         preference.sort(completeAddress.getAddresses(), true);
 
         // if (logger.isDebugEnabled()) {

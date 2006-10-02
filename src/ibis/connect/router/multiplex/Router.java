@@ -1,4 +1,4 @@
-package ibis.connect.router.simple;
+package ibis.connect.router.multiplex;
 
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.virtual.VirtualServerSocket;

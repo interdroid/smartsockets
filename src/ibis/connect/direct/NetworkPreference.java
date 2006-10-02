@@ -22,6 +22,8 @@ public class NetworkPreference {
     static Logger logger = ibis.util.GetLogger
             .getLogger(NetworkPreference.class.getName());
 
+    private static Properties properties;
+    
     private Preference defaultPreference;
 
     private String clusterName;
@@ -72,7 +74,7 @@ public class NetworkPreference {
      * If the property is not set or the value could not be parsed, null is
      * returned.
      */
-    NetworkPreference(IPAddressSet myAddress) {
+    private NetworkPreference(IPAddressSet myAddress) {
 
         Properties p = getPropertyFile();
 
@@ -95,7 +97,7 @@ public class NetworkPreference {
         }
     }
 
-    private Properties getPropertyFile() {
+    private static Properties getPropertyFile() {
 
         String file = TypedProperties
                 .stringProperty(ibis.connect.direct.Properties.CONNECT_FILE);
@@ -341,5 +343,14 @@ public class NetworkPreference {
 
     public String toString() {
         return defaultPreference.toString();
+    }
+    
+    public static NetworkPreference getPreference(IPAddressSet myAddress) { 
+        
+        if (properties == null) { 
+            properties = getPropertyFile();
+        }
+        
+        return new NetworkPreference(myAddress);
     }
 }
