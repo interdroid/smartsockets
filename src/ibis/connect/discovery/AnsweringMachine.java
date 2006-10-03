@@ -1,4 +1,4 @@
-package ibis.connect.discovery;
+ package ibis.connect.discovery;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

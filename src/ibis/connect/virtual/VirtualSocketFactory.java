@@ -3,13 +3,9 @@ package ibis.connect.virtual;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.discovery.Discovery;
 import ibis.connect.proxy.servicelink.ServiceLinkImpl;
+import ibis.connect.util.TypedProperties;
 import ibis.connect.virtual.modules.ConnectModule;
-import ibis.connect.virtual.modules.direct.Direct;
-import ibis.connect.virtual.modules.reverse.Reverse;
-import ibis.connect.virtual.modules.routed.Routed;
-import ibis.connect.virtual.modules.splice.Splice;
 import ibis.connect.virtual.service.ServiceLink;
-import ibis.util.TypedProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,8 +20,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.sun.org.apache.xpath.internal.operations.Div;
-
 /**
  * This class implements a 'virtual' socket factory.
  *  
@@ -37,13 +31,13 @@ import com.sun.org.apache.xpath.internal.operations.Div;
 public class VirtualSocketFactory {
 
     private static final int DEFAULT_BACKLOG = 20;     
-    private static final int DEFAULT_TIMEOUT = 1000;     
-    
+    private static final int DEFAULT_TIMEOUT = 1000;         
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
     
-    private static final HashMap connectionSetupCache = new HashMap(); 
-    
     private static final HashMap factories = new HashMap();
+        
+    // TODO: should this be static ? 
+    private static final HashMap connectionSetupCache = new HashMap(); 
     
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
@@ -59,12 +53,16 @@ public class VirtualSocketFactory {
     
     private ServiceLink serviceLink;
     
-    private VirtualSocketFactory(Map properties) throws Exception {
+    private final TypedProperties properties;
+    
+    private VirtualSocketFactory(TypedProperties properties) throws Exception {
                 
         logger.info("Creating VirtualSocketFactory");    
         
-        loadModules(properties);
-        createServiceLink(properties);
+        this.properties = properties;
+        
+        loadModules();
+        createServiceLink();
         passServiceLinkToModules();        
         
         if (modules.size() == 0) { 
@@ -73,32 +71,22 @@ public class VirtualSocketFactory {
         }       
     } 
     
-    private void createServiceLink(Map properties){ 
+    private void createServiceLink(){ 
         
         SocketAddressSet address = null;
         
-        // Check if the poxy address was passed as a parameter.
-        if (properties != null) {
-            address = 
-                (SocketAddressSet) properties.get("connect.proxy.address");           
-        }
-       
-        // Check if the proxy address was passed as a command line property.
-        if (address == null) { 
-            String host = TypedProperties.stringProperty(Properties.HUB_HOST);
+        // Check if the proxy address was passed as a property.
+        String tmp = properties.getProperty(Properties.PROXY);
         
-            if (host != null) { 
-                try { 
-                    logger.info("Got addr \"" + host + "\""); 
-                    address = new SocketAddressSet(host);
-                } catch (Exception e) {
-                    logger.warn("Failed to understand proxy address " + host 
-                            + "!", e);                    
-                }
-            }
-        } 
+        if (tmp != null) {
+            try { 
+                address = new SocketAddressSet(tmp);
+            } catch (Exception e) { 
+                logger.warn("Failed to understand proxy address: " + tmp, e);                                
+            }           
+        }
 
-        // Check if the proxy address is broadcast using UDP. 
+        // Check if we can discover the proxy address using UDP multicast. 
         if (address == null) {
          
             logger.info("Attempting to discover proxy using UDP multicast...");                
@@ -133,66 +121,93 @@ public class VirtualSocketFactory {
         }                        
     }
     
-    private void loadModules(Map properties) throws Exception { 
-        logger.info("Loading modules:");
-        
-        // TODO: Hardcoded for now. Should implement some configurable 
-        // reflection based scheme here ...
-        //
-        // Problem: All modules together should define my adress, but some 
-        // require a service link before they can init, and the serviceLink 
-        // requires my address.....        
-        
-        try { 
-            // Direct module
-            ConnectModule m = new Direct();
-            m.init(this, properties, logger);
-          
-            // TODO: should be 'add to set' operation here...
-            myAddresses = m.getAddresses();                 
-            modules.add(m);           
-        } catch (Exception e) {
-            logger.warn("Failed to load module: Direct", e);
-        }   
-            
-        try {    
-            // Reverse module 
-            ConnectModule m = new Reverse();
-            m.init(this, properties,logger);
-          
-            // TODO: should be 'add to set' operation here...
-            //myAddresses = m.getAddresses(); 
+    private ConnectModule loadModule(String name) {         
                 
-            modules.add(m);
-        } catch (Exception e) {
-            logger.warn("Failed to load module: Reverse", e);
-        }       
-        /*
-        try {    
-            // Splice module 
-            ConnectModule m = new Splice();
-            m.init(this, properties, logger);
-          
-            // TODO: should be 'add to set' operation here...
-            //myAddresses = m.getAddresses(); 
-               
-            modules.add(m);
-        } catch (Exception e) {
-            logger.warn("Failed to load module: Reverse", e);
+        logger.info("Loading module: " + name);
+        
+        String classname = properties.getProperty(
+                Properties.MODULES_PREFIX + name, null);
+        
+        if (classname == null) { 
+            // The class implementing the module is not explicitly defined, so 
+            // instead we use an 'educated guess' of the form:
+            //
+            // smartsockets.virtual.modules.<name>.<Name>
+            //            
+            StringBuffer tmp = new StringBuffer();            
+            tmp.append("smartsockets.virtual.modules.");
+            tmp.append(name.toLowerCase());
+            tmp.append(".");            
+            tmp.append(Character.toUpperCase(name.charAt(0)));
+            tmp.append(name.substring(1));            
+            classname = tmp.toString();
         }
-        */
-        try {    
-            // Routed module 
-            ConnectModule m = new Routed();
-            m.init(this, properties, logger);
-          
-            // TODO: should be 'add to set' operation here...
-            //myAddresses = m.getAddresses(); 
+    
+        logger.info("    class name: " + classname);
                 
-            modules.add(m);
+        try { 
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();        
+            Class c = cl.loadClass(classname);
+            
+            // Check if the class we loaded is indeed a flavor of ConnectModule            
+            if (!ConnectModule.class.isAssignableFrom(c)) {
+                logger.warn("Cannot load module " + classname + " since it is " 
+                        + " not a subclass of ConnectModule!");
+                return null;
+            } 
+
+            return (ConnectModule) c.newInstance();
+            
         } catch (Exception e) {
-            logger.warn("Failed to load module: Reverse", e);
-        }       
+            logger.warn("Failed to load module " + classname, e);
+        }
+
+        return null;
+    }
+    
+    private void loadModules() throws Exception {         
+        // Get the list of modules that we should load...
+        String [] mods = 
+            properties.getStringList(Properties.MODULES_DEFINE, ",", null);
+                        
+        if (mods == null || mods.length == 0) { 
+            logger.error("No smartsockets modules defined!");
+            return;
+        }
+        
+        String t = "";
+        
+        for (int i=0;i<mods.length;i++) {
+            t += mods[i] + " ";
+        }
+        
+        logger.info("Loading modules: " + t);
+                
+        for (int i=0;i<mods.length;i++) {
+            logger.info("************* AAP");
+            
+            try {                                 
+                ConnectModule m = loadModule(mods[i]);            
+                m.init(this, properties, logger);
+            
+                SocketAddressSet tmp = m.getAddresses();
+                
+                if (tmp != null) { 
+                    if (myAddresses == null) {
+                        myAddresses = tmp;
+                    } else { 
+                        myAddresses = SocketAddressSet.merge(myAddresses, tmp);
+                    }                    
+                }
+                                
+                modules.add(m);
+            } catch (Exception e) {
+                logger.warn("Failed to load module: " + mods[i], e);
+            }
+        } 
+        
+        logger.info("************* DONE");
+        
     }
         
     private void passServiceLinkToModules() { 
@@ -485,16 +500,31 @@ public class VirtualSocketFactory {
             serverSockets.remove(new Integer(port));           
         }                
     }
-        
+           
     public static VirtualSocketFactory getSocketFactory() {
-        return getSocketFactory(null);        
+        return getSocketFactory(Properties.getDefaultProperties(), false);        
     }
     
-    public static VirtualSocketFactory getSocketFactory(Map properties) {
+    public static VirtualSocketFactory getSocketFactory(HashMap p, 
+            boolean addDefaults) {    
+        return getSocketFactory(new TypedProperties(p), addDefaults);        
+    } 
+        
+    public static VirtualSocketFactory getSocketFactory(TypedProperties p, 
+            boolean addDefaults) {
+    
+        if (p == null) { 
+            p = Properties.getDefaultProperties();            
+        } else if (addDefaults) { 
+            p.putAll(Properties.getDefaultProperties());
+        } 
+        
+        VirtualSocketFactory factory = (VirtualSocketFactory) factories.get(p);
         
         if (factory == null) { 
             try { 
-                factory = new VirtualSocketFactory(properties);                
+                factory = new VirtualSocketFactory(p);
+                factories.put(p, factory);                
             } catch (Exception e) {
                 logger.warn("Failed to create VirtualSocketFactory!", e);
             }                       

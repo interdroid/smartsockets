@@ -12,7 +12,7 @@ public class Test {
         String [] def = p.getStringList("define", ",", null);
         
         if (def == null || def.length == 0) { 
-            System.out.println(prefix + ".define not found!");
+            System.out.println(prefix + "define not found!");
             return;
         }
                    
@@ -32,11 +32,11 @@ public class Test {
     public static void main(String [] args) { 
      
         // These are the default values.....
-        HashMap map = new HashMap();
-        map.put("smartsockets.networks.default", "site,link,global");
+        HashMap defaults = new HashMap();
+        defaults.put("smartsockets.networks.default", "site,link,global");
         
-        TypedProperties tp = new TypedProperties(map);
-        
+        TypedProperties tp = new TypedProperties(defaults);
+                        
         if (args.length == 1) { 
             try { 
                 FileInputStream in = new FileInputStream(args[0]);
@@ -47,8 +47,12 @@ public class Test {
             }
         }
         
+        TypedProperties sys = new TypedProperties(System.getProperties());
+        
+        tp.putAll(sys.filter("smartsockets.", false, false));
+                               
         System.out.println("I now know " + tp.size() + " properties.");
-        System.out.println();
+        System.out.println(tp.toVerboseString());
         
         System.out.println("Network ======================== ");               
         TypedProperties tmp = tp.filter("smartsockets.networks.", true, true);

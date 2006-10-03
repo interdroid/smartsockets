@@ -115,7 +115,7 @@ public class Discovery {
                 String result = null; 
                 
                 try { 
-                    sr.receive(500);
+                    result = sr.receive(500);
                 } catch (SocketTimeoutException e) {
                     // ignore
                 }

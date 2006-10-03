@@ -1,52 +1,123 @@
 package ibis.connect.virtual;
 
-import ibis.util.TypedProperties;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.log4j.Logger;
+
+import ibis.connect.util.TypedProperties;
 
 public class Properties {
 
-    public static final String PREFIX = "ibis.connect.virtual.";
+    public static final String DEFAULT_FILE = "smartsockets.properties";
     
-    // These are used by the ParallelStreamSocketFactory 
-    //public static final String PAR_NUMWAYS = PREFIX + "NumWays";
-    //public static final String PAR_BLOCKSIZE = PREFIX + "BlockSize";
-
-    // These are used by the RoutedMessagesSocketFactory
-    //public static final String HUB_PORT = PREFIX + "hub.port";
-    public static final String HUB_HOST = PREFIX + "hub.host";
-    //public static final String HUB_STATS = PREFIX + "hub.stats";
+    public static final String PREFIX = "smartsockets.";
     
+    public static final String PROXY   = PREFIX + "proxy";    
     public static final String ROUTERS = PREFIX + "routers";  
+    public static final String FILE    = PREFIX + "file";  
+        
+    public static final String MODULES_PREFIX = PREFIX + "modules.";
+    public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
+    public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
+        
+    private static final String [] defaults = new String [] {
+            MODULES_DEFINE, "direct,reverse,splice,routed", 
+            MODULES_ORDER, "direct,reverse,splice,routed" 
+    };
+
+    private static TypedProperties defaultProperties;
+
+    protected static Logger logger =         
+            ibis.util.GetLogger.getLogger("smartsocket.properties");
     
-    // These are used by the TcpSpliceSocketFactory    
-    /** Splice timeout: 0 means try splicing forever, < 0 means do not try slicing,
-    > 0 means try splicing for slice_timeout seconds */
-    //public static final String SPLICE_TIMEOUT = PREFIX + "splice_timeout";
-    //public static final String SPLICE_PORT = PREFIX + "splice_port";
+    private static TypedProperties getPropertyFile(String file) {
+        
+        InputStream in = null;
 
-    // These are generic ones
-    private static final String DEBUG_PROP = PREFIX + "debug";    
-    private static final String VERBOSE_PROP = PREFIX + "verbose";
+        try {
+            in = new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            logger.info("Property file \"" + file + "\" not found!");
+        }
+                
+        if (in == null) {
+
+            ClassLoader loader = ClassLoader.getSystemClassLoader();
+
+            in = loader.getResourceAsStream(file);
+
+            if (in != null) {
+                logger.info("Found property file in classpath: \""
+                        + loader.getResource(file) + "\"");
+            } else {
+                logger.info("Property file \"" + file + "\" not found "
+                        + "in classpath, giving up!");
+                return null;
+            }
+        }
+
+        try {
+            TypedProperties p = new TypedProperties();
+            p.load(in);
+
+            return p;
+        } catch (IOException e) {
+            logger.warn("Error while loading property file: " + file, e);
+
+            try {
+                in.close();
+            } catch (Exception x) {
+                // ignore
+            }
+        }
+        
+        return null;
+    }
     
-    public static final String ISIZE = PREFIX + "InputBufferSize";
-    public static final String OSIZE = PREFIX + "OutputBufferSize";
+    
+    public static TypedProperties getDefaultProperties() {
+        
+        if (defaultProperties == null) { 
+            defaultProperties = new TypedProperties();
 
-    public static final boolean DEBUG = TypedProperties.booleanProperty(
-            DEBUG_PROP, false);
-
-    public static final boolean VERBOSE = TypedProperties.booleanProperty(
-            VERBOSE_PROP, false);
-
-    public static int inputBufferSize = 64 * 1024;
-    public static int outputBufferSize = 64 * 1024;
+            // Start by inserting the default values.            
+            for (int i=0;i<defaults.length;i+=2) { 
+                defaultProperties.put(defaults[i], defaults[i+1]);            
+            }
       
-    private static final String[] sysprops = { 
-            /*PAR_NUMWAYS, PAR_BLOCKSIZE, HUB_PORT,*/ HUB_HOST,
-            /*HUB_STATS, SPLICE_PORT, SPLICE_TIMEOUT,*/ DEBUG_PROP, VERBOSE_PROP,
-            ISIZE, OSIZE };
+            // Get the smartsockets related properties from the commandline. 
+            TypedProperties system = 
+                new TypedProperties(System.getProperties()).filter(PREFIX);
 
-    static {
-        TypedProperties.checkProperties(PREFIX, sysprops, null);
-        inputBufferSize = TypedProperties.intProperty(ISIZE, 64 * 1024);
-        outputBufferSize = TypedProperties.intProperty(OSIZE, 64 * 1024);
+            // Check what property file we should load.
+            String file = system.getProperty(FILE, DEFAULT_FILE); 
+
+            // If the file is not explicitly set to null, we try to load it.
+            if (file != null) {
+                
+                TypedProperties fromFile = getPropertyFile(file);
+                
+                if (fromFile == null && !file.equals(DEFAULT_FILE)) { 
+                    // If we fail to load the user specified file, we give an
+                    // error, since only the default file may fail silently.                     
+                    logger.error("User specified preferences \"" + file 
+                            + "\" not found!");                                            
+                } else {                  
+                    // If we managed to load the file, we add the properties to 
+                    // the 'defaultProperties' possibly overwriting defaults.
+                    defaultProperties.putAll(fromFile);
+                }
+            }
+            
+            // Finally, add the smartsockets related properties from the command
+            // line to the result, possibly overriding entries fromfile or the 
+            // defaults.            
+            defaultProperties.putAll(system);
+        } 
+        
+        return defaultProperties;        
     }
 }

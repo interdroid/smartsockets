@@ -41,15 +41,15 @@ public class Router extends Thread {
     
     public Router(SocketAddressSet proxy) throws IOException {         
         
-        properties.put("connect.module.skip", "routed"); 
+        properties.put("smartsockets.modules.skip", "routed"); 
         
         if (proxy != null) { 
-            properties.put("connect.proxy.address", proxy);
+            properties.put("smartsockets.proxy", proxy.toString());
         }
                 
         logger.debug("Router creating VirtualSocketFactory");
         
-        factory = VirtualSocketFactory.getSocketFactory(properties);        
+        factory = VirtualSocketFactory.getSocketFactory(properties, true);        
         serviceLink = factory.getServiceLink();
         
         if (serviceLink == null) { 

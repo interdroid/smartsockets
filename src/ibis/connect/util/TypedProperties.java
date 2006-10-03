@@ -7,7 +7,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.StringTokenizer;
 
 /**
  * Utility to extract and check typed properties
@@ -394,30 +393,32 @@ public class TypedProperties extends Properties {
             prefix = "";
         }
 
-        Iterator iterator = entrySet().iterator();
-
-        while (iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry) iterator.next();
-            String key = (String) entry.getKey();
-            String value = (String) entry.getValue();
-
+        for (Enumeration e = propertyNames(); e.hasMoreElements();) {
+            String key = (String) e.nextElement();
+            
             if (key.startsWith(prefix)) {
-                
+            
+                String value = getProperty(key);
+               
                 if (removePrefix) {
-                    key = key.substring(prefix.length());
+                    result.put(key.substring(prefix.length()),  value);
+                } else {                 
+                    result.put(key, value);
                 }
                 
-                result.put(key, value);
-                
                 if (removeProperties) { 
-                    iterator.remove();
+                    remove(key);
                 }                
             }
         }
 
         return result;
     }
-        
+
+    public TypedProperties filter(String prefix) {
+        return filter(prefix, false, false);
+    }
+
     /**
      * Prints properties (including default properties) to a stream.
      * 
@@ -453,6 +454,5 @@ public class TypedProperties extends Properties {
         }
 
         return result;
-    }
-
+    }    
 }
