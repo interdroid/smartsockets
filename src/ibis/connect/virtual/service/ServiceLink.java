@@ -63,7 +63,7 @@ public abstract class ServiceLink {
     
     public abstract SocketAddressSet [] proxies() throws IOException;    
     
-    public abstract SocketAddressSet [] directionToClient(String client) throws IOException;
+    public abstract SocketAddressSet [] locateClient(String client) throws IOException;
 
     public abstract SocketAddressSet findSharedProxy(SocketAddressSet myMachine,
             SocketAddressSet targetMachine);

@@ -71,7 +71,7 @@ public class Router extends Thread {
     synchronized SocketAddressSet [] getDirections(SocketAddressSet machine) 
         throws IOException {
         
-        return serviceLink.directionToClient(machine.toString());
+        return serviceLink.locateClient(machine.toString());
     }
     
     synchronized Client [] findClients(SocketAddressSet proxy, String service) 

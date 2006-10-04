@@ -185,7 +185,7 @@ public class ServiceLinkImpl extends ServiceLink {
         return hubAddress;
     }
 
-    public SocketAddressSet[] directionToClient(String client) throws IOException {
+    public SocketAddressSet[] locateClient(String client) throws IOException {
         // TODO Auto-generated method stub
         return null;
     }

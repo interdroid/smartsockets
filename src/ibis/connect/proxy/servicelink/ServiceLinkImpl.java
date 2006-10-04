@@ -366,7 +366,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }
     }
     
-    public SocketAddressSet [] directionToClient(String client) throws IOException {
+    public SocketAddressSet [] locateClient(String client) throws IOException {
 
         if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot get direction to client: not connected to proxy");            
