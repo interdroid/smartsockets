@@ -31,8 +31,7 @@ public class VirtualSocketFactory {
     
     private static final HashMap factories = new HashMap();
         
-    // TODO: should this be static ? 
-    private static final HashMap connectionSetupCache = new HashMap(); 
+    private final HashMap connectionSetupCache = new HashMap(); 
     
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
@@ -126,7 +125,7 @@ public class VirtualSocketFactory {
     }
     
     private ConnectModule loadModule(String name) {         
-                
+                        
         logger.info("Loading module: " + name);
         
         String classname = properties.getProperty(
@@ -179,39 +178,58 @@ public class VirtualSocketFactory {
             return;
         }
         
+        String [] skip = 
+            properties.getStringList(Properties.MODULES_SKIP, ",", null);
+
+        // Remove all modules that should be skipped. 
+        if (skip != null) { 
+            for (int s=0;s<skip.length;s++) { 
+                for (int m=0;m<mods.length;m++) {
+                    if (skip[s].equals(mods[m])) {
+                        logger.info("Skipping module " + mods[m]);                        
+                        mods[m] = null;
+                    }
+                }
+            }        
+        }
+        
         String t = "";
         
         for (int i=0;i<mods.length;i++) {
-            t += mods[i] + " ";
+            if (mods[i] != null) {            
+                t += mods[i] + " ";
+            }
         }
         
         logger.info("Loading modules: " + t);
                 
         for (int i=0;i<mods.length;i++) {
-            logger.info("************* AAP");
             
-            try {                                 
-                ConnectModule m = loadModule(mods[i]);            
-                m.init(this, properties, logger);
-            
-                SocketAddressSet tmp = m.getAddresses();
-                
-                if (tmp != null) { 
-                    if (myAddresses == null) {
-                        myAddresses = tmp;
-                    } else { 
-                        myAddresses = SocketAddressSet.merge(myAddresses, tmp);
-                    }                    
+            if (mods[i] != null) {              
+                try {                                 
+                    ConnectModule m = loadModule(mods[i]);            
+                    m.init(this, properties, logger);
+
+                    SocketAddressSet tmp = m.getAddresses();
+
+                    if (tmp != null) { 
+                        if (myAddresses == null) {
+                            myAddresses = tmp;
+                        } else { 
+                            myAddresses = SocketAddressSet.merge(myAddresses, tmp);
+                        }                    
+                    }
+
+                    modules.add(m);
+                } catch (Exception e) {
+                    logger.warn("Failed to load module: " + mods[i], e);
                 }
-                                
-                modules.add(m);
-            } catch (Exception e) {
-                logger.warn("Failed to load module: " + mods[i], e);
-            }
-        } 
+            } 
+        }
+
+        logger.info("All modules loaded");
         
-        logger.info("************* DONE");
-        
+        // TODO: look the order ?
     }
         
     private void passServiceLinkToModules() { 
@@ -335,9 +353,13 @@ public class VirtualSocketFactory {
     }
     
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
-            int timeout, Map properties) throws IOException {
+            int timeout, Map prop) throws IOException {
 
-        //int refusedCount = 0;
+        // TODO: should we still have a properties parameter here ? 
+        if (prop == null) {
+            prop = properties;
+        }
+
         int notSuitableCount = 0;
         
         if (timeout < 0) { 
@@ -352,9 +374,9 @@ public class VirtualSocketFactory {
         // we connected to this machine...
         boolean cache = false;
         String winner = null;
-        
-        // Check if the user wan't us to use the cache...
-        if (properties != null && properties.containsKey("cache.winner")) { 
+               
+        // Check if the user wants us to use the cache...
+        if (prop != null && prop.containsKey("cache.winner")) { 
             cache = true;            
             winner = (String) connectionSetupCache.get(target);
         }
@@ -365,7 +387,7 @@ public class VirtualSocketFactory {
             
             if (m != null) { 
                 VirtualSocket vs = createClientSocket(m, target, timeout, 
-                        properties);
+                        prop);
             
                 if (vs != null) { 
                     return vs;
@@ -386,7 +408,7 @@ public class VirtualSocketFactory {
                 break;
             }
             
-            VirtualSocket vs = createClientSocket(m, target, timeout, properties);
+            VirtualSocket vs = createClientSocket(m, target, timeout, prop);
             
             if (vs != null) {                 
                 if (cache) { 
@@ -483,14 +505,7 @@ public class VirtualSocketFactory {
             return vss;
         } 
     }
-
-    public VirtualSocket createBrokeredSocket(InputStream in, OutputStream out,
-            boolean hintIsServer, Map properties) throws IOException {    
-        
-        // TODO: REMOVE this at some point ?
-        throw new RuntimeException("createBrokeredSocket not implemented");
-    }
-
+  
     public ServiceLink getServiceLink() { 
         return serviceLink;        
     }

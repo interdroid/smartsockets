@@ -16,7 +16,7 @@ public class TypedProperties extends Properties {
     private static final long serialVersionUID = 1L;
 
     // 1.4 code
-    @SuppressWarnings("unchecked")
+    //@SuppressWarnings("unchecked")
     public TypedProperties(Map initialValues) {
         putAll(initialValues);
     }

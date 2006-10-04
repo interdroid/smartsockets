@@ -25,7 +25,8 @@ public class Properties {
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
-        
+    public static final String MODULES_SKIP   = MODULES_PREFIX + "skip";
+    
     public static final String DISCOVERY_PREFIX  = PREFIX + "discovery.";
     public static final String DISCOVERY_PORT    = DISCOVERY_PREFIX + "port";
     public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
@@ -41,6 +42,7 @@ public class Properties {
             DISCOVERY_TIMEOUT, "5000",             
     };
 
+    
     private static TypedProperties defaultProperties;
 
     protected static Logger logger =         

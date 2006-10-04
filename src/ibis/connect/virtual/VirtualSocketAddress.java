@@ -17,6 +17,9 @@ public class VirtualSocketAddress implements Serializable {
     // at another proxy).     
     private final SocketAddressSet proxy;
     
+    // This field indicates which 'virtual cluster' the machine is part of.
+    // private final String cluster;
+
     public VirtualSocketAddress(SocketAddressSet machine, int port) {
         this(machine, port, null);
     }
@@ -26,7 +29,7 @@ public class VirtualSocketAddress implements Serializable {
         
         this.proxy = proxy;
         this.machine = machine;
-        this.port = port;      
+        this.port = port;
     }
     
     /**
