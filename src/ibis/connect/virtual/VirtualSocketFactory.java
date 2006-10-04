@@ -3,7 +3,6 @@ package ibis.connect.virtual;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.discovery.Discovery;
 import ibis.connect.proxy.servicelink.ServiceLink;
-import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 import ibis.connect.util.TypedProperties;
 import ibis.connect.virtual.modules.ConnectModule;
 
@@ -118,7 +117,7 @@ public class VirtualSocketFactory {
         }  
         
         try { 
-            serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses);            
+            serviceLink = ServiceLink.getServiceLink(address, myAddresses);            
             proxyAddress = serviceLink.getAddress();            
         } catch (Exception e) {
             logger.warn("Failed to connect service link to proxy!", e);

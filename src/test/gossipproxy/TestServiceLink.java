@@ -8,7 +8,6 @@ import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.proxy.servicelink.CallBack;
 import ibis.connect.proxy.servicelink.Client;
 import ibis.connect.proxy.servicelink.ServiceLink;
-import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,7 +35,7 @@ public class TestServiceLink implements CallBack {
         ss = factory.createServerSocket(port, 10, null);        
         
         while (proxies.size() > 0) {
-            serviceLink = ServiceLinkImpl.getServiceLink(
+            serviceLink = ServiceLink.getServiceLink(
                     (SocketAddressSet) proxies.removeFirst(), 
                     ss.getAddressSet());
             
