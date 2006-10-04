@@ -15,10 +15,11 @@ public class STUN {
         ibis.util.GetLogger.getLogger(STUN.class.getName());
     
     private static String [] DEFAULT_SERVERS = 
-        new String [] { "iphone-stun.freenet.de",
+        new String [] { "stun.voipbuster.com",
+                        "stun.fwd.org", 
+                        "iphone-stun.freenet.de",
                         "stun.xten.net",
-                        "stun.fwdnet.net", 
-                        "stun.fwd.org" }; 
+                        "stun.fwdnet.net" }; 
     
     private static InetAddress external; 
     
@@ -57,9 +58,8 @@ public class STUN {
                 
         public void run() {                          
             try {
-                logger.info("STUN discovery initiated on: " + iaddress);
-                
-                System.err.println("STUN discovery initiated on: " + iaddress);
+                logger.info("STUN discovery initiated on: " + iaddress 
+                        + ":" + port);
                 
                 DiscoveryTest test = new DiscoveryTest(iaddress, server, port);
                 result = test.test();
@@ -68,7 +68,7 @@ public class STUN {
             }
 
             synchronized (this) {
-                logger.info("STUN discovery done on: " + iaddress);
+                logger.info("STUN discovery done on: " + iaddress + ":" + port);
                 done = true;
                 notifyAll();
             }
