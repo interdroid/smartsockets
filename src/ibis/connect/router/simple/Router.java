@@ -63,12 +63,12 @@ public class Router extends Thread {
 
         logger.info("Router listening on " + local.toString());                 
         
-        boolean register = serviceLink.registerService("router", local);
+        boolean register = serviceLink.registerService("router", local.toString());
         
         logger.info("Router registration: " + register);                 
     } 
                
-    synchronized SocketAddressSet [] getDirections(SocketAddressSet machine) 
+    synchronized SocketAddressSet [] locateMachine(SocketAddressSet machine) 
         throws IOException {
         
         return serviceLink.locateClient(machine.toString());

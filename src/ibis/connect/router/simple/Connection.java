@@ -148,7 +148,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         
         // The target wasn't local. We now traverse each of the proxies one by
         // one, and check if we can find any router processes associated with 
-        // them. If ther are, we try to connect to the target via one of these
+        // them. If there are, we try to connect to the target via one of these
         // routers...        
         for (int i=startIndex;i<directions.length;i++) {
             
@@ -172,6 +172,10 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
                 }
                 
                 for (int x=0;x<result.length;x++) {
+                    
+                    // TODO: should we change the target address to include the
+                    // new proxy ?
+                    
                     if (connectViaRouter(result[i], target, timeout)) { 
                         return true;                        
                     }
@@ -182,7 +186,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         return false;
     }
        
-    private boolean connect() throws IOException { 
+    private boolean connectToTarget() throws IOException { 
          
         boolean succes = false;
         
@@ -199,14 +203,28 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             Router.logger.debug("     timeout: " + timeout);
 
             SocketAddressSet machine = target.machine();
+            SocketAddressSet proxy = target.proxy();
             
-            SocketAddressSet [] directions = parent.getDirections(machine);
+            if (proxy != null) { 
+                SocketAddressSet [] dir = new SocketAddressSet [] { proxy };                 
+                succes = connectToTarget(target, timeout, dir);
+         
+                if (!succes) { 
+                    Router.logger.warn("Connection " + socketToClient + " failed"
+                            + " to connect to: " + machine + "@" + proxy);         
+                }
+            }
             
-            if (directions == null || directions.length == 0) { 
-                Router.logger.warn("Connection " + socketToClient + " failed"
-                        + " to get directions to: " + machine);
-            } else { 
-                succes = connectToTarget(target, timeout, directions);                
+            if (!succes) {                
+                // Failed to connect to target. The proxy was invalid or null.
+                SocketAddressSet [] directions = parent.locateMachine(machine);
+            
+                if (directions == null || directions.length == 0) { 
+                    Router.logger.warn("Connection " + socketToClient + " failed"
+                            + " to locate machine: " + machine + "@" + proxy);
+                } else { 
+                    succes = connectToTarget(target, timeout, directions);                
+                }
             }
             
         } catch (Exception e) {
@@ -298,7 +316,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
     public void run() { 
         
         try {            
-            if (!connect()) {
+            if (!connectToTarget()) {
                 System.err.println("Failed to setup connection for " + socketToClient);
                 VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
                 return;

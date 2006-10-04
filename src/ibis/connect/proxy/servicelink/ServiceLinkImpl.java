@@ -4,7 +4,6 @@ import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.proxy.ProxyProtocol;
-import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.service.CallBack;
 import ibis.connect.virtual.service.Client;
 import ibis.connect.virtual.service.ServiceLink;
@@ -412,16 +411,14 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         return proxyAddress;
     }
     
-    public boolean registerService(String tag, VirtualSocketAddress address) 
-        throws IOException {
+    public boolean registerService(String tag, String info) throws IOException {
 
         if (!waitConnected(maxWaitTime)) {
             logger.info("Cannot register service: not connected to proxy");            
             throw new IOException("No connection to proxy!");
         }        
         
-        logger.info("Requesting service registration: " + tag + " " 
-                + address.toString());
+        logger.info("Requesting service registration: " + tag + " " + info); 
         
         String id = "RegisterService" + getNextSimpleCallbackID();
         
@@ -433,7 +430,7 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
                 out.write(ServiceLinkProtocol.REGISTER_SERVICE);
                 out.writeUTF(id);
                 out.writeUTF(tag);
-                out.writeUTF(address.toString());
+                out.writeUTF(info);
                 out.flush();            
             } 
 

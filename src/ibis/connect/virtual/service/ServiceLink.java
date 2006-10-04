@@ -51,7 +51,7 @@ public abstract class ServiceLink {
             SocketAddressSet targetProxy, String targetModule, int opcode, 
             String message);
 
-    public abstract boolean registerService(String tag, VirtualSocketAddress address) throws IOException;
+    public abstract boolean registerService(String tag, String info) throws IOException;
     
     public abstract Client [] clients() throws IOException;    
     public abstract Client [] clients(SocketAddressSet proxy) throws IOException;
