@@ -25,13 +25,16 @@ public class STUN {
     static class Discovery implements Runnable {
         
         private final InetAddress iaddress;        
+        private final int port;
         private final String server; 
-        
+                
         private boolean done = false;               
         private DiscoveryInfo result; 
         
-        public Discovery(InetAddress iaddress, String server) {
+        
+        public Discovery(InetAddress iaddress, int port, String server) {
             this.iaddress = iaddress;
+            this.port = port;
             this.server = server;            
         }
     
@@ -58,7 +61,7 @@ public class STUN {
                 
                 System.err.println("STUN discovery initiated on: " + iaddress);
                 
-                DiscoveryTest test = new DiscoveryTest(iaddress, server, 3478);
+                DiscoveryTest test = new DiscoveryTest(iaddress, server, port);
                 result = test.test();
             } catch (Exception e) {
                 logger.warn("STUN discovery on " + iaddress + " failed!", e);
@@ -85,12 +88,14 @@ public class STUN {
         int wait = 25;        
         int count = 0;
         
+        int port = 3478;
+        
         // For each network address (except loopback) we start a thread that
         // tries to find the external address using STUN. 
         for (int i=0;i<addresses.length;i++) {                 
             if (!addresses[i].isLoopbackAddress()) {
                 count++;
-                tmp[i] = new Discovery(addresses[i], server);                    
+                tmp[i] = new Discovery(addresses[i], port + i, server);                    
                 ThreadPool.createNew(tmp[i], "STUN " + addresses[i]);
             }
         }
