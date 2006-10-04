@@ -29,8 +29,8 @@ public class Client {
             int index = clientAsString.indexOf(", ");
         
             if (index == -1) { 
-                throw new IllegalArgumentException("String does not contain Client" 
-                        + " description!");
+                throw new IllegalArgumentException("String does not contain"
+                        + " Client description!");
             }
 
             clientAddress = 
@@ -45,8 +45,8 @@ public class Client {
             }
 
             if (index == -1) { 
-                throw new IllegalArgumentException("String does not contain Client" 
-                        + " description!");
+                throw new IllegalArgumentException("String does not contain"
+                        + " Client description!");
             }
 
             version = Long.parseLong(clientAsString.substring(0, index));
@@ -66,7 +66,7 @@ public class Client {
                 index = clientAsString.indexOf(']');
                     
                 VirtualSocketAddress a = 
-                    new VirtualSocketAddress(clientAsString.substring(0, index)); 
+                   new VirtualSocketAddress(clientAsString.substring(0, index)); 
 
                 services.put(key, a);
             

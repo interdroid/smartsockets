@@ -42,14 +42,23 @@ public class ProxyConnection extends MessageForwardingConnection {
         lastSendState = state.get();
     }
     
-    public synchronized void writeMessage(String source, String target, 
-            String module, int code, String message, int hopsLeft) { 
+    public synchronized void writeMessage(String source, String sourceProxy,  
+            String target, String targetProxy, String module, int code, 
+            String message, int hopsLeft) { 
         
+        if (targetProxy == null) { 
+            targetProxy = "";
+        }
+                
         try {
             out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
             
             out.writeUTF(source);
+            out.writeUTF(sourceProxy);
+        
             out.writeUTF(target);
+            out.writeUTF(targetProxy);
+            
             out.writeUTF(module);
             out.writeInt(code);
             out.writeUTF(message);
@@ -202,17 +211,23 @@ public class ProxyConnection extends MessageForwardingConnection {
     private void handleClientMessage() throws IOException {
         
         String source = in.readUTF();
+        String sourceProxy = in.readUTF();
+        
         String target = in.readUTF();
+        String targetProxy = in.readUTF();
+        
         String module = in.readUTF();
         int code = in.readInt();
+        
         String message = in.readUTF();
         int hopsLeft = in.readInt();
         
-        logger.debug("Got message [" + source + ", " 
-                + target + ", " + module + ", " + code + ", " + message 
-                + ", " + hopsLeft + "]");
+        logger.debug("Got message [" + source + "@" + sourceProxy + ", " 
+                + target  + "@" + targetProxy + ", " + module + ", " + code 
+                + ", " + message + ", " + hopsLeft + "]");
                
-        forwardMessage(source, target, module, code, message, hopsLeft);          
+        forward(source, sourceProxy, target, targetProxy, module, code, message,
+                hopsLeft);          
     }
     
     protected String getName() { 

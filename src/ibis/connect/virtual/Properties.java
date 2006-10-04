@@ -15,17 +15,30 @@ public class Properties {
     
     public static final String PREFIX = "smartsockets.";
     
+    public static final String FILE    = PREFIX + "file";         
     public static final String PROXY   = PREFIX + "proxy";    
     public static final String ROUTERS = PREFIX + "routers";  
-    public static final String FILE    = PREFIX + "file";  
         
+    public static final String BACKLOG = PREFIX + "backlog";  
+    public static final String TIMEOUT = PREFIX + "timeout";  
+    
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
         
+    public static final String DISCOVERY_PREFIX  = PREFIX + "discovery.";
+    public static final String DISCOVERY_PORT    = DISCOVERY_PREFIX + "port";
+    public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
+                   
     private static final String [] defaults = new String [] {
-            MODULES_DEFINE, "direct,reverse,splice,routed", 
-            MODULES_ORDER, "direct,reverse,splice,routed" 
+            BACKLOG,           "20", 
+            TIMEOUT,           "1000", 
+            
+            MODULES_DEFINE,    "direct,reverse,splice,routed", 
+            MODULES_ORDER,     "direct,reverse,splice,routed",
+            
+            DISCOVERY_PORT,    "24545", 
+            DISCOVERY_TIMEOUT, "5000",             
     };
 
     private static TypedProperties defaultProperties;

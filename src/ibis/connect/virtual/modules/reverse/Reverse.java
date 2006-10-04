@@ -87,7 +87,7 @@ public class Reverse extends ConnectModule {
         VirtualServerSocket ss = 
             (VirtualServerSocket) parent.createServerSocket(0, 1, null);
                        
-        serviceLink.send(target.machine(), name, PLEASE_CONNECT, 
+        serviceLink.send(target.machine(), target.proxy(), name, PLEASE_CONNECT, 
                 target.port() + ":" + ss.getPort());
         
         DirectVirtualSocket s = null;
@@ -129,16 +129,17 @@ public class Reverse extends ConnectModule {
         }
     }        
     
-    public void gotMessage(SocketAddressSet src, int opcode, String message) {
+    public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
+            int opcode, String message) {
 
         if (opcode != PLEASE_CONNECT) { 
-            logger.warn(name + ": got unexpected message from " + src 
-                    + " opcode = " + opcode + ", message = " + message);
+            logger.warn(name + ": got unexpected message from " + src + "@" + 
+                   srcProxy + " opcode = " + opcode + ", message = " + message);
             return;
         }
     
-        logger.info(name + ": handling connection request from " + src 
-                + " message = \"" + message + "\"");  
+        logger.info(name + ": handling connection request from " + src + "@" + 
+                srcProxy + " message = \"" + message + "\"");  
         
         int localport = 0;
         int remoteport = 0;
@@ -160,7 +161,8 @@ public class Reverse extends ConnectModule {
             return;            
         }
 
-        VirtualSocketAddress target = new VirtualSocketAddress(src, remoteport);
+        VirtualSocketAddress target = 
+            new VirtualSocketAddress(src, remoteport, srcProxy);
         
         if (USE_THREAD) { 
             new Connector(ss, target).start();    

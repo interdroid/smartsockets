@@ -13,6 +13,7 @@ import ibis.connect.proxy.state.StateCounter;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Dictionary;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -34,6 +35,8 @@ public class Proxy extends Thread {
             
     private StateCounter state = new StateCounter();
             
+    private Discovery discovery;
+    
     public Proxy() throws IOException { 
         this(null);
     }
@@ -76,10 +79,8 @@ public class Proxy extends Thread {
 
         logger.info("Listning for broadcast on LAN");
         
-        //Discovery.advertise(0, 0, "Proxy at: " + local);
-
-        Discovery.answeringMachine(DEFAULT_DISCOVERY_PORT, "Any Proxies?", 
-                local.toString());
+        discovery = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 0);         
+        discovery.answeringMachine("Any Proxies?", local.toString());
                         
         logger.info("Start Gossiping!");
         

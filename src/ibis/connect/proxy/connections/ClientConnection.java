@@ -28,15 +28,17 @@ public class ClientConnection extends MessageForwardingConnection {
 
     private void handleMessage() throws IOException { 
         // Read the message
-        String target = in.readUTF();                    
+        String target = in.readUTF();
+        String targetProxy = in.readUTF();               
         String module = in.readUTF();
         int code = in.readInt();
         String message = in.readUTF();
         
-        logger.debug("Incoming message: [" + target + ", " 
+        logger.debug("Incoming message: [" + target + "@" + targetProxy + ", " 
                 + module + ", " + code + ", " + message); 
 
-        forwardMessage(clientAddress, target, module, code, message);
+        forwardMessageFromClient(clientAddress, target, targetProxy, module, 
+                code, message);
     } 
                 
     private void disconnect() {
@@ -51,12 +53,13 @@ public class ClientConnection extends MessageForwardingConnection {
         DirectSocketFactory.close(s, out, in);            
     } 
     
-    synchronized boolean sendMessage(String src, String module, int code, 
-            String message) {  
+    synchronized boolean sendMessage(String src, String srcProxy, String module,
+            int code, String message) {  
         
         try { 
             out.write(ServiceLinkProtocol.MESSAGE);
             out.writeUTF(src);
+            out.writeUTF(srcProxy);            
             out.writeUTF(module);
             out.writeInt(code);
             out.writeUTF(message);

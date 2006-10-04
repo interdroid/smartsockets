@@ -12,37 +12,73 @@ public class VirtualSocketAddress implements Serializable {
     private final SocketAddressSet machine;
     private final int port;
     
-    public VirtualSocketAddress(SocketAddressSet machine, int port) { 
+    // This proxy field is a hint of the location of the machine. It may be null
+    // or change over time (e.g., when a proxy crashes and a machine registers 
+    // at another proxy).     
+    private final SocketAddressSet proxy;
+    
+    public VirtualSocketAddress(SocketAddressSet machine, int port) {
+        this(machine, port, null);
+    }
+    
+    public VirtualSocketAddress(SocketAddressSet machine,
+            int port, SocketAddressSet proxy) {
+        
+        this.proxy = proxy;
         this.machine = machine;
         this.port = port;      
     }
     
     /**
-     * Construct a new IbisSocketAddress starting from a String with the 
+     * Construct a new VirtualSocketAddress starting from a String with the 
      * following format: 
      * 
-     *   MACHINEADDRESS:PORT
+     *   MACHINEADDRESS:PORT[@MACHINEADDRESS]
+     *   
+     * The last part of the address '@MACHINEADDRESS' is optional and indicates  
+     * the proxy where the machine can be found. 
      *  
      * @param address 
      * @throws UnknownHostException 
      */
     public VirtualSocketAddress(String address) throws UnknownHostException { 
         
-        int close = address.lastIndexOf(':');
-
-        if (close == -1) { 
-            throw new IllegalArgumentException("String does not contain " 
-                    + "IbisSocketAddress!");
-        }
+        int index = address.lastIndexOf('@');
         
-        machine = new SocketAddressSet(address.substring(0, close));
-        port = Integer.parseInt(address.substring(close+1));                        
+        if (index != -1) {
+            proxy = new SocketAddressSet(address.substring(index+1));
+            address = address.substring(0, index);
+        } else { 
+            proxy = null;
+        }
+                
+        index = address.lastIndexOf(':');
+
+        if (index == -1) { 
+            throw new IllegalArgumentException("String does not contain " 
+                    + "VirtualSocketAddress!");
+        }
+                
+        machine = new SocketAddressSet(address.substring(0, index));
+        port = Integer.parseInt(address.substring(index+1));                        
     }
 
-    public VirtualSocketAddress(String machine, int port) throws UnknownHostException {         
-        this(new SocketAddressSet(machine), port);
+    public VirtualSocketAddress(String machine, int port) 
+        throws UnknownHostException {
+        
+        this(new SocketAddressSet(machine), port, null);
     }
 
+    public VirtualSocketAddress(String proxy, String machine, int port) 
+        throws UnknownHostException {    
+        
+        this(new SocketAddressSet(machine), port, new SocketAddressSet(proxy));
+    }
+
+    public SocketAddressSet proxy() { 
+        return proxy;
+    }
+    
     public SocketAddressSet machine() { 
         return machine;
     }
@@ -69,17 +105,22 @@ public class VirtualSocketAddress implements Serializable {
             return false;
         }
         
+        // Now compare the addresses. Note that the proxy field is not compared, 
+        // since it is only a hint of the location of the machine. It may be 
+        // null in some cases or contain different values if the machine is 
+        // registered at multiple proxies.       
         VirtualSocketAddress tmp = (VirtualSocketAddress) other;
         
+        // The ports must be the same. 
         if (port != tmp.port) { 
             return false;
         }
-
+        
+        // The machine must be the same 
         return machine.equals(tmp.machine);
     }
     
-    public int hashCode() {         
-        // TODO: improve
+    public int hashCode() {
         return machine.hashCode() ^ port;        
     }
 }

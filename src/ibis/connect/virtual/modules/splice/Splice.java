@@ -81,7 +81,7 @@ public class Splice extends AbstractDirectModule {
                 
         // Send a message to the target asking it to participate in the
         // connection attempt. We will not get a reply. 
-        serviceLink.send(targetMachine, name, PLEASE_CONNECT, 
+        serviceLink.send(targetMachine, target.proxy(), name, PLEASE_CONNECT, 
                 shared + " " + connectID + " " + timeout + " " + target.port());
         
         // Now create the connection to the shared proxy, and get the public
@@ -236,15 +236,16 @@ public class Splice extends AbstractDirectModule {
         }
     }
     
-    public void gotMessage(SocketAddressSet src, int opcode, String message) {
+    public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
+            int opcode, String message) {
 
-        logger.info(name + ": got message " + src + " " + opcode 
-                + " \"" +  message + "\"");
+        logger.info(name + ": got message " + src + "@" + srcProxy + " " 
+                + opcode + " \"" +  message + "\"");
                
         // Check if the opcode makes any sense
         if (opcode != PLEASE_CONNECT) { 
-            logger.warn(name + ": ignoring message " + src + " " + opcode 
-                    + "\"" +  message + "\"");
+            logger.warn(name + ": ignoring message " + src + "@" + srcProxy 
+                    + " " + opcode + "\"" +  message + "\"");
             return;
         }
                 
@@ -252,8 +253,8 @@ public class Splice extends AbstractDirectModule {
         StringTokenizer t = new StringTokenizer(message);
         
         if (t.countTokens() != 4) { 
-            logger.warn(name + ": malformed message " + src + " " + opcode 
-                    + "\"" +  message + "\"");
+            logger.warn(name + ": malformed message " + src + "@" + srcProxy 
+                    + " " + opcode + "\"" +  message + "\"");
             return;
         }
         
@@ -269,8 +270,8 @@ public class Splice extends AbstractDirectModule {
             timeout = Integer.parseInt(t.nextToken());
             port = Integer.parseInt(t.nextToken());
         } catch (Exception e) {
-            logger.warn(name + ": failed to parse message " + src + " " + opcode 
-                    + "\"" +  message + "\"", e);
+            logger.warn(name + ": failed to parse message " + src + "@" 
+                    + srcProxy + " " + opcode + "\"" +  message + "\"", e);
             return;
         }
         

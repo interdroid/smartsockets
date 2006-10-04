@@ -11,6 +11,7 @@ import java.util.Map;
 
 public class VirtualServerSocket {
     
+    private final VirtualSocketFactory parent;
     private final int port;
     
     private final LinkedList incoming = new LinkedList();
@@ -24,9 +25,10 @@ public class VirtualServerSocket {
 
     private Map properties;
     
-    protected VirtualServerSocket(VirtualSocketAddress address, int port,
-            int backlog, Map p) {
+    protected VirtualServerSocket(VirtualSocketFactory parent, 
+            VirtualSocketAddress address, int port, int backlog, Map p) {
         
+        this.parent = parent;
         this.port = port;
         this.backlog = backlog;
         this.localAddress = address;
@@ -115,7 +117,7 @@ public class VirtualServerSocket {
             s.connectionRejected();
         } 
         
-        VirtualSocketFactory.factory.closed(port);            
+        parent.closed(port);            
     }
 
     public int getPort() { 

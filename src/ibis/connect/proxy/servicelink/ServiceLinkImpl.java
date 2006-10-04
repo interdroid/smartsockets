@@ -122,20 +122,27 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
                            
     private void handleMessage() throws IOException { 
         
-        String source = in.readUTF();
-        String targetID = in.readUTF();
+        String source = in.readUTF();        
+        String sourceProxy = in.readUTF();                
+        String targetModule = in.readUTF();
         int opcode = in.readInt();
         String message = in.readUTF();
             
-        logger.info("ServiceLink: Received message for " + targetID);
+        logger.info("ServiceLink: Received message for " + targetModule);
                         
-        CallBack target = (CallBack) findCallback(targetID);
+        CallBack target = (CallBack) findCallback(targetModule);
             
         if (target == null) { 
-            logger.warn("ServiceLink: Callback " + targetID + " not found");                                       
+            logger.warn("ServiceLink: Callback " + targetModule + " not found");                                       
         } else { 
             SocketAddressSet src = new SocketAddressSet(source);
-            target.gotMessage(src, opcode, message);
+            SocketAddressSet srcProxy = null;
+            
+            if (sourceProxy != null && sourceProxy.length() > 0) { 
+                srcProxy = new SocketAddressSet(sourceProxy);
+            }
+            
+            target.gotMessage(src, srcProxy, opcode, message);
         } 
     }
 
@@ -198,8 +205,9 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         }               
     }
         
-    public synchronized void send(SocketAddressSet target, String targetModule, 
-            int opcode, String message) { 
+    public synchronized void send(SocketAddressSet target, 
+            SocketAddressSet targetProxy, String targetModule, int opcode, 
+            String message) { 
 
         if (!connected) {
             logger.info("Cannot send message: not connected to proxy");            
@@ -212,6 +220,13 @@ public class ServiceLinkImpl extends ServiceLink implements Runnable {
         try { 
             out.write(ServiceLinkProtocol.MESSAGE);
             out.writeUTF(target.toString());
+            
+            if (targetProxy != null) { 
+                out.writeUTF(targetProxy.toString());                   
+            } else { 
+                out.writeUTF("");
+            }
+            
             out.writeUTF(targetModule);
             out.writeInt(opcode);
             out.writeUTF(message);

@@ -10,19 +10,25 @@ import org.apache.log4j.Logger;
 
 public class Discovery {
     
-    protected static Logger logger = 
+    protected static final Logger logger = 
             ibis.util.GetLogger.getLogger(Discovery.class.getName());
     
-    private static final int DEFAULT_SEND_PORT = 24545;
-    private static final int DEFAULT_RECEIVE_PORT = 24454;
-    private static final int DEFAULT_SLEEP = 5;  
+    protected static final int MAGIC = (0x42<<24 | 0xff<<16 | 0x42<<8 | 0xff);
     
-    protected static final int MAGIC = (0x42 << 24 | 0xff << 16 | 0x42 << 8 | 0xff);
+    private Receiver receiver; 
+    private Sender sender;
+    private AnsweringMachine answer;
     
-    private static Receiver receiver; 
-    private static Sender sender;
-    private static AnsweringMachine answer;
-        
+    private final int sendPort;
+    private final int receivePort;
+    private final int timeout;  
+    
+    public Discovery(int receivePort, int sendPort, int timeout) { 
+        this.receivePort = receivePort;
+        this.sendPort = sendPort;
+        this.timeout = timeout;
+    }
+    
     protected static void write(byte [] buffer, int pos, int value) {         
         buffer[pos]   = (byte)(0xff & (value >> 24));
         buffer[pos+1] = (byte)(0xff & (value >> 16));
@@ -37,72 +43,49 @@ public class Discovery {
                  (buffer[pos+3] & 0xff));
     }
         
-    public static void advertise(int port, int sleep, String message) {
-        if (port <= 0) { 
-            port = DEFAULT_SEND_PORT;           
-        }
-        
-        if (sleep <= 0) { 
-            sleep = DEFAULT_SLEEP * 1000;           
-        }
-       
+    public void advertise(String message) {
         InetAddress[] addresses = NetworkUtils.getAllHostAddresses();
                 
         try {                        
-            sender = new Sender(addresses, port, DEFAULT_RECEIVE_PORT, 
-                    sleep, message); 
+            sender = new Sender(addresses, sendPort, receivePort, 
+                    timeout, message); 
             sender.start();            
         } catch (Exception e) {
             logger.warn("Failed to create sender!", e);
         }
     }
             
-    public static void listnen(int port, Callback callback) { 
+    public void listnen(Callback callback) { 
     
         if (callback == null) { 
             throw new NullPointerException();
-        }
-
-        if (port <= 0) { 
-            port = DEFAULT_RECEIVE_PORT;
         }
         
         InetAddress[] addresses = NetworkUtils.getAllHostAddresses();
         
         try {                        
-            receiver = new Receiver(addresses, port, callback);
+            receiver = new Receiver(addresses, receivePort, callback);
             receiver.start();
         } catch (Exception e) {
             logger.warn("Failed to create receiver!", e);
         }
     }
     
-    public static void answeringMachine(int port, String prefix, String reply) { 
-        
-        if (port == 0) { 
-            port = DEFAULT_RECEIVE_PORT;
-        }
+    public void answeringMachine(String prefix, String reply) { 
         
         try {
-            answer = new AnsweringMachine(port, prefix, reply);
+            answer = new AnsweringMachine(receivePort, prefix, reply);
             answer.start();
         } catch (SocketException e) {
             logger.warn("Failed to create answering machine!", e);
         }
     }
         
-    public static String broadcastWithReply(String message, int destport, 
-            int timeout) {
-        
-        InetAddress[] ads = NetworkUtils.getAllHostAddresses();
-                
-        if (destport == 0) { 
-            destport = DEFAULT_RECEIVE_PORT;
-        }
+    public String broadcastWithReply(String message) {
         
         try {
-            SendReceive sr = new SendReceive(0);            
-            sr.setMessage(message, destport);
+            SendReceive sr = new SendReceive(sendPort);            
+            sr.setMessage(message, receivePort);
             
             long end = System.currentTimeMillis() + timeout;
             long left = timeout; 

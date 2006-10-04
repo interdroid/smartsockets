@@ -53,14 +53,15 @@ public class TestServiceLink implements CallBack {
         serviceLink.register("TEST", this);
     }
     
-    public void gotMessage(SocketAddressSet src, int opcode, String message) {
+    public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
+            int opcode, String message) {
     
-        System.out.println("Got message from: " + src + "\n   [" 
-                + opcode + "] - " + message);            
+        System.out.println("Got message from: " + src + "@" + srcProxy 
+                + "\n   [" + opcode + "] - " + message);            
         
         if (!interactive) {
             // bounce the message back to the sender.
-            serviceLink.send(src, "TEST", opcode, "I got: " + message);
+            serviceLink.send(src, srcProxy, "TEST", opcode, "I got: " + message);
         }
     }    
     
@@ -74,16 +75,30 @@ public class TestServiceLink implements CallBack {
         int index = line.indexOf(' ');
         
         if (index == -1) { 
-            System.out.println("Need <target> <txt> as input!");
+            System.out.println("Need <target[@proxy]> <txt> as input!");
             return;
         }
         
+        String proxy = null;
         String target = line.substring(0, index);
         String txt = line.substring(index).trim();
         
+        index = target.indexOf('@');
+        
+        if (index > 0) { 
+            proxy = target.substring(index+1);
+            target = target.substring(0, index);
+        }
+                
         try { 
-            SocketAddressSet address = new SocketAddressSet(target);
-            serviceLink.send(address, "TEST", message++, txt);
+            SocketAddressSet t = new SocketAddressSet(target);
+            SocketAddressSet p = null; 
+            
+            if (proxy != null) { 
+                p = new SocketAddressSet(proxy);
+            }
+
+            serviceLink.send(t, p, "TEST", message++, txt);
         } catch (Exception e) {
             System.out.println("Failed to parse target address!" + e);
         }           

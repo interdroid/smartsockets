@@ -29,10 +29,6 @@ import org.apache.log4j.Logger;
  * 
  */
 public class VirtualSocketFactory {
-
-    private static final int DEFAULT_BACKLOG = 20;     
-    private static final int DEFAULT_TIMEOUT = 1000;         
-    private static final int DEFAULT_DISCOVERY_PORT = 24545;
     
     private static final HashMap factories = new HashMap();
         
@@ -41,26 +37,33 @@ public class VirtualSocketFactory {
     
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
-        
-    protected static VirtualSocketFactory factory; 
+            
+    private final ArrayList modules = new ArrayList();
+
+    private final TypedProperties properties;
+    
+    private final int DEFAULT_BACKLOG;     
+    private final int DEFAULT_TIMEOUT;         
+    private final int DEFAULT_DISCOVERY_PORT;
         
     private HashMap serverSockets = new HashMap();        
     private int nextPort = 3000;    
     
-    private SocketAddressSet myAddresses;
-    
-    private final ArrayList modules = new ArrayList();
+    private SocketAddressSet myAddresses;      
+    private SocketAddressSet proxyAddress;
     
     private ServiceLink serviceLink;
-    
-    private final TypedProperties properties;
-    
-    private VirtualSocketFactory(TypedProperties properties) throws Exception {
+            
+    private VirtualSocketFactory(TypedProperties p) throws Exception {
                 
         logger.info("Creating VirtualSocketFactory");    
         
-        this.properties = properties;
-        
+        properties = p;
+    
+        DEFAULT_BACKLOG = p.getIntProperty(Properties.BACKLOG);
+        DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT);
+        DEFAULT_DISCOVERY_PORT = p.getIntProperty(Properties.DISCOVERY_PORT);
+                       
         loadModules();
         createServiceLink();
         passServiceLinkToModules();        
@@ -91,8 +94,9 @@ public class VirtualSocketFactory {
          
             logger.info("Attempting to discover proxy using UDP multicast...");                
                         
-            String result = Discovery.broadcastWithReply("Any Proxies?", 
-                    DEFAULT_DISCOVERY_PORT, 10000);
+            Discovery d = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 10000);
+            
+            String result = d.broadcastWithReply("Any Proxies?");
             
             if (result != null) { 
                 try { 
@@ -114,7 +118,8 @@ public class VirtualSocketFactory {
         }  
         
         try { 
-            serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses); 
+            serviceLink = ServiceLinkImpl.getServiceLink(address, myAddresses);            
+            proxyAddress = serviceLink.getAddress();            
         } catch (Exception e) {
             logger.warn("Failed to connect service link to proxy!", e);
             return;
@@ -470,10 +475,10 @@ public class VirtualSocketFactory {
             }
             
             VirtualSocketAddress a = 
-                new VirtualSocketAddress(myAddresses, port);
+                new VirtualSocketAddress(myAddresses, port, proxyAddress);
             
-            VirtualServerSocket vss = new VirtualServerSocket(a, port, backlog, 
-                    properties);
+            VirtualServerSocket vss = new VirtualServerSocket(this, a, port, 
+                    backlog, properties);
             
             serverSockets.put(key, vss);            
             return vss;

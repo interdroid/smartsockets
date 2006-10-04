@@ -132,7 +132,7 @@ public class ServiceLinkImpl extends ServiceLink {
                             + " not found");                                       
                 } else { 
                     SocketAddressSet src = new SocketAddressSet(source);
-                    target.gotMessage(src, opcode, message);
+                    target.gotMessage(src, hubAddress, opcode, message);
                 } 
                     
             } catch (IOException e) {
@@ -142,7 +142,8 @@ public class ServiceLinkImpl extends ServiceLink {
         }               
     }
         
-    public synchronized void send(SocketAddressSet target, String targetModule, 
+    public synchronized void send(SocketAddressSet target, 
+            SocketAddressSet targetProxy, String targetModule, 
             int opcode, String message) { 
 
         logger.info("Sending message to hub: [" + target.toString() + ", " +

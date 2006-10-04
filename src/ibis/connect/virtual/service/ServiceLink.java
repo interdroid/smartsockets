@@ -47,8 +47,9 @@ public abstract class ServiceLink {
     
     public abstract SocketAddressSet getAddress() throws IOException; 
     
-    public abstract void send(SocketAddressSet target, String targetModule, 
-            int opcode, String message);
+    public abstract void send(SocketAddressSet target, 
+            SocketAddressSet targetProxy, String targetModule, int opcode, 
+            String message);
 
     public abstract boolean registerService(String tag, VirtualSocketAddress address) throws IOException;
     

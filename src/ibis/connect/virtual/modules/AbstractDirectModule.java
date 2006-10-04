@@ -66,9 +66,6 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 return;
             }
             
-            VirtualSocket vs = createVirtualSocket(
-                    new VirtualSocketAddress(target, targetPort), ds, out, in);
-            
             // Next check if the port exists locally
             VirtualServerSocket vss = parent.getServerSocket(targetPort);
             
@@ -88,6 +85,9 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 logger.debug(name + ": Connection seems OK, checking is " +
                         "server is willing to accept");
             }
+            
+            VirtualSocket vs = createVirtualSocket(
+                    new VirtualSocketAddress(target, targetPort, null), ds, out, in);
             
             // Next check if the serverSocket is willing to accept                        
             boolean accept = vss.incomingConnection(vs);
