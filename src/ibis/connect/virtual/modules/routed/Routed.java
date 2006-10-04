@@ -1,13 +1,13 @@
 package ibis.connect.virtual.modules.routed;
 
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.proxy.servicelink.Client;
 import ibis.connect.router.simple.RouterClient;
 import ibis.connect.virtual.ModuleNotSuitableException;
 import ibis.connect.virtual.Properties;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.modules.ConnectModule;
-import ibis.connect.virtual.service.Client;
 import ibis.util.TypedProperties;
 
 import java.io.IOException;

@@ -4,12 +4,12 @@
 package ibis.connect.router.simple;
 
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.proxy.servicelink.Client;
 import ibis.connect.util.Forwarder;
 import ibis.connect.util.ForwarderDoneCallback;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
-import ibis.connect.virtual.service.Client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

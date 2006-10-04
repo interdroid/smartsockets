@@ -1,4 +1,4 @@
-package ibis.connect.virtual.service;
+package ibis.connect.proxy.servicelink;
 
 import ibis.connect.direct.SocketAddressSet;
 

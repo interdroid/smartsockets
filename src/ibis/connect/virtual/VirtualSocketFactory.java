@@ -2,10 +2,10 @@ package ibis.connect.virtual;
 
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.discovery.Discovery;
+import ibis.connect.proxy.servicelink.ServiceLink;
 import ibis.connect.proxy.servicelink.ServiceLinkImpl;
 import ibis.connect.util.TypedProperties;
 import ibis.connect.virtual.modules.ConnectModule;
-import ibis.connect.virtual.service.ServiceLink;
 
 import java.io.IOException;
 import java.io.InputStream;

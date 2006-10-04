@@ -5,10 +5,10 @@ import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 
 
+import ibis.connect.proxy.servicelink.CallBack;
+import ibis.connect.proxy.servicelink.Client;
+import ibis.connect.proxy.servicelink.ServiceLink;
 import ibis.connect.proxy.servicelink.ServiceLinkImpl;
-import ibis.connect.virtual.service.Client;
-import ibis.connect.virtual.service.ServiceLink;
-import ibis.connect.virtual.service.CallBack;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -4,10 +4,6 @@ import ibis.connect.direct.DirectSocket;
 import ibis.connect.direct.DirectSocketFactory;
 import ibis.connect.direct.SocketAddressSet;
 import ibis.connect.proxy.ProxyProtocol;
-import ibis.connect.virtual.service.CallBack;
-import ibis.connect.virtual.service.Client;
-import ibis.connect.virtual.service.ServiceLink;
-import ibis.connect.virtual.service.SimpleCallBack;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

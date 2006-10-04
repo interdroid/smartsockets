@@ -1,4 +1,4 @@
-package ibis.connect.virtual.service;
+package ibis.connect.proxy.servicelink;
 
 import java.io.IOException;
 import java.util.HashMap;

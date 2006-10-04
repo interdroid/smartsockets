@@ -1,12 +1,12 @@
 package ibis.connect.router.multiplex;
 
 import ibis.connect.direct.SocketAddressSet;
+import ibis.connect.proxy.servicelink.Client;
+import ibis.connect.proxy.servicelink.ServiceLink;
 import ibis.connect.virtual.VirtualServerSocket;
 import ibis.connect.virtual.VirtualSocket;
 import ibis.connect.virtual.VirtualSocketAddress;
 import ibis.connect.virtual.VirtualSocketFactory;
-import ibis.connect.virtual.service.Client;
-import ibis.connect.virtual.service.ServiceLink;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
