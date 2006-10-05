@@ -551,4 +551,8 @@ public class VirtualSocketFactory {
         
         return factory;
     }
+
+    public VirtualSocket createBrokeredSocket(InputStream brokered_in, OutputStream brokered_out, boolean b, Map p) {
+        throw new RuntimeException("createBrokeredSocket not implemented");
+    }
 }
