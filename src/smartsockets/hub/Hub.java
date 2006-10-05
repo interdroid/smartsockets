@@ -104,7 +104,7 @@ public class Hub extends Thread {
     private void gossip() { 
         
         logger.info("Starting gossip round (local state = " + state.get() + ")");        
-        logger.info("AAP I know the following proxies:\n" + proxies.toString());        
+        //logger.info("I know the following proxies:\n" + proxies.toString());        
                         
         Iterator itt = proxies.connectedProxiesIterator();
         
