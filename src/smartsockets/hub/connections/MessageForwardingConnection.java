@@ -6,13 +6,13 @@ import java.io.DataOutputStream;
 import java.util.Iterator;
 
 import smartsockets.direct.DirectSocket;
-import smartsockets.hub.state.ProxyDescription;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.HubDescription;
+import smartsockets.hub.state.HubList;
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
-            DataOutputStream out, Connections connections, ProxyList proxies) {
+            DataOutputStream out, Connections connections, HubList proxies) {
         super(s, in, out, connections, proxies);
     }
     
@@ -23,8 +23,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
         BaseConnection c = connections.getConnection(proxy); 
         
-        if (c != null && c instanceof ProxyConnection) {             
-            ProxyConnection tmp = (ProxyConnection) c;            
+        if (c != null && c instanceof HubConnection) {             
+            HubConnection tmp = (HubConnection) c;            
             tmp.writeMessage(src, srcProxy, target, targetProxy, module, code, 
                     message, hopsLeft);
             return true;
@@ -34,7 +34,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     }
     
     // Tries to forward a message to a given proxy, directly or indirectly.  
-    private void forwardMessageToProxy(ProxyDescription p, String src, 
+    private void forwardMessageToProxy(HubDescription p, String src, 
             String srcProxy, String target, String targetProxy,  
             String module, int code, String message, int hopsLeft) {
         
@@ -64,7 +64,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
         // We don't have a direct connection, but we should be able to reach the
         // proxy indirectly
-        ProxyDescription p2 = p.getIndirection();
+        HubDescription p2 = p.getIndirection();
         
         if (p2 == null) {
             // Oh dear, we don't have an indirection!
@@ -126,7 +126,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Lets see if we directly known the proxy that the client is 
         // associated with. 
         if (targetProxy != null && targetProxy.length() > 0) { 
-            ProxyDescription p = knownProxies.get(targetProxy);
+            HubDescription p = knownProxies.get(targetProxy);
             
             if (p != null) { 
                 forwardMessageToProxy(p, src, srcProxy, target, targetProxy, 
@@ -155,7 +155,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         Iterator itt = knownProxies.connectedProxiesIterator();
         
         while (itt.hasNext()) { 
-            String p = ((ProxyDescription) itt.next()).proxyAddressAsString;
+            String p = ((HubDescription) itt.next()).proxyAddressAsString;
 
             // Make sure we don't return the message the the sender...
             if (!p.equals(srcProxy)) { 

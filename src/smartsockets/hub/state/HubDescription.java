@@ -6,9 +6,9 @@ import java.util.Iterator;
 import java.util.TreeMap;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.hub.connections.ProxyConnection;
+import smartsockets.hub.connections.HubConnection;
 
-public class ProxyDescription {
+public class HubDescription {
         
     // Note: order is important here, we always want the highest possible value!
     public static final byte UNKNOWN     = 0;    
@@ -21,7 +21,7 @@ public class ProxyDescription {
     final StateCounter state;        
     final boolean local;
     
-    private ProxyDescription indirection;     
+    private HubDescription indirection;     
         
     // Value of the local state the last time anything was changed in this 
     // description.  
@@ -52,13 +52,13 @@ public class ProxyDescription {
     // view...
     private TreeMap clients = new TreeMap(); 
 
-    private ProxyConnection connection;
+    private HubConnection connection;
   
-    public ProxyDescription(SocketAddressSet address, StateCounter state) {
+    public HubDescription(SocketAddressSet address, StateCounter state) {
         this(address, state, false);
     } 
     
-    public ProxyDescription(SocketAddressSet address, StateCounter state, 
+    public HubDescription(SocketAddressSet address, StateCounter state, 
             boolean local) {
         
         this.state = state;        
@@ -239,7 +239,7 @@ public class ProxyDescription {
         setContactTimeStamp(false);
     }
     
-    public synchronized void addIndirection(ProxyDescription indirection, int hops) {
+    public synchronized void addIndirection(HubDescription indirection, int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;
@@ -248,7 +248,7 @@ public class ProxyDescription {
         } 
     }
     
-    public synchronized ProxyDescription getIndirection() {
+    public synchronized HubDescription getIndirection() {
         return indirection;
     }
         
@@ -284,7 +284,7 @@ public class ProxyDescription {
         return local;
     }
     
-    public synchronized boolean createConnection(ProxyConnection c) {
+    public synchronized boolean createConnection(HubConnection c) {
         
         if (connection != null) {
             // Already have a connection to this proxy!
@@ -295,7 +295,7 @@ public class ProxyDescription {
         return true;
     }
         
-    public synchronized ProxyConnection getConnection() { 
+    public synchronized HubConnection getConnection() { 
         return connection;
     }
 

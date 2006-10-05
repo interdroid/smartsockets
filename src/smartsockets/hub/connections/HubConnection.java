@@ -12,14 +12,14 @@ import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
 import smartsockets.hub.state.ClientDescription;
-import smartsockets.hub.state.ProxyDescription;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.HubDescription;
+import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
-public class ProxyConnection extends MessageForwardingConnection {
+public class HubConnection extends MessageForwardingConnection {
 
-    private final ProxyDescription peer;
-    private final ProxyDescription local;    
+    private final HubDescription peer;
+    private final HubDescription local;    
     
     // Keeps the current state of the system. 
     private final StateCounter state;        
@@ -28,9 +28,9 @@ public class ProxyConnection extends MessageForwardingConnection {
     // to the peer. Remembering this allows us to send delta's. 
     private long lastSendState;    
             
-    public ProxyConnection(DirectSocket s, DataInputStream in, 
-            DataOutputStream out, ProxyDescription peer, 
-            Connections connections, ProxyList proxies, StateCounter state) {
+    public HubConnection(DirectSocket s, DataInputStream in, 
+            DataOutputStream out, HubDescription peer, 
+            Connections connections, HubList proxies, StateCounter state) {
         
         super(s, in, out, connections, proxies);
         
@@ -84,7 +84,7 @@ public class ProxyConnection extends MessageForwardingConnection {
             Iterator itt = knownProxies.iterator();
             
             while (itt.hasNext()) { 
-                ProxyDescription tmp = (ProxyDescription) itt.next();
+                HubDescription tmp = (HubDescription) itt.next();
                 
                 if (tmp.getLastLocalUpdate() > lastSendState) {
                     
@@ -129,7 +129,7 @@ public class ProxyConnection extends MessageForwardingConnection {
         out.write(HubProtocol.PING);
     } 
     
-    private void writeProxy(ProxyDescription d) throws IOException {        
+    private void writeProxy(HubDescription d) throws IOException {        
         out.write(HubProtocol.GOSSIP);
         
         out.writeUTF(d.proxyAddress.toString());
@@ -152,7 +152,7 @@ public class ProxyConnection extends MessageForwardingConnection {
     private void readProxy() throws IOException {
                 
         SocketAddressSet address = new SocketAddressSet(in.readUTF());                
-        ProxyDescription tmp = knownProxies.add(address);
+        HubDescription tmp = knownProxies.add(address);
                
         int hops = in.readInt();
         

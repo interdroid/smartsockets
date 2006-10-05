@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.connections.Connections;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
 abstract class CommunicationThread extends Thread {
@@ -19,7 +19,7 @@ abstract class CommunicationThread extends Thread {
     protected final Logger logger;
     
     protected final Connections connections;     
-    protected final ProxyList knownProxies;
+    protected final HubList knownProxies;
     
     protected final DirectSocketFactory factory;    
     
@@ -27,7 +27,7 @@ abstract class CommunicationThread extends Thread {
     protected String localAsString;
     
     protected CommunicationThread(String name, StateCounter state, 
-            Connections connections, ProxyList knownProxies, 
+            Connections connections, HubList knownProxies, 
             DirectSocketFactory factory) {
         
         super(name);        

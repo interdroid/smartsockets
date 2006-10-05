@@ -12,8 +12,8 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.ClientDescription;
-import smartsockets.hub.state.ProxyDescription;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.HubDescription;
+import smartsockets.hub.state.HubList;
 
 public class ClientConnection extends MessageForwardingConnection {
 
@@ -21,7 +21,7 @@ public class ClientConnection extends MessageForwardingConnection {
     
     public ClientConnection(String clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, Connections connections,
-            ProxyList proxies) {
+            HubList proxies) {
      
         super(s, in, out, connections, proxies);        
         this.clientAddress = clientAddress;
@@ -99,7 +99,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         logger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        ProxyDescription p = knownProxies.get(proxy); 
+        HubDescription p = knownProxies.get(proxy); 
         
         ArrayList tmp = null;
         
@@ -179,7 +179,7 @@ public class ClientConnection extends MessageForwardingConnection {
         logger.debug("Connection " + clientAddress + " return id: " + id +  
                 " adding " + tag + " " + address + " to services!");         
                
-        ProxyDescription localProxy = knownProxies.getLocalDescription();
+        HubDescription localProxy = knownProxies.getLocalDescription();
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            

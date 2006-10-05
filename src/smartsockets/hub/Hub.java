@@ -14,9 +14,9 @@ import smartsockets.discovery.Callback;
 import smartsockets.discovery.Discovery;
 import smartsockets.discovery.Sender;
 import smartsockets.hub.connections.Connections;
-import smartsockets.hub.connections.ProxyConnection;
-import smartsockets.hub.state.ProxyDescription;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.state.HubDescription;
+import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
 public class Hub extends Thread {
@@ -28,7 +28,7 @@ public class Hub extends Thread {
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(Hub.class.getName());
                
-    private ProxyList proxies;    
+    private HubList proxies;    
     private Connections connections;
     
     private Acceptor acceptor;
@@ -51,7 +51,7 @@ public class Hub extends Thread {
         DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
         
         // Create the proxy list
-        proxies = new ProxyList(state);
+        proxies = new HubList(state);
                 
         connections = new Connections();
         
@@ -65,7 +65,7 @@ public class Hub extends Thread {
         logger.info("GossipAcceptor listning at " + local);
         
         // Create a description for the local machine. 
-        ProxyDescription localDesc = new ProxyDescription(local, state, true);        
+        HubDescription localDesc = new HubDescription(local, state, true);        
         localDesc.setReachable();
         localDesc.setCanReachMe();
         
@@ -109,8 +109,8 @@ public class Hub extends Thread {
         Iterator itt = proxies.connectedProxiesIterator();
         
         while (itt.hasNext()) { 
-            ProxyDescription d = (ProxyDescription) itt.next();            
-            ProxyConnection c = d.getConnection();
+            HubDescription d = (HubDescription) itt.next();            
+            HubConnection c = d.getConnection();
             
             if (c != null) {
                 logger.info("Gossip with " + d.proxyAddressAsString); 

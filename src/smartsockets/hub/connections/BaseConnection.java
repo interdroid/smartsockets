@@ -8,7 +8,7 @@ import java.io.DataOutputStream;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.HubList;
 
 public abstract class BaseConnection implements Runnable {
 
@@ -20,10 +20,10 @@ public abstract class BaseConnection implements Runnable {
     protected final DataOutputStream out; 
     
     protected Connections connections;
-    protected final ProxyList knownProxies; 
+    protected final HubList knownProxies; 
           
     protected BaseConnection(DirectSocket s, DataInputStream in, 
-            DataOutputStream out, Connections connections, ProxyList proxies) {
+            DataOutputStream out, Connections connections, HubList proxies) {
         
         this.s = s;
         this.in = in;

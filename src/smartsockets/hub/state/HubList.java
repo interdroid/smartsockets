@@ -12,12 +12,12 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.SocketAddressSet;
 
-public class ProxyList {
+public class HubList {
         
     private static int RETRY_DELAY = 15000;
     
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(ProxyList.class.getName());
+        ibis.util.GetLogger.getLogger(HubList.class.getName());
     
     private final StateCounter state; 
   
@@ -26,7 +26,7 @@ public class ProxyList {
         
     private final HashMap map = new HashMap();    
     
-    private ProxyDescription localDescription;
+    private HubDescription localDescription;
     
     private class PartialIterator implements Iterator {
 
@@ -52,11 +52,11 @@ public class ProxyList {
         } 
     }
     
-    public ProxyList(StateCounter state) { 
+    public HubList(StateCounter state) { 
         this.state = state; 
     }
         
-    public synchronized ProxyDescription nextProxyToCheck() {
+    public synchronized HubDescription nextProxyToCheck() {
                
         // Wait until there are proxies to check.
         while (mustCheck.size() == 0) {            
@@ -73,14 +73,14 @@ public class ProxyList {
             //System.out.println("@@@@@@@@@@@@@ get proxy");
             
             // Get the first one from the list. 
-            ProxyDescription tmp = (ProxyDescription) mustCheck.getFirst();
+            HubDescription tmp = (HubDescription) mustCheck.getFirst();
             
             if (tmp.getLastContact() == 0) {
                 
                 //System.out.println("@@@@@@@@@@@@@ return new");
                 
                 // it's a new entry, so we can check it immediately
-                return (ProxyDescription) mustCheck.removeFirst();                        
+                return (HubDescription) mustCheck.removeFirst();                        
             }
         
             // it's an old entry, so check it we have to wait for a while. 
@@ -91,7 +91,7 @@ public class ProxyList {
                 //System.out.println("@@@@@@@@@@@@@ return old");
                 
                 // we've passed the deadline and can return the proxy. 
-                return (ProxyDescription) mustCheck.removeFirst();
+                return (HubDescription) mustCheck.removeFirst();
             }
             
             long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;
@@ -109,7 +109,7 @@ public class ProxyList {
         } 
     }
     
-    public void addLocalDescription(ProxyDescription desc) {
+    public void addLocalDescription(HubDescription desc) {
         // NOTE: We assume that it is not required to be thread safe!        
         // The description of the local machine is only put in the map, not the
         // list...
@@ -117,7 +117,7 @@ public class ProxyList {
         map.put(desc.proxyAddress, desc);        
     }
     
-    public ProxyDescription getLocalDescription() {
+    public HubDescription getLocalDescription() {
         // NOTE: We assume that it is not required to be thread safe!
         return localDescription;
     }
@@ -126,11 +126,11 @@ public class ProxyList {
         return map.containsKey(m); 
     }
            
-    public ProxyDescription get(SocketAddressSet m) {                        
-        return (ProxyDescription) map.get(m);
+    public HubDescription get(SocketAddressSet m) {                        
+        return (HubDescription) map.get(m);
     }
             
-    public ProxyDescription get(String target) {        
+    public HubDescription get(String target) {        
         // TODO: not very efficient ....        
         try {
             return get(new SocketAddressSet(target));
@@ -158,7 +158,7 @@ public class ProxyList {
         
         while (i.hasNext()) {
             
-            ProxyDescription p = (ProxyDescription) i.next(); 
+            HubDescription p = (HubDescription) i.next(); 
             
             if (p.haveConnection()) {             
                 result.add(p);
@@ -168,7 +168,7 @@ public class ProxyList {
         return result;
     }
     
-    public synchronized void putBack(ProxyDescription d) {
+    public synchronized void putBack(HubDescription d) {
         
         if (d.reachableKnown() && d.isReachable()) { 
             checked.addLast(d);        
@@ -179,12 +179,12 @@ public class ProxyList {
         } 
     }
     
-    public synchronized ProxyDescription add(SocketAddressSet a) { 
+    public synchronized HubDescription add(SocketAddressSet a) { 
         
-        ProxyDescription tmp = get(a);
+        HubDescription tmp = get(a);
         
         if (tmp == null) {   
-            tmp = new ProxyDescription(a, state);
+            tmp = new HubDescription(a, state);
             map.put(tmp.proxyAddress, tmp);
             
             System.out.println("@@@@@@@@@@@@@ ADD NEW PROXY:\n " + tmp + "\n");      
@@ -227,7 +227,7 @@ public class ProxyList {
         
         while (itt.hasNext()) { 
             
-            ProxyDescription tmp = (ProxyDescription) itt.next();
+            HubDescription tmp = (HubDescription) itt.next();
             
             if (tmp.containsClient(client)) {
 
@@ -241,7 +241,7 @@ public class ProxyList {
                 } else if (tmp.canReachMe()) { 
                     bad.addLast(tmp.proxyAddressAsString);
                 } else {                                         
-                    ProxyDescription indi = tmp.getIndirection();
+                    HubDescription indi = tmp.getIndirection();
                     
                     if (indi != null) { 
                         if (indi.isReachable()) { 
@@ -279,7 +279,7 @@ public class ProxyList {
         
         while (itt.hasNext()) { 
             
-            ProxyDescription tmp = (ProxyDescription) itt.next();
+            HubDescription tmp = (HubDescription) itt.next();
             
             if (skip != null && skip.contains(tmp.proxyAddress.toString())) { 
                 System.out.println("@@@@@@@@@@@@@ Skipping proxy: " 
@@ -316,7 +316,7 @@ public class ProxyList {
         
         while (itt.hasNext()) { 
             
-            ProxyDescription tmp = (ProxyDescription) itt.next();
+            HubDescription tmp = (HubDescription) itt.next();
             
             if (tmp.containsClient(target)) {
 
@@ -340,7 +340,7 @@ public class ProxyList {
         Iterator itt = map.values().iterator();
         
         for (int i=0;i<proxies;i++) { 
-            result[i] = ((ProxyDescription) itt.next()).proxyAddressAsString;                                               
+            result[i] = ((HubDescription) itt.next()).proxyAddressAsString;                                               
         }
 
         return result;
@@ -352,7 +352,7 @@ public class ProxyList {
         Iterator itt = map.values().iterator();
         
         while (itt.hasNext()) { 
-            ProxyDescription tmp = (ProxyDescription) itt.next();           
+            HubDescription tmp = (HubDescription) itt.next();           
             result.addAll(tmp.getClients(tag));
         }
         
@@ -366,7 +366,7 @@ public class ProxyList {
         Iterator itt = iterator();
         
         while (itt.hasNext()) { 
-            ProxyDescription desc = (ProxyDescription) itt.next();
+            HubDescription desc = (HubDescription) itt.next();
             result.append(desc).append('\n');            
         }
         

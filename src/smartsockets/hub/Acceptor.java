@@ -16,9 +16,9 @@ import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.connections.ClientConnection;
 import smartsockets.hub.connections.Connections;
-import smartsockets.hub.connections.ProxyConnection;
-import smartsockets.hub.state.ProxyDescription;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.state.HubDescription;
+import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
 public class Acceptor extends CommunicationThread {
@@ -42,7 +42,7 @@ public class Acceptor extends CommunicationThread {
     private HashMap spliceInfo = new HashMap();
         
     Acceptor(StateCounter state, Connections connections, 
-            ProxyList knownProxies, DirectSocketFactory factory) 
+            HubList knownProxies, DirectSocketFactory factory) 
             throws IOException {
 
         super("ProxyAcceptor", state, connections, knownProxies, factory);        
@@ -61,11 +61,11 @@ public class Acceptor extends CommunicationThread {
 
         logger.info("Got connection from " + addr);
 
-        ProxyDescription d = knownProxies.add(addr);        
+        HubDescription d = knownProxies.add(addr);        
         d.setCanReachMe();
 
-        ProxyConnection c = 
-            new ProxyConnection(s, in, out, d, connections, knownProxies, state);
+        HubConnection c = 
+            new HubConnection(s, in, out, d, connections, knownProxies, state);
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this proxy...            

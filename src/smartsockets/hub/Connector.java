@@ -10,9 +10,9 @@ import java.io.IOException;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.hub.connections.Connections;
-import smartsockets.hub.connections.ProxyConnection;
-import smartsockets.hub.state.ProxyDescription;
-import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.state.HubDescription;
+import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
 class Connector extends CommunicationThread {
@@ -20,7 +20,7 @@ class Connector extends CommunicationThread {
     private boolean done = false;
     
     Connector(StateCounter state, Connections connections,
-            ProxyList knownProxies, DirectSocketFactory factory) {
+            HubList knownProxies, DirectSocketFactory factory) {
         
         super("ProxyConnector", state, connections, knownProxies, factory);
     }
@@ -49,7 +49,7 @@ class Connector extends CommunicationThread {
         }
     }
 
-    private void testConnection(ProxyDescription d) {
+    private void testConnection(HubDescription d) {
 
         DirectSocket s = null;
         DataInputStream in = null;
@@ -85,13 +85,13 @@ class Connector extends CommunicationThread {
         } 
     }
     
-    private void createConnection(ProxyDescription d) { 
+    private void createConnection(HubDescription d) { 
                 
         DirectSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
         boolean result = false;
-        ProxyConnection c = null;
+        HubConnection c = null;
         
         // Creates a connection to a newly discovered proxy. Note that there is 
         // a very nice race condition here, since the target proxy may be doing
@@ -138,7 +138,7 @@ class Connector extends CommunicationThread {
             if (master) { 
                 logger.info("I am master during connection setup");
                 
-                c = new ProxyConnection(s, in, out, d, connections, 
+                c = new HubConnection(s, in, out, d, connections, 
                         knownProxies, state);                                
                 result = d.createConnection(c);                
                 
@@ -158,7 +158,7 @@ class Connector extends CommunicationThread {
                 result = sendConnect(out, in);
 
                 if (result) {                 
-                    c = new ProxyConnection(s, in, out, d, connections, 
+                    c = new HubConnection(s, in, out, d, connections, 
                             knownProxies, state);                
                     result = d.createConnection(c);
                     
@@ -189,7 +189,7 @@ class Connector extends CommunicationThread {
     private void handleNewProxy() { 
 
         // Handles the connection setup to newly discovered proxies.
-        ProxyDescription d = knownProxies.nextProxyToCheck();
+        HubDescription d = knownProxies.nextProxyToCheck();
         
         if (d.haveConnection()) {
             // The connection was already created by the other side. Create a 
