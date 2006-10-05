@@ -1,0 +1,29 @@
+                                                                                                                                                                                                                 
+                   FW             FW                                                                                                                                                                             
+Node ----> Proxy --||--> Proxy <--||--- Proxy <---- Node                                                                                                                                                         
+                                                                                                                                                                                                                 
+DAS3       DAS3           PC           Sophia      Sophia                                                                                                                                                        
+Node     Frontend         VU          Frontend      Node              
+
+Server                                             Client
+
+
+
+
+Created connection to 130.161.7.141/10.141.0.13-50227:3000
+Configured socket: 
+ sendbuffer     = 1048576
+ receiverbuffer = 1048576
+ no delay       = true
+Starting test
+Test took 46782 ms. Throughput = 2.1375742807062545 MByte/s (17.100594245650036 MBit/s)
+Test took 46439 ms. Throughput = 2.1533624755055016 MByte/s (17.226899804044013 MBit/s)
+Test took 46493 ms. Throughput = 2.1508614199987095 MByte/s (17.206891359989676 MBit/s)
+Test took 46301 ms. Throughput = 2.1597805662944647 MByte/s (17.278244530355718 MBit/s)
+Test took 46318 ms. Throughput = 2.1589878664881903 MByte/s (17.271902931905522 MBit/s)
+Test took 46216 ms. Throughput = 2.163752812878657 MByte/s (17.310022503029256 MBit/s)
+Test took 46464 ms. Throughput = 2.152203856749311 MByte/s (17.21763085399449 MBit/s)
+Test took 46329 ms. Throughput = 2.1584752530812232 MByte/s (17.267802024649786 MBit/s)
+Test took 46496 ms. Throughput = 2.1507226428079833 MByte/s (17.205781142463866 MBit/s)
+Test took 46526 ms. Throughput = 2.1493358552207367 MByte/s (17.194686841765893 MBit/s)
+

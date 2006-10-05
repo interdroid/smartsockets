@@ -1,0 +1,103 @@
+
+
+Proxy  <-+
+         |
+  ^      +---------- +                
+  |                  |
+           FW
+Server ----||----> Client 
+
+venus              sophia FE
+
+Results (22/9/06 14:15) :
+
+Sending sophia->venus
+
+Starting test
+Test took 68881 ms. Throughput = 1.4517791553548873 MByte/s (11.614233242839099 MBit/s)
+Test took 68635 ms. Throughput = 1.4569825890580608 MByte/s (11.655860712464486 MBit/s)
+Test took 68781 ms. Throughput = 1.4538898823803086 MByte/s (11.631119059042469 MBit/s)
+Test took 68829 ms. Throughput = 1.4528759679786136 MByte/s (11.623007743828909 MBit/s)
+Test took 68822 ms. Throughput = 1.4530237424079508 MByte/s (11.624189939263607 MBit/s)
+Test took 68836 ms. Throughput = 1.4527282236039283 MByte/s (11.621825788831426 MBit/s)
+Test took 68650 ms. Throughput = 1.4566642388929352 MByte/s (11.653313911143481 MBit/s)
+Test took 68844 ms. Throughput = 1.452559409679856 MByte/s (11.620475277438848 MBit/s)
+Test took 68793 ms. Throughput = 1.4536362711322373 MByte/s (11.629090169057898 MBit/s)
+Test took 68844 ms. Throughput = 1.452559409679856 MByte/s (11.620475277438848 MBit/s)
+
+Sending venus->Sophia
+ 
+Created connection to 193.51.209.11/138.96.20.214/10.96.20.214/10.6.1.214-59041:3000
+Configured socket: 
+ sendbuffer     = 131071
+ receiverbuffer = 131071
+ no delay       = true
+Starting test
+Test took 219416 ms. Throughput = 0.4557552776461151 MByte/s (3.646042221168921 MBit/s)
+Test took 220380 ms. Throughput = 0.45376168436337233 MByte/s (3.6300934749069786 MBit/s)
+Test took 214744 ms. Throughput = 0.46567075215139886 MByte/s (3.725366017211191 MBit/s)
+Test took 220332 ms. Throughput = 0.4538605377339651 MByte/s (3.630884301871721 MBit/s)
+Test took 219246 ms. Throughput = 0.45610866332795125 MByte/s (3.64886930662361 MBit/s)
+Test took 219516 ms. Throughput = 0.455547659396126 MByte/s (3.644381275169008 MBit/s)
+Test took 219019 ms. Throughput = 0.4565813924819308 MByte/s (3.6526511398554464 MBit/s)
+Test took 219469 ms. Throughput = 0.45564521640869554 MByte/s (3.6451617312695643 MBit/s)
+Test took 219359 ms. Throughput = 0.4558737047488364 MByte/s (3.646989637990691 MBit/s)
+Test took 221005 ms. Throughput = 0.45247845071378473 MByte/s (3.619827605710278 MBit/s)
+
+At the same time:
+
+Created connection to 193.51.209.11/138.96.20.214/10.96.20.214/10.6.1.214-58805:3000
+Configured socket: 
+ sendbuffer     = 131071
+ receiverbuffer = 131071
+ no delay       = true
+Starting test
+Test took 209393 ms. Throughput = 0.4775708834583773 MByte/s (3.8205670676670183 MBit/s)
+Test took 218966 ms. Throughput = 0.4566919065060329 MByte/s (3.6535352520482633 MBit/s)
+Test took 219534 ms. Throughput = 0.45551030819827454 MByte/s (3.6440824655861963 MBit/s)
+Test took 220083 ms. Throughput = 0.4543740316153451 MByte/s (3.634992252922761 MBit/s)
+Test took 219961 ms. Throughput = 0.4546260473447566 MByte/s (3.6370083787580527 MBit/s)
+Test took 219307 ms. Throughput = 0.4559817972066555 MByte/s (3.647854377653244 MBit/s)
+Test took 220318 ms. Throughput = 0.4538893780807742 MByte/s (3.6311150246461934 MBit/s)
+Test took 219471 ms. Throughput = 0.4556410641952695 MByte/s (3.645128513562156 MBit/s)
+Test took 218294 ms. Throughput = 0.45809779471721623 MByte/s (3.66478235773773 MBit/s)
+Test took 219521 ms. Throughput = 0.4555372834489639 MByte/s (3.644298267591711 MBit/s)
+
+Sophia --> Venus (2x)
+
+Configured socket: 
+ sendbuffer     = 1048576
+ receiverbuffer = 1048576
+ no delay       = true
+Starting test
+Test took 69034 ms. Throughput = 1.4485615783526957 MByte/s (11.588492626821566 MBit/s)
+Test took 68991 ms. Throughput = 1.44946442289574 MByte/s (11.59571538316592 MBit/s)
+Test took 68969 ms. Throughput = 1.4499267786976757 MByte/s (11.599414229581406 MBit/s)
+Test took 68978 ms. Throughput = 1.4497375974948534 MByte/s (11.597900779958827 MBit/s)
+Test took 68966 ms. Throughput = 1.4499898500710495 MByte/s (11.599918800568396 MBit/s)
+Test took 69009 ms. Throughput = 1.4490863510556593 MByte/s (11.592690808445274 MBit/s)
+Test took 69218 ms. Throughput = 1.4447109133462395 MByte/s (11.557687306769916 MBit/s)
+Test took 69686 ms. Throughput = 1.4350084665499527 MByte/s (11.480067732399622 MBit/s)
+Test took 69307 ms. Throughput = 1.4428557000014428 MByte/s (11.542845600011542 MBit/s)
+Test took 69292 ms. Throughput = 1.4431680424868671 MByte/s (11.545344339894937 MBit/s)
+
+At the same time!
+
+Created connection to 130.37.193.15/10.0.0.1-53778:3000
+Configured socket: 
+ sendbuffer     = 1048576
+ receiverbuffer = 1048576
+ no delay       = true
+Starting test
+Test took 69013 ms. Throughput = 1.44900236187385 MByte/s (11.5920188949908 MBit/s)
+Test took 68823 ms. Throughput = 1.4530026299347603 MByte/s (11.624021039478082 MBit/s)
+Test took 68793 ms. Throughput = 1.4536362711322373 MByte/s (11.629090169057898 MBit/s)
+Test took 68986 ms. Throughput = 1.449569477865074 MByte/s (11.596555822920593 MBit/s)
+Test took 68790 ms. Throughput = 1.4536996656490768 MByte/s (11.629597325192615 MBit/s)
+Test took 68829 ms. Throughput = 1.4528759679786136 MByte/s (11.623007743828909 MBit/s)
+Test took 69220 ms. Throughput = 1.444669170759896 MByte/s (11.557353366079168 MBit/s)
+Test took 69652 ms. Throughput = 1.4357089530810314 MByte/s (11.485671624648251 MBit/s)
+Test took 69514 ms. Throughput = 1.4385591391662111 MByte/s (11.50847311332969 MBit/s)
+Test took 69162 ms. Throughput = 1.4458806859257973 MByte/s (11.567045487406379 MBit/s)
+
+
