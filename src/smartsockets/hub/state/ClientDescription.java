@@ -1,4 +1,4 @@
-package smartsockets.proxy.state;
+package smartsockets.hub.state;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

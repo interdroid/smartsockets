@@ -1,4 +1,4 @@
-package smartsockets.proxy.connections;
+package smartsockets.hub.connections;
 
 
 import java.io.DataInputStream;
@@ -10,11 +10,11 @@ import java.util.Iterator;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.ProxyProtocol;
-import smartsockets.proxy.state.ClientDescription;
-import smartsockets.proxy.state.ProxyDescription;
-import smartsockets.proxy.state.ProxyList;
-import smartsockets.proxy.state.StateCounter;
+import smartsockets.hub.HubProtocol;
+import smartsockets.hub.state.ClientDescription;
+import smartsockets.hub.state.ProxyDescription;
+import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.StateCounter;
 
 public class ProxyConnection extends MessageForwardingConnection {
 
@@ -52,7 +52,7 @@ public class ProxyConnection extends MessageForwardingConnection {
         }
                 
         try {
-            out.writeByte(ProxyProtocol.CLIENT_MESSAGE);
+            out.writeByte(HubProtocol.CLIENT_MESSAGE);
             
             out.writeUTF(source);
             out.writeUTF(sourceProxy);
@@ -126,11 +126,11 @@ public class ProxyConnection extends MessageForwardingConnection {
     
     private void writePing() throws IOException {        
         System.err.println("Sending ping to " + peer.proxyAddress);
-        out.write(ProxyProtocol.PING);
+        out.write(HubProtocol.PING);
     } 
     
     private void writeProxy(ProxyDescription d) throws IOException {        
-        out.write(ProxyProtocol.GOSSIP);
+        out.write(HubProtocol.GOSSIP);
         
         out.writeUTF(d.proxyAddress.toString());
         out.writeInt(d.getHops());
@@ -247,15 +247,15 @@ public class ProxyConnection extends MessageForwardingConnection {
                 DirectSocketFactory.close(s, out, in);
                 return false;
                 
-            case ProxyProtocol.GOSSIP:
+            case HubProtocol.GOSSIP:
                 readProxy();
                 return true;
     
-            case ProxyProtocol.PING:
+            case HubProtocol.PING:
                 handlePing();
                 return true;
 
-            case ProxyProtocol.CLIENT_MESSAGE:
+            case HubProtocol.CLIENT_MESSAGE:
                 handleClientMessage();
                 return true;
                

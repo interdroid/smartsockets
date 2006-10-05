@@ -16,7 +16,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Discovery;
-import smartsockets.proxy.servicelink.ServiceLink;
+import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.modules.ConnectModule;
 

@@ -1,4 +1,4 @@
-package smartsockets.proxy.state;
+package smartsockets.hub.state;
 
 public class StateCounter {
 

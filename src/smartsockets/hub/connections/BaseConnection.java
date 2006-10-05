@@ -1,4 +1,4 @@
-package smartsockets.proxy.connections;
+package smartsockets.hub.connections;
 
 import ibis.util.ThreadPool;
 
@@ -8,7 +8,7 @@ import java.io.DataOutputStream;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
-import smartsockets.proxy.state.ProxyList;
+import smartsockets.hub.state.ProxyList;
 
 public abstract class BaseConnection implements Runnable {
 

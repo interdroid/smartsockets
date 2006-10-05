@@ -1,4 +1,4 @@
-package smartsockets.proxy.connections;
+package smartsockets.hub.connections;
 
 import java.util.HashMap;
 

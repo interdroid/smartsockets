@@ -1,4 +1,4 @@
-package smartsockets.proxy.state;
+package smartsockets.hub.state;
 
 
 import java.util.ArrayList;
@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.TreeMap;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.connections.ProxyConnection;
+import smartsockets.hub.connections.ProxyConnection;
 
 public class ProxyDescription {
         

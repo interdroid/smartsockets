@@ -1,4 +1,4 @@
-package smartsockets.proxy.servicelink;
+package smartsockets.hub.servicelink;
 
 public interface ServiceLinkProtocol {
     public final byte MESSAGE           = 1;

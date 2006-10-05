@@ -1,4 +1,4 @@
-package smartsockets.proxy;
+package smartsockets.hub;
 
 
 import java.io.BufferedInputStream;
@@ -9,11 +9,11 @@ import java.io.IOException;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.proxy.connections.Connections;
-import smartsockets.proxy.connections.ProxyConnection;
-import smartsockets.proxy.state.ProxyDescription;
-import smartsockets.proxy.state.ProxyList;
-import smartsockets.proxy.state.StateCounter;
+import smartsockets.hub.connections.Connections;
+import smartsockets.hub.connections.ProxyConnection;
+import smartsockets.hub.state.ProxyDescription;
+import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.StateCounter;
 
 class Connector extends CommunicationThread {
     
@@ -30,17 +30,17 @@ class Connector extends CommunicationThread {
 
         logger.info("Sending connection request");
                 
-        out.write(ProxyProtocol.CONNECT);
+        out.write(HubProtocol.CONNECT);
         out.writeUTF(localAsString);
         out.flush();
 
         int opcode = in.read();
 
         switch (opcode) {
-        case ProxyProtocol.CONNECTION_ACCEPTED:
+        case HubProtocol.CONNECTION_ACCEPTED:
             logger.info("Connection request accepted");            
             return true;
-        case ProxyProtocol.CONNECTION_REFUSED:
+        case HubProtocol.CONNECTION_REFUSED:
             logger.info("Connection request refused (duplicate)");
             return false;
         default:
@@ -68,7 +68,7 @@ class Connector extends CommunicationThread {
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
-            out.write(ProxyProtocol.PING);
+            out.write(HubProtocol.PING);
             out.writeUTF(localAsString);
             out.flush();            
             
@@ -146,7 +146,7 @@ class Connector extends CommunicationThread {
                     logger.info("Connection was already created!");
                     
                     // never mind...
-                    out.write(ProxyProtocol.PING);
+                    out.write(HubProtocol.PING);
                     out.writeUTF(localAsString);
                     out.flush();
                 } else {

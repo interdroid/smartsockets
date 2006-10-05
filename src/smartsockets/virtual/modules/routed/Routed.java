@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.servicelink.Client;
+import smartsockets.hub.servicelink.Client;
 import smartsockets.router.simple.RouterClient;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.Properties;

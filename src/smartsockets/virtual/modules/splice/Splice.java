@@ -10,7 +10,7 @@ import java.util.StringTokenizer;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.ProxyProtocol;
+import smartsockets.hub.HubProtocol;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
@@ -131,7 +131,7 @@ public class Splice extends AbstractDirectModule {
             out = new DataOutputStream(s.getOutputStream());
 
             // TODO: don't like this access here!
-            out.writeByte(ProxyProtocol.GET_SPLICE_INFO);
+            out.writeByte(HubProtocol.GET_SPLICE_INFO);
             out.writeUTF(connectID);
             out.writeInt(timeout);
             out.flush();

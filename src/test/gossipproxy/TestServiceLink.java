@@ -11,9 +11,9 @@ import java.util.LinkedList;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.servicelink.CallBack;
-import smartsockets.proxy.servicelink.Client;
-import smartsockets.proxy.servicelink.ServiceLink;
+import smartsockets.hub.servicelink.CallBack;
+import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ServiceLink;
 
 public class TestServiceLink implements CallBack {
     

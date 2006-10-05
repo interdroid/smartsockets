@@ -4,12 +4,12 @@ package smartsockets.util;
 import java.io.IOException;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.Proxy;
+import smartsockets.hub.Hub;
 import smartsockets.router.simple.Router;
 
 public class ProxyStarter {
     
-    private static Proxy p;
+    private static Hub p;
     private static Router r;
         
     public static void main(String [] args) { 
@@ -35,7 +35,7 @@ public class ProxyStarter {
         
         try {            
             System.out.println("Starting proxy....");            
-            p = new Proxy(proxies);            
+            p = new Hub(proxies);            
             System.out.println("Proxy running on: " + p.getProxyAddres());            
         } catch (IOException e) {
             System.err.println("Oops: failed to start proxy");

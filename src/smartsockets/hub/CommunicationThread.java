@@ -1,4 +1,4 @@
-package smartsockets.proxy;
+package smartsockets.hub;
 
 import ibis.util.GetLogger;
 
@@ -6,9 +6,9 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.connections.Connections;
-import smartsockets.proxy.state.ProxyList;
-import smartsockets.proxy.state.StateCounter;
+import smartsockets.hub.connections.Connections;
+import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.StateCounter;
 
 abstract class CommunicationThread extends Thread {
 

@@ -1,4 +1,4 @@
-package smartsockets.proxy.connections;
+package smartsockets.hub.connections;
 
 
 import java.io.DataInputStream;
@@ -10,10 +10,10 @@ import java.util.LinkedList;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.proxy.servicelink.ServiceLinkProtocol;
-import smartsockets.proxy.state.ClientDescription;
-import smartsockets.proxy.state.ProxyDescription;
-import smartsockets.proxy.state.ProxyList;
+import smartsockets.hub.servicelink.ServiceLinkProtocol;
+import smartsockets.hub.state.ClientDescription;
+import smartsockets.hub.state.ProxyDescription;
+import smartsockets.hub.state.ProxyList;
 
 public class ClientConnection extends MessageForwardingConnection {
 

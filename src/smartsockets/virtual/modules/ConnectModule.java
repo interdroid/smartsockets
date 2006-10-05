@@ -10,8 +10,8 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.servicelink.CallBack;
-import smartsockets.proxy.servicelink.ServiceLink;
+import smartsockets.hub.servicelink.CallBack;
+import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;

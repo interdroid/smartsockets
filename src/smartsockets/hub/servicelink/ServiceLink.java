@@ -1,4 +1,4 @@
-package smartsockets.proxy.servicelink;
+package smartsockets.hub.servicelink;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.ProxyProtocol;
+import smartsockets.hub.HubProtocol;
 
 
 public class ServiceLink implements Runnable {
@@ -120,7 +120,7 @@ public class ServiceLink implements Runnable {
             in = new DataInputStream(proxy.getInputStream());
                            
             // Ask if we are allowed to join
-            out.write(ProxyProtocol.SERVICELINK_CONNECT);
+            out.write(HubProtocol.SERVICELINK_CONNECT);
             out.writeUTF(myAddress.toString());
             out.flush();
                 
@@ -128,7 +128,7 @@ public class ServiceLink implements Runnable {
             int reply = in.read();
         
             // Throw an exception if the proxy refuses our conenction
-            if (reply != ProxyProtocol.SERVICELINK_ACCEPTED) {
+            if (reply != HubProtocol.SERVICELINK_ACCEPTED) {
                 throw new IOException("Proxy denied connection request");                
             }
         

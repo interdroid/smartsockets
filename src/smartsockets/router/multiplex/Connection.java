@@ -9,7 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.servicelink.Client;
+import smartsockets.hub.servicelink.Client;
 import smartsockets.util.Forwarder;
 import smartsockets.util.ForwarderDoneCallback;
 import smartsockets.virtual.VirtualSocket;

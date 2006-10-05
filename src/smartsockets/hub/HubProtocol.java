@@ -1,6 +1,6 @@
-package smartsockets.proxy;
+package smartsockets.hub;
 
-public interface ProxyProtocol {
+public interface HubProtocol {
 
     public static final byte CONNECT = 1;       
     public static final byte CONNECTION_ACCEPTED = 2;    

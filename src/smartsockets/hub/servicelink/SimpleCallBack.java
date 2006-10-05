@@ -1,4 +1,4 @@
-package smartsockets.proxy.servicelink;
+package smartsockets.hub.servicelink;
 
 public class SimpleCallBack {
 

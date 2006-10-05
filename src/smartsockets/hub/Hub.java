@@ -1,4 +1,4 @@
-package smartsockets.proxy;
+package smartsockets.hub;
 
 
 import java.io.IOException;
@@ -13,20 +13,20 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Callback;
 import smartsockets.discovery.Discovery;
 import smartsockets.discovery.Sender;
-import smartsockets.proxy.connections.Connections;
-import smartsockets.proxy.connections.ProxyConnection;
-import smartsockets.proxy.state.ProxyDescription;
-import smartsockets.proxy.state.ProxyList;
-import smartsockets.proxy.state.StateCounter;
+import smartsockets.hub.connections.Connections;
+import smartsockets.hub.connections.ProxyConnection;
+import smartsockets.hub.state.ProxyDescription;
+import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.StateCounter;
 
-public class Proxy extends Thread {
+public class Hub extends Thread {
     
     private static int GOSSIP_SLEEP = 10000;
     
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
     
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(Proxy.class.getName());
+        ibis.util.GetLogger.getLogger(Hub.class.getName());
                
     private ProxyList proxies;    
     private Connections connections;
@@ -38,11 +38,11 @@ public class Proxy extends Thread {
             
     private Discovery discovery;
     
-    public Proxy() throws IOException { 
+    public Hub() throws IOException { 
         this(null);
     }
     
-    public Proxy(SocketAddressSet [] proxyAds) throws IOException { 
+    public Hub(SocketAddressSet [] proxyAds) throws IOException { 
 
         super("GossipProxy");
         
@@ -153,7 +153,7 @@ public class Proxy extends Thread {
         } 
         
         try {
-            new Proxy(proxies);
+            new Hub(proxies);
         } catch (IOException e) {
             logger.warn("Oops: ", e);
         }        

@@ -1,4 +1,4 @@
-package smartsockets.proxy;
+package smartsockets.hub;
 
 
 import java.io.BufferedInputStream;
@@ -14,12 +14,12 @@ import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.connections.ClientConnection;
-import smartsockets.proxy.connections.Connections;
-import smartsockets.proxy.connections.ProxyConnection;
-import smartsockets.proxy.state.ProxyDescription;
-import smartsockets.proxy.state.ProxyList;
-import smartsockets.proxy.state.StateCounter;
+import smartsockets.hub.connections.ClientConnection;
+import smartsockets.hub.connections.Connections;
+import smartsockets.hub.connections.ProxyConnection;
+import smartsockets.hub.state.ProxyDescription;
+import smartsockets.hub.state.ProxyList;
+import smartsockets.hub.state.StateCounter;
 
 public class Acceptor extends CommunicationThread {
 
@@ -71,14 +71,14 @@ public class Acceptor extends CommunicationThread {
             // There already was a connection with this proxy...            
             logger.info("Connection from " + addr + " refused (duplicate)");
 
-            out.write(ProxyProtocol.CONNECTION_REFUSED);
+            out.write(HubProtocol.CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                         
             // We just created a connection to this proxy.
             logger.info("Connection from " + addr + " accepted");
 
-            out.write(ProxyProtocol.CONNECTION_ACCEPTED);            
+            out.write(HubProtocol.CONNECTION_ACCEPTED);            
             out.flush();
 
             // Now activate it. 
@@ -109,7 +109,7 @@ public class Acceptor extends CommunicationThread {
                     " refused, since it already exists!"); 
                 } 
 
-                out.write(ProxyProtocol.SERVICELINK_REFUSED);
+                out.write(HubProtocol.SERVICELINK_REFUSED);
                 out.flush();
                 DirectSocketFactory.close(s, out, in);
                 return false;
@@ -119,7 +119,7 @@ public class Acceptor extends CommunicationThread {
                 logger.debug("Incoming connection from " + src + " accepted"); 
             } 
 
-            out.write(ProxyProtocol.SERVICELINK_ACCEPTED);
+            out.write(HubProtocol.SERVICELINK_ACCEPTED);
             out.writeUTF(server.getAddressSet().toString());            
             out.flush();
 
@@ -276,23 +276,23 @@ public class Acceptor extends CommunicationThread {
             int opcode = in.read();
 
             switch (opcode) {
-            case ProxyProtocol.CONNECT:
+            case HubProtocol.CONNECT:
                 result = handleIncomingProxyConnect(s, in, out);                   
                 break;
 
-            case ProxyProtocol.PING:
+            case HubProtocol.PING:
                 result = handlePing(s, in, out);                   
                 break;
               
-            case ProxyProtocol.SERVICELINK_CONNECT:
+            case HubProtocol.SERVICELINK_CONNECT:
                 result = handleServiceLinkConnect(s, in, out);
                 break;                
 
-            case ProxyProtocol.BOUNCE_IP:
+            case HubProtocol.BOUNCE_IP:
                 result = handleBounce(s, in, out);
                 break;                
             
-            case ProxyProtocol.GET_SPLICE_INFO:
+            case HubProtocol.GET_SPLICE_INFO:
                 result = handleSpliceInfo(s, in, out);
                 break;                
                             

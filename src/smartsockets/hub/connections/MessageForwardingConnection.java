@@ -1,4 +1,4 @@
-package smartsockets.proxy.connections;
+package smartsockets.hub.connections;
 
 
 import java.io.DataInputStream;
@@ -6,8 +6,8 @@ import java.io.DataOutputStream;
 import java.util.Iterator;
 
 import smartsockets.direct.DirectSocket;
-import smartsockets.proxy.state.ProxyDescription;
-import smartsockets.proxy.state.ProxyList;
+import smartsockets.hub.state.ProxyDescription;
+import smartsockets.hub.state.ProxyList;
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 

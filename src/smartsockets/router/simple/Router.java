@@ -8,8 +8,8 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.proxy.servicelink.Client;
-import smartsockets.proxy.servicelink.ServiceLink;
+import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
