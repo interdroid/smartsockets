@@ -2,7 +2,8 @@ package test.properties;
 
 import java.io.FileInputStream;
 import java.util.HashMap;
-import ibis.connect.util.TypedProperties;
+
+import smartsockets.util.TypedProperties;
 
 public class Test {
     

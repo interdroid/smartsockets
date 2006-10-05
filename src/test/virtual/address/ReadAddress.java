@@ -1,6 +1,6 @@
 package test.virtual.address;
 
-import ibis.connect.virtual.VirtualSocketAddress;
+import smartsockets.virtual.VirtualSocketAddress;
 
 public class ReadAddress {
 

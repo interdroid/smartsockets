@@ -1,18 +1,19 @@
 package test.gossipproxy;
 
-import ibis.connect.direct.DirectServerSocket;
-import ibis.connect.direct.DirectSocketFactory;
-import ibis.connect.direct.SocketAddressSet;
 
 
-import ibis.connect.proxy.servicelink.CallBack;
-import ibis.connect.proxy.servicelink.Client;
-import ibis.connect.proxy.servicelink.ServiceLink;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
+
+import smartsockets.direct.DirectServerSocket;
+import smartsockets.direct.DirectSocketFactory;
+import smartsockets.direct.SocketAddressSet;
+import smartsockets.proxy.servicelink.CallBack;
+import smartsockets.proxy.servicelink.Client;
+import smartsockets.proxy.servicelink.ServiceLink;
 
 public class TestServiceLink implements CallBack {
     

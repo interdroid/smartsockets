@@ -1,14 +1,15 @@
 package test.direct.splice;
 
-import ibis.connect.direct.DirectServerSocket;
-import ibis.connect.direct.DirectSocket;
-import ibis.connect.direct.DirectSocketFactory;
-import ibis.connect.direct.SocketAddressSet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+
+import smartsockets.direct.DirectServerSocket;
+import smartsockets.direct.DirectSocket;
+import smartsockets.direct.DirectSocketFactory;
+import smartsockets.direct.SocketAddressSet;
 
 public class SimpleSpliceTest {
 

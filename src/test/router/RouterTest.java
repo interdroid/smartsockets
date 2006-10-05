@@ -1,16 +1,17 @@
 package test.router;
 
-import ibis.connect.router.simple.Router;
-import ibis.connect.router.simple.RouterClient;
-import ibis.connect.virtual.VirtualServerSocket;
-import ibis.connect.virtual.VirtualSocket;
-import ibis.connect.virtual.VirtualSocketAddress;
-import ibis.connect.virtual.VirtualSocketFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
+
+import smartsockets.router.simple.Router;
+import smartsockets.router.simple.RouterClient;
+import smartsockets.virtual.VirtualServerSocket;
+import smartsockets.virtual.VirtualSocket;
+import smartsockets.virtual.VirtualSocketAddress;
+import smartsockets.virtual.VirtualSocketFactory;
 
 public class RouterTest {
     
