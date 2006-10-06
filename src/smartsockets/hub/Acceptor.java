@@ -45,12 +45,12 @@ public class Acceptor extends CommunicationThread {
             HubList knownProxies, DirectSocketFactory factory) 
             throws IOException {
 
-        super("ProxyAcceptor", state, connections, knownProxies, factory);        
+        super("HubAcceptor", state, connections, knownProxies, factory);        
 
         server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
         setLocal(server.getAddressSet());
         
-        System.err.println("Proxy listnening at: " + localAsString);
+        System.err.println("Hub listnening at: " + localAsString);
     }
 
     private boolean handleIncomingHubConnect(DirectSocket s, 
@@ -68,14 +68,14 @@ public class Acceptor extends CommunicationThread {
             new HubConnection(s, in, out, d, connections, knownHubs, state);
 
         if (!d.createConnection(c)) { 
-            // There already was a connection with this proxy...            
+            // There already was a connection with this hub...            
             logger.info("Connection from " + addr + " refused (duplicate)");
 
             out.write(HubProtocol.CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                         
-            // We just created a connection to this proxy.
+            // We just created a connection to this hub.
             logger.info("Connection from " + addr + " accepted");
 
             out.write(HubProtocol.CONNECTION_ACCEPTED);            

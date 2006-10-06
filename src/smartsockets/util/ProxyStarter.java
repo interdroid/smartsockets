@@ -36,7 +36,7 @@ public class ProxyStarter {
         try {            
             System.out.println("Starting proxy....");            
             p = new Hub(proxies);            
-            System.out.println("Proxy running on: " + p.getProxyAddres());            
+            System.out.println("Proxy running on: " + p.getHubAddress());            
         } catch (IOException e) {
             System.err.println("Oops: failed to start proxy");
             e.printStackTrace(System.err);
@@ -46,7 +46,7 @@ public class ProxyStarter {
         if (startRouter) { 
             try {         
                 System.out.println("Starting router...");            
-                r = new Router(p.getProxyAddres());
+                r = new Router(p.getHubAddress());
                 System.out.println("Router running on: " + r.getAddress());
                 r.start();                                
             } catch (IOException e) {

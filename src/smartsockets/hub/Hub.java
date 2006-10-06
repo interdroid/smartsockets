@@ -38,7 +38,7 @@ public class Hub extends Thread {
         this(null);
     }
     
-    public Hub(SocketAddressSet [] proxyAds) throws IOException { 
+    public Hub(SocketAddressSet [] hubAddresses) throws IOException { 
 
         super("GossipHub");
         
@@ -67,7 +67,7 @@ public class Hub extends Thread {
         
         hubs.addLocalDescription(localDesc);
 
-        addHubs(proxyAds);
+        addHubs(hubAddresses);
         
         logger.info("Starting Gossip connector/acceptor");
                 
@@ -118,7 +118,7 @@ public class Hub extends Thread {
         }                   
     }
     
-    public SocketAddressSet getProxyAddres() { 
+    public SocketAddressSet getHubAddress() { 
         return acceptor.getLocal();
     }
         
@@ -138,18 +138,18 @@ public class Hub extends Thread {
     
     public static void main(String [] args) { 
         
-        SocketAddressSet [] proxies = new SocketAddressSet[args.length];
+        SocketAddressSet [] hubs = new SocketAddressSet[args.length];
             
         for (int i=0;i<args.length;i++) {                
             try { 
-                proxies[i] = new SocketAddressSet(args[i]);
+                hubs[i] = new SocketAddressSet(args[i]);
             } catch (Exception e) {
-                logger.warn("Skipping proxy address: " + args[i], e);              
+                logger.warn("Skipping hub address: " + args[i], e);              
             }
         } 
         
         try {
-            new Hub(proxies);
+            new Hub(hubs);
         } catch (IOException e) {
             logger.warn("Oops: ", e);
         }        
