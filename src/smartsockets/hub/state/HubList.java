@@ -1,6 +1,5 @@
 package smartsockets.hub.state;
 
-
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,16 +7,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import smartsockets.direct.SocketAddressSet;
 
 public class HubList {
         
     private static int RETRY_DELAY = 15000;
     
-    protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(HubList.class.getName());
     
     private final StateCounter state; 
   

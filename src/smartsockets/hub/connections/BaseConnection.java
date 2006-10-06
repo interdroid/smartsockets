@@ -11,27 +11,22 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.hub.state.HubList;
 
 public abstract class BaseConnection implements Runnable {
-
-    protected static Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsockets.proxy.connections"); 
     
     protected final DirectSocket s;
     protected final DataInputStream in;
     protected final DataOutputStream out; 
     
     protected Connections connections;
-    protected final HubList knownProxies; 
+    protected final HubList knownHubs; 
           
     protected BaseConnection(DirectSocket s, DataInputStream in, 
-            DataOutputStream out, Connections connections, HubList proxies) {
+            DataOutputStream out, Connections connections, HubList hubs) {
         
         this.s = s;
         this.in = in;
         this.out = out;
         this.connections = connections;
-        this.knownProxies = proxies;
-        
-        logger.info("Created connection!");
+        this.knownHubs = hubs;
     }
         
     public void activate() {

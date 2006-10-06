@@ -7,6 +7,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.hub.connections.Connections;
@@ -16,6 +18,9 @@ import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
 class Connector extends CommunicationThread {
+    
+    protected static Logger hconlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
     
     private boolean done = false;
     
@@ -28,7 +33,7 @@ class Connector extends CommunicationThread {
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
         throws IOException { 
 
-        logger.info("Sending connection request");
+        hconlogger.debug("Sending connection request");
                 
         out.write(HubProtocol.CONNECT);
         out.writeUTF(localAsString);
@@ -38,13 +43,13 @@ class Connector extends CommunicationThread {
 
         switch (opcode) {
         case HubProtocol.CONNECTION_ACCEPTED:
-            logger.info("Connection request accepted");            
+            hconlogger.debug("Connection request accepted");            
             return true;
         case HubProtocol.CONNECTION_REFUSED:
-            logger.info("Connection request refused (duplicate)");
+            hconlogger.debug("Connection request refused (duplicate)");
             return false;
         default:
-            logger.warn("Got unknown reply from proxy!");
+            hconlogger.warn("Got unknown reply from proxy!");
             return false;
         }
     }
@@ -57,7 +62,7 @@ class Connector extends CommunicationThread {
         
         // Creates a connection to a proxy to check if it is reachable. If so, 
         // it will send a ping. 
-        logger.info("Creating test connection to " + d.hubAddress);
+        hconlogger.info("Creating test connection to " + d.hubAddress);
                 
         try { 
             s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, null);
@@ -72,12 +77,12 @@ class Connector extends CommunicationThread {
             out.writeUTF(localAsString);
             out.flush();            
             
-            logger.info("Succesfully created connection!");                       
+            hconlogger.debug("Succesfully created connection!");                       
             d.setReachable();
            
         } catch (Exception e) {
             
-            logger.info("Failed to set up connection!");
+            hconlogger.info("Failed to set up connection!");
             d.setUnreachable();
             
         } finally {             
@@ -106,7 +111,7 @@ class Connector extends CommunicationThread {
         // smallest one decide what to do...                                  
         boolean master = localAsString.compareTo(d.hubAddress.toString()) < 0;
         
-        logger.info("Creating connection to " + d.hubAddress);
+        hconlogger.info("Creating connection to " + d.hubAddress);
                 
         try { 
             s = factory.createSocket(d.hubAddress, 
@@ -136,14 +141,14 @@ class Connector extends CommunicationThread {
             // may 'accidently' block an incoming connection from a machine that
             // we are not able to connect to ourselves.        
             if (master) { 
-                logger.info("I am master during connection setup");
+                hconlogger.debug("I am master during connection setup");
                 
                 c = new HubConnection(s, in, out, d, connections, 
                         knownHubs, state);                                
                 result = d.createConnection(c);                
                 
                 if (!result) {
-                    logger.info("Connection was already created!");
+                    hconlogger.debug("Connection was already created!");
                     
                     // never mind...
                     out.write(HubProtocol.PING);
@@ -153,7 +158,7 @@ class Connector extends CommunicationThread {
                     result = sendConnect(out, in);                    
                 } 
             } else {   
-                logger.info("I am slave during connection setup");
+                hconlogger.debug("I am slave during connection setup");
                 
                 result = sendConnect(out, in);
 
@@ -164,7 +169,7 @@ class Connector extends CommunicationThread {
                     
                     if (!result) { 
                         // This should not happen if the protocol works....
-                        logger.warn("Race condition triggered during " +
+                        hconlogger.warn("Race condition triggered during " +
                                 "connection setup!!");
                     }
                 }                 
@@ -172,16 +177,16 @@ class Connector extends CommunicationThread {
         
             d.setReachable();       
         } catch (Exception e) {
-            logger.warn("Got exception!", e);        
+            hconlogger.warn("Got exception!", e);        
             d.setUnreachable();
        }
         
         if (result) {
-            logger.info("Succesfully created connection!");
+            hconlogger.debug("Succesfully created connection!");
             connections.addConnection(d.hubAddress.toString(), c);
             c.activate();
         } else { 
-            logger.info("Failed to set up connection!");
+            hconlogger.info("Failed to set up connection!");
             DirectSocketFactory.close(s, out, in);
         }
     }

@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
@@ -18,6 +20,12 @@ import smartsockets.hub.state.StateCounter;
 
 public class HubConnection extends MessageForwardingConnection {
 
+    protected static Logger conlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
+    
+    protected static Logger goslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.gossip"); 
+          
     private final HubDescription peer;
     private final HubDescription local;    
     
@@ -78,30 +86,27 @@ public class HubConnection extends MessageForwardingConnection {
         try {
             int writes = 0;
 
-            logger.info("=============================="); 
-            logger.info("Gossiping with: " + peer.hubAddress); 
+            goslogger.info("Gossiping with: " + peer.hubAddress); 
             
-            Iterator itt = knownProxies.iterator();
+            Iterator itt = knownHubs.iterator();
             
             while (itt.hasNext()) { 
                 HubDescription tmp = (HubDescription) itt.next();
                 
                 if (tmp.getLastLocalUpdate() > lastSendState) {
                     
-                    logger.info("Writing proxy:\n" 
-                            + tmp.hubAddressAsString
-                            + " since lastLocalUpdate=" 
+                    goslogger.info("Writing proxy: " + tmp.hubAddressAsString);                    
+                    goslogger.debug("    since lastLocalUpdate="  
                             + tmp.getLastLocalUpdate()  
                             + " > lastSendState= " + lastSendState + "\n\n");
                     
                     writeProxy(tmp);                    
                     writes++;
                 } else { 
-                    logger.info("NOT writing proxy:\n"
-                            + tmp.hubAddressAsString 
-                            + " since lastLocalUpdate=" 
+                    goslogger.info("NOT writing proxy: " + tmp.hubAddressAsString);                    
+                    goslogger.debug("    since lastLocalUpdate="  
                             + tmp.getLastLocalUpdate()  
-                            + " <= lastSendState= " + lastSendState + "\n\n");                    
+                            + " <= lastSendState= " + lastSendState + "\n\n");
                 }
             }        
             
@@ -111,11 +116,9 @@ public class HubConnection extends MessageForwardingConnection {
             } 
             
             out.flush();
-        
-            logger.info("==============================\n");
             
         } catch (Exception e) {
-            System.err.println("Unhandled exception in ProxyConnection!!" + e);
+            goslogger.warn("Unhandled exception in ProxyConnection!!" + e);
             // TODO: handle exception
         }
         
@@ -125,7 +128,6 @@ public class HubConnection extends MessageForwardingConnection {
     }
     
     private void writePing() throws IOException {        
-        System.err.println("Sending ping to " + peer.hubAddress);
         out.write(HubProtocol.PING);
     } 
     
@@ -151,8 +153,8 @@ public class HubConnection extends MessageForwardingConnection {
         
     private void readProxy() throws IOException {
                 
-        SocketAddressSet address = new SocketAddressSet(in.readUTF());                
-        HubDescription tmp = knownProxies.add(address);
+        SocketAddressSet address = new SocketAddressSet(in.readUTF());
+        HubDescription tmp = knownHubs.add(address);
                
         int hops = in.readInt();
         
@@ -179,7 +181,7 @@ public class HubConnection extends MessageForwardingConnection {
             if (state > tmp.getHomeState()) { 
                 tmp.update(c, state);
             } else { 
-                logger.warn("EEK: got information directly from " 
+                goslogger.warn("EEK: got information directly from " 
                         + peer.hubAddressAsString + " which seems to be "
                         + "out of date! " + state + " " + tmp.getHomeState());
             }
@@ -194,7 +196,7 @@ public class HubConnection extends MessageForwardingConnection {
             if (state > tmp.getHomeState()) { 
                 tmp.update(c, state);
             } else {
-                logger.info("Ignoring outdated information about " + 
+                goslogger.debug("Ignoring outdated information about " + 
                         tmp.hubAddressAsString + " from "  
                         + peer.hubAddressAsString + " " + state + " " 
                         + tmp.getHomeState());                
@@ -205,7 +207,7 @@ public class HubConnection extends MessageForwardingConnection {
     }
         
     private void handlePing() {        
-        logger.debug("Got ping from " + peer.hubAddress);
+        goslogger.debug("Got ping from " + peer.hubAddress);
         peer.setContactTimeStamp(false);
     }
   
@@ -223,7 +225,7 @@ public class HubConnection extends MessageForwardingConnection {
         String message = in.readUTF();
         int hopsLeft = in.readInt();
         
-        logger.debug("Got message [" + source + "@" + sourceProxy + ", " 
+        meslogger.debug("Got message [" + source + "@" + sourceProxy + ", " 
                 + target  + "@" + targetProxy + ", " + module + ", " + code 
                 + ", " + message + ", " + hopsLeft + "]");
                
@@ -243,30 +245,33 @@ public class HubConnection extends MessageForwardingConnection {
             switch (opcode) { 
         
             case -1:
-                logger.info("ProxyConnection got EOF!");
+                conlogger.info("HubConnection got EOF!");
                 DirectSocketFactory.close(s, out, in);
                 return false;
                 
             case HubProtocol.GOSSIP:
+                goslogger.info("HubConnection got gossip!");                
                 readProxy();
                 return true;
     
             case HubProtocol.PING:
+                goslogger.info("HubConnection got ping!");                                
                 handlePing();
                 return true;
 
             case HubProtocol.CLIENT_MESSAGE:
+                meslogger.info("HubConnection got message!");                                                
                 handleClientMessage();
                 return true;
                
             default:
-                logger.info("ProxyConnection got junk!");
+                conlogger.warn("HubConnection got junk!");
                 DirectSocketFactory.close(s, out, in);
                 return false;
             }
                         
         } catch (Exception e) {
-            logger.warn("ProxyConnection got exception!", e);
+            conlogger.warn("HubConnection got exception!", e);
             DirectSocketFactory.close(s, out, in);
         }
         

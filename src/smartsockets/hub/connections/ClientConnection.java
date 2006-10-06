@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
@@ -17,6 +19,15 @@ import smartsockets.hub.state.HubList;
 
 public class ClientConnection extends MessageForwardingConnection {
 
+    protected static Logger conlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.client"); 
+    
+    protected static Logger reqlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.request"); 
+    
+    protected static Logger reglogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
+        
     private final String clientAddress;
     
     public ClientConnection(String clientAddress, DirectSocket s, 
@@ -25,6 +36,8 @@ public class ClientConnection extends MessageForwardingConnection {
      
         super(s, in, out, connections, proxies);        
         this.clientAddress = clientAddress;
+        
+        conlogger.debug("Created client connection: " + clientAddress);        
     }
 
     private void handleMessage() throws IOException { 
@@ -35,8 +48,8 @@ public class ClientConnection extends MessageForwardingConnection {
         int code = in.readInt();
         String message = in.readUTF();
         
-        logger.debug("Incoming message: [" + target + "@" + targetProxy + ", " 
-                + module + ", " + code + ", " + message); 
+        meslogger.debug("Incoming message: [" + target + "@" + targetProxy 
+                + ", " + module + ", " + code + ", " + message); 
 
         forwardMessageFromClient(clientAddress, target, targetProxy, module, 
                 code, message);
@@ -44,10 +57,11 @@ public class ClientConnection extends MessageForwardingConnection {
                 
     private void disconnect() {
         
-        if (knownProxies.getLocalDescription().removeClient(clientAddress)) { 
-            logger.debug("Removed client " + clientAddress + " from local proxy"); 
+        if (knownHubs.getLocalDescription().removeClient(clientAddress)) { 
+            conlogger.debug("Removed client connection " + clientAddress); 
         } else { 
-            logger.debug("Failed to removed client " + clientAddress + " from local proxy");
+            conlogger.debug("Failed to removed client connection " 
+                    + clientAddress + "!");
         }
         
         connections.removeConnection(clientAddress);
@@ -67,7 +81,7 @@ public class ClientConnection extends MessageForwardingConnection {
             out.flush();
             return true;
         } catch (IOException e) {
-            logger.warn("Connection " + src + " is broken!", e);
+            meslogger.warn("Connection " + src + " is broken!", e);
             DirectSocketFactory.close(s, out, in);
             return false;                
         }
@@ -77,9 +91,9 @@ public class ClientConnection extends MessageForwardingConnection {
         
         String id = in.readUTF();
         
-        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        String [] proxies = knownProxies.proxiesAsString();
+        String [] proxies = knownHubs.proxiesAsString();
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
@@ -97,9 +111,9 @@ public class ClientConnection extends MessageForwardingConnection {
         String proxy = in.readUTF();
         String tag = in.readUTF();
         
-        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        HubDescription p = knownProxies.get(proxy); 
+        HubDescription p = knownHubs.get(proxy); 
         
         ArrayList tmp = null;
         
@@ -125,15 +139,15 @@ public class ClientConnection extends MessageForwardingConnection {
         String id = in.readUTF();
         String tag = in.readUTF();
         
-        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        ArrayList clients = knownProxies.allClients(tag);
+        ArrayList clients = knownHubs.allClients(tag);
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(clients.size());
 
-        logger.debug("Connection " + clientAddress + " returning : " 
+        reqlogger.debug("Connection " + clientAddress + " returning : " 
                 + clients.size() + " clients");         
         
         for (int i=0;i<clients.size();i++) {
@@ -148,22 +162,22 @@ public class ClientConnection extends MessageForwardingConnection {
         String id = in.readUTF();
         String client = in.readUTF();
                 
-        logger.debug("Connection " + clientAddress + " return id: " + id); 
+        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        LinkedList result = knownProxies.directionToClient(client);
+        LinkedList result = knownHubs.directionToClient(client);
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(result.size());
 
-        logger.debug("Connection " + clientAddress + " returning : " 
+        reqlogger.debug("Connection " + clientAddress + " returning : " 
                 + result.size() + " possible directions!");         
         
         Iterator itt = result.iterator();
        
         while (itt.hasNext()) {             
             String tmp = (String) itt.next();                       
-            logger.debug(" -> " + tmp);                             
+            reqlogger.debug(" -> " + tmp);                             
             out.writeUTF(tmp);
         } 
             
@@ -176,10 +190,10 @@ public class ClientConnection extends MessageForwardingConnection {
         String tag = in.readUTF();
         String address = in.readUTF();
 
-        logger.debug("Connection " + clientAddress + " return id: " + id +  
+        reglogger.debug("Connection " + clientAddress + " return id: " + id +  
                 " adding " + tag + " " + address + " to services!");         
                
-        HubDescription localProxy = knownProxies.getLocalDescription();
+        HubDescription localProxy = knownHubs.getLocalDescription();
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
@@ -205,68 +219,69 @@ public class ClientConnection extends MessageForwardingConnection {
 
             switch (opcode) { 
             case ServiceLinkProtocol.MESSAGE:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " got message");
+                if (meslogger.isDebugEnabled()) {
+                    meslogger.debug("Connection " + clientAddress + " got message");
                 }                     
                 handleMessage();
                 return true;
                 
             case ServiceLinkProtocol.DISCONNECT:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " disconnecting");
+                if (conlogger.isDebugEnabled()) {
+                    conlogger.debug("Connection " + clientAddress + " disconnecting");
                 } 
                 disconnect();
                 return false;
             
             case ServiceLinkProtocol.PROXIES:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " requests " 
+                if (reqlogger.isDebugEnabled()) {
+                    reqlogger.debug("Connection " + clientAddress + " requests " 
                             + "proxies");
                 } 
                 proxies();
                 return true;
             
             case ServiceLinkProtocol.CLIENTS_FOR_PROXY:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " requests" 
+                if (reqlogger.isDebugEnabled()) {
+                    reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " local clients");
                 } 
                 clientsForProxy();
                 return true;
             
             case ServiceLinkProtocol.ALL_CLIENTS:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " requests" 
+                if (reqlogger.isDebugEnabled()) {
+                    reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " all clients");
                 }
                 clients();
                 return true;
             
             case ServiceLinkProtocol.DIRECTION:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " requests" 
+                if (reqlogger.isDebugEnabled()) {
+                    reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " direction to other client");
                 }
                 directions();
                 return true;
             
             case ServiceLinkProtocol.REGISTER_SERVICE:
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Connection " + clientAddress + " requests" 
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " requests" 
                             + " service registration");
                 }
                 registerService();
                 return true;
                 
             default:
-                logger.warn("Connection " + clientAddress + " got unknown "
-                        + "opcode " + opcode + " -- disconnecting");
+                conlogger.warn("Connection " + clientAddress 
+                        + " got unknown " + "opcode " + opcode 
+                        + " -- disconnecting");
                 disconnect();
                 return false;                
             } 
             
         } catch (Exception e) { 
-            logger.warn("Connection to " + clientAddress + " is broken!", e);
+            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
             disconnect();
         }
         

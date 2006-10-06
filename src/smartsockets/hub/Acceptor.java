@@ -10,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
@@ -22,7 +24,20 @@ import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
 public class Acceptor extends CommunicationThread {
-
+    
+    protected static Logger hconlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
+    
+    protected static Logger cconlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.client"); 
+    
+    protected static Logger reglogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
+    
+    protected static Logger reqlogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.request"); 
+    
+    
     private DirectServerSocket server;
     private boolean done = false;
 
@@ -59,7 +74,7 @@ public class Acceptor extends CommunicationThread {
         String otherAsString = in.readUTF();        
         SocketAddressSet addr = new SocketAddressSet(otherAsString); 
 
-        logger.info("Got connection from " + addr);
+        hconlogger.debug("Got connection from " + addr);
 
         HubDescription d = knownHubs.add(addr);        
         d.setCanReachMe();
@@ -69,14 +84,14 @@ public class Acceptor extends CommunicationThread {
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this hub...            
-            logger.info("Connection from " + addr + " refused (duplicate)");
+            hconlogger.info("Connection from " + addr + " refused (duplicate)");
 
             out.write(HubProtocol.CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                         
             // We just created a connection to this hub.
-            logger.info("Connection from " + addr + " accepted");
+            hconlogger.info("Connection from " + addr + " accepted");
 
             out.write(HubProtocol.CONNECTION_ACCEPTED);            
             out.flush();
@@ -93,7 +108,7 @@ public class Acceptor extends CommunicationThread {
             DataInputStream in, DataOutputStream out) throws IOException {
 
         String sender = in.readUTF();         
-        logger.info("Got ping from: " + sender);      
+        //logger.info("Got ping from: " + sender);      
         return false;
     }    
 
@@ -104,8 +119,8 @@ public class Acceptor extends CommunicationThread {
             String src = in.readUTF();
             
             if (connections.getConnection(src) != null) { 
-                if (logger.isDebugEnabled()) { 
-                    logger.debug("Incoming connection from " + src + 
+                if (cconlogger.isDebugEnabled()) { 
+                    cconlogger.debug("Incoming connection from " + src + 
                     " refused, since it already exists!"); 
                 } 
 
@@ -115,8 +130,8 @@ public class Acceptor extends CommunicationThread {
                 return false;
             }
 
-            if (logger.isDebugEnabled()) { 
-                logger.debug("Incoming connection from " + src + " accepted"); 
+            if (cconlogger.isDebugEnabled()) { 
+                cconlogger.debug("Incoming connection from " + src + " accepted"); 
             } 
 
             out.write(HubProtocol.SERVICELINK_ACCEPTED);
@@ -129,10 +144,13 @@ public class Acceptor extends CommunicationThread {
             c.activate();
 
             knownHubs.getLocalDescription().addClient(src);
+            
+            reglogger.info("Added client: " + src);            
+            
             return true;
 
         } catch (IOException e) { 
-            logger.warn("Got exception while handling connect!", e);
+            cconlogger.warn("Got exception while handling connect!", e);
             DirectSocketFactory.close(s, out, in);
         }  
 
@@ -156,13 +174,13 @@ public class Acceptor extends CommunicationThread {
         String connectID = in.readUTF();
         int time = in.readInt();
         
-        logger.info("Got request for splice info: " + connectID + " " + time);
+        reqlogger.info("Got request for splice info: " + connectID + " " + time);
         
         SpliceInfo info = (SpliceInfo) spliceInfo.remove(connectID);
         
         if (info == null) {
             
-            logger.info("Request " + connectID + " is first");
+            reqlogger.info("Request " + connectID + " is first");
                         
             // We're the first...            
             info = new SpliceInfo();
@@ -183,7 +201,7 @@ public class Acceptor extends CommunicationThread {
             // until the other side arrives...
             result = true;        
         } else {
-            logger.info("Request " + connectID + " is second");            
+            reqlogger.info("Request " + connectID + " is second");            
             
             // The peer is already waiting...
             
@@ -198,7 +216,7 @@ public class Acceptor extends CommunicationThread {
                 info.out.writeInt(tmp.getPort());
                 info.out.flush();
                 
-                logger.info("Reply to first " + tmp.getAddress() + ":" 
+                reqlogger.info("Reply to first " + tmp.getAddress() + ":" 
                         + tmp.getPort()); 
                 
                 tmp = (InetSocketAddress) info.s.getRemoteSocketAddress();
@@ -207,12 +225,12 @@ public class Acceptor extends CommunicationThread {
                 out.writeInt(tmp.getPort());
                 out.flush();
 
-                logger.info("Reply to second " + tmp.getAddress() + ":" 
+                reqlogger.info("Reply to second " + tmp.getAddress() + ":" 
                         + tmp.getPort()); 
                 
             } catch (Exception e) {                
                 // The connections may have been closed already....
-                logger.info("Failed to forward splice info!", e);               
+                reqlogger.info("Failed to forward splice info!", e);               
             } finally { 
                 // We should close the first connection. The second will be 
                 // closed for us when we return false
@@ -263,8 +281,8 @@ public class Acceptor extends CommunicationThread {
         DataOutputStream out = null;
         boolean result = false;
 
-        logger.info("Doing accept.");
-
+        hublogger.debug("Waiting for connection...");
+        
         try {
             s = server.accept();                
             in = new DataInputStream(
@@ -280,7 +298,7 @@ public class Acceptor extends CommunicationThread {
                 result = handleIncomingHubConnect(s, in, out);                   
                 break;
 
-            case HubProtocol.PING:
+            case HubProtocol.PING:                
                 result = handlePing(s, in, out);                   
                 break;
               
@@ -300,7 +318,7 @@ public class Acceptor extends CommunicationThread {
                 break;
             }
         } catch (Exception e) {
-            logger.warn("Failed to accept connection!", e);
+            hublogger.warn("Failed to accept connection!", e);
             result = false;
         }
 

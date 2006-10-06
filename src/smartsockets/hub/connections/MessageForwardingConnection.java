@@ -5,12 +5,17 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.direct.DirectSocket;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 
+    protected static Logger meslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.messages"); 
+        
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, Connections connections, HubList proxies) {
         super(s, in, out, connections, proxies);
@@ -35,30 +40,30 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     // Tries to forward a message to a given proxy, directly or indirectly.  
     private void forwardMessageToProxy(HubDescription p, String src, 
-            String srcProxy, String target, String targetProxy,  
+            String srcProxy, String target, String targetHub,  
             String module, int code, String message, int hopsLeft) {
         
         String address = p.hubAddressAsString;
         
-        logger.info("Attempting to forward message to proxy "
+        meslogger.debug("Attempting to forward message to hub "
                 + p.hubAddress);
         
-        if (forwardMessageToProxy(address, src, srcProxy, target, targetProxy, 
+        if (forwardMessageToProxy(address, src, srcProxy, target, targetHub, 
                 module, code, message, hopsLeft)) {
             
-            logger.info("Succesfully forwarded message to proxy " 
+            meslogger.debug("Succesfully forwarded message to proxy " 
                     + address + " using direct link");
             return;            
         } 
          
         if (hopsLeft == 0) {
-            logger.info("Failed to forward message to proxy " 
+            meslogger.info("Failed to forward message to proxy " 
                     + address + " and we are not allowed to use" 
                     +" an indirection!");
             return;
         } 
             
-        logger.info("Failed to forward message to proxy " 
+        meslogger.debug("Failed to forward message to proxy " 
                 + address + " using direct link, " 
                 + "trying indirection");
 
@@ -68,19 +73,19 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (p2 == null) {
             // Oh dear, we don't have an indirection!
-            logger.warn("Indirection address of " + address + " is null!");
+            meslogger.warn("Indirection address of " + address + " is null!");
             return;
         } 
 
         if (forwardMessageToProxy(p2.hubAddressAsString, src, srcProxy, 
-                target, targetProxy, module, code, message, hopsLeft)) { 
+                target, targetHub, module, code, message, hopsLeft)) { 
 
-            logger.info("Succesfully forwarded message to proxy " 
+            meslogger.debug("Succesfully forwarded message to proxy " 
                     + p2.hubAddressAsString + " using direct link");
             return;            
         } 
 
-        logger.info("Failed to forward message to proxy " + address 
+        meslogger.info("Failed to forward message to proxy " + address 
                 + " or it's indirection " + p2.hubAddressAsString);
     }
     
@@ -91,7 +96,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected void forwardMessageFromClient(String src, String target, 
             String targetProxy, String module, int code, String message) { 
         // Get the local proxy address.
-        String local = knownProxies.getLocalDescription().hubAddressAsString;
+        String local = knownHubs.getLocalDescription().hubAddressAsString;
         
         // TODO: what is a decent value for hopsleft ??
         forward(src, local, target, targetProxy, module, code, message, 10);            
@@ -106,7 +111,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (c != null && c instanceof ClientConnection) {
 
-            logger.info("Attempting to directly forward message to client " 
+            meslogger.debug("Attempting to directly forward message to client " 
                     + target + "@" + targetProxy);
            
             // We found the target, so lets forward the message
@@ -114,25 +119,25 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                     module, code, message);
             
             if (result) {
-                logger.info("Directly forward message to client " 
+                meslogger.debug("Directly forward message to client " 
                         + target + "@" + targetProxy + " succeeded!...");                
                 return;
             }
         } 
         
-        logger.info("Failed to directly forward message to " + target + "@" 
+        meslogger.debug("Failed to directly forward message to " + target + "@" 
              + targetProxy + ": target not locally available, trying other proxies");
 
         // Lets see if we directly known the proxy that the client is 
         // associated with. 
         if (targetProxy != null && targetProxy.length() > 0) { 
-            HubDescription p = knownProxies.get(targetProxy);
+            HubDescription p = knownHubs.get(targetProxy);
             
             if (p != null) { 
                 forwardMessageToProxy(p, src, srcProxy, target, targetProxy, 
                         module, code, message, p.getHops());                
                 
-                logger.info("Directly forwarded message to proxy: " 
+                meslogger.debug("Directly forwarded message to proxy: " 
                         + targetProxy);
                 
                 return;
@@ -150,9 +155,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
 
         // Still some hops left, so we now broadcast the message.
-        logger.info("Broadcasting message for " + target + "@" + targetProxy); 
+        meslogger.debug("Broadcasting message for " + target + "@" + targetProxy); 
                 
-        Iterator itt = knownProxies.connectedHubsIterator();
+        Iterator itt = knownHubs.connectedHubsIterator();
         
         while (itt.hasNext()) { 
             String p = ((HubDescription) itt.next()).hubAddressAsString;
@@ -164,7 +169,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             }
         }        
             
-        logger.info("Finished broadcasting message for " + target + "@" 
+        meslogger.debug("Finished broadcasting message for " + target + "@" 
                 + targetProxy);    
     }
     

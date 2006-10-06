@@ -21,9 +21,13 @@ public class Hub extends Thread {
     
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
     
-    protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(Hub.class.getName());
-               
+    protected static Logger misclogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.misc");
+
+    protected static Logger goslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.gossip");
+
+    
     private HubList hubs;    
     private Connections connections;
     
@@ -40,9 +44,9 @@ public class Hub extends Thread {
     
     public Hub(SocketAddressSet [] hubAddresses) throws IOException { 
 
-        super("GossipHub");
+        super("Hub");
         
-        logger.info("Creating GossipHub");
+        misclogger.info("Creating Hub");
                 
         DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
         
@@ -58,7 +62,7 @@ public class Hub extends Thread {
         
         connector.setLocal(local);
                 
-        logger.info("GossipAcceptor listning at " + local);
+        goslogger.info("GossipAcceptor listning at " + local);
         
         // Create a description for the local machine. 
         HubDescription localDesc = new HubDescription(local, state, true);        
@@ -69,17 +73,17 @@ public class Hub extends Thread {
 
         addHubs(hubAddresses);
         
-        logger.info("Starting Gossip connector/acceptor");
+        goslogger.info("Starting Gossip connector/acceptor");
                 
         acceptor.start();
         connector.start();
 
-        logger.info("Listning for broadcast on LAN");
+        misclogger.info("Listning for broadcast on LAN");
         
         discovery = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 0);         
         discovery.answeringMachine("Any Proxies?", local.toString());
                         
-        logger.info("Start Gossiping!");
+        goslogger.info("Start Gossiping!");
         
         start();
     }
@@ -99,8 +103,8 @@ public class Hub extends Thread {
     
     private void gossip() { 
         
-        logger.info("Starting gossip round (local state = " + state.get() + ")");        
-        logger.info("I know the following hubs:\n" + hubs.toString());        
+        goslogger.info("Starting gossip round (local state = " + state.get() + ")");        
+        goslogger.info("I know the following hubs:\n" + hubs.toString());        
                         
         Iterator itt = hubs.connectedHubsIterator();
         
@@ -109,10 +113,10 @@ public class Hub extends Thread {
             HubConnection c = d.getConnection();
             
             if (c != null) {
-                logger.info("Gossip with " + d.hubAddressAsString); 
+                goslogger.info("Gossip with " + d.hubAddressAsString); 
                 c.gossip(state.get());
             } else { 
-                logger.info("Cannot gossip with " + d.hubAddressAsString 
+                goslogger.info("Cannot gossip with " + d.hubAddressAsString 
                         + ": NO CONNECTION!");
             }
         }                   
@@ -126,7 +130,7 @@ public class Hub extends Thread {
         
         while (true) { 
             try { 
-                logger.info("Sleeping for " + GOSSIP_SLEEP + " ms.");
+                goslogger.info("Sleeping for " + GOSSIP_SLEEP + " ms.");
                 Thread.sleep(GOSSIP_SLEEP);
             } catch (InterruptedException e) {
                 // ignore
@@ -144,14 +148,14 @@ public class Hub extends Thread {
             try { 
                 hubs[i] = new SocketAddressSet(args[i]);
             } catch (Exception e) {
-                logger.warn("Skipping hub address: " + args[i], e);              
+                misclogger.warn("Skipping hub address: " + args[i], e);              
             }
         } 
         
         try {
             new Hub(hubs);
         } catch (IOException e) {
-            logger.warn("Oops: ", e);
+            misclogger.warn("Oops: ", e);
         }        
     }
 }

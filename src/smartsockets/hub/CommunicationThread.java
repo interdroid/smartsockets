@@ -16,8 +16,10 @@ abstract class CommunicationThread extends Thread {
     protected static final int DEFAULT_TIMEOUT = 1000;
        
     protected final StateCounter state;         
-    protected final Logger logger;
     
+    protected static Logger hublogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub"); 
+        
     protected final Connections connections;     
     protected final HubList knownHubs;
     
@@ -35,7 +37,6 @@ abstract class CommunicationThread extends Thread {
         this.connections = connections;
         this.knownHubs = knownHubs;
         this.factory = factory;        
-        logger = GetLogger.getLogger(this.getClass().getName());                   
     }
     
     protected void setLocal(SocketAddressSet local) { 

@@ -14,10 +14,11 @@ import smartsockets.hub.HubProtocol;
 
 
 public class ServiceLink implements Runnable {
-        
+    
+    // TODO: create different loggers here!
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(ServiceLink.class.getName());
-         
+        ibis.util.GetLogger.getLogger("smartsockets.hub.servicelink");
+
     protected final HashMap callbacks = new HashMap();
     
     
