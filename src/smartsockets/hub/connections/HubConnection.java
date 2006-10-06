@@ -95,18 +95,18 @@ public class HubConnection extends MessageForwardingConnection {
                 
                 if (tmp.getLastLocalUpdate() > lastSendState) {
                     
-                    goslogger.info("Writing proxy: " + tmp.hubAddressAsString);                    
-                    goslogger.debug("    since lastLocalUpdate="  
+                    goslogger.info("    Writing proxy: " + tmp.hubAddressAsString);                    
+                    goslogger.debug("      since lastLocalUpdate="  
                             + tmp.getLastLocalUpdate()  
-                            + " > lastSendState= " + lastSendState + "\n\n");
+                            + " > lastSendState= " + lastSendState);
                     
                     writeProxy(tmp);                    
                     writes++;
                 } else { 
-                    goslogger.info("NOT writing proxy: " + tmp.hubAddressAsString);                    
-                    goslogger.debug("    since lastLocalUpdate="  
+                    goslogger.info("    NOT writing proxy: " + tmp.hubAddressAsString);                    
+                    goslogger.debug("      since lastLocalUpdate="  
                             + tmp.getLastLocalUpdate()  
-                            + " <= lastSendState= " + lastSendState + "\n\n");
+                            + " <= lastSendState= " + lastSendState);
                 }
             }        
             
