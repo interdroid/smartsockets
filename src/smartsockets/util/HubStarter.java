@@ -7,7 +7,7 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.Hub;
 import smartsockets.router.simple.Router;
 
-public class ProxyStarter {
+public class HubStarter {
     
     private static Hub p;
     private static Router r;
@@ -16,7 +16,7 @@ public class ProxyStarter {
         
         boolean startRouter = true;
         
-        SocketAddressSet [] proxies = new SocketAddressSet[args.length];
+        SocketAddressSet [] hubs = new SocketAddressSet[args.length];
             
         for (int i=0;i<args.length;i++) {                
             
@@ -24,9 +24,9 @@ public class ProxyStarter {
                 startRouter = false;                
             } else { 
                 try { 
-                    proxies[i] = new SocketAddressSet(args[i]);
+                    hubs[i] = new SocketAddressSet(args[i]);
                 } catch (Exception e) {
-                    System.err.println("Skipping proxy address: " + args[i]);
+                    System.err.println("Skipping hub address: " + args[i]);
                     e.printStackTrace(System.err);
                 }
             } 
@@ -34,11 +34,11 @@ public class ProxyStarter {
                 
         
         try {            
-            System.out.println("Starting proxy....");            
-            p = new Hub(proxies);            
-            System.out.println("Proxy running on: " + p.getHubAddress());            
+            System.out.println("Starting hub....");            
+            p = new Hub(hubs);            
+            System.out.println("Hub running on: " + p.getHubAddress());            
         } catch (IOException e) {
-            System.err.println("Oops: failed to start proxy");
+            System.err.println("Oops: failed to start hub");
             e.printStackTrace(System.err);
             System.exit(1);
         }   

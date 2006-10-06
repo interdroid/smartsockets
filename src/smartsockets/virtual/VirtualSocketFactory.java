@@ -60,6 +60,8 @@ public class VirtualSocketFactory {
         
         properties = p;
     
+        cluster = p.getProperty(Properties.CLUSTER_MEMBER, null);
+        
         DEFAULT_BACKLOG = p.getIntProperty(Properties.BACKLOG);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT);
         DEFAULT_DISCOVERY_PORT = p.getIntProperty(Properties.DISCOVERY_PORT);

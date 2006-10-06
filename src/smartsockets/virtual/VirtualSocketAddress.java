@@ -122,8 +122,10 @@ public class VirtualSocketAddress implements Serializable {
         return port;
     }    
     
-    public String toString() { 
-        return machine.toString() + ":" + port;       
+    public String toString() {         
+        return machine.toString() + ":" + port 
+            + (hub == null ? "" : ("@" + hub.toString())) 
+            + (cluster == null ? "" : ("#" + cluster)); 
     }
     
     public boolean equals(Object other) { 

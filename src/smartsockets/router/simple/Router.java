@@ -40,14 +40,14 @@ public class Router extends Thread {
         this(null);        
     }
     
-    public Router(SocketAddressSet proxy) throws IOException {         
+    public Router(SocketAddressSet hub) throws IOException {         
         
         properties.put("smartsockets.modules.skip", "routed"); 
         
-        if (proxy != null) { 
-            properties.put("smartsockets.proxy", proxy.toString());
+        if (hub != null) { 
+            properties.put("smartsockets.hub", hub.toString());
         }
-                
+             
         logger.debug("Router creating VirtualSocketFactory");
         
         factory = VirtualSocketFactory.getSocketFactory(properties, true);        
@@ -75,10 +75,10 @@ public class Router extends Thread {
         return serviceLink.locateClient(machine.toString());
     }
     
-    synchronized Client [] findClients(SocketAddressSet proxy, String service) 
+    synchronized Client [] findClients(SocketAddressSet hub, String service) 
         throws IOException {
         
-        return serviceLink.clients(proxy, service);
+        return serviceLink.clients(hub, service);
     }
     
     VirtualSocket connect(VirtualSocketAddress target, long timeout) 
@@ -117,7 +117,7 @@ public class Router extends Thread {
         try { 
             return serviceLink.getAddress();
         } catch (IOException e) {
-            logger.warn("Router failed to retrieve proxy address!", e);
+            logger.warn("Router failed to retrieve hub address!", e);
             return null;
         }
     }

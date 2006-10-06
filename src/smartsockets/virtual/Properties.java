@@ -31,7 +31,17 @@ public class Properties {
     public static final String DISCOVERY_PREFIX  = PREFIX + "discovery.";
     public static final String DISCOVERY_PORT    = DISCOVERY_PREFIX + "port";
     public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
-                   
+    
+    public static final String CLUSTER_PREFIX = PREFIX + "cluster.";
+    public static final String CLUSTER_DEFINE = CLUSTER_PREFIX + "define";
+    public static final String CLUSTER_MEMBER = CLUSTER_PREFIX + "member";
+    
+    // NOTE: These properties require a which can only be determined at runtime.  
+    public static final String CLUSTER_PREFERENCE = "preference.";    
+    public static final String CLUSTER_MEMBERSHIP = "preference.membership";
+    public static final String CLUSTER_INSIDE     = "preference.inside";
+    public static final String CLUSTER_DEFAULT    = "preference.default";
+    
     private static final String [] defaults = new String [] {
             BACKLOG,           "20", 
             TIMEOUT,           "1000", 
