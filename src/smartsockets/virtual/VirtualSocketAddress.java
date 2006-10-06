@@ -13,9 +13,9 @@ public class VirtualSocketAddress implements Serializable {
     private final SocketAddressSet machine;
     private final int port;
     
-    // This proxy field is a hint of the location of the machine. It may be null
-    // or change over time (e.g., when a proxy crashes and a machine registers 
-    // at another proxy).     
+    // This hub field is a hint of the location of the machine. It may be null
+    // or change over time (e.g., when a hub crashes and a machine registers 
+    // at another hub).     
     private final SocketAddressSet hub;
     
     // This field indicates which 'virtual cluster' the machine is part of.
@@ -55,7 +55,7 @@ public class VirtualSocketAddress implements Serializable {
         String addr = null;
             
         if (index2 < index1) {
-            // The proxy is after the cluster (or cluster does not exist).
+            // The hub is after the cluster (or cluster does not exist).
             hub = new SocketAddressSet(address.substring(index1+1));
             
             if (index2 != -1) { 
@@ -67,7 +67,7 @@ public class VirtualSocketAddress implements Serializable {
             }
             
         } else if (index2 > index1){
-            // The proxy is before the cluster.
+            // The hub is before the cluster.
             cluster = address.substring(index2+1);
             
             if (index1 != -1) {            
@@ -100,13 +100,13 @@ public class VirtualSocketAddress implements Serializable {
         this(new SocketAddressSet(machine), port, null, null);
     }
 
-    public VirtualSocketAddress(String proxy, String machine, int port) 
+    public VirtualSocketAddress(String hub, String machine, int port) 
         throws UnknownHostException {    
         
-        this(new SocketAddressSet(machine), port, new SocketAddressSet(proxy), null);
+        this(new SocketAddressSet(machine), port, new SocketAddressSet(hub), null);
     }
     
-    public SocketAddressSet proxy() { 
+    public SocketAddressSet hub() { 
         return hub;
     }
     
@@ -142,7 +142,7 @@ public class VirtualSocketAddress implements Serializable {
             return false;
         }
         
-        // Now compare the addresses. Note that the proxy field is not compared, 
+        // Now compare the addresses. Note that the hub field is not compared, 
         // since it is only a hint of the location of the machine. It may be 
         // null in some cases or contain different values if the machine is 
         // registered at multiple proxies.       

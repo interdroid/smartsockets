@@ -40,7 +40,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
         DataOutputStream out = null;
         
         if (logger.isDebugEnabled()) { 
-            logger.debug(name + ": Got incoming connection on " + ds);
+            logger.debug(module + ": Got incoming connection on " + ds);
         }
            
         try {         
@@ -51,7 +51,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
             int targetPort = in.readInt();
     
             if (logger.isDebugEnabled()) { 
-                logger.debug(name + ": Target port " + targetPort);
+                logger.debug(module + ": Target port " + targetPort);
             }
                     
             // First check if we are the desired target machine...
@@ -61,7 +61,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 DirectSocketFactory.close(ds, out, in);
                 
                 if (logger.isDebugEnabled()) { 
-                    logger.debug(name + ": Connection failed, WRONG machine!");
+                    logger.debug(module + ": Connection failed, WRONG machine!");
                 }
                 
                 return;
@@ -76,14 +76,14 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 DirectSocketFactory.close(ds, out, in);
                 
                 if (logger.isDebugEnabled()) { 
-                    logger.debug(name + ": Connection failed, PORT not found!");
+                    logger.debug(module + ": Connection failed, PORT not found!");
                 }                
                 
                 return;
             }
             
             if (logger.isDebugEnabled()) { 
-                logger.debug(name + ": Connection seems OK, checking is " +
+                logger.debug(module + ": Connection seems OK, checking is " +
                         "server is willing to accept");
             }
             
@@ -101,14 +101,14 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 DirectSocketFactory.close(ds, out, in);
                 
                 if (logger.isDebugEnabled()) { 
-                    logger.debug(name + ": Connection failed, REJECTED!");
+                    logger.debug(module + ": Connection failed, REJECTED!");
                 }
                 
                 return;
             }
             
         } catch (Exception e) {            
-            logger.warn(name + ": Got exception during connection setup!", e);            
+            logger.warn(module + ": Got exception during connection setup!", e);            
             DirectSocketFactory.close(ds, out, in);
         }
     }

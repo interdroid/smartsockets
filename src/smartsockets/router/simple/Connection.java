@@ -204,7 +204,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             Router.logger.debug("     timeout: " + timeout);
 
             SocketAddressSet machine = target.machine();
-            SocketAddressSet proxy = target.proxy();
+            SocketAddressSet proxy = target.hub();
             
             if (proxy != null) { 
                 SocketAddressSet [] dir = new SocketAddressSet [] { proxy };                 

@@ -48,11 +48,11 @@ public class Splice extends AbstractDirectModule {
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
         if (target.machine().sameMachine(parent.getLocalHost())) { 
-            throw new ModuleNotSuitableException(name + ": Cannot set up " +
+            throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
         
-        logger.info(name + ": attempting connection setup to " + target);
+        logger.info(module + ": attempting connection setup to " + target);
         
         // Start by extracting the machine address of the target.
         SocketAddressSet targetMachine = target.machine();
@@ -63,7 +63,7 @@ public class Splice extends AbstractDirectModule {
         // Generate a unique ID for this connection setup 
         String connectID = getID() + "@" + myMachine; 
         
-        logger.info(name + ": looking for shared proxy between " + myMachine 
+        logger.info(module + ": looking for shared proxy between " + myMachine 
                 + " and " + targetMachine);
         
         // Now try to find a proxy that both machines can reach.
@@ -71,18 +71,18 @@ public class Splice extends AbstractDirectModule {
             serviceLink.findSharedProxy(myMachine, targetMachine);
         
         if (shared == null) {            
-            logger.info(name + ": no shared proxy found!");
+            logger.info(module + ": no shared proxy found!");
             
             // No shared proxy was found, so we give up!
             throw new ModuleNotSuitableException("Could not find shared " + 
                     "proxy for " + myMachine + " and " + targetMachine);
         }
 
-        logger.info(name + ": shared proxy found " + shared);
+        logger.info(module + ": shared proxy found " + shared);
                 
         // Send a message to the target asking it to participate in the
         // connection attempt. We will not get a reply. 
-        serviceLink.send(targetMachine, target.proxy(), name, PLEASE_CONNECT, 
+        serviceLink.send(targetMachine, target.hub(), module, PLEASE_CONNECT, 
                 shared + " " + connectID + " " + timeout + " " + target.port());
         
         // Now create the connection to the shared proxy, and get the public
@@ -92,7 +92,7 @@ public class Splice extends AbstractDirectModule {
 
         // Check if proxy returned somethig usefull...
         if (a[0] == null) {             
-            logger.info(name + ": failed to contact peer at shared proxy!");            
+            logger.info(module + ": failed to contact peer at shared proxy!");            
             throw new ModuleNotSuitableException("Failed to contact peer at " +                    
                     "shared proxy " + shared);
         }
@@ -101,7 +101,7 @@ public class Splice extends AbstractDirectModule {
         DirectSocket s = connect(a, localPort, DEFAULT_TIMEOUT);
                 
         if (s == null) { 
-            throw new ModuleNotSuitableException(name + ": Failed to connect "
+            throw new ModuleNotSuitableException(module + ": Failed to connect "
                     + " to " + target);                         
         }
 
@@ -146,7 +146,7 @@ public class Splice extends AbstractDirectModule {
             
             // Failed to create the exception, to the shared proxy 
             // TODO: try to find other shared proxy ? 
-            throw new ModuleNotSuitableException(name + ": Failed to " +
+            throw new ModuleNotSuitableException(module + ": Failed to " +
                     "connect to shared proxy " + shared + " " + e);                   
         } finally { 
             DirectSocketFactory.close(s, out, in);
@@ -161,7 +161,7 @@ public class Splice extends AbstractDirectModule {
         } catch (IOException e) {
             // Failed to create the exception, to the shared proxy 
             // TODO: try to find other shared proxy ? 
-            throw new ModuleNotSuitableException(name + ": Failed to " +
+            throw new ModuleNotSuitableException(module + ": Failed to " +
                     "parse reply from shared proxy " + shared + " " + e);                   
         } 
     }
@@ -178,12 +178,12 @@ public class Splice extends AbstractDirectModule {
                 try { 
                     return factory.createSocket(target[t], timeout, localPort, null);
                 } catch (IOException e) {
-                    logger.info(name + ": Connection failed " 
+                    logger.info(module + ": Connection failed " 
                             + target.toString(), e);
                 }           
             }    
             
-            logger.debug(name + ": Splice failed (" + i + ")");
+            logger.debug(module + ": Splice failed (" + i + ")");
         }
                         
         return null;
@@ -207,7 +207,7 @@ public class Splice extends AbstractDirectModule {
     public void startModule() throws Exception {
         
         if (serviceLink == null) {
-            throw new Exception(name + ": no service link available!");       
+            throw new Exception(module + ": no service link available!");       
         }
         
         // Create a direct socket factory. 
@@ -226,26 +226,26 @@ public class Splice extends AbstractDirectModule {
             DirectSocket s = connect(a, local, timeout);
             
             if (s == null) {  
-                logger.info(name + ": Incoming connection setup failed!");
+                logger.info(module + ": Incoming connection setup failed!");
                 return;
             }
                
             handleAccept(s);
                         
         } catch (Exception e) {
-            logger.info(name + ": Incoming connection setup failed!", e);            
+            logger.info(module + ": Incoming connection setup failed!", e);            
         }
     }
     
     public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
             int opcode, String message) {
 
-        logger.info(name + ": got message " + src + "@" + srcProxy + " " 
+        logger.info(module + ": got message " + src + "@" + srcProxy + " " 
                 + opcode + " \"" +  message + "\"");
                
         // Check if the opcode makes any sense
         if (opcode != PLEASE_CONNECT) { 
-            logger.warn(name + ": ignoring message " + src + "@" + srcProxy 
+            logger.warn(module + ": ignoring message " + src + "@" + srcProxy 
                     + " " + opcode + "\"" +  message + "\"");
             return;
         }
@@ -254,7 +254,7 @@ public class Splice extends AbstractDirectModule {
         StringTokenizer t = new StringTokenizer(message);
         
         if (t.countTokens() != 4) { 
-            logger.warn(name + ": malformed message " + src + "@" + srcProxy 
+            logger.warn(module + ": malformed message " + src + "@" + srcProxy 
                     + " " + opcode + "\"" +  message + "\"");
             return;
         }
@@ -271,7 +271,7 @@ public class Splice extends AbstractDirectModule {
             timeout = Integer.parseInt(t.nextToken());
             port = Integer.parseInt(t.nextToken());
         } catch (Exception e) {
-            logger.warn(name + ": failed to parse message " + src + "@" 
+            logger.warn(module + ": failed to parse message " + src + "@" 
                     + srcProxy + " " + opcode + "\"" +  message + "\"", e);
             return;
         }
@@ -281,7 +281,7 @@ public class Splice extends AbstractDirectModule {
         
         if (ss == null) {
             // TODO: send reply ??
-            logger.info(name + ": port " + port + " not found!");
+            logger.info(module + ": port " + port + " not found!");
             return;            
         }
 

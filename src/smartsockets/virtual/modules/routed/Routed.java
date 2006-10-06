@@ -125,7 +125,7 @@ public class Routed extends ConnectModule {
     public void startModule() throws Exception {
 
         if (serviceLink == null) {
-            throw new Exception(name + ": no service link available!");       
+            throw new Exception(module + ": no service link available!");       
         }
     }
 
@@ -139,7 +139,7 @@ public class Routed extends ConnectModule {
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
         if (target.machine().sameMachine(parent.getLocalHost())) { 
-            throw new ModuleNotSuitableException(name + ": Cannot set up " +
+            throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
        

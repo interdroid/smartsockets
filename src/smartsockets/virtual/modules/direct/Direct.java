@@ -73,21 +73,21 @@ public class Direct extends AbstractDirectModule {
                 
         try {            
             if (logger.isDebugEnabled()) { 
-                logger.debug(name + ": Creating ServerSocket on port " + port);
+                logger.debug(module + ": Creating ServerSocket on port " + port);
             }
                         
             server = direct.createServerSocket(port, 100, prop);
 
-            logger.info(name + ": ServerSocket created: "
+            logger.info(module + ": ServerSocket created: "
                     + server.getAddressSet());
             
         } catch (IOException e) {            
-            logger.warn(name + ": Failed to create ServerSocket on port " 
+            logger.warn(module + ": Failed to create ServerSocket on port " 
                     + port, e);
             throw e;
         }
         
-        logger.info(name + ": Starting AcceptThread");
+        logger.info(module + ": Starting AcceptThread");
 
         // Finally start a thread to handle the incoming connections.
         acceptThread = new AcceptThread();
@@ -190,7 +190,7 @@ public class Direct extends AbstractDirectModule {
         try { 
             handleAccept(server.accept());    
         } catch (IOException e) {
-            logger.warn(name + ": Got exception while waiting " +
+            logger.warn(module + ": Got exception while waiting " +
                     "for connection!", e);
         }                
     }
@@ -205,7 +205,7 @@ public class Direct extends AbstractDirectModule {
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            
-            throw new ModuleNotSuitableException(name + ": Failed to " +
+            throw new ModuleNotSuitableException(module + ": Failed to " +
                     "connect to " + target + " " + e);           
         }
         

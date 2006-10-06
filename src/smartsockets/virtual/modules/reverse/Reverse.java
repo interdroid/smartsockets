@@ -47,13 +47,13 @@ public class Reverse extends ConnectModule {
 
     public void startModule() throws Exception {
         if (serviceLink == null) {
-            throw new Exception(name + ": no service link available!");       
+            throw new Exception(module + ": no service link available!");       
         }
         
         direct = (Direct) parent.findModule("ConnectModule(Direct)");
         
         if (direct == null) {
-            throw new Exception(name + ": no direct module available!");       
+            throw new Exception(module + ": no direct module available!");       
         }        
     }
 
@@ -77,7 +77,7 @@ public class Reverse extends ConnectModule {
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
         if (target.machine().sameMachine(parent.getLocalHost())) { 
-            throw new ModuleNotSuitableException(name + ": Cannot set up " +
+            throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
                 
@@ -88,7 +88,7 @@ public class Reverse extends ConnectModule {
         VirtualServerSocket ss = 
             (VirtualServerSocket) parent.createServerSocket(0, 1, null);
                        
-        serviceLink.send(target.machine(), target.proxy(), name, PLEASE_CONNECT, 
+        serviceLink.send(target.machine(), target.hub(), module, PLEASE_CONNECT, 
                 target.port() + ":" + ss.getLocalSocketAddress().toString());
         
         DirectVirtualSocket s = null;
@@ -98,7 +98,7 @@ public class Reverse extends ConnectModule {
             // TODO: Check we connected to the right machine here ? 
             s = (DirectVirtualSocket) ss.accept();
         } catch (Exception e) {
-            throw new ModuleNotSuitableException(name + ": Failed to set up " +
+            throw new ModuleNotSuitableException(module + ": Failed to set up " +
                     "reverse connection"); 
         } finally { 
             ss.close();
@@ -114,7 +114,7 @@ public class Reverse extends ConnectModule {
             DirectVirtualSocket s = 
                 (DirectVirtualSocket) direct.connect(target, DEFAULT_TIMEOUT, null);
             
-            logger.info(name + ": Connection to " + target + " created!");                
+            logger.info(module + ": Connection to " + target + " created!");                
             
             // NOTE: The socket is now accepted by the temporary serversocket 
             // we created on the other side. Now we must check if the server 
@@ -122,11 +122,11 @@ public class Reverse extends ConnectModule {
                         
             if (!ss.incomingConnection(s)) { 
                 // TODO: send reply ??
-                logger.info(name + ": ServerSocket refused " + target);
+                logger.info(module + ": ServerSocket refused " + target);
                 s.connectionRejected();
             }
         } catch (Exception e) {
-            logger.info(name + ": Connection to " + target + " failed!", e);                
+            logger.info(module + ": Connection to " + target + " failed!", e);                
         }
     }        
     
@@ -134,12 +134,12 @@ public class Reverse extends ConnectModule {
             int opcode, String message) {
 
         if (opcode != PLEASE_CONNECT) { 
-            logger.warn(name + ": got unexpected message from " + src + "@" + 
+            logger.warn(module + ": got unexpected message from " + src + "@" + 
                    srcProxy + " opcode = " + opcode + ", message = " + message);
             return;
         }
     
-        logger.info(name + ": handling connection request from " + src + "@" + 
+        logger.info(module + ": handling connection request from " + src + "@" + 
                 srcProxy + " message = \"" + message + "\"");  
         
         int localport = 0;
@@ -150,7 +150,7 @@ public class Reverse extends ConnectModule {
             localport = Integer.parseInt(message.substring(0, index));
             target = new VirtualSocketAddress(message.substring(index+1));            
         } catch (Exception e) {
-            logger.warn(name + ": failed to parse target address!", e);
+            logger.warn(module + ": failed to parse target address!", e);
             return;
         }
         
@@ -158,7 +158,7 @@ public class Reverse extends ConnectModule {
         
         if (ss == null) {
             // TODO: send reply ??
-            logger.info(name + ": port " + localport + " not found!");
+            logger.info(module + ": port " + localport + " not found!");
             return;            
         }
         

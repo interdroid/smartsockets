@@ -19,20 +19,23 @@ import smartsockets.virtual.VirtualSocketFactory;
 
 public abstract class ConnectModule implements CallBack {
             
-    public final String name;
+    public final String module;
+    
     public final boolean requiresServiceLink;
     
     protected VirtualSocketFactory parent;
     protected Logger logger;
     protected ServiceLink serviceLink;     
     protected Map properties; 
-        
+    
+    private String name;
+    
     protected ConnectModule(String name, boolean requiresServiceLink) { 
         this(name, requiresServiceLink, null);
     }
     
     protected ConnectModule(String name, boolean requiresServiceLink, Map p) { 
-        this.name = name;
+        this.module = name;
         this.requiresServiceLink = requiresServiceLink;
         
         if (p == null) {         
@@ -54,15 +57,21 @@ public abstract class ConnectModule implements CallBack {
         } 
     }
         
-    public void init(VirtualSocketFactory p, Map properties, Logger l) throws Exception {
+    public void init(VirtualSocketFactory p, String name, Map properties, 
+            Logger l) throws Exception {
         
+        this.name = name;
         parent = p;        
         logger = l;               
                 
-        l.info("Initializing module: " + name);
+        l.info("Initializing module: " + name + " -> " + module);
                         
         // Now perform the implementation-specific initialization.
         initModule(properties);
+    }
+    
+    public String getName() { 
+        return name;
     }
     
     public void startModule(ServiceLink sl) throws Exception { 
@@ -70,12 +79,12 @@ public abstract class ConnectModule implements CallBack {
         if (requiresServiceLink) { 
             
             if (sl == null) {
-                throw new Exception("Failed to initialize module: " + name 
+                throw new Exception("Failed to initialize module: " + module 
                         + " (service link required)");                
             } 
               
             serviceLink = sl;
-            serviceLink.register(name, this);        
+            serviceLink.register(module, this);        
         }   
         
         startModule();
@@ -85,7 +94,7 @@ public abstract class ConnectModule implements CallBack {
             int opcode, String message) {
         // Note: Default implementation. Should be extended by any module 
         // which requires use of service links         
-        logger.warn("Module: "+ name + " got unexpected message from " + src 
+        logger.warn("Module: "+ module + " got unexpected message from " + src 
                 + "@" + proxy + ", " + opcode + ", " + message);
     }
     
@@ -156,7 +165,7 @@ public abstract class ConnectModule implements CallBack {
         String tmp = (String) requirements.get("connect.module.skip");
         
         if (tmp != null) { 
-            if (contains(tmp, name)) { 
+            if (contains(tmp, module)) { 
                 return false;
             } // else, continue with other checks            
         }
@@ -186,7 +195,7 @@ public abstract class ConnectModule implements CallBack {
         
         if (tmp != null) { 
             selectionExists = true;
-            selected = contains(tmp, name); 
+            selected = contains(tmp, module); 
         }
         
         // Check if there are certain module types explicitly selected.

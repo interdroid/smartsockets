@@ -8,6 +8,7 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class VirtualSocketFactory {
     private final HashMap connectionSetupCache = new HashMap(); 
     
     protected static Logger logger =         
-        ibis.util.GetLogger.getLogger(VirtualSocketFactory.class.getName());
+        ibis.util.GetLogger.getLogger("smartsockets.virtual.misc");
             
     private final ArrayList modules = new ArrayList();
 
@@ -51,22 +52,35 @@ public class VirtualSocketFactory {
     private SocketAddressSet myAddresses;      
     private SocketAddressSet proxyAddress;    
     private String cluster;
-        
+    
     private ServiceLink serviceLink;
+    
+    private ClusterDefinition defaultOrder;
+    private HashMap clusterSpecificOrder;
             
+    private class ClusterDefinition {         
+        final String name;        
+        final ConnectModule [] order;
+        
+        ClusterDefinition(String name, ConnectModule [] order) {
+            this.name = name;
+            this.order = order;
+        }
+    }
+    
     private VirtualSocketFactory(TypedProperties p) throws Exception {
                 
         logger.info("Creating VirtualSocketFactory");    
         
         properties = p;
-    
-        cluster = p.getProperty(Properties.CLUSTER_MEMBER, null);
         
         DEFAULT_BACKLOG = p.getIntProperty(Properties.BACKLOG);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT);
         DEFAULT_DISCOVERY_PORT = p.getIntProperty(Properties.DISCOVERY_PORT);
-                       
-        loadModules();
+    
+        // NOTE: order is VERY important here!
+        loadModules();        
+        loadClusterDefinitions();                        
         createServiceLink();
         passServiceLinkToModules();        
         
@@ -76,6 +90,87 @@ public class VirtualSocketFactory {
         }       
     } 
     
+    private void loadClusterDefinitions() { 
+        
+        cluster = properties.getProperty(Properties.CLUSTER_MEMBER, null);               
+        
+        String [] clusters = 
+            properties.getStringList(Properties.CLUSTER_DEFINE, ",", null);
+               
+        if (clusters == null && cluster != null) { 
+            logger.warn("No virtual cluster definitions found!");
+            return;
+        }
+        
+        if (clusters != null && cluster == null) { 
+            logger.warn("I am not a member of any of the virtual clusters!");
+            return;
+        }
+
+        int myCluster = -1;
+        
+        for (int i=0;i<clusters.length;i++) { 
+            if (clusters[i].equals(cluster)) { 
+                myCluster = i;
+                break;
+            }
+        }
+        
+        if (myCluster == -1) { 
+            logger.warn("Missing the virtual cluster definition for " + cluster);
+            return;            
+        }
+        
+        logger.info("Processing cluster definitions:");
+        logger.info("  - my cluster: " + cluster);
+
+        String prefix = Properties.CLUSTER_PREFIX + cluster + ".";
+                
+        // First get the 'default' connect rule
+        String p = prefix + Properties.CLUSTER_DEFAULT;                 
+        String [] tmp = properties.getStringList(p, ",", null);
+        
+        if (tmp != null) {
+            // NOTE the two spaces at the end are intentional!
+            defaultOrder = new ClusterDefinition("default", getModules(tmp));            
+            logger.info("  - default : " + Arrays.deepToString(tmp));
+        }
+
+        // Next, get the rule for how we are supposed to connect inside our own 
+        // cluster...                
+        p = prefix + Properties.CLUSTER_INSIDE;                
+        tmp = properties.getStringList(p, ",", null);
+        
+        if (tmp != null) { 
+            addClusterDefinition(cluster, tmp);
+        }
+
+        // Finally, extract the connect rules for any of the other clusters...
+        for (int i=0;i<clusters.length;i++) {
+            if (i != myCluster) { 
+                p = prefix + Properties.CLUSTER_PREFERENCE + clusters[i];
+                
+                tmp = properties.getStringList(p, ",", null);
+                
+                if (tmp != null) { 
+                    addClusterDefinition(clusters[i], tmp);
+                }
+            }
+        }
+    }
+    
+    private void addClusterDefinition(String name, String[] order) {
+        
+        logger.info("  - to " + name + " : " + Arrays.deepToString(order));
+        
+        if (clusterSpecificOrder == null) { 
+            clusterSpecificOrder = new HashMap();
+        }
+        
+        clusterSpecificOrder.put(name, 
+                new ClusterDefinition(name, getModules(order)));        
+    }
+
     private void createServiceLink(){ 
         
         SocketAddressSet address = null;
@@ -176,7 +271,9 @@ public class VirtualSocketFactory {
         // Get the list of modules that we should load...
         String [] mods = 
             properties.getStringList(Properties.MODULES_DEFINE, ",", null);
-                        
+
+        int count = mods.length;
+        
         if (mods == null || mods.length == 0) { 
             logger.error("No smartsockets modules defined!");
             return;
@@ -192,6 +289,7 @@ public class VirtualSocketFactory {
                     if (skip[s].equals(mods[m])) {
                         logger.info("Skipping module " + mods[m]);                        
                         mods[m] = null;
+                        count--;
                     }
                 }
             }        
@@ -205,14 +303,14 @@ public class VirtualSocketFactory {
             }
         }
         
-        logger.info("Loading modules: " + t);
+        logger.info("Loading " + count + " modules: " + t);
                 
         for (int i=0;i<mods.length;i++) {
             
             if (mods[i] != null) {              
                 try {                                 
                     ConnectModule m = loadModule(mods[i]);            
-                    m.init(this, properties, logger);
+                    m.init(this, mods[i], properties, logger);
 
                     SocketAddressSet tmp = m.getAddresses();
 
@@ -227,15 +325,48 @@ public class VirtualSocketFactory {
                     modules.add(m);
                 } catch (Exception e) {
                     logger.warn("Failed to load module: " + mods[i], e);
+                    mods[i] = null;
+                    count--;
                 }
             } 
         }
 
-        logger.info("All modules loaded");
+        logger.info(count + " modules loaded, determining order...");
         
-        // TODO: look the order ?
+        String [] order = 
+            properties.getStringList(Properties.MODULES_ORDER, ",", mods);
+                        
+        defaultOrder = new ClusterDefinition("default", getModules(order)); 
     }
+
+    private ConnectModule [] getModules(String [] names) { 
+
+        ArrayList tmp = new ArrayList();
         
+        for (int i=0;i<names.length;i++) {
+        
+            boolean found = false;
+            
+            if (names[i] != null && !names[i].equals("none")) {                
+                for (int j=0;j<modules.size();j++) {                     
+                    ConnectModule m = (ConnectModule) modules.get(j); 
+                    
+                    if (m.getName().equals(names[i])) { 
+                        tmp.add(m);
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) { 
+                    logger.warn("Module " + names[i] + " not found!");
+                }                
+            }
+        }
+        
+        return (ConnectModule []) tmp.toArray(new ConnectModule[tmp.size()]);
+    }
+    
     private void passServiceLinkToModules() { 
         
         Iterator itt = modules.iterator();
@@ -246,7 +377,7 @@ public class VirtualSocketFactory {
             try { 
                 c.startModule(serviceLink);
             } catch (Exception e) { 
-                logger.warn("Module " + c.name 
+                logger.warn("Module " + c.module 
                         + " did not accept serviceLink!", e);
                 itt.remove();
             }
@@ -263,7 +394,7 @@ public class VirtualSocketFactory {
 
         for (int i=0;i<modules.size();i++) { 
             ConnectModule m = (ConnectModule) modules.get(i);
-            if (m.name.equals(name)) { 
+            if (m.module.equals(name)) { 
                 return m;
             }
         } 
@@ -304,7 +435,7 @@ public class VirtualSocketFactory {
         for (int i=0;i<modules.size();i++) {            
             ConnectModule m = (ConnectModule) modules.get(i);
             
-            if (m.name.equals(name)) { 
+            if (m.module.equals(name)) { 
                 return m;
             }            
         }
@@ -318,7 +449,7 @@ public class VirtualSocketFactory {
         
         if (m.matchRuntimeRequirements(properties)) {
             
-            logger.info("Using module " + m.name + " to set up " +
+            logger.info("Using module " + m.module + " to set up " +
                     "connection to " + target);
             
             long start = System.currentTimeMillis();
@@ -332,7 +463,7 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);                    
-                    logger.debug("Sucess with module " + m.name 
+                    logger.debug("Sucess with module " + m.module 
                             + " connected to " + target + " (time = " + 
                             (end-start) + " ms.)");
                     
@@ -348,7 +479,7 @@ public class VirtualSocketFactory {
             }            
             // NOTE: other exceptions are forwarded to the user!
         } else { 
-            logger.info("Module " + m.name + " may not be used to set " +
+            logger.info("Module " + m.module + " may not be used to set " +
                     "up connection to " + target);
             
         }
@@ -370,12 +501,24 @@ public class VirtualSocketFactory {
             timeout = DEFAULT_TIMEOUT;
         }
         
-        if (timeout == 0 && modules.size() > 1) { 
+        String targetCluster = target.cluster();
+        
+        ClusterDefinition cd = defaultOrder;
+        
+        if (targetCluster != null && clusterSpecificOrder != null) {
+            if (clusterSpecificOrder.containsKey(targetCluster)) {             
+               cd = (ClusterDefinition) clusterSpecificOrder.get(targetCluster);
+            }
+        }
+        
+        if (timeout == 0 && cd.order.length > 1) { 
             timeout = DEFAULT_TIMEOUT;
         }
             
         // First check if we remember which module was succesfull the last time
         // we connected to this machine...
+        
+        /* TODO: repair this...
         boolean cache = false;
         String winner = null;
                
@@ -400,32 +543,36 @@ public class VirtualSocketFactory {
                 notSuitableCount++;
             }
         }
-                
+        */
+        
         // Now try the remaining modules (or all of them if we weren't 
         // using the cache in the first place...) 
-        for (int i=0;i<modules.size();i++) {
+        for (int i=0;i<cd.order.length;i++) {
             
-            ConnectModule m = (ConnectModule) modules.get(i);
+            ConnectModule m = cd.order[i];
             
-            if (winner != null && m.name.equals(winner)) {
+            /* TODO: repair this..
+            if (winner != null && m.module.equals(winner)) {
                 // we already tried this module 
                 break;
-            }
+            }            
+            */
             
             VirtualSocket vs = createClientSocket(m, target, timeout, prop);
             
-            if (vs != null) {                 
+            if (vs != null) {
+                /* TODO: repair this...
                 if (cache) { 
-                    connectionSetupCache.put(target, m.name);
+                    connectionSetupCache.put(target, m.module);
                 }
-                                
+                */              
                 return vs;
             }
             
             notSuitableCount++;
         }        
         
-        if (notSuitableCount == modules.size()) {
+        if (notSuitableCount == cd.order.length) {
             logger.info("No suitable module found to connect to " + target);
                     
             // No suitable modules found...
