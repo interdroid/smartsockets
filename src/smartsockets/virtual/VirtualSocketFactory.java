@@ -49,8 +49,9 @@ public class VirtualSocketFactory {
     private int nextPort = 3000;    
     
     private SocketAddressSet myAddresses;      
-    private SocketAddressSet proxyAddress;
-    
+    private SocketAddressSet proxyAddress;    
+    private String cluster;
+        
     private ServiceLink serviceLink;
             
     private VirtualSocketFactory(TypedProperties p) throws Exception {
@@ -497,7 +498,8 @@ public class VirtualSocketFactory {
             }
             
             VirtualSocketAddress a = 
-                new VirtualSocketAddress(myAddresses, port, proxyAddress);
+                new VirtualSocketAddress(myAddresses, port, proxyAddress, 
+                        cluster);
             
             VirtualServerSocket vss = new VirtualServerSocket(this, a, port, 
                     backlog, properties);
@@ -514,7 +516,15 @@ public class VirtualSocketFactory {
     public SocketAddressSet getLocalHost() { 
         return myAddresses;
     }
-        
+    
+    public String getLocalCluster() { 
+        return cluster;
+    }
+    
+    public SocketAddressSet getLocalProxy() { 
+        return proxyAddress;        
+    }
+    
     protected void closed(int port) {        
         synchronized (serverSockets) {
             serverSockets.remove(new Integer(port));           

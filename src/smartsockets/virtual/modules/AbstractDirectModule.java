@@ -88,7 +88,9 @@ public abstract class AbstractDirectModule extends ConnectModule {
             }
             
             VirtualSocket vs = createVirtualSocket(
-                    new VirtualSocketAddress(target, targetPort, null), ds, out, in);
+                    new VirtualSocketAddress(target, targetPort, 
+                            parent.getLocalProxy(), parent.getLocalCluster()), 
+                            ds, out, in);
             
             // Next check if the serverSocket is willing to accept                        
             boolean accept = vss.incomingConnection(vs);

@@ -89,7 +89,7 @@ public class Reverse extends ConnectModule {
             (VirtualServerSocket) parent.createServerSocket(0, 1, null);
                        
         serviceLink.send(target.machine(), target.proxy(), name, PLEASE_CONNECT, 
-                target.port() + ":" + ss.getPort());
+                target.port() + ":" + ss.getLocalSocketAddress().toString());
         
         DirectVirtualSocket s = null;
         
@@ -143,14 +143,14 @@ public class Reverse extends ConnectModule {
                 srcProxy + " message = \"" + message + "\"");  
         
         int localport = 0;
-        int remoteport = 0;
+        VirtualSocketAddress target = null;
         
         try {
             int index = message.indexOf(':');
             localport = Integer.parseInt(message.substring(0, index));
-            remoteport = Integer.parseInt(message.substring(index+1));            
+            target = new VirtualSocketAddress(message.substring(index+1));            
         } catch (Exception e) {
-            logger.warn(name + ": failed to parse target port!", e);
+            logger.warn(name + ": failed to parse target address!", e);
             return;
         }
         
@@ -161,9 +161,6 @@ public class Reverse extends ConnectModule {
             logger.info(name + ": port " + localport + " not found!");
             return;            
         }
-
-        VirtualSocketAddress target = 
-            new VirtualSocketAddress(src, remoteport, srcProxy);
         
         if (USE_THREAD) { 
             new Connector(ss, target).start();    
