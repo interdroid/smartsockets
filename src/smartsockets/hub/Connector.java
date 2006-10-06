@@ -27,7 +27,7 @@ class Connector extends CommunicationThread {
     Connector(StateCounter state, Connections connections,
             HubList knownProxies, DirectSocketFactory factory) {
         
-        super("ProxyConnector", state, connections, knownProxies, factory);
+        super("HubConnector", state, connections, knownProxies, factory);
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
@@ -177,7 +177,8 @@ class Connector extends CommunicationThread {
         
             d.setReachable();       
         } catch (Exception e) {
-            hconlogger.warn("Got exception!", e);        
+            // This happens a lot, so it's not worth a warning...
+            hconlogger.debug("Got exception!", e);        
             d.setUnreachable();
        }
         
