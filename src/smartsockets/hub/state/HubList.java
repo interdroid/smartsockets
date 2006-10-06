@@ -12,8 +12,7 @@ import smartsockets.direct.SocketAddressSet;
 public class HubList {
         
     private static int RETRY_DELAY = 15000;
-    
-    
+        
     private final StateCounter state; 
   
     private final LinkedList connectedHubs = new LinkedList();
@@ -294,7 +293,7 @@ public class HubList {
         return good;
     }
     
-    public Iterator findProxiesForTarget(String target, boolean includeLocal) { 
+    public Iterator findHubsForTarget(String target, boolean includeLocal) { 
         
         PartialIterator result = new PartialIterator();
         
@@ -317,15 +316,15 @@ public class HubList {
         return result;
     }
                
-    public synchronized String [] proxiesAsString() {
+    public synchronized String [] hubsAsString() {
         
-        int proxies = map.size();
+        int count = map.size();
         
-        String [] result = new String[proxies]; 
+        String [] result = new String[count]; 
         
         Iterator itt = map.values().iterator();
         
-        for (int i=0;i<proxies;i++) { 
+        for (int i=0;i<count;i++) { 
             result[i] = ((HubDescription) itt.next()).hubAddressAsString;                                               
         }
 

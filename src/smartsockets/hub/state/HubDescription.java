@@ -89,6 +89,12 @@ public class HubDescription {
             return true;
         } 
     }
+    
+    public boolean knowsClient(String client) {
+        synchronized (clients) {            
+            return clients.containsKey(client);
+        }
+    }
 
     public boolean removeClient(String client) {
         

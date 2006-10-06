@@ -51,27 +51,13 @@ public class HubConnection extends MessageForwardingConnection {
         lastSendState = state.get();
     }
     
-    public synchronized void writeMessage(String source, String sourceProxy,  
-            String target, String targetProxy, String module, int code, 
-            String message, int hopsLeft) { 
+    public synchronized void writeMessage(ClientMessage cm) { 
         
-        if (targetProxy == null) { 
-            targetProxy = "";
-        }
-                
         try {
             out.writeByte(HubProtocol.CLIENT_MESSAGE);
             
-            out.writeUTF(source);
-            out.writeUTF(sourceProxy);
-        
-            out.writeUTF(target);
-            out.writeUTF(targetProxy);
+            cm.write(out);
             
-            out.writeUTF(module);
-            out.writeInt(code);
-            out.writeUTF(message);
-            out.writeInt(hopsLeft);
             out.flush();
         } catch (IOException e) {
             System.err.println("Unhandled exception in writeMessage!!" + e);            
@@ -213,24 +199,9 @@ public class HubConnection extends MessageForwardingConnection {
   
     private void handleClientMessage() throws IOException {
         
-        String source = in.readUTF();
-        String sourceProxy = in.readUTF();
-        
-        String target = in.readUTF();
-        String targetProxy = in.readUTF();
-        
-        String module = in.readUTF();
-        int code = in.readInt();
-        
-        String message = in.readUTF();
-        int hopsLeft = in.readInt();
-        
-        meslogger.debug("Got message [" + source + "@" + sourceProxy + ", " 
-                + target  + "@" + targetProxy + ", " + module + ", " + code 
-                + ", " + message + ", " + hopsLeft + "]");
-               
-        forward(source, sourceProxy, target, targetProxy, module, code, message,
-                hopsLeft);          
+        ClientMessage cm = new ClientMessage(in);        
+        meslogger.debug("Got message: " + cm);               
+        forward(cm, false);          
     }
     
     protected String getName() { 

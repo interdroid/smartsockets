@@ -42,17 +42,13 @@ public class ClientConnection extends MessageForwardingConnection {
 
     private void handleMessage() throws IOException { 
         // Read the message
-        String target = in.readUTF();
-        String targetProxy = in.readUTF();               
-        String module = in.readUTF();
-        int code = in.readInt();
-        String message = in.readUTF();
         
-        meslogger.debug("Incoming message: [" + target + "@" + targetProxy 
-                + ", " + module + ", " + code + ", " + message); 
-
-        forwardMessageFromClient(clientAddress, target, targetProxy, module, 
-                code, message);
+        ClientMessage cm = new ClientMessage(clientAddress, 
+                knownHubs.getLocalDescription().hubAddressAsString, 0, in);
+        
+        meslogger.debug("Incoming message: " + cm);
+        
+        forward(cm, true);
     } 
                 
     private void disconnect() {
@@ -68,20 +64,15 @@ public class ClientConnection extends MessageForwardingConnection {
         DirectSocketFactory.close(s, out, in);            
     } 
     
-    synchronized boolean sendMessage(String src, String srcProxy, String module,
-            int code, String message) {  
+    synchronized boolean sendMessage(ClientMessage m) {  
         
         try { 
-            out.write(ServiceLinkProtocol.MESSAGE);
-            out.writeUTF(src);
-            out.writeUTF(srcProxy);            
-            out.writeUTF(module);
-            out.writeInt(code);
-            out.writeUTF(message);
+            out.write(ServiceLinkProtocol.MESSAGE);            
+            m.writePartially(out);
             out.flush();
             return true;
         } catch (IOException e) {
-            meslogger.warn("Connection " + src + " is broken!", e);
+            meslogger.warn("Connection " + clientAddress + " is broken!", e);
             DirectSocketFactory.close(s, out, in);
             return false;                
         }
@@ -93,7 +84,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        String [] proxies = knownHubs.proxiesAsString();
+        String [] proxies = knownHubs.hubsAsString();
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
