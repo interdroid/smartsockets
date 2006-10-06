@@ -15,8 +15,8 @@ public class HubDescription {
     public static final byte UNREACHABLE = 1;
     public static final byte REACHABLE   = 2;
     
-    public final SocketAddressSet proxyAddress;
-    public final String proxyAddressAsString;
+    public final SocketAddressSet hubAddress;
+    public final String hubAddressAsString;
     
     final StateCounter state;        
     final boolean local;
@@ -48,7 +48,7 @@ public class HubDescription {
     private byte canReachMe = UNKNOWN;
 
     // Maintain a list of machines that have registered themselves as clients. 
-    // Note that this is probably a very bad idea from a scalabitly point of 
+    // Note that this is probably a very bad idea from a scalability point of 
     // view...
     private TreeMap clients = new TreeMap(); 
 
@@ -62,8 +62,8 @@ public class HubDescription {
             boolean local) {
         
         this.state = state;        
-        this.proxyAddress = address;
-        this.proxyAddressAsString = address.toString();
+        this.hubAddress = address;
+        this.hubAddressAsString = address.toString();
         this.lastLocalUpdate = state.increment();
         
         this.reachable = UNKNOWN;
@@ -76,7 +76,7 @@ public class HubDescription {
         
         if (!local) { 
             throw new IllegalStateException("Cannot add clients to remote"
-                    + " proxy descriptions!");
+                    + " hub descriptions!");
         }
         
         synchronized (clients) {            
@@ -94,7 +94,7 @@ public class HubDescription {
         
         if (!local) { 
             throw new IllegalStateException("Cannot remove clients from remote"
-                    + " proxy descriptions!");
+                    + " hub descriptions!");
         }
                 
         synchronized (clients) {            
@@ -112,7 +112,7 @@ public class HubDescription {
         
         if (local) { 
             throw new IllegalStateException("Cannot update clients of local"
-                    + " proxy description!");
+                    + " hub description!");
         }
                 
         synchronized (clients) {            
@@ -287,7 +287,7 @@ public class HubDescription {
     public synchronized boolean createConnection(HubConnection c) {
         
         if (connection != null) {
-            // Already have a connection to this proxy!
+            // Already have a connection to this hub!
             return false;
         }
         
@@ -321,7 +321,7 @@ public class HubDescription {
     public String toString() { 
     
         StringBuffer buffer = new StringBuffer();
-        buffer.append("Address      : ").append(proxyAddress).append('\n');  
+        buffer.append("Address      : ").append(hubAddress).append('\n');  
         
         buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
         
@@ -335,7 +335,7 @@ public class HubDescription {
                 
             if (reachable == UNREACHABLE && indirection != null) { 
                 buffer.append("Reachable Via: ").append(
-                        indirection.proxyAddressAsString).append('\n');
+                        indirection.hubAddressAsString).append('\n');
             }        
 
             buffer.append("Required Hops: ").append(hops).append('\n');

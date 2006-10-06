@@ -38,10 +38,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             String srcProxy, String target, String targetProxy,  
             String module, int code, String message, int hopsLeft) {
         
-        String address = p.proxyAddressAsString;
+        String address = p.hubAddressAsString;
         
         logger.info("Attempting to forward message to proxy "
-                + p.proxyAddress);
+                + p.hubAddress);
         
         if (forwardMessageToProxy(address, src, srcProxy, target, targetProxy, 
                 module, code, message, hopsLeft)) {
@@ -72,16 +72,16 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             return;
         } 
 
-        if (forwardMessageToProxy(p2.proxyAddressAsString, src, srcProxy, 
+        if (forwardMessageToProxy(p2.hubAddressAsString, src, srcProxy, 
                 target, targetProxy, module, code, message, hopsLeft)) { 
 
             logger.info("Succesfully forwarded message to proxy " 
-                    + p2.proxyAddressAsString + " using direct link");
+                    + p2.hubAddressAsString + " using direct link");
             return;            
         } 
 
         logger.info("Failed to forward message to proxy " + address 
-                + " or it's indirection " + p2.proxyAddressAsString);
+                + " or it's indirection " + p2.hubAddressAsString);
     }
     
     // Forwards a message from a client to a target client. If the target is 
@@ -91,7 +91,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected void forwardMessageFromClient(String src, String target, 
             String targetProxy, String module, int code, String message) { 
         // Get the local proxy address.
-        String local = knownProxies.getLocalDescription().proxyAddressAsString;
+        String local = knownProxies.getLocalDescription().hubAddressAsString;
         
         // TODO: what is a decent value for hopsleft ??
         forward(src, local, target, targetProxy, module, code, message, 10);            
@@ -152,10 +152,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Still some hops left, so we now broadcast the message.
         logger.info("Broadcasting message for " + target + "@" + targetProxy); 
                 
-        Iterator itt = knownProxies.connectedProxiesIterator();
+        Iterator itt = knownProxies.connectedHubsIterator();
         
         while (itt.hasNext()) { 
-            String p = ((HubDescription) itt.next()).proxyAddressAsString;
+            String p = ((HubDescription) itt.next()).hubAddressAsString;
 
             // Make sure we don't return the message the the sender...
             if (!p.equals(srcProxy)) { 

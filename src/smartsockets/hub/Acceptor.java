@@ -53,7 +53,7 @@ public class Acceptor extends CommunicationThread {
         System.err.println("Proxy listnening at: " + localAsString);
     }
 
-    private boolean handleIncomingProxyConnect(DirectSocket s, 
+    private boolean handleIncomingHubConnect(DirectSocket s, 
             DataInputStream in, DataOutputStream out) throws IOException { 
 
         String otherAsString = in.readUTF();        
@@ -61,11 +61,11 @@ public class Acceptor extends CommunicationThread {
 
         logger.info("Got connection from " + addr);
 
-        HubDescription d = knownProxies.add(addr);        
+        HubDescription d = knownHubs.add(addr);        
         d.setCanReachMe();
 
         HubConnection c = 
-            new HubConnection(s, in, out, d, connections, knownProxies, state);
+            new HubConnection(s, in, out, d, connections, knownHubs, state);
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this proxy...            
@@ -124,11 +124,11 @@ public class Acceptor extends CommunicationThread {
             out.flush();
 
             ClientConnection c = new ClientConnection(src, s, in, out, 
-                    connections, knownProxies);
+                    connections, knownHubs);
             connections.addConnection(src, c);                                               
             c.activate();
 
-            knownProxies.getLocalDescription().addClient(src);
+            knownHubs.getLocalDescription().addClient(src);
             return true;
 
         } catch (IOException e) { 
@@ -277,7 +277,7 @@ public class Acceptor extends CommunicationThread {
 
             switch (opcode) {
             case HubProtocol.CONNECT:
-                result = handleIncomingProxyConnect(s, in, out);                   
+                result = handleIncomingHubConnect(s, in, out);                   
                 break;
 
             case HubProtocol.PING:

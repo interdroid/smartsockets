@@ -2,17 +2,13 @@ package smartsockets.hub;
 
 
 import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.Dictionary;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.discovery.Callback;
 import smartsockets.discovery.Discovery;
-import smartsockets.discovery.Sender;
 import smartsockets.hub.connections.Connections;
 import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.state.HubDescription;
@@ -28,7 +24,7 @@ public class Hub extends Thread {
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(Hub.class.getName());
                
-    private HubList proxies;    
+    private HubList hubs;    
     private Connections connections;
     
     private Acceptor acceptor;
@@ -44,19 +40,19 @@ public class Hub extends Thread {
     
     public Hub(SocketAddressSet [] proxyAds) throws IOException { 
 
-        super("GossipProxy");
+        super("GossipHub");
         
-        logger.info("Creating GossipProxy");
+        logger.info("Creating GossipHub");
                 
         DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
         
-        // Create the proxy list
-        proxies = new HubList(state);
+        // Create the hub list
+        hubs = new HubList(state);
                 
         connections = new Connections();
         
-        acceptor = new Acceptor(state, connections, proxies, factory);        
-        connector = new Connector(state, connections, proxies, factory);
+        acceptor = new Acceptor(state, connections, hubs, factory);        
+        connector = new Connector(state, connections, hubs, factory);
         
         SocketAddressSet local = acceptor.getLocal();         
         
@@ -69,9 +65,9 @@ public class Hub extends Thread {
         localDesc.setReachable();
         localDesc.setCanReachMe();
         
-        proxies.addLocalDescription(localDesc);
+        hubs.addLocalDescription(localDesc);
 
-        addProxies(proxyAds);
+        addHubs(proxyAds);
         
         logger.info("Starting Gossip connector/acceptor");
                 
@@ -88,15 +84,15 @@ public class Hub extends Thread {
         start();
     }
 
-    public void addProxies(SocketAddressSet [] proxyAds) { 
+    public void addHubs(SocketAddressSet [] hubAddresses) { 
         
-        if (proxyAds == null || proxyAds.length == 0) { 
+        if (hubAddresses == null || hubAddresses.length == 0) { 
             return;
         }
         
-        for (int i=0;i<proxyAds.length;i++) { 
-            if (proxyAds[i] != null) { 
-                proxies.add(proxyAds[i]);
+        for (int i=0;i<hubAddresses.length;i++) { 
+            if (hubAddresses[i] != null) { 
+                hubs.add(hubAddresses[i]);
             } 
         }
     }
@@ -104,19 +100,19 @@ public class Hub extends Thread {
     private void gossip() { 
         
         logger.info("Starting gossip round (local state = " + state.get() + ")");        
-        //logger.info("I know the following proxies:\n" + proxies.toString());        
+        logger.info("I know the following hubs:\n" + hubs.toString());        
                         
-        Iterator itt = proxies.connectedProxiesIterator();
+        Iterator itt = hubs.connectedHubsIterator();
         
         while (itt.hasNext()) { 
             HubDescription d = (HubDescription) itt.next();            
             HubConnection c = d.getConnection();
             
             if (c != null) {
-                logger.info("Gossip with " + d.proxyAddressAsString); 
+                logger.info("Gossip with " + d.hubAddressAsString); 
                 c.gossip(state.get());
             } else { 
-                logger.info("Cannot gossip with " + d.proxyAddressAsString 
+                logger.info("Cannot gossip with " + d.hubAddressAsString 
                         + ": NO CONNECTION!");
             }
         }                   

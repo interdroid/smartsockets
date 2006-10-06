@@ -21,7 +21,10 @@ public class HubList {
     
     private final StateCounter state; 
   
-    private final LinkedList checked = new LinkedList();     
+    private final LinkedList connectedHubs = new LinkedList();
+    
+    // TODO: actually use this list! 
+    private final LinkedList unConnectedHubs = new LinkedList();         
     private final LinkedList mustCheck = new LinkedList();
         
     private final HashMap map = new HashMap();    
@@ -56,12 +59,11 @@ public class HubList {
         this.state = state; 
     }
         
-    public synchronized HubDescription nextProxyToCheck() {
+    public synchronized HubDescription nextHubToCheck() {
                
         // Wait until there are proxies to check.
         while (mustCheck.size() == 0) {            
             try { 
-//                System.out.println("@@@@@@@@@@@@@ waiting");
                 wait();
             } catch (InterruptedException e) {
                 // ignore
@@ -69,16 +71,10 @@ public class HubList {
         } 
         
         while (true) { 
-
-            //System.out.println("@@@@@@@@@@@@@ get proxy");
-            
             // Get the first one from the list. 
             HubDescription tmp = (HubDescription) mustCheck.getFirst();
             
             if (tmp.getLastContact() == 0) {
-                
-                //System.out.println("@@@@@@@@@@@@@ return new");
-                
                 // it's a new entry, so we can check it immediately
                 return (HubDescription) mustCheck.removeFirst();                        
             }
@@ -87,9 +83,6 @@ public class HubList {
             long now = System.currentTimeMillis();
 
             if (tmp.getLastConnect()+RETRY_DELAY < now) {
-
-                //System.out.println("@@@@@@@@@@@@@ return old");
-                
                 // we've passed the deadline and can return the proxy. 
                 return (HubDescription) mustCheck.removeFirst();
             }
@@ -97,7 +90,6 @@ public class HubList {
             long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;
             
             try {
-                //System.out.println("@@@@@@@@@@@@@ old wait " + waitTime);                
                 wait(waitTime);
             } catch (InterruptedException e) {
                 // ignore
@@ -114,7 +106,7 @@ public class HubList {
         // The description of the local machine is only put in the map, not the
         // list...
         localDescription = desc;
-        map.put(desc.proxyAddress, desc);        
+        map.put(desc.hubAddress, desc);        
     }
     
     public HubDescription getLocalDescription() {
@@ -138,17 +130,16 @@ public class HubList {
             return null;
         }
     }
-    
-    
+        
     public synchronized Iterator iterator() { 
         return map.values().iterator();
     }
     
-    public synchronized Iterator connectedProxiesIterator() { 
+    public synchronized Iterator connectedHubsIterator() { 
         
         PartialIterator result = new PartialIterator();
         
-        Iterator i = checked.iterator();
+        Iterator i = connectedHubs.iterator();
         
         while (i.hasNext()) { 
             result.add(i.next());
@@ -171,7 +162,7 @@ public class HubList {
     public synchronized void putBack(HubDescription d) {
         
         if (d.reachableKnown() && d.isReachable()) { 
-            checked.addLast(d);        
+            connectedHubs.addLast(d);        
         } else {
             // Existing entries go to the tail of the list
             mustCheck.addLast(d);
@@ -185,7 +176,7 @@ public class HubList {
         
         if (tmp == null) {   
             tmp = new HubDescription(a, state);
-            map.put(tmp.proxyAddress, tmp);
+            map.put(tmp.hubAddress, tmp);
             
             System.out.println("@@@@@@@@@@@@@ ADD NEW PROXY:\n " + tmp + "\n");      
                                    
@@ -235,19 +226,19 @@ public class HubList {
                         + client + ":\n" + tmp + "\n");
                 
                 if (tmp == localDescription) {
-                    good.addFirst(tmp.proxyAddressAsString);                    
+                    good.addFirst(tmp.hubAddressAsString);                    
                 } else if (tmp.isReachable()) {
-                    good.addLast(tmp.proxyAddressAsString);
+                    good.addLast(tmp.hubAddressAsString);
                 } else if (tmp.canReachMe()) { 
-                    bad.addLast(tmp.proxyAddressAsString);
+                    bad.addLast(tmp.hubAddressAsString);
                 } else {                                         
                     HubDescription indi = tmp.getIndirection();
                     
                     if (indi != null) { 
                         if (indi.isReachable()) { 
-                            ugly.addFirst(indi.proxyAddressAsString);
+                            ugly.addFirst(indi.hubAddressAsString);
                         } else if (indi.canReachMe()) {  
-                            ugly.addLast(indi.proxyAddressAsString);
+                            ugly.addLast(indi.hubAddressAsString);
                         }
                     }
                 }
@@ -281,9 +272,9 @@ public class HubList {
             
             HubDescription tmp = (HubDescription) itt.next();
             
-            if (skip != null && skip.contains(tmp.proxyAddress.toString())) { 
+            if (skip != null && skip.contains(tmp.hubAddress.toString())) { 
                 System.out.println("@@@@@@@@@@@@@ Skipping proxy: " 
-                        + tmp.proxyAddress);                 
+                        + tmp.hubAddress);                 
             
             } else if (tmp.containsClient(client)) {
 
@@ -340,7 +331,7 @@ public class HubList {
         Iterator itt = map.values().iterator();
         
         for (int i=0;i<proxies;i++) { 
-            result[i] = ((HubDescription) itt.next()).proxyAddressAsString;                                               
+            result[i] = ((HubDescription) itt.next()).hubAddressAsString;                                               
         }
 
         return result;
@@ -362,8 +353,28 @@ public class HubList {
     public String toString() {
         
         StringBuffer result = new StringBuffer();
+       
+        result.append("Hubs with a direct connection:\n");
         
-        Iterator itt = iterator();
+        Iterator itt = connectedHubs.iterator();
+        
+        while (itt.hasNext()) { 
+            HubDescription desc = (HubDescription) itt.next();
+            result.append(desc).append('\n');            
+        }
+        
+        result.append("Hubs without a direct connection:\n");
+        
+        itt = unConnectedHubs.iterator();
+        
+        while (itt.hasNext()) { 
+            HubDescription desc = (HubDescription) itt.next();
+            result.append(desc).append('\n');            
+        }
+        
+        result.append("Hubs which need to be checked:\n");
+        
+        itt = mustCheck.iterator();
         
         while (itt.hasNext()) { 
             HubDescription desc = (HubDescription) itt.next();

@@ -79,7 +79,7 @@ public class HubConnection extends MessageForwardingConnection {
             int writes = 0;
 
             logger.info("=============================="); 
-            logger.info("Gossiping with: " + peer.proxyAddress); 
+            logger.info("Gossiping with: " + peer.hubAddress); 
             
             Iterator itt = knownProxies.iterator();
             
@@ -89,7 +89,7 @@ public class HubConnection extends MessageForwardingConnection {
                 if (tmp.getLastLocalUpdate() > lastSendState) {
                     
                     logger.info("Writing proxy:\n" 
-                            + tmp.proxyAddressAsString
+                            + tmp.hubAddressAsString
                             + " since lastLocalUpdate=" 
                             + tmp.getLastLocalUpdate()  
                             + " > lastSendState= " + lastSendState + "\n\n");
@@ -98,7 +98,7 @@ public class HubConnection extends MessageForwardingConnection {
                     writes++;
                 } else { 
                     logger.info("NOT writing proxy:\n"
-                            + tmp.proxyAddressAsString 
+                            + tmp.hubAddressAsString 
                             + " since lastLocalUpdate=" 
                             + tmp.getLastLocalUpdate()  
                             + " <= lastSendState= " + lastSendState + "\n\n");                    
@@ -125,14 +125,14 @@ public class HubConnection extends MessageForwardingConnection {
     }
     
     private void writePing() throws IOException {        
-        System.err.println("Sending ping to " + peer.proxyAddress);
+        System.err.println("Sending ping to " + peer.hubAddress);
         out.write(HubProtocol.PING);
     } 
     
     private void writeProxy(HubDescription d) throws IOException {        
         out.write(HubProtocol.GOSSIP);
         
-        out.writeUTF(d.proxyAddress.toString());
+        out.writeUTF(d.hubAddress.toString());
         out.writeInt(d.getHops());
         
         if (d.isLocal()) { 
@@ -166,7 +166,7 @@ public class HubConnection extends MessageForwardingConnection {
             c[i] = ClientDescription.read(in);                        
         }
                         
-        if (local.proxyAddress.equals(address)) {
+        if (local.hubAddress.equals(address)) {
             // Just received information about myself!
             if (hops == 0) {
                 peer.setCanReachMe();
@@ -180,7 +180,7 @@ public class HubConnection extends MessageForwardingConnection {
                 tmp.update(c, state);
             } else { 
                 logger.warn("EEK: got information directly from " 
-                        + peer.proxyAddressAsString + " which seems to be "
+                        + peer.hubAddressAsString + " which seems to be "
                         + "out of date! " + state + " " + tmp.getHomeState());
             }
         } else {
@@ -195,8 +195,8 @@ public class HubConnection extends MessageForwardingConnection {
                 tmp.update(c, state);
             } else {
                 logger.info("Ignoring outdated information about " + 
-                        tmp.proxyAddressAsString + " from "  
-                        + peer.proxyAddressAsString + " " + state + " " 
+                        tmp.hubAddressAsString + " from "  
+                        + peer.hubAddressAsString + " " + state + " " 
                         + tmp.getHomeState());                
             }
         }
@@ -205,7 +205,7 @@ public class HubConnection extends MessageForwardingConnection {
     }
         
     private void handlePing() {        
-        logger.debug("Got ping from " + peer.proxyAddress);
+        logger.debug("Got ping from " + peer.hubAddress);
         peer.setContactTimeStamp(false);
     }
   
@@ -232,7 +232,7 @@ public class HubConnection extends MessageForwardingConnection {
     }
     
     protected String getName() { 
-        return "ProxyConnection(" + peer.proxyAddress + ")";
+        return "ProxyConnection(" + peer.hubAddress + ")";
     }
     
     protected boolean runConnection() {

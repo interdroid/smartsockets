@@ -57,10 +57,10 @@ class Connector extends CommunicationThread {
         
         // Creates a connection to a proxy to check if it is reachable. If so, 
         // it will send a ping. 
-        logger.info("Creating test connection to " + d.proxyAddress);
+        logger.info("Creating test connection to " + d.hubAddress);
                 
         try { 
-            s = factory.createSocket(d.proxyAddress, DEFAULT_TIMEOUT, null);
+            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, null);
             
             out = new DataOutputStream(
                     new BufferedOutputStream(s.getOutputStream()));
@@ -104,12 +104,12 @@ class Connector extends CommunicationThread {
         // To solve this problem, we introduce some 'total order' on the proxies
         // by comparing the string form of their addresses. We then let the 
         // smallest one decide what to do...                                  
-        boolean master = localAsString.compareTo(d.proxyAddress.toString()) < 0;
+        boolean master = localAsString.compareTo(d.hubAddress.toString()) < 0;
         
-        logger.info("Creating connection to " + d.proxyAddress);
+        logger.info("Creating connection to " + d.hubAddress);
                 
         try { 
-            s = factory.createSocket(d.proxyAddress, 
+            s = factory.createSocket(d.hubAddress, 
                     DEFAULT_TIMEOUT, null);
             
             out = new DataOutputStream(
@@ -139,7 +139,7 @@ class Connector extends CommunicationThread {
                 logger.info("I am master during connection setup");
                 
                 c = new HubConnection(s, in, out, d, connections, 
-                        knownProxies, state);                                
+                        knownHubs, state);                                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -159,7 +159,7 @@ class Connector extends CommunicationThread {
 
                 if (result) {                 
                     c = new HubConnection(s, in, out, d, connections, 
-                            knownProxies, state);                
+                            knownHubs, state);                
                     result = d.createConnection(c);
                     
                     if (!result) { 
@@ -178,7 +178,7 @@ class Connector extends CommunicationThread {
         
         if (result) {
             logger.info("Succesfully created connection!");
-            connections.addConnection(d.proxyAddress.toString(), c);
+            connections.addConnection(d.hubAddress.toString(), c);
             c.activate();
         } else { 
             logger.info("Failed to set up connection!");
@@ -189,7 +189,7 @@ class Connector extends CommunicationThread {
     private void handleNewProxy() { 
 
         // Handles the connection setup to newly discovered proxies.
-        HubDescription d = knownProxies.nextProxyToCheck();
+        HubDescription d = knownHubs.nextHubToCheck();
         
         if (d.haveConnection()) {
             // The connection was already created by the other side. Create a 
@@ -199,7 +199,7 @@ class Connector extends CommunicationThread {
             createConnection(d);
         } 
         
-        knownProxies.putBack(d);
+        knownHubs.putBack(d);
     } 
    
     public void run() {

@@ -19,7 +19,7 @@ abstract class CommunicationThread extends Thread {
     protected final Logger logger;
     
     protected final Connections connections;     
-    protected final HubList knownProxies;
+    protected final HubList knownHubs;
     
     protected final DirectSocketFactory factory;    
     
@@ -27,13 +27,13 @@ abstract class CommunicationThread extends Thread {
     protected String localAsString;
     
     protected CommunicationThread(String name, StateCounter state, 
-            Connections connections, HubList knownProxies, 
+            Connections connections, HubList knownHubs, 
             DirectSocketFactory factory) {
         
         super(name);        
         this.state = state;
         this.connections = connections;
-        this.knownProxies = knownProxies;
+        this.knownHubs = knownHubs;
         this.factory = factory;        
         logger = GetLogger.getLogger(this.getClass().getName());                   
     }
