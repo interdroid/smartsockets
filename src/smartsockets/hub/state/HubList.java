@@ -172,7 +172,7 @@ public class HubList {
             tmp = new HubDescription(a, state);
             map.put(tmp.hubAddress, tmp);
             
-            System.out.println("@@@@@@@@@@@@@ ADD NEW PROXY:\n " + tmp + "\n");      
+            //System.out.println("@@@@@@@@@@@@@ ADD NEW PROXY:\n " + tmp + "\n");      
                                    
             // Fresh entries go to the head of the list
             mustCheck.addFirst(tmp);

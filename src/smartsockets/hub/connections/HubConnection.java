@@ -51,13 +51,11 @@ public class HubConnection extends MessageForwardingConnection {
         lastSendState = state.get();
     }
     
-    public synchronized void writeMessage(ClientMessage cm) { 
+    public synchronized void writeMessage(ClientMessage m) { 
         
         try {
-            out.writeByte(HubProtocol.CLIENT_MESSAGE);
-            
-            cm.write(out);
-            
+            out.writeByte(HubProtocol.CLIENT_MESSAGE);            
+            m.write(out);            
             out.flush();
         } catch (IOException e) {
             System.err.println("Unhandled exception in writeMessage!!" + e);            
@@ -197,8 +195,7 @@ public class HubConnection extends MessageForwardingConnection {
         peer.setContactTimeStamp(false);
     }
   
-    private void handleClientMessage() throws IOException {
-        
+    private void handleClientMessage() throws IOException {        
         ClientMessage cm = new ClientMessage(in);        
         meslogger.debug("Got message: " + cm);               
         forward(cm, false);          
