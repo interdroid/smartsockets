@@ -113,10 +113,9 @@ public class Hub extends Thread {
             HubConnection c = d.getConnection();
             
             if (c != null) {
-                goslogger.info("Gossip with " + d.hubAddressAsString); 
                 c.gossip(state.get());
             } else { 
-                goslogger.info("Cannot gossip with " + d.hubAddressAsString 
+                goslogger.debug("Cannot gossip with " + d.hubAddressAsString 
                         + ": NO CONNECTION!");
             }
         }                   
