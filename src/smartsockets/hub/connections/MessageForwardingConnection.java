@@ -4,8 +4,6 @@ package smartsockets.hub.connections;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Iterator;
-import java.util.LinkedList;
-
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;

@@ -1,7 +1,5 @@
 package smartsockets.hub;
 
-import ibis.util.GetLogger;
-
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocketFactory;

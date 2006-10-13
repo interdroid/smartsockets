@@ -1,7 +1,6 @@
 package smartsockets.util.net;
 
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 import java.util.regex.Pattern;
 

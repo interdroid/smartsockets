@@ -25,40 +25,45 @@ public class UPNP {
     
     private static final String GATEWAY_DEVICE_URN = 
         "urn:schemas-upnp-org:device:InternetGatewayDevice:1";                    
-   
-    private static final String WAN_DEVICE_URN = 
-        "urn:schemas-upnp-org:device:WANDevice:1";
-    
-    private static final String WAN_COMMON_URN = 
-        "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1";
-        
+               
     private static final String WAN_CONNECTION_DEVICE_URN = 
         "urn:schemas-upnp-org:device:WANConnectionDevice:1";
             
     private static final String WAN_CONNECTION_URN = 
         "urn:schemas-upnp-org:service:WANIPConnection:1";
     
-    private static final String WAN_LINK_CONFIG_URN = 
-        "urn:schemas-upnp-org:service:WANDSLLinkConfig:1";
-    
     private static final String LAN_DEVICE_URN = 
         "urn:schemas-upnp-org:device:LANDevice:1"; 
     
     private static final String LAN_CONFIG_URN = 
         "urn:schemas-upnp-org:service:LANHostConfigManagement:1";
-        
+    
+    /*
+    private static final String WAN_COMMON_URN = 
+        "urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1";
+    
+    private static final String WAN_DEVICE_URN = 
+        "urn:schemas-upnp-org:device:WANDevice:1";
+    
+    private static final String WAN_LINK_CONFIG_URN = 
+        "urn:schemas-upnp-org:service:WANDSLLinkConfig:1";
+     */
+    
     private static final int MAX_MAPPING_TRIES = 4;
     private static final int DISCOVERY_TIMEOUT = 1500;
 
     private static UPNPRootDevice root;
     
-    private static UPNPDevice wan;
-    private static UPNPService wanCommonConfigService;
     
     private static UPNPDevice wanConnection;
     private static UPNPService wanConnectionService;
+    
+    /*
+    private static UPNPDevice wan;    
+    private static UPNPService wanCommonConfigService;    
     private static UPNPService wanLinkConfigService;
-        
+      */
+    
     private static UPNPDevice lan;
     private static UPNPService lanConfigService;
                        
@@ -93,34 +98,7 @@ public class UPNP {
         
         return (root != null);
     }
- 
-    private static boolean getWANDevice() {
-        
-        if (!getRootDevice()) {
-            return false;
-        } 
-            
-        if (wan == null) {                     
-            wan = root.getChildDevice(WAN_DEVICE_URN);
-        } 
-              
-        return (wan != null);
-    }
- 
-    private static boolean getWANCommonConfigService() {
-        
-        if (!getWANDevice()) {
-            return false;
-        } 
-          
-        if (wanCommonConfigService == null) { 
-            wanCommonConfigService = wan.getService(WAN_COMMON_URN);
-        } 
-        
-        return (wanCommonConfigService != null);
-    }
-    
-    
+  
     private static boolean getWANConnectionDevice() {
         
         if (!getRootDevice()) {
@@ -146,20 +124,6 @@ public class UPNP {
         
         return (wanConnectionService != null);
     }
-    
-    private static boolean getWANLinkConfigService() {
-        
-        if (!getWANConnectionDevice()) {
-            return false;
-        } 
-          
-        if (wanLinkConfigService == null) { 
-            wanLinkConfigService = wanConnection.getService(WAN_LINK_CONFIG_URN);
-        } 
-        
-        return (wanLinkConfigService != null);
-    }
-    
     
     private static boolean getLANDevice() {  
         
@@ -508,8 +472,46 @@ public class UPNP {
         return false;
     }
     
-    // The rest is unused at the moment....    
-       
+    /* The rest is unused at the moment....    
+     private static boolean getWANDevice() {
+        
+          if (!getRootDevice()) {
+              return false;
+          } 
+            
+          if (wan == null) {                     
+              wan = root.getChildDevice(WAN_DEVICE_URN);
+          } 
+              
+          return (wan != null);
+      }
+ 
+      private static boolean getWANCommonConfigService() {
+        
+        if (!getWANDevice()) {
+            return false;
+        } 
+          
+        if (wanCommonConfigService == null) { 
+            wanCommonConfigService = wan.getService(WAN_COMMON_URN);
+        } 
+        
+        return (wanCommonConfigService != null);
+    }
+    
+    private static boolean getWANLinkConfigService() {
+        
+        if (!getWANConnectionDevice()) {
+            return false;
+        } 
+          
+        if (wanLinkConfigService == null) { 
+            wanLinkConfigService = wanConnection.getService(WAN_LINK_CONFIG_URN);
+        } 
+        
+        return (wanLinkConfigService != null);
+    }
+    
     private static String getDestinationAddress() {        
         if (!getWANLinkConfigService()) {
             System.out.println("Failed to get link config service");
@@ -572,5 +574,5 @@ public class UPNP {
         }
         return simpleStringInvocation(lanConfigService, "ReservedAddresses"); 
     }
-
+*/
 }

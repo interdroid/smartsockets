@@ -5,8 +5,6 @@ import ibis.util.ThreadPool;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 
-import org.apache.log4j.Logger;
-
 import smartsockets.direct.DirectSocket;
 import smartsockets.hub.state.HubList;
 
