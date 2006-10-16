@@ -2,6 +2,7 @@ package smartsockets.hub;
 
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -14,6 +15,7 @@ import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
+import smartsockets.util.TypedProperties;
 
 public class Hub extends Thread {
     
@@ -26,7 +28,6 @@ public class Hub extends Thread {
 
     protected static Logger goslogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.gossip");
-
     
     private HubList hubs;    
     private Connections connections;
@@ -37,16 +38,21 @@ public class Hub extends Thread {
     private StateCounter state = new StateCounter();
             
     private Discovery discovery;
-    
-    public Hub() throws IOException { 
-        this(null);
-    }
-    
-    public Hub(SocketAddressSet [] hubAddresses) throws IOException { 
+        
+    public Hub(SocketAddressSet [] hubAddresses, TypedProperties p) 
+        throws IOException { 
 
         super("Hub");
         
-        misclogger.info("Creating Hub");
+        String [] clusters = 
+            p.getStringList("smartsockets.hub.clusters", ",", null);
+        
+        if (clusters == null) { 
+            clusters = new String[] { "" };
+        }
+        
+        misclogger.info("Creating Hub for clusters: " 
+                + Arrays.deepToString(clusters));
                 
         DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
         
@@ -79,9 +85,15 @@ public class Hub extends Thread {
         connector.start();
 
         misclogger.info("Listning for broadcast on LAN");
+                      
+        String [] prefixes = new String[clusters.length];
         
+        for (int i=0;i<prefixes.length;i++) { 
+            prefixes[i] = "Any Proxies?" + " " + clusters[i];
+        }
+                
         discovery = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 0);         
-        discovery.answeringMachine("Any Proxies?", local.toString());
+        discovery.answeringMachine(prefixes, local.toString());
                         
         goslogger.info("Start Gossiping!");
         
@@ -142,17 +154,50 @@ public class Hub extends Thread {
     public static void main(String [] args) { 
         
         SocketAddressSet [] hubs = new SocketAddressSet[args.length];
+         
+        TypedProperties p = new TypedProperties();
+        String clusters = null;
+        
+        for (int i=0;i<args.length;i++) {
             
-        for (int i=0;i<args.length;i++) {                
-            try { 
-                hubs[i] = new SocketAddressSet(args[i]);
-            } catch (Exception e) {
-                misclogger.warn("Skipping hub address: " + args[i], e);              
+            if (args[i].equals("-clusters")) { 
+                if (i+1 >= args.length) { 
+                    System.out.println("-clusters option requires parameter!");
+                    System.exit(1);
+                }   
+                
+                clusters = args[++i];
+            } else {
+                // Assume it's a hub address.
+                try { 
+                    hubs[i] = new SocketAddressSet(args[i]);
+                } catch (Exception e) {
+                    misclogger.warn("Skipping hub address: " + args[i], e);              
+                }
             }
         } 
         
+        if (clusters != null) { 
+            p.put("smartsockets.hub.clusters", clusters);
+            
+            // Check if the property is a comma seperated list of strings
+            String [] tmp = null;
+            
+            try {             
+                tmp = p.getStringList("smartsockets.hub.clusters", ",", null);               
+            } catch (Exception e) { 
+                // ignore
+            }
+            
+            if (tmp == null) { 
+                System.out.println("-clusters option has incorrect " + 
+                        "parameter: " + clusters);
+                System.exit(1);            
+            }
+        }
+                
         try {
-            new Hub(hubs);
+            new Hub(hubs, p);
         } catch (IOException e) {
             misclogger.warn("Oops: ", e);
         }        

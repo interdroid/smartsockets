@@ -193,7 +193,13 @@ public class VirtualSocketFactory {
                         
             Discovery d = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 10000);
             
-            String result = d.broadcastWithReply("Any Proxies?");
+            String message = "Any Proxies? "; 
+            
+            if (cluster != null) { 
+                message += cluster;
+            }
+            
+            String result = d.broadcastWithReply(message);
             
             if (result != null) { 
                 try { 

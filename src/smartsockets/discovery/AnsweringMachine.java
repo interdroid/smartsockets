@@ -11,12 +11,12 @@ public class AnsweringMachine extends Thread {
     private final DatagramPacket packet; 
     private final DatagramPacket replyPacket; 
         
-    private final String prefix;
+    private final String [] tags;
           
-    AnsweringMachine(int port, String prefix, String reply) throws SocketException {
+    AnsweringMachine(int port, String [] tags, String reply) throws SocketException {
         super("discovery.AnsweringMachine");
             
-        this.prefix = prefix;
+        this.tags = tags;
         
         if (port == 0) {         
             socket = new DatagramSocket();
@@ -101,8 +101,20 @@ public class AnsweringMachine extends Thread {
                 
                 // If we have received a message, and it starts with the right 
                 // prefix, we send a reply.               
-                if (result != null && result.startsWith(prefix)) { 
-                    sendReply();                
+                if (result != null) { 
+                    
+                    boolean match = false;
+                    
+                    for (int i=0;i<tags.length;i++) { 
+                        if (result.equals(tags[i])) {                     
+                            match = true;
+                            break;
+                        }
+                    }
+                    
+                    if (match) { 
+                        sendReply();
+                    }
                 }
             } catch (Exception e) {
                 Discovery.logger.warn("Failed to receive packet", e);

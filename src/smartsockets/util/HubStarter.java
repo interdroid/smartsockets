@@ -35,7 +35,7 @@ public class HubStarter {
         
         try {            
             System.out.println("Starting hub....");            
-            p = new Hub(hubs);            
+            p = new Hub(hubs, null);            
             System.out.println("Hub running on: " + p.getHubAddress());            
         } catch (IOException e) {
             System.err.println("Oops: failed to start hub");

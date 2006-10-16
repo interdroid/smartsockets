@@ -72,10 +72,10 @@ public class Discovery {
         }
     }
     
-    public void answeringMachine(String prefix, String reply) { 
+    public void answeringMachine(String [] tags, String reply) { 
         
         try {
-            answer = new AnsweringMachine(receivePort, prefix, reply);
+            answer = new AnsweringMachine(receivePort, tags, reply);
             answer.start();
         } catch (SocketException e) {
             logger.warn("Failed to create answering machine!", e);
