@@ -70,7 +70,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         try {
             Router.logger.debug("Connecting to router: " + router);
                         
-            VirtualSocketAddress r = router.getService("router");            
+            VirtualSocketAddress r = router.getServiceAsAddress("router");            
            
             if (connect(r, timeout)) {
                 Router.logger.debug("Connection to router created!!");

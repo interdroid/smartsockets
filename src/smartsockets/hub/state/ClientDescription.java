@@ -79,12 +79,12 @@ public class ClientDescription {
             
             while (itt.hasNext()) { 
                 String key = (String) itt.next();
-                String adr = (String) services.get(key);
+                String val = (String) services.get(key);
                 
                 tmp.append(", [");
                 tmp.append(key);
-                tmp.append(" at ");
-                tmp.append(adr);
+                tmp.append(",");
+                tmp.append(val);
                 tmp.append("]");
             }
         }

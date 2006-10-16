@@ -1,5 +1,6 @@
 package smartsockets.hub.servicelink;
 
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,6 +17,8 @@ public class Client {
         
     public Client(String clientAsString) { 
     
+        final String orig = clientAsString;
+        
         System.out.println("Parsing client from string \"" + clientAsString 
                 + "\"");
         
@@ -58,24 +61,25 @@ public class Client {
         
             while (clientAsString.startsWith(", [")) {
                 
-                index = clientAsString.indexOf(" at ");
+                clientAsString = clientAsString.substring(3);
                 
-                String key = clientAsString.substring(3, index);            
+                index = clientAsString.indexOf(",");
+                
+                String key = clientAsString.substring(0, index);            
             
-                clientAsString = clientAsString.substring(index+4);
+                clientAsString = clientAsString.substring(index+1);
             
                 index = clientAsString.indexOf(']');
                     
-                VirtualSocketAddress a = 
-                   new VirtualSocketAddress(clientAsString.substring(0, index)); 
+                String value = clientAsString.substring(0, index); 
 
-                services.put(key, a);
+                services.put(key, value);
             
                 clientAsString = clientAsString.substring(index+1);
             }
         } catch (Exception e) {
             throw new IllegalArgumentException("String does not contain Client" 
-                    + " description!", e);
+                    + " description: \"" + orig + "\"", e);
 
         }            
             
@@ -95,14 +99,21 @@ public class Client {
         return clientAddress;
     }
     
-    public VirtualSocketAddress getService(String name) { 
-        return (VirtualSocketAddress) services.get(name);
+    public VirtualSocketAddress getServiceAsAddress(String name) 
+        throws UnknownHostException {
+        
+        return new VirtualSocketAddress(getService(name));
     }
+    
+    public String getService(String name) { 
+        return (String) services.get(name);
+    }
+    
     
     public boolean offersService(String name) { 
         return services.containsKey(name);
     }
-    
+          
     public String toString() { 
         
         StringBuffer result = new StringBuffer("Client("); 
@@ -113,12 +124,12 @@ public class Client {
         
         while (it.hasNext()) { 
             String key = (String) it.next();
-            VirtualSocketAddress ad = (VirtualSocketAddress) services.get(key);            
+            String value = (String) services.get(key);            
             
             result.append(", [");
             result.append(key);
-            result.append(" at ");
-            result.append(ad.toString());
+            result.append(",");
+            result.append(value);
             result.append("]");
         }
         

@@ -177,6 +177,8 @@ public class Hub extends Thread {
             }
         } 
         
+        // TODO: use property file ? 
+        
         if (clusters != null) { 
             p.put("smartsockets.hub.clusters", clusters);
             
@@ -194,7 +196,7 @@ public class Hub extends Thread {
                         "parameter: " + clusters);
                 System.exit(1);            
             }
-        }
+        } 
                 
         try {
             new Hub(hubs, p);

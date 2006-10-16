@@ -52,7 +52,7 @@ public class Routed extends ConnectModule {
             if (r != null && r.length > 0) {
                 for (int i=0;i<r.length;i++) {                     
                     Client c = r[i];
-                    routers.addLast(c.getService("router"));
+                    routers.addLast(c.getServiceAsAddress("router"));
                 }                    
             }
             
@@ -137,12 +137,14 @@ public class Routed extends ConnectModule {
             Map properties) throws ModuleNotSuitableException, IOException {
 
         // First check if we are trying to connect to ourselves (which makes no 
-        // sense for this module... 
+        // sense for this module...
+        /*
         if (target.machine().sameMachine(parent.getLocalHost())) { 
             throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
-       
+       */
+        
         if (timeout == 0 || timeout > DEFAULT_TIMEOUT) { 
             timeout = DEFAULT_TIMEOUT; 
         }

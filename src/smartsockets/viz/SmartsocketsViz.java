@@ -75,242 +75,270 @@ import com.touchgraph.graphlayout.TGException;
  * @author   Alexander Shapiro
  * @version  1.22-jre1.1  $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch Exp $
  */
-public class SmartsocketsViz extends GLPanel {
+public class SmartsocketsViz extends GLPanel implements Runnable {
 
-    class Permutation extends Thread {
+    class HubInfo {
+        Node node;
 
-        ServiceLink sl;
+        SocketAddressSet address;
 
-        class HubInfo {
-            Node node;
-
-            SocketAddressSet address;
-
-            HashMap clients;
-        }
-
-        class ClientInfo {
-            Node node;
-            Edge edge;
-            
-            HubInfo proxy;
-
-            Client client;
-        }
-
-        HashMap hubs = new HashMap();
-
-        HashMap oldHubs = new HashMap();
-
-        public Permutation(SocketAddressSet hub) {
-
-            try {
-                DirectSocketFactory df = DirectSocketFactory.getSocketFactory();
-                DirectServerSocket ss = df.createServerSocket(0, 1, null);
-
-                sl = ServiceLink.getServiceLink(hub, ss.getAddressSet());                
-            } catch (Exception e) {
-                System.err.println("Failed to connect to Hub: " + e);
-                e.printStackTrace(System.err);
-                System.exit(1);
-            }
-        }
-
-        private SocketAddressSet[] getHubs() {
-            try {
-                return sl.proxies();
-            } catch (IOException e) {
-                System.err.println("Failed to list hubs: " + e);
-                e.printStackTrace(System.err);
-                return null;
-            }
-        }
-
-        private Client[] getClientsForHub(SocketAddressSet hub) {
-            try {
-                return sl.clients(hub);
-            } catch (IOException e) {
-                System.err.println("Failed to list hubs: " + e);
-                e.printStackTrace(System.err);
-                return null;
-            }
-        }
-
-        private void updateHub(SocketAddressSet a) {
-
-            HubInfo h = (HubInfo) oldHubs.remove(a);
-
-            if (h == null) {
-                h = new HubInfo();
-                h.address = a;
-
-                try {
-                    h.node = new Node(a.toString(), " H ");
-                    h.node.setType(Node.TYPE_CIRCLE);                    
-                    h.node.setBackColor(Color.ORANGE);                    
-                    h.node.setMouseOverText(new String[] { "Hub:",
-                            a.toString() });
-                    
-                    
-                    
-                    tgPanel.addNode(h.node);                    
-                } catch (TGException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-
-                h.clients = new HashMap();
-            }
-
-            Client[] clients = getClientsForHub(a);
-
-            updateClients(clients, h);
-
-            hubs.put(a, h);
-        }
-
-        private ClientInfo createClientInfo(Client c, HubInfo h) { 
-            
-            ClientInfo ci = new ClientInfo();
-            ci.client = c;
-            ci.proxy = h;
-
-            String adr = c.getClientAddress().toString(); 
-            
-            System.out.println("Adding client " + adr);
-            
-            
-            try {
-                ci.node = (Node) tgPanel.addNode(adr.toString(), "C");
-                ci.node.setMouseOverText(new String[] { "Client:", adr });
-                ci.edge = tgPanel.addEdge(ci.node, h.node, Edge.DEFAULT_LENGTH); 
-            } catch (TGException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                return null;
-            }
-            
-            return ci;
-        }
-        
-        private void updateClients(Client[] clients, HubInfo h) {
-
-            if (h.clients.size() == 0) {
-                // No clients yet, so just all them all....
-
-                for (int c = 0; c < clients.length; c++) {
-                    ClientInfo ci = createClientInfo(clients[c], h);
-                    
-                    if (ci != null) {                     
-                        h.clients.put(clients[c].getClientAddress(), ci);
-                    }
-                }
-                
-                return;
-            }
-
-            // Do a diff between the old and new client set...
-            HashMap old = h.clients;
-            h.clients = new HashMap();
-
-            for (int c = 0; c < clients.length; c++) {
-
-                ClientInfo ci = 
-                    (ClientInfo) old.remove(clients[c].getClientAddress());
-
-                if (ci == null) {
-                    ci = createClientInfo(clients[c], h);
-                }
-
-                h.clients.put(clients[c].getClientAddress(), ci);
-            }
-            
-            if (old.size() != 0) { 
-                
-                Iterator itt = old.values().iterator();
-                
-                while (itt.hasNext()) { 
-                    
-                    ClientInfo ci = (ClientInfo) itt.next();
-                    
-                    System.out.println("Removing client " + ci.client.getClientAddress().toString());
-                    
-                    if (ci.edge != null) {                     
-                        tgPanel.deleteEdge(ci.edge);
-                    } 
-                    
-                    tgPanel.deleteNode(ci.node);
-                }                                
-            }
-        }
-
-        private void updateGraph() {
-
-            SocketAddressSet[] p = getHubs();
-
-            if (p == null) {
-                return;
-            }
-
-            // Flip the hashmaps 
-            HashMap tmp = hubs;
-            hubs = oldHubs;
-            oldHubs = tmp;
-
-            for (int i = 0; i < p.length; i++) {
-                updateHub(p[i]);
-            }
-
-            if (oldHubs.size() > 0) {
-                Iterator itt = oldHubs.values().iterator();
-
-                while (itt.hasNext()) { 
-
-                    // TODO: clean this up!!
-                    HubInfo hi = (HubInfo) itt.next();
-
-                    //if (ci.edge != null) {                     
-                    //    tgPanel.deleteEdge(ci.edge);
-                    //} 
-
-                    tgPanel.deleteNode(hi.node);
-                }                                
-            }
-
-            /*
-             Node r = tgPanel.getGES().getRandomNode();
-
-             if (r.getLabel().equals("C")) {
-
-             for (int i=r.edgeCount()-1;i>=0;i--) { 
-             tgPanel.deleteEdge(r.edgeAt(i));
-             }
-
-             tgPanel.deleteNode(r);
-             }
-             */
-        }
-
-        public void run() {
-
-            while (true) {
-                updateGraph();
-
-                try {
-                    Thread.sleep(10000);
-                } catch (Exception e) {
-                    // ignore
-                }
-            }
-        }
+        HashMap clients;
     }
+
+    class ClientInfo {
+        Node node;
+
+        Edge edge;
+
+        HubInfo proxy;
+
+        Client client;
+    }
+
+    private ServiceLink sl;
+
+    private HashMap hubs = new HashMap();
+    private HashMap oldHubs = new HashMap();
 
     /** Default constructor.
      * @param hub 
      */
     public SmartsocketsViz(SocketAddressSet hub) {
         super();
-        new Permutation(hub).start();
+
+        try {
+            DirectSocketFactory df = DirectSocketFactory.getSocketFactory();
+            DirectServerSocket ss = df.createServerSocket(0, 1, null);
+
+            sl = ServiceLink.getServiceLink(hub, ss.getAddressSet());
+            sl.registerService("visualization", "");                        
+        } catch (Exception e) {
+            System.err.println("Failed to connect to Hub: " + e);
+            e.printStackTrace(System.err);
+            System.exit(1);
+        }
+
+        new Thread(this).start();
+    }
+
+    private SocketAddressSet[] getHubs() {
+        try {
+            return sl.proxies();
+        } catch (IOException e) {
+            System.err.println("Failed to list hubs: " + e);
+            e.printStackTrace(System.err);
+            return null;
+        }
+    }
+
+    private Client[] getClientsForHub(SocketAddressSet hub) {
+        try {
+            return sl.clients(hub);
+        } catch (IOException e) {
+            System.err.println("Failed to list hubs: " + e);
+            e.printStackTrace(System.err);
+            return null;
+        }
+    }
+
+    private void updateHub(SocketAddressSet a) {
+
+        HubInfo h = (HubInfo) oldHubs.remove(a);
+
+        if (h == null) {
+            h = new HubInfo();
+            h.address = a;
+
+            try {
+                h.node = new Node(a.toString(), " H ");
+                h.node.setType(Node.TYPE_CIRCLE);
+                h.node.setBackColor(Color.decode("#8B2500"));
+                h.node.setNodeBorderInactiveColor(Color.decode("#5c1800"));
+
+                h.node.setMouseOverText(new String[] { "Hub:", a.toString() });
+
+                tgPanel.addNode(h.node);
+            } catch (TGException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+
+            h.clients = new HashMap();
+        }
+
+        Client[] clients = getClientsForHub(a);
+
+        updateClients(clients, h);
+
+        hubs.put(a, h);
+    }
+
+    private ClientInfo createClientInfo(Client c, HubInfo h) {
+
+        ClientInfo ci = new ClientInfo();
+        ci.client = c;
+        ci.proxy = h;
+
+        String adr = c.getClientAddress().toString();
+
+        String[] mouseOverText = null;
+        Color color = null;
+        Color border = null;
+        String label = null;
+
+        if (c.offersService("router")) {
+            System.out.println("Adding router " + adr);
+            mouseOverText = new String[] { "Router:", adr };
+            color = Color.decode("#FF7F24"); // Color.decode("#CDC673");
+            border = Color.decode("#CD661D"); // Color.decode("#8B864E");
+            label = "R";
+        } else if (c.offersService("visualization")) {
+            System.out.println("Adding visualization " + adr);
+            mouseOverText = new String[] { "Visualization:", adr };
+            color = Color.decode("#8000A0");
+            label = "V";
+        } else {
+            System.out.println("Adding client " + adr);
+            mouseOverText = new String[] { "Client:", adr };
+            label = "C";
+        }
+
+        try {
+            ci.node = (Node) tgPanel.addNode(adr, label);
+            ci.node.setType(Node.TYPE_CIRCLE);
+
+            if (color != null) {
+                ci.node.setBackColor(color);
+            }
+
+            if (border != null) {
+                ci.node.setNodeBorderInactiveColor(border);
+            }
+
+            if (mouseOverText != null) {
+                ci.node.setMouseOverText(mouseOverText);
+            }
+
+            ci.edge = tgPanel.addEdge(ci.node, h.node, Edge.DEFAULT_LENGTH);
+        } catch (TGException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
+
+        return ci;
+    }
+
+    private void updateClients(Client[] clients, HubInfo h) {
+
+        if (h.clients.size() == 0) {
+            // No clients yet, so just all them all....
+
+            for (int c = 0; c < clients.length; c++) {
+                ClientInfo ci = createClientInfo(clients[c], h);
+
+                if (ci != null) {
+                    h.clients.put(clients[c].getClientAddress(), ci);
+                }
+            }
+
+            return;
+        }
+
+        // Do a diff between the old and new client set...
+        HashMap old = h.clients;
+        h.clients = new HashMap();
+
+        for (int c = 0; c < clients.length; c++) {
+
+            ClientInfo ci = (ClientInfo) old.remove(clients[c]
+                    .getClientAddress());
+
+            if (ci == null) {
+                ci = createClientInfo(clients[c], h);
+            }
+
+            h.clients.put(clients[c].getClientAddress(), ci);
+        }
+
+        if (old.size() != 0) {
+
+            Iterator itt = old.values().iterator();
+
+            while (itt.hasNext()) {
+
+                ClientInfo ci = (ClientInfo) itt.next();
+
+                System.out.println("Removing client "
+                        + ci.client.getClientAddress().toString());
+
+                if (ci.edge != null) {
+                    tgPanel.deleteEdge(ci.edge);
+                }
+
+                tgPanel.deleteNode(ci.node);
+            }
+        }
+    }
+
+    private void updateGraph() {
+
+        SocketAddressSet[] p = getHubs();
+
+        if (p == null) {
+            return;
+        }
+
+        // Flip the hashmaps 
+        HashMap tmp = hubs;
+        hubs = oldHubs;
+        oldHubs = tmp;
+
+        for (int i = 0; i < p.length; i++) {
+            updateHub(p[i]);
+        }
+
+        if (oldHubs.size() > 0) {
+            Iterator itt = oldHubs.values().iterator();
+
+            while (itt.hasNext()) {
+
+                // TODO: clean this up!!
+                HubInfo hi = (HubInfo) itt.next();
+
+                //if (ci.edge != null) {                     
+                //    tgPanel.deleteEdge(ci.edge);
+                //} 
+
+                tgPanel.deleteNode(hi.node);
+            }
+        }
+
+        /*
+         Node r = tgPanel.getGES().getRandomNode();
+
+         if (r.getLabel().equals("C")) {
+
+         for (int i=r.edgeCount()-1;i>=0;i--) { 
+         tgPanel.deleteEdge(r.edgeAt(i));
+         }
+
+         tgPanel.deleteNode(r);
+         }
+         */
+    }
+
+    public void run() {
+
+        while (true) {
+            updateGraph();
+
+            try {
+                Thread.sleep(10000);
+            } catch (Exception e) {
+                // ignore
+            }
+        }
     }
 
     public void randomGraph() throws TGException {

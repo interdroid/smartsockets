@@ -16,13 +16,13 @@ public class Properties {
     
     public static final String PREFIX = "smartsockets.";
     
-    public static final String FILE    = PREFIX + "file";         
-    public static final String PROXY   = PREFIX + "proxy";    
+    public static final String FILE    = PREFIX + "file";
+    public static final String HUB     = PREFIX + "hub";            
     public static final String ROUTERS = PREFIX + "routers";  
         
     public static final String BACKLOG = PREFIX + "backlog";  
     public static final String TIMEOUT = PREFIX + "timeout";  
-    
+        
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
@@ -32,6 +32,9 @@ public class Properties {
     public static final String DISCOVERY_PORT    = DISCOVERY_PREFIX + "port";
     public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
     
+    public static final String HUB_PREFIX   = PREFIX + "hub.";
+    public static final String HUB_CLUSTERS = HUB_PREFIX + "clusters";       
+        
     public static final String CLUSTER_PREFIX = PREFIX + "cluster.";
     public static final String CLUSTER_DEFINE = CLUSTER_PREFIX + "define";
     public static final String CLUSTER_MEMBER = CLUSTER_PREFIX + "member";

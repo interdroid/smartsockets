@@ -100,6 +100,6 @@ public class DirectServerSocket {
     }
 
     public String toString() {        
-        return "PlainServerSocket(" + local + ", " + external + ")";  
+        return "DirectServerSocket(" + local + ", " + external + ")";  
     }
 }

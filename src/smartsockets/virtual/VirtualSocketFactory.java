@@ -176,7 +176,7 @@ public class VirtualSocketFactory {
         SocketAddressSet address = null;
         
         // Check if the proxy address was passed as a property.
-        String tmp = properties.getProperty(Properties.PROXY);
+        String tmp = properties.getProperty(Properties.HUB);
         
         if (tmp != null) {
             try { 
