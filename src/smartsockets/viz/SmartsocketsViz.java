@@ -196,6 +196,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             System.out.println("Adding visualization " + adr);
             mouseOverText = new String[] { "Visualization:", adr };
             color = Color.decode("#8000A0");
+            border = Color.decode("#54006A"); 
             label = "V";
         } else {
             System.out.println("Adding client " + adr);
