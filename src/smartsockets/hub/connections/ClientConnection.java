@@ -13,7 +13,9 @@ import org.apache.log4j.Logger;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
+import smartsockets.hub.state.AddressAsStringSelector;
 import smartsockets.hub.state.ClientDescription;
+import smartsockets.hub.state.DetailsSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 
@@ -32,9 +34,9 @@ public class ClientConnection extends MessageForwardingConnection {
     
     public ClientConnection(String clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, Connections connections,
-            HubList proxies) {
+            HubList hubs) {
      
-        super(s, in, out, connections, proxies);        
+        super(s, in, out, connections, hubs);        
         this.clientAddress = clientAddress;
         
         conlogger.debug("Created client connection: " + clientAddress);        
@@ -78,33 +80,68 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     }
         
-    private void proxies() throws IOException { 
+    private void hubs() throws IOException { 
         
         String id = in.readUTF();
         
         reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
+                
+        AddressAsStringSelector as = new AddressAsStringSelector();
         
-        String [] proxies = knownHubs.hubsAsString();
-
+        knownHubs.select(as);
+                
+        LinkedList result = as.getResult();
+        
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
-        out.writeInt(proxies.length);
+        out.writeInt(result.size());
 
-        for (int i=0;i<proxies.length;i++) { 
-            out.writeUTF(proxies[i]);
+        Iterator itt = result.iterator();
+                
+        for (int i=0;i<result.size();i++) { 
+            out.writeUTF((String) itt.next());
         } 
             
         out.flush();        
     } 
-    
-    private void clientsForProxy() throws IOException { 
+
+    private void hubDetails() throws IOException { 
+        
         String id = in.readUTF();
-        String proxy = in.readUTF();
+        
+        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
+        
+        DetailsSelector as = new DetailsSelector();
+        
+        knownHubs.select(as);
+        
+        LinkedList result = as.getResult();
+        
+        out.write(ServiceLinkProtocol.INFO);           
+        out.writeUTF(id);            
+        out.writeInt(result.size());
+
+        reqlogger.debug("Connection " + clientAddress + " result: " 
+                + result.size() + " " + result);         
+        
+        Iterator itt = result.iterator();
+        
+        for (int i=0;i<result.size();i++) { 
+            out.writeUTF((String) itt.next());
+        } 
+            
+        out.flush();        
+    } 
+
+    
+    private void clientsForHub() throws IOException { 
+        String id = in.readUTF();
+        String hub = in.readUTF();
         String tag = in.readUTF();
         
         reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        HubDescription p = knownHubs.get(proxy); 
+        HubDescription p = knownHubs.get(hub); 
         
         ArrayList tmp = null;
         
@@ -184,13 +221,13 @@ public class ClientConnection extends MessageForwardingConnection {
         reglogger.debug("Connection " + clientAddress + " return id: " + id +  
                 " adding " + tag + " " + address + " to services!");         
                
-        HubDescription localProxy = knownHubs.getLocalDescription();
+        HubDescription localHub = knownHubs.getLocalDescription();
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(1);
         
-        if (localProxy.addService(clientAddress, tag, address)) { 
+        if (localHub.addService(clientAddress, tag, address)) { 
             out.writeUTF("OK");
         } else { 
             out.writeUTF("DENIED");
@@ -223,20 +260,28 @@ public class ClientConnection extends MessageForwardingConnection {
                 disconnect();
                 return false;
             
-            case ServiceLinkProtocol.PROXIES:
+            case ServiceLinkProtocol.HUBS:
                 if (reqlogger.isDebugEnabled()) {
                     reqlogger.debug("Connection " + clientAddress + " requests " 
-                            + "proxies");
+                            + "hubs");
                 } 
-                proxies();
+                hubs();
                 return true;
-            
-            case ServiceLinkProtocol.CLIENTS_FOR_PROXY:
+
+            case ServiceLinkProtocol.HUB_DETAILS:
+                if (reqlogger.isDebugEnabled()) {
+                    reqlogger.debug("Connection " + clientAddress + " requests " 
+                            + "hub details");
+                } 
+                hubDetails();
+                return true;
+                
+            case ServiceLinkProtocol.CLIENTS_FOR_HUB:
                 if (reqlogger.isDebugEnabled()) {
                     reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " local clients");
                 } 
-                clientsForProxy();
+                clientsForHub();
                 return true;
             
             case ServiceLinkProtocol.ALL_CLIENTS:

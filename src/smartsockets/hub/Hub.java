@@ -12,6 +12,7 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Discovery;
 import smartsockets.hub.connections.Connections;
 import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.state.ConnectionsSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
@@ -117,17 +118,20 @@ public class Hub extends Thread {
         
         goslogger.info("Starting gossip round (local state = " + state.get() + ")");        
         goslogger.info("I know the following hubs:\n" + hubs.toString());        
-                        
-        Iterator itt = hubs.connectedHubsIterator();
+            
+        ConnectionsSelector selector = new ConnectionsSelector();
+        
+        hubs.select(selector);
+        
+        Iterator itt = selector.getResult().iterator(); 
         
         while (itt.hasNext()) { 
-            HubDescription d = (HubDescription) itt.next();            
-            HubConnection c = d.getConnection();
+            HubConnection c = (HubConnection) itt.next();
             
             if (c != null) {
-                c.gossip(state.get());
+                c.gossip();
             } else { 
-                goslogger.debug("Cannot gossip with " + d.hubAddressAsString 
+                goslogger.debug("Cannot gossip with " + c
                         + ": NO CONNECTION!");
             }
         }                   

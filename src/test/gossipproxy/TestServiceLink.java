@@ -12,7 +12,7 @@ import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.CallBack;
-import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.ServiceLink;
 
 public class TestServiceLink implements CallBack {
@@ -107,7 +107,7 @@ public class TestServiceLink implements CallBack {
     private void proxies() { 
         
         try {
-            SocketAddressSet [] result = serviceLink.proxies();
+            SocketAddressSet [] result = serviceLink.hubs();
         
             System.out.println("Known proxies:" + result.length);
             
@@ -123,7 +123,7 @@ public class TestServiceLink implements CallBack {
     private void allClients() { 
         
         try {
-            Client [] result = serviceLink.clients();
+            ClientInfo [] result = serviceLink.clients();
         
             System.out.println("Known clients:" + result.length);
             
@@ -139,7 +139,7 @@ public class TestServiceLink implements CallBack {
     private void localClients() { 
         
         try {
-            Client [] result = serviceLink.localClients();
+            ClientInfo [] result = serviceLink.localClients();
         
             System.out.println("Clients sharing proxy:" + result.length);
             

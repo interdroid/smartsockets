@@ -60,7 +60,8 @@ import java.util.Iterator;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ClientInfo;
+import smartsockets.hub.servicelink.HubInfo;
 import smartsockets.hub.servicelink.ServiceLink;
 
 import com.touchgraph.graphlayout.Edge;
@@ -76,24 +77,6 @@ import com.touchgraph.graphlayout.TGException;
  * @version  1.22-jre1.1  $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch Exp $
  */
 public class SmartsocketsViz extends GLPanel implements Runnable {
-
-    class HubInfo {
-        Node node;
-
-        SocketAddressSet address;
-
-        HashMap clients;
-    }
-
-    class ClientInfo {
-        Node node;
-
-        Edge edge;
-
-        HubInfo proxy;
-
-        Client client;
-    }
 
     private ServiceLink sl;
 
@@ -121,9 +104,9 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         new Thread(this).start();
     }
 
-    private SocketAddressSet[] getHubs() {
+    private HubInfo[] getHubs() {
         try {
-            return sl.proxies();
+            return sl.hubDetails();
         } catch (IOException e) {
             System.err.println("Failed to list hubs: " + e);
             e.printStackTrace(System.err);
@@ -131,7 +114,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         }
     }
 
-    private Client[] getClientsForHub(SocketAddressSet hub) {
+    private ClientInfo[] getClientsForHub(SocketAddressSet hub) {
         try {
             return sl.clients(hub);
         } catch (IOException e) {
@@ -141,86 +124,39 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         }
     }
 
-    private void updateHub(SocketAddressSet a) {
+    private void updateHub(HubInfo info) {
 
-        HubInfo h = (HubInfo) oldHubs.remove(a);
+        HubNode h = (HubNode) oldHubs.remove(info.hubAddress);
 
         if (h == null) {
-            h = new HubInfo();
-            h.address = a;
-
-            try {
-                h.node = new Node(a.toString(), " H ");
-                h.node.setType(Node.TYPE_CIRCLE);
-                h.node.setBackColor(Color.decode("#8B2500"));
-                h.node.setNodeBorderInactiveColor(Color.decode("#5c1800"));
-
-                h.node.setMouseOverText(new String[] { "Hub:", a.toString() });
-
-                tgPanel.addNode(h.node);
+            h = new HubNode(this, info);
+                        
+            try {              
+                tgPanel.addNode(h);
             } catch (TGException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
-            h.clients = new HashMap();
+        } else { 
+            h.updateInfo(info);
         }
 
-        Client[] clients = getClientsForHub(a);
-
+        /*
+         * Do this on demand ? 
+        ClientInfo[] clients = getClientsForHub(info.hubAddress);
         updateClients(clients, h);
-
-        hubs.put(a, h);
+         */
+        
+        hubs.put(info.hubAddress, h);
     }
 
-    private ClientInfo createClientInfo(Client c, HubInfo h) {
+    private ClientNode createClientInfo(ClientInfo c, HubNode h) {
 
-        ClientInfo ci = new ClientInfo();
-        ci.client = c;
-        ci.proxy = h;
-
-        String adr = c.getClientAddress().toString();
-
-        String[] mouseOverText = null;
-        Color color = null;
-        Color border = null;
-        String label = null;
-
-        if (c.offersService("router")) {
-            System.out.println("Adding router " + adr);
-            mouseOverText = new String[] { "Router:", adr };
-            color = Color.decode("#FF7F24"); // Color.decode("#CDC673");
-            border = Color.decode("#CD661D"); // Color.decode("#8B864E");
-            label = "R";
-        } else if (c.offersService("visualization")) {
-            System.out.println("Adding visualization " + adr);
-            mouseOverText = new String[] { "Visualization:", adr };
-            color = Color.decode("#8000A0");
-            border = Color.decode("#54006A"); 
-            label = "V";
-        } else {
-            System.out.println("Adding client " + adr);
-            mouseOverText = new String[] { "Client:", adr };
-            label = "C";
-        }
-
+        ClientNode ci = new ClientNode(c, h);
+       
         try {
-            ci.node = (Node) tgPanel.addNode(adr, label);
-            ci.node.setType(Node.TYPE_CIRCLE);
-
-            if (color != null) {
-                ci.node.setBackColor(color);
-            }
-
-            if (border != null) {
-                ci.node.setNodeBorderInactiveColor(border);
-            }
-
-            if (mouseOverText != null) {
-                ci.node.setMouseOverText(mouseOverText);
-            }
-
-            ci.edge = tgPanel.addEdge(ci.node, h.node, Edge.DEFAULT_LENGTH);
+            tgPanel.addNode(ci);
+            tgPanel.addEdge(ci.getEdge());
         } catch (TGException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -230,13 +166,14 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         return ci;
     }
 
-    private void updateClients(Client[] clients, HubInfo h) {
+    /*
+    private void updateClients(ClientInfo[] clients, HubNode h) {
 
         if (h.clients.size() == 0) {
             // No clients yet, so just all them all....
 
             for (int c = 0; c < clients.length; c++) {
-                ClientInfo ci = createClientInfo(clients[c], h);
+                ClientNode ci = createClientInfo(clients[c], h);
 
                 if (ci != null) {
                     h.clients.put(clients[c].getClientAddress(), ci);
@@ -252,8 +189,8 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
 
         for (int c = 0; c < clients.length; c++) {
 
-            ClientInfo ci = (ClientInfo) old.remove(clients[c]
-                    .getClientAddress());
+            ClientNode ci = 
+                (ClientNode) old.remove(clients[c].getClientAddress());
 
             if (ci == null) {
                 ci = createClientInfo(clients[c], h);
@@ -268,7 +205,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
 
             while (itt.hasNext()) {
 
-                ClientInfo ci = (ClientInfo) itt.next();
+                ClientNode ci = (ClientNode) itt.next();
 
                 System.out.println("Removing client "
                         + ci.client.getClientAddress().toString());
@@ -281,11 +218,16 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             }
         }
     }
-
+*/
+    
     private void updateGraph() {
 
-        SocketAddressSet[] p = getHubs();
+        System.out.println("Retrieving graph ...");
+        
+        HubInfo [] p = getHubs();
 
+        System.out.println("Retrieving graph done!");
+                
         if (p == null) {
             return;
         }
@@ -298,35 +240,22 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         for (int i = 0; i < p.length; i++) {
             updateHub(p[i]);
         }
-
+        
         if (oldHubs.size() > 0) {
             Iterator itt = oldHubs.values().iterator();
 
             while (itt.hasNext()) {
-
-                // TODO: clean this up!!
-                HubInfo hi = (HubInfo) itt.next();
-
-                //if (ci.edge != null) {                     
-                //    tgPanel.deleteEdge(ci.edge);
-                //} 
-
-                tgPanel.deleteNode(hi.node);
+                HubNode hi = (HubNode) itt.next();                
+                hi.delete();
             }
         }
 
-        /*
-         Node r = tgPanel.getGES().getRandomNode();
-
-         if (r.getLabel().equals("C")) {
-
-         for (int i=r.edgeCount()-1;i>=0;i--) { 
-         tgPanel.deleteEdge(r.edgeAt(i));
-         }
-
-         tgPanel.deleteNode(r);
-         }
-         */
+        // Now update the connections between the hubs...
+        Iterator itt = hubs.values().iterator();
+        
+        while (itt.hasNext()) {             
+            ((HubNode) itt.next()).updateEdges();
+        }
     }
 
     public void run() {
@@ -425,5 +354,21 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         frame.add("Center", glPanel);
         frame.setSize(800, 600);
         frame.setVisible(true);
+    }
+
+    public void addEdge(Edge e) {
+        tgPanel.addEdge(e);
+    }
+    
+    public void deleteEdge(Edge e) {
+        tgPanel.deleteEdge(e);
+    }
+
+    public HubNode getHubNode(SocketAddressSet to) {
+        return (HubNode) hubs.get(to);
+    }
+
+    public void deleteNode(Node node) {
+        tgPanel.deleteNode(node);
     }
 }

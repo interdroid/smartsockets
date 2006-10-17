@@ -9,7 +9,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.util.Forwarder;
 import smartsockets.util.ForwarderDoneCallback;
 import smartsockets.virtual.VirtualSocket;
@@ -59,7 +59,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         }
     }
        
-    private boolean connectViaRouter(Client router, VirtualSocketAddress target,
+    private boolean connectViaRouter(ClientInfo router, VirtualSocketAddress target,
             long timeout) {
 
         boolean succes = false;
@@ -153,7 +153,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         // routers...        
         for (int i=startIndex;i<directions.length;i++) {
             
-            Client [] result = null;
+            ClientInfo [] result = null;
             
             try { 
                 result = parent.findClients(directions[i], "router");

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
@@ -75,7 +75,7 @@ public class Router extends Thread {
         return serviceLink.locateClient(machine.toString());
     }
     
-    synchronized Client [] findClients(SocketAddressSet proxy, String service) 
+    synchronized ClientInfo [] findClients(SocketAddressSet proxy, String service) 
         throws IOException {
         
         return serviceLink.clients(proxy, service);

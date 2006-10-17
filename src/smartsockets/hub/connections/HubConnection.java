@@ -17,6 +17,7 @@ import smartsockets.hub.state.ClientDescription;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
+import smartsockets.hub.state.StateSelector;
 
 public class HubConnection extends MessageForwardingConnection {
 
@@ -63,35 +64,31 @@ public class HubConnection extends MessageForwardingConnection {
         }        
     }
     
-    public synchronized void gossip(long currentState) { 
+    public synchronized void gossip() { 
         
         long newSendState = state.get(); 
+
+        goslogger.info("Gossiping with: " + peer.hubAddress); 
+        
+        StateSelector ss = new StateSelector(lastSendState);
+        
+        knownHubs.select(ss);
         
         try {
             int writes = 0;
 
-            goslogger.info("Gossiping with: " + peer.hubAddress); 
-            
-            Iterator itt = knownHubs.iterator();
+            Iterator itt = ss.iterator();
             
             while (itt.hasNext()) { 
                 HubDescription tmp = (HubDescription) itt.next();
                 
-                if (tmp.getLastLocalUpdate() > lastSendState) {
+                goslogger.info("    Writing proxy: " + tmp.hubAddressAsString);                    
+                goslogger.debug("      since lastLocalUpdate="  
+                        + tmp.getLastLocalUpdate()  
+                        + " > lastSendState= " + lastSendState);
                     
-                    goslogger.info("    Writing proxy: " + tmp.hubAddressAsString);                    
-                    goslogger.debug("      since lastLocalUpdate="  
-                            + tmp.getLastLocalUpdate()  
-                            + " > lastSendState= " + lastSendState);
-                    
-                    writeProxy(tmp);                    
-                    writes++;
-                } else { 
-                    goslogger.info("    NOT writing proxy: " + tmp.hubAddressAsString);                    
-                    goslogger.debug("      since lastLocalUpdate="  
-                            + tmp.getLastLocalUpdate()  
-                            + " <= lastSendState= " + lastSendState);
-                }
+                writeProxy(tmp);                    
+                writes++;
             }        
             
             if (writes == 0) {
@@ -133,6 +130,19 @@ public class HubConnection extends MessageForwardingConnection {
         for (int i=0;i<clients.size();i++) {                 
             ClientDescription.write((ClientDescription) clients.get(i), out);            
         }    
+        
+        String [] connectedTo = d.connectedTo();
+        
+        if (connectedTo == null || connectedTo.length == 0) {         
+            out.writeInt(0);
+            return;
+        }  
+          
+        out.writeInt(connectedTo.length);
+        
+        for (int i=0;i<connectedTo.length;i++) {
+            out.writeUTF(connectedTo[i]);
+        }    
     } 
         
     private void readProxy() throws IOException {
@@ -151,6 +161,14 @@ public class HubConnection extends MessageForwardingConnection {
         for (int i=0;i<clients;i++) {
             c[i] = ClientDescription.read(in);                        
         }
+        
+        int conns = in.readInt();        
+                
+        String [] a = new String[conns];
+        
+        for (int i=0;i<conns;i++) {
+            a[i] = in.readUTF();                        
+        }
                         
         if (local.hubAddress.equals(address)) {
             // Just received information about myself!
@@ -163,7 +181,7 @@ public class HubConnection extends MessageForwardingConnection {
             // The peer send information about itself. This should 
             // always be up-to-date.
             if (state > tmp.getHomeState()) { 
-                tmp.update(c, state);
+                tmp.update(c, a, state);
             } else { 
                 goslogger.warn("EEK: got information directly from " 
                         + peer.hubAddressAsString + " which seems to be "
@@ -178,7 +196,7 @@ public class HubConnection extends MessageForwardingConnection {
             
             // Check if the information is more recent than what I know...
             if (state > tmp.getHomeState()) { 
-                tmp.update(c, state);
+                tmp.update(c, a, state);
             } else {
                 goslogger.debug("Ignoring outdated information about " + 
                         tmp.hubAddressAsString + " from "  
@@ -205,6 +223,15 @@ public class HubConnection extends MessageForwardingConnection {
         return "ProxyConnection(" + peer.hubAddress + ")";
     }
     
+    private void disconnect() {
+                
+        // Update the administration
+        connections.removeConnection(peer.hubAddressAsString);        
+        local.removeConnectedTo(peer.hubAddressAsString);
+        
+        DirectSocketFactory.close(s, out, in);            
+    } 
+    
     protected boolean runConnection() {
     
         try { 
@@ -214,7 +241,7 @@ public class HubConnection extends MessageForwardingConnection {
         
             case -1:
                 conlogger.info("HubConnection got EOF!");
-                DirectSocketFactory.close(s, out, in);
+                disconnect();
                 return false;
                 
             case HubProtocol.GOSSIP:
@@ -234,13 +261,13 @@ public class HubConnection extends MessageForwardingConnection {
                
             default:
                 conlogger.warn("HubConnection got junk!");
-                DirectSocketFactory.close(s, out, in);
+                disconnect();
                 return false;
             }
                         
         } catch (Exception e) {
             conlogger.warn("HubConnection got exception!", e);
-            DirectSocketFactory.close(s, out, in);
+            disconnect();
         }
         
         return false;

@@ -124,35 +124,33 @@ public class HubList {
             return null;
         }
     }
+            
+    public synchronized void select(Selector s) {
         
-    public synchronized Iterator iterator() { 
-        return map.values().iterator();
-    }
-    
-    public synchronized Iterator connectedHubsIterator() { 
-        
-        PartialIterator result = new PartialIterator();
-        
-        Iterator i = connectedHubs.iterator();
-        
-        while (i.hasNext()) { 
-            result.add(i.next());
+        boolean all = s.needAll();
+        boolean connected = s.needConnected();
+        boolean local = s.needLocal();
+
+        if (local && !all && !connected) { 
+            // shortcut
+            s.select(localDescription);
+            return;
         }
-        
-        i = mustCheck.iterator();
-        
+                
+        Iterator i = map.values().iterator();
+            
         while (i.hasNext()) {
             
-            HubDescription p = (HubDescription) i.next(); 
-            
-            if (p.haveConnection()) {             
-                result.add(p);
-            }               
-        }
-        
-        return result;
+            HubDescription d = (HubDescription) i.next();
+                
+            if (all || 
+               (connected && (d.getConnection() != null)) ||  
+               (local && d.local)) { 
+                s.select(d);
+            }            
+        } 
     }
-    
+  
     public synchronized void putBack(HubDescription d) {
         
         if (d.reachableKnown() && d.isReachable()) { 
@@ -313,21 +311,6 @@ public class HubList {
             } 
         }
         
-        return result;
-    }
-               
-    public synchronized String [] hubsAsString() {
-        
-        int count = map.size();
-        
-        String [] result = new String[count]; 
-        
-        Iterator itt = map.values().iterator();
-        
-        for (int i=0;i<count;i++) { 
-            result[i] = ((HubDescription) itt.next()).hubAddressAsString;                                               
-        }
-
         return result;
     }
   

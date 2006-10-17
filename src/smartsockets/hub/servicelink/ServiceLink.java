@@ -33,8 +33,8 @@ public class ServiceLink implements Runnable {
     private boolean connected = false;
     
     private SocketAddressSet userSuppliedAddress;
-    private SocketAddressSet proxyAddress; 
-    private DirectSocket proxy;
+    private SocketAddressSet hubAddress; 
+    private DirectSocket hub;
     private DataOutputStream out; 
     private DataInputStream in; 
     
@@ -42,12 +42,12 @@ public class ServiceLink implements Runnable {
     
     private int maxWaitTime = DEFAULT_WAIT_TIME;
     
-    private ServiceLink(SocketAddressSet proxyAddress, 
+    private ServiceLink(SocketAddressSet hubAddress, 
             SocketAddressSet myAddress) throws IOException { 
         
         factory = DirectSocketFactory.getSocketFactory();
         
-        this.userSuppliedAddress = proxyAddress;
+        this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;              
                
         Thread t = new Thread(this, "ServiceLink Message Reader");
@@ -66,7 +66,8 @@ public class ServiceLink implements Runnable {
         callbacks.put(identifier, callback);              
     }
     
-    protected synchronized void registerCallback(String identifier, SimpleCallBack cb) { 
+    protected synchronized void registerCallback(String identifier, 
+            SimpleCallBack cb) { 
         
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override callback " 
@@ -109,16 +110,16 @@ public class ServiceLink implements Runnable {
             
     private void closeConnection() {
         setConnected(false);
-        DirectSocketFactory.close(proxy, out, in);                               
+        DirectSocketFactory.close(hub, out, in);                               
     }
     
-    private void connectToProxy(SocketAddressSet address) throws IOException { 
+    private void connectToHub(SocketAddressSet address) throws IOException { 
         try {
-            // Create a connection to the proxy
-            proxy = factory.createSocket(address, TIMEOUT, null);
+            // Create a connection to the hub
+            hub = factory.createSocket(address, TIMEOUT, null);
             
-            out = new DataOutputStream(proxy.getOutputStream());
-            in = new DataInputStream(proxy.getInputStream());
+            out = new DataOutputStream(hub.getOutputStream());
+            in = new DataInputStream(hub.getInputStream());
                            
             // Ask if we are allowed to join
             out.write(HubProtocol.SERVICELINK_CONNECT);
@@ -128,23 +129,23 @@ public class ServiceLink implements Runnable {
             // Get the result
             int reply = in.read();
         
-            // Throw an exception if the proxy refuses our conenction
+            // Throw an exception if the hub refuses our conenction
             if (reply != HubProtocol.SERVICELINK_ACCEPTED) {
-                throw new IOException("Proxy denied connection request");                
+                throw new IOException("Hub denied connection request");                
             }
         
-            // If the connection is accepted, the proxy will give us its full 
+            // If the connection is accepted, the hub will give us its full 
             // address (since the user supplied one may be a partial).  
-            proxyAddress = new SocketAddressSet(in.readUTF());
+            hubAddress = new SocketAddressSet(in.readUTF());
             
-            logger.info("Proxy at " + address + " accepted connection, " +
-                    "it's real address is: " + proxyAddress);            
+            logger.info("Hub at " + address + " accepted connection, " +
+                    "it's real address is: " + hubAddress);            
 
-            proxy.setSoTimeout(0);
+            hub.setSoTimeout(0);
             
             setConnected(true);
         } catch (IOException e) {            
-            logger.warn("Connection setup to proxy at " + address 
+            logger.warn("Connection setup to hub at " + address 
                     + " failed: ", e);            
             closeConnection();
             throw e;
@@ -154,7 +155,7 @@ public class ServiceLink implements Runnable {
     private void handleMessage() throws IOException { 
         
         String source = in.readUTF();        
-        String sourceProxy = in.readUTF();                
+        String sourceHub = in.readUTF();                
         String targetModule = in.readUTF();
         int opcode = in.readInt();
         String message = in.readUTF();
@@ -167,13 +168,13 @@ public class ServiceLink implements Runnable {
             logger.warn("ServiceLink: Callback " + targetModule + " not found");                                       
         } else { 
             SocketAddressSet src = new SocketAddressSet(source);
-            SocketAddressSet srcProxy = null;
+            SocketAddressSet srcHub = null;
             
-            if (sourceProxy != null && sourceProxy.length() > 0) { 
-                srcProxy = new SocketAddressSet(sourceProxy);
+            if (sourceHub != null && sourceHub.length() > 0) { 
+                srcHub = new SocketAddressSet(sourceHub);
             }
             
-            target.gotMessage(src, srcProxy, opcode, message);
+            target.gotMessage(src, srcHub, opcode, message);
         } 
     }
 
@@ -237,23 +238,23 @@ public class ServiceLink implements Runnable {
     }
         
     public synchronized void send(SocketAddressSet target, 
-            SocketAddressSet targetProxy, String targetModule, int opcode, 
+            SocketAddressSet targetHub, String targetModule, int opcode, 
             String message) { 
 
         if (!connected) {
-            logger.info("Cannot send message: not connected to proxy");            
+            logger.info("Cannot send message: not connected to hub");            
             return;
         }
                 
-        logger.info("Sending message to proxy: [" + target.toString() + ", " +
+        logger.info("Sending message to hub: [" + target.toString() + ", " +
                 targetModule + ", " + opcode + ", " + message + "]");
         
         try { 
             out.write(ServiceLinkProtocol.MESSAGE);
             out.writeUTF(target.toString());
             
-            if (targetProxy != null) { 
-                out.writeUTF(targetProxy.toString());                   
+            if (targetHub != null) { 
+                out.writeUTF(targetHub.toString());                   
             } else { 
                 out.writeUTF("");
             }
@@ -263,7 +264,7 @@ public class ServiceLink implements Runnable {
             out.writeUTF(message);
             out.flush();
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
         }        
     }
@@ -272,73 +273,85 @@ public class ServiceLink implements Runnable {
         return nextCallbackID++;
     }
     
-    public Client [] localClients() throws IOException {
-        return clients(proxyAddress, "");
+    public ClientInfo [] localClients() throws IOException {
+        return clients(hubAddress, "");
     }
     
-    public Client [] localClients(String tag) throws IOException {
-        return clients(proxyAddress, tag);
+    public ClientInfo [] localClients(String tag) throws IOException {
+        return clients(hubAddress, tag);
     }
     
-    public Client [] clients(SocketAddressSet proxy) throws IOException {
-        return clients(proxy, "");
+    public ClientInfo [] clients(SocketAddressSet hub) throws IOException {
+        return clients(hub, "");
     }
            
-    private Client [] convert(String [] message) { 
+    private ClientInfo [] convertToClientInfo(String [] message) { 
         
-        Client [] result = new Client[message.length];
+        ClientInfo [] result = new ClientInfo[message.length];
         
         for (int i=0;i<message.length;i++) { 
-            result[i] = new Client(message[i]);
+            result[i] = new ClientInfo(message[i]);
         }
         
         return result;        
     }
     
-    public Client [] clients(SocketAddressSet proxy, String tag) throws IOException {
+    private  HubInfo [] convertToHubInfo(String [] message) { 
+        
+        HubInfo [] result = new HubInfo[message.length];
+        
+        for (int i=0;i<message.length;i++) { 
+            result[i] = new HubInfo(message[i]);
+        }
+        
+        return result;        
+    }
+    
+    
+    public ClientInfo [] clients(SocketAddressSet hub, String tag) throws IOException {
 
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get clients: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
+            logger.info("Cannot get clients: not connected to hub");            
+            throw new IOException("No connection to hub!");
         }
                 
-        logger.info("Requesting client list from proxy");
+        logger.info("Requesting client list from hub");
     
-        String id = "GetClientsForProxy" + getNextSimpleCallbackID();
+        String id = "GetClientsForHub" + getNextSimpleCallbackID();
     
         SimpleCallBack tmp = new SimpleCallBack();        
         registerCallback(id, tmp);
         
         try {
             synchronized (this) {         
-                out.write(ServiceLinkProtocol.CLIENTS_FOR_PROXY);
+                out.write(ServiceLinkProtocol.CLIENTS_FOR_HUB);
                 out.writeUTF(id);
-                out.writeUTF(proxy.toString());
+                out.writeUTF(hub.toString());
                 out.writeUTF(tag);                
                 out.flush();            
             }
             
-            return convert((String []) tmp.getReply());        
+            return convertToClientInfo((String []) tmp.getReply());        
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
-            throw new IOException("Connection to proxy lost!");            
+            throw new IOException("Connection to hub lost!");            
         } finally { 
             removeCallback(id);
         }
     }
     
-    public Client [] clients() throws IOException {
+    public ClientInfo [] clients() throws IOException {
         return clients("");
     }
 
-    public Client [] clients(String tag) throws IOException {        
+    public ClientInfo [] clients(String tag) throws IOException {        
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get clients: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
+            logger.info("Cannot get clients: not connected to hub");            
+            throw new IOException("No connection to hub!");
         }
                 
-        logger.info("Requesting client list from proxy");
+        logger.info("Requesting client list from hub");
     
         String id = "GetAllClients" + getNextSimpleCallbackID();
                 
@@ -353,34 +366,34 @@ public class ServiceLink implements Runnable {
                 out.flush();            
             }
             
-            return convert((String []) tmp.getReply());        
+            return convertToClientInfo((String []) tmp.getReply());        
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
-            throw new IOException("Connection to proxy lost!");            
+            throw new IOException("Connection to hub lost!");            
         } finally { 
             removeCallback(id);
         }
     }
    
     
-    public SocketAddressSet [] proxies() throws IOException {
+    public SocketAddressSet [] hubs() throws IOException {
         
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get list of proxies: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
+            logger.info("Cannot get list of hubs: not connected to hub");            
+            throw new IOException("No connection to hub!");
         }        
         
-        logger.info("Requesting proxy list from proxy");
+        logger.info("Requesting hub list from hub");
         
-        String id = "GetProxies" + getNextSimpleCallbackID();
+        String id = "GetHubs" + getNextSimpleCallbackID();
                 
         SimpleCallBack tmp = new SimpleCallBack();        
         registerCallback(id, tmp);
         
         try {
             synchronized (this) {         
-                out.write(ServiceLinkProtocol.PROXIES);
+                out.write(ServiceLinkProtocol.HUBS);
                 out.writeUTF(id);
                 out.flush();            
             } 
@@ -389,22 +402,55 @@ public class ServiceLink implements Runnable {
             return SocketAddressSet.convertToSocketAddressSet(reply);        
                         
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
-            throw new IOException("Connection to proxy lost!");
+            throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
         }
     }
+
+    public HubInfo [] hubDetails() throws IOException {
+        
+        if (!waitConnected(maxWaitTime)) {
+            logger.info("Cannot get list of hubs: not connected to hub");            
+            throw new IOException("No connection to hub!");
+        }        
+        
+        logger.info("Requesting hub details from hub");
+        
+        String id = "GetHubDetails" + getNextSimpleCallbackID();
+                
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.HUB_DETAILS);
+                out.writeUTF(id);
+                out.flush();            
+            } 
+            
+            return convertToHubInfo((String []) tmp.getReply());
+                        
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
+            closeConnection();
+            throw new IOException("Connection to hub lost!");
+        } finally { 
+            removeCallback(id);
+        }
+    }
+
     
     public SocketAddressSet [] locateClient(String client) throws IOException {
 
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get direction to client: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
+            logger.info("Cannot get direction to client: not connected to hub");            
+            throw new IOException("No connection to hub!");
         }        
         
-        logger.info("Requesting direction to client " + client + " from proxy");
+        logger.info("Requesting direction to client " + client + " from hub");
         
         String id = "GetDirection" + getNextSimpleCallbackID();
         
@@ -423,9 +469,9 @@ public class ServiceLink implements Runnable {
             return SocketAddressSet.convertToSocketAddressSet(reply);        
                         
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
-            throw new IOException("Connection to proxy lost!");
+            throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
         }
@@ -436,18 +482,18 @@ public class ServiceLink implements Runnable {
     public SocketAddressSet getAddress() throws IOException {
         
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get proxy address: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
+            logger.info("Cannot get hub address: not connected to hub");            
+            throw new IOException("No connection to hub!");
         }
         
-        return proxyAddress;
+        return hubAddress;
     }
     
     public boolean registerService(String tag, String info) throws IOException {
 
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot register service: not connected to proxy");            
-            throw new IOException("No connection to proxy!");
+            logger.info("Cannot register service: not connected to hub");            
+            throw new IOException("No connection to hub!");
         }        
         
         logger.info("Requesting service registration: " + tag + " " + info); 
@@ -469,9 +515,9 @@ public class ServiceLink implements Runnable {
             String [] reply = (String []) tmp.getReply();            
             return reply != null && reply.length == 1 && reply[0].equals("OK");
         } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to proxy!", e);
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
-            throw new IOException("Connection to proxy lost!");
+            throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
         }
@@ -483,7 +529,7 @@ public class ServiceLink implements Runnable {
             SocketAddressSet myAddress) { 
                                        
         if (address == null) {  
-            throw new NullPointerException("Proxy address is null!");
+            throw new NullPointerException("Hub address is null!");
         }
                 
         if (myAddress == null) { 
@@ -494,7 +540,7 @@ public class ServiceLink implements Runnable {
             try { 
                 serviceLink = new ServiceLink(address, myAddress);                 
             } catch (Exception e) {
-                logger.warn("ServiceLink: Failed to connect to proxy!", e);
+                logger.warn("ServiceLink: Failed to connect to hub!", e);
                 return null;
             }                        
         }
@@ -502,29 +548,29 @@ public class ServiceLink implements Runnable {
         return serviceLink;
     }
 
-    public SocketAddressSet findSharedProxy(SocketAddressSet myMachine, 
+    public SocketAddressSet findSharedHub(SocketAddressSet myMachine, 
             SocketAddressSet targetMachine) {
         
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot find shared proxy: not connected");            
+            logger.info("Cannot find shared hub: not connected");            
             return null;
         }   
 
         // TODO DUMMY IMPLEMENTATION --- FIX!!!!!        
-        return proxyAddress;
+        return hubAddress;
     }
     
     public void run() {
         
-        // Connect to the proxy and processes the messages it gets. When the 
+        // Connect to the hub and processes the messages it gets. When the 
         // connection is lost, it will try to reconnect.         
         while (true) { 
             do {            
                 try { 
-                    if (proxyAddress == null) {
-                        connectToProxy(userSuppliedAddress);
+                    if (hubAddress == null) {
+                        connectToHub(userSuppliedAddress);
                     } else { 
-                        connectToProxy(proxyAddress);
+                        connectToHub(hubAddress);
                     }
                 } catch (IOException e) {
                     try { 

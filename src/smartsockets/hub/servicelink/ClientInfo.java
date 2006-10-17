@@ -9,13 +9,13 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.virtual.VirtualSocketAddress;
 
 
-public class Client {
+public class ClientInfo {
 
     private final SocketAddressSet clientAddress;
     private final long version;
     private final Map services;
         
-    public Client(String clientAsString) { 
+    public ClientInfo(String clientAsString) { 
     
         final String orig = clientAsString;
         
@@ -89,7 +89,7 @@ public class Client {
         } 
     } 
     
-    public Client(SocketAddressSet clientAddress, long version, Map services) { 
+    public ClientInfo(SocketAddressSet clientAddress, long version, Map services) { 
         this.clientAddress = clientAddress;
         this.version = version;        
         this.services = services;

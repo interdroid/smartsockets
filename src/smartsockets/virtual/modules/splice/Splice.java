@@ -68,7 +68,7 @@ public class Splice extends AbstractDirectModule {
         
         // Now try to find a proxy that both machines can reach.
         SocketAddressSet shared = 
-            serviceLink.findSharedProxy(myMachine, targetMachine);
+            serviceLink.findSharedHub(myMachine, targetMachine);
         
         if (shared == null) {            
             logger.info(module + ": no shared proxy found!");

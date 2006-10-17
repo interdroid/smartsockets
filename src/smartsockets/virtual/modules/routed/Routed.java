@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.hub.servicelink.Client;
+import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.router.simple.RouterClient;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.Properties;
@@ -46,12 +46,12 @@ public class Routed extends ConnectModule {
             routers.clear();
 
             // Next get the routers from the service link 
-            Client [] r = serviceLink.localClients("router");
+            ClientInfo [] r = serviceLink.localClients("router");
         
             // Then add them to our cache
             if (r != null && r.length > 0) {
                 for (int i=0;i<r.length;i++) {                     
-                    Client c = r[i];
+                    ClientInfo c = r[i];
                     routers.addLast(c.getServiceAsAddress("router"));
                 }                    
             }

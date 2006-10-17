@@ -185,7 +185,9 @@ class Connector extends CommunicationThread {
         if (result) {
             hconlogger.debug("Succesfully created connection!");
             connections.addConnection(d.hubAddress.toString(), c);
-            c.activate();
+            c.activate();            
+            
+            knownHubs.getLocalDescription().addConnectedTo(d.hubAddressAsString);            
         } else { 
             hconlogger.info("Failed to set up connection!");
             DirectSocketFactory.close(s, out, in);

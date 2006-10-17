@@ -3,6 +3,7 @@ package smartsockets.hub.state;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.TreeMap;
 
 import smartsockets.direct.SocketAddressSet;
@@ -14,15 +15,18 @@ public class HubDescription {
     public static final byte UNKNOWN     = 0;    
     public static final byte UNREACHABLE = 1;
     public static final byte REACHABLE   = 2;
-    
+
+    // Address of the hub, which should be unique. Also stored in String form, 
+    // since this is used quite a lot...
     public final SocketAddressSet hubAddress;
     public final String hubAddressAsString;
     
+    // Easy access to the global state counter 
     final StateCounter state;        
-    final boolean local;
     
-    private HubDescription indirection;     
-        
+    // Is this the local description ?  
+    final boolean local;
+            
     // Value of the local state the last time anything was changed in this 
     // description.  
     private long lastLocalUpdate;
@@ -44,6 +48,7 @@ public class HubDescription {
     // Last time that we tried to connect to this machine.      
     private long lastConnect;    
         
+    // Is the machine reachable ? Can it reach me ? 
     private byte reachable  = UNKNOWN;
     private byte canReachMe = UNKNOWN;
 
@@ -51,9 +56,22 @@ public class HubDescription {
     // Note that this is probably a very bad idea from a scalability point of 
     // view...
     private TreeMap clients = new TreeMap(); 
-
+    
+    // A reference to the actual connection to the described hub. May be 
+    // null if we are not directly connected.    
     private HubConnection connection;
-  
+
+    // If we don't have a connection to a hub, this reference tells us who 
+    // informed us in the first place that this hub exist. This allows us to
+    // indirectly reach the hub if necessary.
+    private HubDescription indirection;     
+    
+    // List of other hubs that this hub is connected to. Can be used by a client
+    // (e.g., a visualization) to get idea of who's connected to whom. Store in 
+    // String form since it's not really worth the effort converting them all
+    // the time.     
+    private ArrayList connectedTo = new ArrayList();
+    
     public HubDescription(SocketAddressSet address, StateCounter state) {
         this(address, state, false);
     } 
@@ -114,25 +132,34 @@ public class HubDescription {
         } 
     }
     
-    public void update(ClientDescription [] c, long remoteState) {
+    public void update(ClientDescription [] clients, String [] connectedTo, 
+            long remoteState) {
         
         if (local) { 
-            throw new IllegalStateException("Cannot update clients of local"
+            throw new IllegalStateException("Cannot update the local"
                     + " hub description!");
         }
                 
-        synchronized (clients) {            
-            clients.clear();
+        synchronized (this.clients) {            
+            this.clients.clear();
 
-            for (int i=0;i<c.length;i++) {
-                clients.put(c[i].clientAddress, c[i]);                                
+            for (int i=0;i<clients.length;i++) {
+                this.clients.put(clients[i].clientAddress, clients[i]);                                
             }   
-        }             
+        }        
         
+        synchronized (this.connectedTo) {            
+            this.connectedTo.clear();
+
+            for (int i=0;i<connectedTo.length;i++) {
+                this.connectedTo.add(connectedTo[i]);                                
+            }               
+        }
+            
         homeState = remoteState;
         lastLocalUpdate = state.increment();
     }
-   
+    
     public long getHomeState() { 
         return homeState;
     }
@@ -153,6 +180,10 @@ public class HubDescription {
         synchronized (client) {
             return clients.containsKey(client);
         } 
+    }
+    
+    public int numberOfClients() { 
+        return clients.size();
     }
     
     public ArrayList getClients(String tag) {
@@ -304,6 +335,12 @@ public class HubDescription {
     public synchronized HubConnection getConnection() { 
         return connection;
     }
+    
+    public String [] connectedTo() {        
+        synchronized (connectedTo) {
+            return (String []) connectedTo.toArray(new String [connectedTo.size()]);            
+        }
+    }
 
     public synchronized boolean haveConnection() { 
         return (connection != null);        
@@ -371,5 +408,28 @@ public class HubDescription {
         
         return buffer.toString();        
     }
-         
+
+    public void addConnectedTo(String address) {
+        
+        if (!local) { 
+            throw new IllegalStateException("Cannot add connections to remote"
+                    + " hub descriptions!");
+        }
+        
+        synchronized (connectedTo) {
+            connectedTo.add(address);
+        }        
+    }
+    
+    public void removeConnectedTo(String address) {
+        
+        if (!local) { 
+            throw new IllegalStateException("Cannot remove connections from" +
+                    " remote hub descriptions!");
+        }
+        
+        synchronized (connectedTo) {
+            connectedTo.remove(address);
+        }        
+    }
 }
