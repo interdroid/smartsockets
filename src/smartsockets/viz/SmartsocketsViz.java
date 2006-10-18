@@ -49,7 +49,6 @@
 
 package smartsockets.viz;
 
-import java.awt.Color;
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -77,6 +76,8 @@ import com.touchgraph.graphlayout.TGException;
  * @version  1.22-jre1.1  $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch Exp $
  */
 public class SmartsocketsViz extends GLPanel implements Runnable {
+
+    private static final long serialVersionUID = -3629362794531051537L;
 
     private ServiceLink sl;
 
@@ -114,7 +115,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         }
     }
 
-    private ClientInfo[] getClientsForHub(SocketAddressSet hub) {
+    ClientInfo[] getClientsForHub(SocketAddressSet hub) {
         try {
             return sl.clients(hub);
         } catch (IOException e) {
@@ -150,9 +151,9 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         hubs.put(info.hubAddress, h);
     }
 
-    private ClientNode createClientInfo(ClientInfo c, HubNode h) {
+    private NormalClientNode createClientInfo(ClientInfo c, HubNode h) {
 
-        ClientNode ci = new ClientNode(c, h);
+        NormalClientNode ci = new NormalClientNode(c, h);
        
         try {
             tgPanel.addNode(ci);
@@ -270,62 +271,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             }
         }
     }
-
-    public void randomGraph() throws TGException {
-        /*
-         Node hub = tgPanel.addNode("hub1", " H ");
-         hub.setType(Node.TYPE_CIRCLE);
-         hub.setMouseOverText(
-         new String [] { "Hub at:", 
-         "82.161.4.24/192.168.1.35-17878" });
-         
-         for ( int i=0; i<7; i++ ) {
-         Node client = tgPanel.addNode("client of hub1" + i, "C");            
-         client.setType(Node.TYPE_ROUNDRECT);            
-         Edge edge = new Edge(client, hub, Edge.DEFAULT_LENGTH);
-         tgPanel.addEdge(edge);            
-         }
-         
-         Node hub2 = tgPanel.addNode("hub2", " H ");
-         hub2.setType(Node.TYPE_CIRCLE);
-         hub2.setMouseOverText(
-         new String [] { "Hub at:", 
-         "130.37.193.15/10.0.0.15-17878" });        
-         
-         for ( int i=0; i<5; i++ ) {
-         Node client = tgPanel.addNode("client of hub2" + i, "C");            
-         client.setType(Node.TYPE_ROUNDRECT);            
-         Edge edge = new Edge(client, hub2, Edge.DEFAULT_LENGTH);
-         tgPanel.addEdge(edge);            
-         }
-         
-         Edge edge = new Edge(hub, hub2, Edge.DEFAULT_LENGTH);
-         tgPanel.addEdge(edge);            
-         
-         
-         /*
-         TGForEachNode fen = new TGForEachNode() {
-         public void forEachNode(Node n) {
-         for(int i=0;i<5;i++) {
-         Node r = tgPanel.getGES().getRandomNode();
-         if(r!=n && tgPanel.findEdge(r,n)==null) 
-         tgPanel.addEdge(r,n,Edge.DEFAULT_LENGTH);	
-         }
-         }
-         };    	
-         tgPanel.getGES().forAllNodes(fen);
-         */
-        /*
-         tgPanel.setLocale(hub,1);
-         tgPanel.setSelect(hub);
-         try {
-         Thread.currentThread().sleep(2000); 
-         } catch (InterruptedException ex) {}                    				
-
-         getHVScroll().slowScrollToCenter(hub);
-         */
-    }
-
+   
     public static void main(String[] args) {
 
         if (args.length != 1) {
@@ -355,7 +301,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         frame.setSize(800, 600);
         frame.setVisible(true);
     }
-
+    
     public void addEdge(Edge e) {
         tgPanel.addEdge(e);
     }
@@ -368,6 +314,15 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         return (HubNode) hubs.get(to);
     }
 
+    public void addNode(Node n) {
+        try {
+            tgPanel.addNode(n);
+        } catch (TGException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+    
     public void deleteNode(Node node) {
         tgPanel.deleteNode(node);
     }

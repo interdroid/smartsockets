@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.HubInfo;
 
 import com.touchgraph.graphlayout.Edge;
@@ -12,15 +13,18 @@ import com.touchgraph.graphlayout.Node;
 
 public class HubNode extends Node {
     
-    final SmartsocketsViz parent;
+    private final SmartsocketsViz parent;
     
     private HubInfo info;
-
     private HashMap edges = new HashMap();        
     private HashMap clients = new HashMap();
-
+    
+    private CollectionClientNode clientCollection;
+    
+    private boolean collapseClients = true;
+    
     public HubNode(SmartsocketsViz parent, HubInfo info) {
-        super(info.hubAddress.toString(), " H ");        
+        super("Hub " + info.hubAddress.toString(), " H ");            
         
         setType(Node.TYPE_CIRCLE);
         setBackColor(Color.decode("#8B2500"));
@@ -29,6 +33,8 @@ public class HubNode extends Node {
         
         this.parent = parent;
         this.info = info;
+        
+        clientCollection = new CollectionClientNode(info.clients, this);
     }
         
     public void updateEdges() {
@@ -69,6 +75,73 @@ public class HubNode extends Node {
         }
     }
 
+    public void updateClients() {
+    
+        HashMap old = clients;
+        clients = new HashMap();
+        
+        if (info.clients > 0) { 
+        
+            if (collapseClients) {  
+                // fold all clients into 1 node to prevent clutter on the 
+                // screen                
+                clientCollection.setClients(info.clients);
+
+                Node tmp = (Node) old.get("collection");
+
+                if (tmp == null) { 
+                    // the collection wasn't shown yet!
+                    parent.addNode(clientCollection);
+                    parent.addEdge(clientCollection.getEdge());
+                }
+
+                clients.put("collection", clientCollection);
+
+            } else { 
+                
+                ClientInfo [] cs = parent.getClientsForHub(info.hubAddress);
+                
+                if (cs != null) { 
+                    
+                    for (int c=0;c<cs.length;c++) {
+
+                        SocketAddressSet a = cs[c].getClientAddress();
+                        
+                        NormalClientNode ci = (NormalClientNode) old.remove(a);
+
+                        if (ci == null) {
+                            ci = new NormalClientNode(cs[c], this);
+                            parent.addNode(ci);
+                            parent.addEdge(ci.getEdge());                            
+                        }
+
+                        clients.put(a, ci);
+                    }
+                }
+            }
+        } 
+
+        // Now remove all leftover clients...
+        if (old.size() > 0) {            
+            Iterator itt = old.values().iterator();
+
+            while (itt.hasNext()) {
+/*
+                Node ci = (Node) itt.next();
+
+                if (ci.edge != null) {
+                    tgPanel.deleteEdge(ci.edge);
+                }
+
+                tgPanel.deleteNode(ci.node);
+                */
+            }
+        }
+        
+    }
+    
+    
+    
     public void delete() {
 
         // remove edges
@@ -85,7 +158,7 @@ public class HubNode extends Node {
             Iterator itt = clients.values().iterator();
 
             while (itt.hasNext()) {
-                parent.deleteNode((ClientNode) itt.next());
+                parent.deleteNode((NormalClientNode) itt.next());
             }
         }
         
@@ -94,5 +167,5 @@ public class HubNode extends Node {
 
     public void updateInfo(HubInfo info) {
         this.info = info;
-    }
+    }      
 }

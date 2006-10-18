@@ -6,15 +6,14 @@ import smartsockets.hub.servicelink.ClientInfo;
 
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
-import com.touchgraph.graphlayout.TGException;
 
-public class ClientNode extends Node {
+public class NormalClientNode extends Node {
     
-    Edge edge;
-    HubNode hub;
-    ClientInfo client;
+    private Edge edge;
+    private HubNode hub;
+    private ClientInfo client;
     
-    public ClientNode(ClientInfo info, HubNode hub) { 
+    public NormalClientNode(ClientInfo info, HubNode hub) { 
         super(info.getClientAddress().toString());
         
         this.hub = hub;
