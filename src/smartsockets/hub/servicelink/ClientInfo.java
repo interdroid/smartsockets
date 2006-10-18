@@ -13,7 +13,7 @@ public class ClientInfo {
 
     private final SocketAddressSet clientAddress;
     private final long version;
-    private final Map services;
+    private final Map properties;
         
     public ClientInfo(String clientAsString) { 
     
@@ -55,7 +55,7 @@ public class ClientInfo {
 
             version = Long.parseLong(clientAsString.substring(0, index));
                         
-            services = new HashMap();
+            properties = new HashMap();
             
             clientAsString = clientAsString.substring(index);
         
@@ -73,7 +73,7 @@ public class ClientInfo {
                     
                 String value = clientAsString.substring(0, index); 
 
-                services.put(key, value);
+                properties.put(key, value);
             
                 clientAsString = clientAsString.substring(index+1);
             }
@@ -89,29 +89,29 @@ public class ClientInfo {
         } 
     } 
     
-    public ClientInfo(SocketAddressSet clientAddress, long version, Map services) { 
+    public ClientInfo(SocketAddressSet clientAddress, long version, Map properties) { 
         this.clientAddress = clientAddress;
         this.version = version;        
-        this.services = services;
+        this.properties = properties;
     }
     
     public SocketAddressSet getClientAddress() { 
         return clientAddress;
     }
     
-    public VirtualSocketAddress getServiceAsAddress(String name) 
+    public VirtualSocketAddress getPropertyAsAddress(String name) 
         throws UnknownHostException {
         
-        return new VirtualSocketAddress(getService(name));
+        return new VirtualSocketAddress(getProperty(name));
     }
     
-    public String getService(String name) { 
-        return (String) services.get(name);
+    public String getProperty(String name) { 
+        return (String) properties.get(name);
     }
     
     
-    public boolean offersService(String name) { 
-        return services.containsKey(name);
+    public boolean hasProperty(String name) { 
+        return properties.containsKey(name);
     }
           
     public String toString() { 
@@ -120,11 +120,11 @@ public class ClientInfo {
         
         result.append(clientAddress.toString());
         
-        Iterator it = services.keySet().iterator();
+        Iterator it = properties.keySet().iterator();
         
         while (it.hasNext()) { 
             String key = (String) it.next();
-            String value = (String) services.get(key);            
+            String value = (String) properties.get(key);            
             
             result.append(", [");
             result.append(key);

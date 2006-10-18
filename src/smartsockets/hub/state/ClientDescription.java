@@ -26,7 +26,7 @@ public class ClientDescription {
         this.services = services;
     }
         
-    public boolean addService(String tag, String address) { 
+    public boolean addService(String tag, String info) { 
         if (services == null) { 
             services = new HashMap();
         }
@@ -35,10 +35,26 @@ public class ClientDescription {
             return false;
         }
         
-        services.put(tag, address);        
+        services.put(tag, info);        
         version++;        
         return true;        
     }
+    
+    public boolean updateService(String tag, String info) { 
+        if (services == null) {
+            return false;
+        }
+        
+        if (!services.containsKey(tag)) { 
+            return false;
+        }
+        
+        // Overrides previous version...
+        services.put(tag, info);        
+        version++;        
+        return true;        
+    }
+    
     
     public boolean removeService(String tag) { 
         if (services == null) { 

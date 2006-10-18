@@ -11,12 +11,12 @@ import java.io.IOException;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.util.Forwarder;
-import smartsockets.util.ForwarderDoneCallback;
+import smartsockets.util.ForwarderCallback;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.VirtualSocketFactory;
 
-class Connection implements Runnable, Protocol, ForwarderDoneCallback {       
+class Connection implements Runnable, Protocol, ForwarderCallback {       
 
     private final Router parent;
     
@@ -70,7 +70,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         try {
             Router.logger.debug("Connecting to router: " + router);
                         
-            VirtualSocketAddress r = router.getServiceAsAddress("router");            
+            VirtualSocketAddress r = router.getPropertyAsAddress("router");            
            
             if (connect(r, timeout)) {
                 Router.logger.debug("Connection to router created!!");
@@ -329,6 +329,11 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
     
     public String toString() { 
         return "Connection from " + socketToClient; 
+    }
+
+    public void forwarded(int bytes) {
+        // TODO Auto-generated method stub
+        
     }
 
     

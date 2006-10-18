@@ -4,6 +4,8 @@
 package smartsockets.router.simple;
 
 
+import ibis.util.ThreadPool;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,15 +13,20 @@ import java.io.IOException;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.util.Forwarder;
-import smartsockets.util.ForwarderDoneCallback;
+import smartsockets.util.ForwarderCallback;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.VirtualSocketFactory;
 
-class Connection implements Runnable, Protocol, ForwarderDoneCallback {       
+class Connection implements Runnable, Protocol, ForwarderCallback {       
 
     private final Router parent;
     
+    private final String ID;
+    
+    private String from;
+    private String to;
+        
     private VirtualSocket socketToClient;
     private DataOutputStream outToClient;
     private DataInputStream inFromClient;    
@@ -31,12 +38,19 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
     private String label1;    
     private String label2;    
     
-    private int forwarderDone = 0;
+    private Forwarder forwarder1;
+    private Forwarder forwarder2;
+        
+    private int forwarderDone = 0;    
    
-    Connection(VirtualSocket sc, Router parent) throws IOException {
+    private long time;
+    private long bytes;
+    
+    Connection(VirtualSocket sc, String ID, Router parent) throws IOException {
         
         Router.logger.debug("Created new connection to " + sc);
-                
+        
+        this.ID = ID;        
         this.socketToClient = sc;
         this.parent = parent;
         
@@ -45,12 +59,14 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         inFromClient = new DataInputStream(sc.getInputStream());
     }
     
+    
     private boolean connect(VirtualSocketAddress target, long timeout) {  
     
         try { 
             socketToTarget = parent.connect(target, timeout);
             outToTarget = new DataOutputStream(socketToTarget.getOutputStream());
-            inFromTarget = new DataInputStream(socketToTarget.getInputStream());        
+            inFromTarget = new DataInputStream(socketToTarget.getInputStream());            
+            to = target.machine().toString();                        
             return true; 
         } catch (IOException e) {
             Router.logger.debug("Failed to create connection to " + target);
@@ -59,20 +75,21 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         }
     }
        
-    private boolean connectViaRouter(ClientInfo router, VirtualSocketAddress target,
-            long timeout) {
+    private boolean connectViaRouter(ClientInfo router, String src, 
+            VirtualSocketAddress target, long timeout) {
 
         boolean succes = false;
         
         try {
             Router.logger.debug("Connecting to router: " + router);
                         
-            VirtualSocketAddress r = router.getServiceAsAddress("router");            
+            VirtualSocketAddress r = router.getPropertyAsAddress("router");            
            
             if (connect(r, timeout)) {
                 Router.logger.debug("Connection to router created!!");
                 Router.logger.debug("Forwarding target: " + target.toString());
                                 
+                outToTarget.writeUTF(src);                                
                 outToTarget.writeUTF(target.toString());                
                 outToTarget.writeLong(timeout);
                 outToTarget.flush();
@@ -108,12 +125,12 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
     }
 
     
-    private boolean connectToTarget(VirtualSocketAddress target, long timeout, 
-            SocketAddressSet [] directions) { 
+    private boolean connectToTarget(String source, VirtualSocketAddress target, 
+            long timeout, SocketAddressSet [] directions) { 
                         
         // Check if the target is local to my proxy. If so, my local proxy 
         // address should be in the first entry of the directions array.
-        SocketAddressSet proxy = parent.getProxyAddress();
+        SocketAddressSet proxy = parent.getHubAddress();
 
         if (proxy == null) { 
             Router.logger.debug("Cannot forward connection: failed to get " +
@@ -177,7 +194,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
                     // TODO: should we change the target address to include the
                     // new proxy ?
                     
-                    if (connectViaRouter(result[i], target, timeout)) { 
+                    if (connectViaRouter(result[i], source, target, timeout)) { 
                         return true;                        
                     }
                 } 
@@ -194,13 +211,18 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         Router.logger.debug("Connection " + socketToClient + " waiting for opcode");
                
         try {
-            VirtualSocketAddress target = 
-                new VirtualSocketAddress(inFromClient.readUTF());
+            String src = inFromClient.readUTF();            
+            String dest = inFromClient.readUTF();
+                       
+            from = src;
+            
+            VirtualSocketAddress target = new VirtualSocketAddress(dest);
             
             long timeout = inFromClient.readLong();
         
             Router.logger.debug("Connection " + socketToClient + " got:");
-            Router.logger.debug("     target : " + target);            
+            Router.logger.debug("     source : " + src);
+            Router.logger.debug("     dest   : " + dest);            
             Router.logger.debug("     timeout: " + timeout);
 
             SocketAddressSet machine = target.machine();
@@ -208,7 +230,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             
             if (proxy != null) { 
                 SocketAddressSet [] dir = new SocketAddressSet [] { proxy };                 
-                succes = connectToTarget(target, timeout, dir);
+                succes = connectToTarget(src, target, timeout, dir);
          
                 if (!succes) { 
                     Router.logger.warn("Connection " + socketToClient + " failed"
@@ -224,7 +246,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
                     Router.logger.warn("Connection " + socketToClient + " failed"
                             + " to locate machine: " + machine + "@" + proxy);
                 } else { 
-                    succes = connectToTarget(target, timeout, directions);                
+                    succes = connectToTarget(src, target, timeout, directions);                
                 }
             }
             
@@ -278,6 +300,8 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
                 
                 VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
                 VirtualSocketFactory.close(socketToTarget, outToTarget, inFromTarget);
+                
+                parent.done(ID);                
             } else { 
                 Router.logger.info("Cannot remove connections yet!");
             }
@@ -291,13 +315,13 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             + ":" 
             + socketToClient.getPort() 
             + " --> " 
-            + socketToTarget.getRemoteSocketAddress() 
+            + to 
             + ":" 
             + socketToTarget.getPort() 
             + "]";
         
         label2 = "[" 
-            + socketToTarget.getRemoteSocketAddress() 
+            + to 
             + ":" 
             + socketToTarget.getPort()         
             + " --> " 
@@ -306,13 +330,45 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             + socketToClient.getPort()         
             + "]";
     
-        // TODO: thread pool ? 
-        new Thread(new Forwarder(inFromClient, outToTarget, this, label1), 
-                "ForwarderThread" + label1).start();
-        
-        new Thread(new Forwarder(inFromTarget, outToClient, this, label2), 
-                "ForwarderThread" + label2).start();
+        forwarder1 = new Forwarder(inFromClient, outToTarget, this, label1); 
+        forwarder2 = new Forwarder(inFromTarget, outToClient, this, label2); 
+                
+        ThreadPool.createNew(forwarder1, "ForwarderThread" + label1);        
+        ThreadPool.createNew(forwarder2, "ForwarderThread" + label2);
     }
+    
+    public long getThroughput() {      
+
+        // returns the throughput in bytes/s since the last request...        
+        if (time == 0 || forwarder1 == null || forwarder2 == null) { 
+            time = System.currentTimeMillis();
+            return 0;            
+        }
+        
+        long currTime = System.currentTimeMillis();         
+        long currBytes = forwarder1.getBytes() + forwarder2.getBytes();
+        
+        long deltaT = (currTime - time) / 1000;
+        
+        if (deltaT == 0) { 
+            return 0;
+        } 
+
+        long result = (((currBytes - bytes) * 8)) / deltaT;
+        
+        bytes = currBytes;
+        time = currTime;
+        
+        return result;        
+    } 
+    
+    public String from() { 
+        return from;
+    }
+    
+    public String to() { 
+        return to;
+    }    
     
     public void run() { 
         
@@ -324,7 +380,8 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
             }              
 
             // We have a connnection, so start forwarding!!
-            startForwarders();
+            startForwarders();            
+            parent.add(ID, this);            
         } catch (Exception e) {
             // TODO: handle exception
             VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
@@ -336,6 +393,7 @@ class Connection implements Runnable, Protocol, ForwarderDoneCallback {
         return "Connection from " + socketToClient; 
     }
 
+   
     
 
 }

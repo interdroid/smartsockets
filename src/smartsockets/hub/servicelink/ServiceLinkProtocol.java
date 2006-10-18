@@ -11,7 +11,10 @@ public interface ServiceLinkProtocol {
     public final byte HUB_DETAILS       = 14;
     
     public final byte DIRECTION         = 20;
-    public final byte REGISTER_SERVICE  = 30;
     
-    public final byte INFO             = 99;
+    public final byte REGISTER_PROPERTY = 30;
+    public final byte UPDATE_PROPERTY   = 31;
+    public final byte REMOVE_PROPERTY   = 32;
+        
+    public final byte INFO              = 99;
 }

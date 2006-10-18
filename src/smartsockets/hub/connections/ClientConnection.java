@@ -212,14 +212,14 @@ public class ClientConnection extends MessageForwardingConnection {
         out.flush();        
     } 
     
-    private void registerService() throws IOException { 
+    private void registerInfo() throws IOException { 
         
         String id = in.readUTF();
         String tag = in.readUTF();
-        String address = in.readUTF();
+        String info = in.readUTF();
 
         reglogger.debug("Connection " + clientAddress + " return id: " + id +  
-                " adding " + tag + " " + address + " to services!");         
+                " adding info: " + tag + " " + info);         
                
         HubDescription localHub = knownHubs.getLocalDescription();
         
@@ -227,7 +227,54 @@ public class ClientConnection extends MessageForwardingConnection {
         out.writeUTF(id);            
         out.writeInt(1);
         
-        if (localHub.addService(clientAddress, tag, address)) { 
+        if (localHub.addService(clientAddress, tag, info)) { 
+            out.writeUTF("OK");
+        } else { 
+            out.writeUTF("DENIED");
+        }
+            
+        out.flush();        
+    } 
+
+    private void updateInfo() throws IOException { 
+        
+        String id = in.readUTF();
+        String tag = in.readUTF();
+        String info = in.readUTF();
+
+        reglogger.debug("Connection " + clientAddress + " return id: " + id +  
+                " updating info: " + tag + " " + info);         
+               
+        HubDescription localHub = knownHubs.getLocalDescription();
+        
+        out.write(ServiceLinkProtocol.INFO);           
+        out.writeUTF(id);            
+        out.writeInt(1);
+        
+        if (localHub.updateService(clientAddress, tag, info)) { 
+            out.writeUTF("OK");
+        } else { 
+            out.writeUTF("DENIED");
+        }
+            
+        out.flush();        
+    } 
+
+    private void removeInfo() throws IOException { 
+        
+        String id = in.readUTF();
+        String tag = in.readUTF();
+        
+        reglogger.debug("Connection " + clientAddress + " return id: " + id +  
+                " removing info: " + tag);         
+               
+        HubDescription localHub = knownHubs.getLocalDescription();
+        
+        out.write(ServiceLinkProtocol.INFO);           
+        out.writeUTF(id);            
+        out.writeInt(1);
+        
+        if (localHub.removeService(clientAddress, tag)) { 
             out.writeUTF("OK");
         } else { 
             out.writeUTF("DENIED");
@@ -300,14 +347,30 @@ public class ClientConnection extends MessageForwardingConnection {
                 directions();
                 return true;
             
-            case ServiceLinkProtocol.REGISTER_SERVICE:
+            case ServiceLinkProtocol.REGISTER_PROPERTY:
                 if (reglogger.isDebugEnabled()) {
                     reglogger.debug("Connection " + clientAddress + " requests" 
-                            + " service registration");
+                            + " info registration");
                 }
-                registerService();
+                registerInfo();
                 return true;
-                
+            
+            case ServiceLinkProtocol.UPDATE_PROPERTY:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " requests" 
+                            + " info update");
+                }
+                updateInfo();
+                return true;
+            
+            case ServiceLinkProtocol.REMOVE_PROPERTY:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " requests" 
+                            + " info removal");
+                }
+                removeInfo();
+                return true;
+                            
             default:
                 conlogger.warn("Connection " + clientAddress 
                         + " got unknown " + "opcode " + opcode 

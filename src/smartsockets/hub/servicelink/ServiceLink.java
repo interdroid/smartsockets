@@ -489,26 +489,26 @@ public class ServiceLink implements Runnable {
         return hubAddress;
     }
     
-    public boolean registerService(String tag, String info) throws IOException {
+    public boolean registerProperty(String tag, String value) throws IOException {
 
         if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot register service: not connected to hub");            
+            logger.info("Cannot register info: not connected to hub");            
             throw new IOException("No connection to hub!");
         }        
         
-        logger.info("Requesting service registration: " + tag + " " + info); 
+        logger.info("Requesting info registration: " + tag + " " + value); 
         
-        String id = "RegisterService" + getNextSimpleCallbackID();
+        String id = "RegisterInfo" + getNextSimpleCallbackID();
         
         SimpleCallBack tmp = new SimpleCallBack();        
         registerCallback(id, tmp);
         
         try {
             synchronized (this) {         
-                out.write(ServiceLinkProtocol.REGISTER_SERVICE);
+                out.write(ServiceLinkProtocol.REGISTER_PROPERTY);
                 out.writeUTF(id);
                 out.writeUTF(tag);
-                out.writeUTF(info);
+                out.writeUTF(value);
                 out.flush();            
             } 
 
@@ -522,8 +522,73 @@ public class ServiceLink implements Runnable {
             removeCallback(id);
         }
     }
-    
-   
+
+    public boolean updateProperty(String tag, String value) throws IOException {
+
+        if (!waitConnected(maxWaitTime)) {
+            logger.info("Cannot update info: not connected to hub");            
+            throw new IOException("No connection to hub!");
+        }        
+        
+        logger.info("Requesting info update: " + tag + " " + value); 
+        
+        String id = "UpdateInfo" + getNextSimpleCallbackID();
+        
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.UPDATE_PROPERTY);
+                out.writeUTF(id);
+                out.writeUTF(tag);
+                out.writeUTF(value);
+                out.flush();            
+            } 
+
+            String [] reply = (String []) tmp.getReply();            
+            return reply != null && reply.length == 1 && reply[0].equals("OK");
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
+            closeConnection();
+            throw new IOException("Connection to hub lost!");
+        } finally { 
+            removeCallback(id);
+        }
+    }
+
+    public boolean removeProperty(String tag) throws IOException {
+
+        if (!waitConnected(maxWaitTime)) {
+            logger.info("Cannot remove info: not connected to hub");            
+            throw new IOException("No connection to hub!");
+        }        
+        
+        logger.info("Requesting info removal: " + tag); 
+        
+        String id = "RemoveInfo" + getNextSimpleCallbackID();
+        
+        SimpleCallBack tmp = new SimpleCallBack();        
+        registerCallback(id, tmp);
+        
+        try {
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.REMOVE_PROPERTY);
+                out.writeUTF(id);
+                out.writeUTF(tag);
+                out.flush();            
+            } 
+
+            String [] reply = (String []) tmp.getReply();            
+            return reply != null && reply.length == 1 && reply[0].equals("OK");
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
+            closeConnection();
+            throw new IOException("Connection to hub lost!");
+        } finally { 
+            removeCallback(id);
+        }
+    }
     
     public static ServiceLink getServiceLink(SocketAddressSet address, 
             SocketAddressSet myAddress) { 

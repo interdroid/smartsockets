@@ -52,7 +52,7 @@ public class Routed extends ConnectModule {
             if (r != null && r.length > 0) {
                 for (int i=0;i<r.length;i++) {                     
                     ClientInfo c = r[i];
-                    routers.addLast(c.getServiceAsAddress("router"));
+                    routers.addLast(c.getPropertyAsAddress("router"));
                 }                    
             }
             

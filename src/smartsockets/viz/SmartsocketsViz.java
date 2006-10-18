@@ -101,7 +101,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             DirectServerSocket ss = df.createServerSocket(0, 1, null);
 
             sl = ServiceLink.getServiceLink(hub, ss.getAddressSet());
-            sl.registerService("visualization", "");                        
+            sl.registerProperty("visualization", "");                        
         } catch (Exception e) {
             System.err.println("Failed to connect to Hub: " + e);
             e.printStackTrace(System.err);
@@ -201,6 +201,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         hubs.put(info.hubAddress, h);
     }
     
+  
     private void updateGraph() {
 
         System.out.println("Retrieving graph ...");

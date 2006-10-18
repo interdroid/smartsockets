@@ -35,6 +35,7 @@ public class RouterClient implements Protocol {
                         
         logger.info("Sending connect request to router!");
         
+        out.writeUTF(factory.getLocalHost().toString());                
         out.writeUTF(target.toString());                
         out.writeLong(timeout);
         out.flush();

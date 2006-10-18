@@ -64,7 +64,7 @@ public class Router extends Thread {
 
         logger.info("Router listening on " + local.toString());                 
         
-        boolean register = serviceLink.registerService("router", local.toString());
+        boolean register = serviceLink.registerProperty("router", local.toString());
         
         logger.info("Router registration: " + register);                 
     } 

@@ -101,6 +101,9 @@ public class HubNode extends Node {
                 clients.put("collection", clientCollection);
 
             } else { 
+                // NOTE: this does not allow clients to 'change shape' during 
+                // the run (e.g., a client changing from a router to a normal 
+                // client)
                 
                 ClientInfo [] cs = parent.getClientsForHub(info.hubAddress);
                 
@@ -109,13 +112,24 @@ public class HubNode extends Node {
                     for (int c=0;c<cs.length;c++) {
 
                         SocketAddressSet a = cs[c].getClientAddress();
-                        
-                        NormalClientNode ci = (NormalClientNode) old.remove(a);
+                                               
+                        ClientNode ci = (ClientNode) old.remove(a);
 
                         if (ci == null) {
-                            ci = new NormalClientNode(cs[c], this);
+                            
+                            if (cs[c].hasProperty("router")) { 
+                                ci = new RouterClientNode(cs[c], this);                                
+                            } else if (cs[c].hasProperty("visualization")) {
+                                ci = new VizClientNode(cs[c], this);                                                            
+                            } else { 
+                                ci = new NormalClientNode(cs[c], this);                           
+                            }
+                            
                             parent.addNode(ci);
-                            parent.addEdge(ci.getEdge());                            
+                            parent.addEdge(ci.getEdge());
+                            
+                        } else if (ci instanceof RouterClientNode) { 
+                            ((RouterClientNode) ci).update(cs[c]);
                         }
 
                         clients.put(a, ci);

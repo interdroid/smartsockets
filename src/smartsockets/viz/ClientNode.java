@@ -1,5 +1,7 @@
 package smartsockets.viz;
 
+import smartsockets.hub.servicelink.ClientInfo;
+
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
@@ -18,5 +20,5 @@ public class ClientNode extends Node {
     
     public Edge getEdge() {
         return edge;
-    }        
+    }
 }

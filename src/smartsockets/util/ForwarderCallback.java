@@ -1,5 +1,5 @@
 package smartsockets.util;
 
-public interface ForwarderDoneCallback {    
+public interface ForwarderCallback {    
     public void done(String label);
 }

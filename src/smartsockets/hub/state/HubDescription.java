@@ -172,7 +172,48 @@ public class HubDescription {
             } 
 
             ClientDescription c = (ClientDescription) clients.get(client);
-            return c.addService(tag, address);
+            if (c.addService(tag, address)) {             
+                lastLocalUpdate = state.increment();
+                return true;
+            } else { 
+                return false;
+            }            
+        }
+    }
+
+    public boolean updateService(String client, String tag, String address) {
+        synchronized (clients) {
+            
+            if (!clients.containsKey(client)) {
+                return false;
+            } 
+
+            ClientDescription c = (ClientDescription) clients.get(client);
+            
+            if (c.updateService(tag, address)) {             
+                lastLocalUpdate = state.increment();
+                return true;
+            } else { 
+                return false;
+            }            
+        }
+    }
+
+    public boolean removeService(String client, String tag) {
+        synchronized (clients) {
+            
+            if (!clients.containsKey(client)) {
+                return false;
+            } 
+
+            ClientDescription c = (ClientDescription) clients.get(client);
+            
+            if (c.removeService(tag)) {             
+                lastLocalUpdate = state.increment();
+                return true;
+            } else { 
+                return false;
+            }            
         }
     }
     

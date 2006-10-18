@@ -11,9 +11,9 @@ public class Forwarder implements Runnable {
     public final InputStream in;
     public final OutputStream out;
     
-    private int bytes;    
+    private long bytes = 0;    
     
-    private final ForwarderDoneCallback cb;
+    private final ForwarderCallback cb;
     
     private final String label;
         
@@ -23,13 +23,13 @@ public class Forwarder implements Runnable {
         this(in, out, null, "unknown", DEFAULT_BUFFER_SIZE);
     }
     
-    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, 
+    public Forwarder(InputStream in, OutputStream out, ForwarderCallback cb, 
             String label) { 
         
         this(in, out, cb, label, DEFAULT_BUFFER_SIZE);
     }
 
-    public Forwarder(InputStream in, OutputStream out, ForwarderDoneCallback cb, 
+    public Forwarder(InputStream in, OutputStream out, ForwarderCallback cb, 
             String label, int bufferSize) {
         
         this.in = in;
@@ -43,6 +43,10 @@ public class Forwarder implements Runnable {
         return done;
     }
         
+    public synchronized long getBytes() { 
+        return bytes;
+    }
+    
     public void run() {
         
         System.out.println("Forwarder " + label + " running!");
@@ -60,7 +64,10 @@ public class Forwarder implements Runnable {
                 } else if (n > 0) {
                     out.write(buffer, 0, n);
                     out.flush();
-                    bytes += n;
+                    
+                    synchronized (this) {
+                        bytes += n;
+                    }
                 }
                 
             } catch (Exception e) {
