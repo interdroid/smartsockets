@@ -142,84 +142,8 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             h.updateInfo(info);
         }
 
-        /*
-         * Do this on demand ? 
-        ClientInfo[] clients = getClientsForHub(info.hubAddress);
-        updateClients(clients, h);
-         */
-        
         hubs.put(info.hubAddress, h);
     }
-
-    private NormalClientNode createClientInfo(ClientInfo c, HubNode h) {
-
-        NormalClientNode ci = new NormalClientNode(c, h);
-       
-        try {
-            tgPanel.addNode(ci);
-            tgPanel.addEdge(ci.getEdge());
-        } catch (TGException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
-        }
-
-        return ci;
-    }
-
-    /*
-    private void updateClients(ClientInfo[] clients, HubNode h) {
-
-        if (h.clients.size() == 0) {
-            // No clients yet, so just all them all....
-
-            for (int c = 0; c < clients.length; c++) {
-                ClientNode ci = createClientInfo(clients[c], h);
-
-                if (ci != null) {
-                    h.clients.put(clients[c].getClientAddress(), ci);
-                }
-            }
-
-            return;
-        }
-
-        // Do a diff between the old and new client set...
-        HashMap old = h.clients;
-        h.clients = new HashMap();
-
-        for (int c = 0; c < clients.length; c++) {
-
-            ClientNode ci = 
-                (ClientNode) old.remove(clients[c].getClientAddress());
-
-            if (ci == null) {
-                ci = createClientInfo(clients[c], h);
-            }
-
-            h.clients.put(clients[c].getClientAddress(), ci);
-        }
-
-        if (old.size() != 0) {
-
-            Iterator itt = old.values().iterator();
-
-            while (itt.hasNext()) {
-
-                ClientNode ci = (ClientNode) itt.next();
-
-                System.out.println("Removing client "
-                        + ci.client.getClientAddress().toString());
-
-                if (ci.edge != null) {
-                    tgPanel.deleteEdge(ci.edge);
-                }
-
-                tgPanel.deleteNode(ci.node);
-            }
-        }
-    }
-*/
     
     private void updateGraph() {
 
@@ -251,11 +175,14 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             }
         }
 
-        // Now update the connections between the hubs...
+        // Now update the connections between the hubs and the clients that 
+        // are connected to them...
         Iterator itt = hubs.values().iterator();
         
-        while (itt.hasNext()) {             
-            ((HubNode) itt.next()).updateEdges();
+        while (itt.hasNext()) {            
+            HubNode n = (HubNode) itt.next();             
+            n.updateEdges();
+            n.updateClients();
         }
     }
 
@@ -265,7 +192,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             updateGraph();
 
             try {
-                Thread.sleep(10000);
+                Thread.sleep(5000);
             } catch (Exception e) {
                 // ignore
             }

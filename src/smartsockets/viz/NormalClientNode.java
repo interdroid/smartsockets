@@ -7,16 +7,12 @@ import smartsockets.hub.servicelink.ClientInfo;
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
-public class NormalClientNode extends Node {
+public class NormalClientNode extends ClientNode {
     
-    private Edge edge;
-    private HubNode hub;
     private ClientInfo client;
     
     public NormalClientNode(ClientInfo info, HubNode hub) { 
-        super(info.getClientAddress().toString());
-        
-        this.hub = hub;
+        super(info.getClientAddress().toString(), hub);
         
         String adr = info.getClientAddress().toString();
 
@@ -39,11 +35,5 @@ public class NormalClientNode extends Node {
             setMouseOverText(new String[] { "Client:", adr });
             setLabel("C");
         }
-        
-        edge = new Edge(this, hub);
-    }
-
-    public Edge getEdge() {
-        return edge;
     }
 }

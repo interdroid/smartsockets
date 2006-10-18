@@ -87,7 +87,8 @@ public class HubNode extends Node {
                 // screen                
                 clientCollection.setClients(info.clients);
 
-                Node tmp = (Node) old.get("collection");
+                CollectionClientNode tmp = 
+                    (CollectionClientNode) old.remove("collection");
 
                 if (tmp == null) { 
                     // the collection wasn't shown yet!
@@ -126,25 +127,21 @@ public class HubNode extends Node {
             Iterator itt = old.values().iterator();
 
             while (itt.hasNext()) {
-/*
-                Node ci = (Node) itt.next();
 
-                if (ci.edge != null) {
-                    tgPanel.deleteEdge(ci.edge);
+                ClientNode ci = (ClientNode) itt.next();
+
+                if (ci.getEdge() != null) {
+                    parent.deleteEdge(ci.getEdge());
                 }
 
-                tgPanel.deleteNode(ci.node);
-                */
+                parent.deleteNode(ci);
             }
         }
-        
     }
-    
-    
     
     public void delete() {
 
-        // remove edges
+        // remove edges to other hubs
         if (edges.size() > 0) { 
             Iterator itt = edges.values().iterator();
 
@@ -158,7 +155,13 @@ public class HubNode extends Node {
             Iterator itt = clients.values().iterator();
 
             while (itt.hasNext()) {
-                parent.deleteNode((NormalClientNode) itt.next());
+                ClientNode n = (ClientNode) itt.next();
+                
+                if (n.getEdge() != null) {                 
+                    parent.deleteEdge(n.getEdge());
+                } 
+                
+                parent.deleteNode(n);
             }
         }
         
