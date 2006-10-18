@@ -26,6 +26,8 @@ public class HubNode extends Node {
     public HubNode(SmartsocketsViz parent, HubInfo info) {
         super("Hub " + info.hubAddress.toString(), " H ");            
         
+        setPopup("CollapsedHubNode");
+        
         setType(Node.TYPE_CIRCLE);
         setBackColor(Color.decode("#8B2500"));
         setNodeBorderInactiveColor(Color.decode("#5c1800"));
@@ -75,7 +77,7 @@ public class HubNode extends Node {
         }
     }
 
-    public void updateClients() {
+    public synchronized void updateClients() {
     
         HashMap old = clients;
         clients = new HashMap();
@@ -168,7 +170,19 @@ public class HubNode extends Node {
         parent.deleteNode(this);            
     }
 
-    public void updateInfo(HubInfo info) {
+    public synchronized void updateInfo(HubInfo info) {
         this.info = info;
+    }
+    
+    public synchronized void expandClients() {        
+        this.collapseClients = false;
+        setPopup("ExpandedHubNode");              
+        updateClients();
+    }
+
+    public synchronized void collapseClients() {
+        this.collapseClients = true;
+        setPopup("CollapsedHubNode");
+        updateClients();
     }      
 }

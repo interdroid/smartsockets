@@ -50,6 +50,10 @@
 package smartsockets.viz;
 
 import java.awt.Frame;
+import java.awt.MenuItem;
+import java.awt.PopupMenu;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -90,6 +94,8 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
     public SmartsocketsViz(SocketAddressSet hub) {
         super();
 
+        initPopups();
+        
         try {
             DirectSocketFactory df = DirectSocketFactory.getSocketFactory();
             DirectServerSocket ss = df.createServerSocket(0, 1, null);
@@ -105,7 +111,57 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         new Thread(this).start();
     }
 
-    private HubInfo[] getHubs() {
+    private void initPopups() {
+        setNodePopup(null, null);        
+        initHubPopups();
+    }
+
+    private void initHubPopups() { 
+        
+        PopupMenu p = new PopupMenu();
+        
+        MenuItem menuItem;
+        menuItem = new MenuItem("Expand clients");
+                        
+        ActionListener action = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (popupNode != null && popupNode instanceof HubNode) {                    
+                    ((HubNode) popupNode).expandClients();
+                }
+//              JDK11 Change .. because of MenuBecomesInvisible
+                tgPanel.setMaintainMouseOver(false);
+                tgPanel.setMouseOverN(null);
+                tgPanel.repaint();
+//              JDK11 Change .. because of MenuBecomesInvisible
+            }
+        };
+
+        menuItem.addActionListener(action);
+        p.add(menuItem);        
+        setNodePopup("CollapsedHubNode", p);
+               
+        p = new PopupMenu();        
+        menuItem = new MenuItem("Collapse clients");
+        
+        action = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (popupNode != null && popupNode instanceof HubNode) {                    
+                    ((HubNode) popupNode).collapseClients();
+                }
+//              JDK11 Change .. because of MenuBecomesInvisible
+                tgPanel.setMaintainMouseOver(false);
+                tgPanel.setMouseOverN(null);
+                tgPanel.repaint();
+//              JDK11 Change .. because of MenuBecomesInvisible
+            }
+        };
+
+        menuItem.addActionListener(action);
+        p.add(menuItem);        
+        setNodePopup("ExpandedHubNode", p);
+    }
+        
+    private synchronized HubInfo[] getHubs() {
         try {
             return sl.hubDetails();
         } catch (IOException e) {
@@ -115,7 +171,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         }
     }
 
-    ClientInfo[] getClientsForHub(SocketAddressSet hub) {
+    synchronized ClientInfo[] getClientsForHub(SocketAddressSet hub) {
         try {
             return sl.clients(hub);
         } catch (IOException e) {
