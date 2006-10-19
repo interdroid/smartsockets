@@ -13,7 +13,7 @@ import com.touchgraph.graphlayout.Node;
 
 public class HubNode extends Node {
     
-    private final SmartsocketsViz parent;
+    final SmartsocketsViz parent;
     
     private HubInfo info;
     private HashMap edges = new HashMap();        
@@ -39,6 +39,14 @@ public class HubNode extends Node {
         clientCollection = new CollectionClientNode(info.clients, this);
     }
         
+    public void deleteEdge(Edge e) { 
+        parent.deleteEdge(e);
+    }
+    
+    public void showEdge(Edge e) { 
+        parent.addEdge(e);
+    }
+    
     public void updateEdges() {
 
         HashMap oldEdges = edges;
@@ -198,5 +206,25 @@ public class HubNode extends Node {
         this.collapseClients = true;
         setPopup("CollapsedHubNode");
         updateClients();
-    }      
+    }
+    
+    public synchronized void updateRouters() {
+        
+        if (collapseClients) { 
+            return;
+        }
+        
+        if (clients.size() > 0) { 
+
+            Iterator itt = clients.values().iterator();
+            
+            while (itt.hasNext()) { 
+                ClientNode n = (ClientNode) itt.next();
+                
+                if (n instanceof RouterClientNode) { 
+                    ((RouterClientNode) n).showConnections(clients);
+                }
+            }
+        }
+    }    
 }

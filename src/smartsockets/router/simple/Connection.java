@@ -22,11 +22,12 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
 
     private final Router parent;
     
-    private final String ID;
+    private final String localID;
     
     private String from;
     private String to;
-        
+    private long linkID;
+            
     private VirtualSocket socketToClient;
     private DataOutputStream outToClient;
     private DataInputStream inFromClient;    
@@ -50,7 +51,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
         
         Router.logger.debug("Created new connection to " + sc);
         
-        this.ID = ID;        
+        this.localID = ID;        
         this.socketToClient = sc;
         this.parent = parent;
         
@@ -75,7 +76,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
         }
     }
        
-    private boolean connectViaRouter(ClientInfo router, String src, 
+    private boolean connectViaRouter(ClientInfo router, 
             VirtualSocketAddress target, long timeout) {
 
         boolean succes = false;
@@ -88,9 +89,10 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
             if (connect(r, timeout)) {
                 Router.logger.debug("Connection to router created!!");
                 Router.logger.debug("Forwarding target: " + target.toString());
-                                
-                outToTarget.writeUTF(src);                                
+                                                
+                outToTarget.writeUTF(parent.getLocalAddress().toString());                                
                 outToTarget.writeUTF(target.toString());                
+                outToClient.writeLong(linkID);                
                 outToTarget.writeLong(timeout);
                 outToTarget.flush();
 
@@ -125,8 +127,8 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
     }
 
     
-    private boolean connectToTarget(String source, VirtualSocketAddress target, 
-            long timeout, SocketAddressSet [] directions) { 
+    private boolean connectToTarget(VirtualSocketAddress target, long timeout, 
+            SocketAddressSet [] directions) { 
                         
         // Check if the target is local to my proxy. If so, my local proxy 
         // address should be in the first entry of the directions array.
@@ -194,7 +196,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                     // TODO: should we change the target address to include the
                     // new proxy ?
                     
-                    if (connectViaRouter(result[i], source, target, timeout)) { 
+                    if (connectViaRouter(result[i], target, timeout)) { 
                         return true;                        
                     }
                 } 
@@ -211,17 +213,16 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
         Router.logger.debug("Connection " + socketToClient + " waiting for opcode");
                
         try {
-            String src = inFromClient.readUTF();            
-            String dest = inFromClient.readUTF();
-                       
-            from = src;
+            from = inFromClient.readUTF();            
+            String dest = inFromClient.readUTF();                        
+            linkID = inFromClient.readLong();            
             
             VirtualSocketAddress target = new VirtualSocketAddress(dest);
             
             long timeout = inFromClient.readLong();
         
             Router.logger.debug("Connection " + socketToClient + " got:");
-            Router.logger.debug("     source : " + src);
+            Router.logger.debug("     source : " + from);
             Router.logger.debug("     dest   : " + dest);            
             Router.logger.debug("     timeout: " + timeout);
 
@@ -230,7 +231,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
             
             if (proxy != null) { 
                 SocketAddressSet [] dir = new SocketAddressSet [] { proxy };                 
-                succes = connectToTarget(src, target, timeout, dir);
+                succes = connectToTarget(target, timeout, dir);
          
                 if (!succes) { 
                     Router.logger.warn("Connection " + socketToClient + " failed"
@@ -246,7 +247,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                     Router.logger.warn("Connection " + socketToClient + " failed"
                             + " to locate machine: " + machine + "@" + proxy);
                 } else { 
-                    succes = connectToTarget(src, target, timeout, directions);                
+                    succes = connectToTarget(target, timeout, directions);                
                 }
             }
             
@@ -301,7 +302,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                 VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);
                 VirtualSocketFactory.close(socketToTarget, outToTarget, inFromTarget);
                 
-                parent.done(ID);                
+                parent.done(localID);                
             } else { 
                 Router.logger.info("Cannot remove connections yet!");
             }
@@ -370,6 +371,10 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
         return to;
     }    
     
+    public long linkID() { 
+        return linkID;
+    }
+    
     public void run() { 
         
         try {            
@@ -381,7 +386,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
 
             // We have a connnection, so start forwarding!!
             startForwarders();            
-            parent.add(ID, this);            
+            parent.add(localID, this);            
         } catch (Exception e) {
             // TODO: handle exception
             VirtualSocketFactory.close(socketToClient, outToClient, inFromClient);

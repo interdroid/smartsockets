@@ -17,14 +17,17 @@ public class RouterClient implements Protocol {
     private static Logger logger = 
         ibis.util.GetLogger.getLogger(RouterClient.class.getName());
     
+    private static long clientID = 0;
     private static HashMap properties;       
     private static VirtualSocketFactory factory;     
     
+    public final long id;
     public final VirtualSocket s;
     public final DataOutputStream out;
     public final DataInputStream in;   
                
-    RouterClient(VirtualSocket s, DataOutputStream out, DataInputStream in) {         
+    RouterClient(long id, VirtualSocket s, DataOutputStream out, DataInputStream in) {
+        this.id = id;
         this.s = s;        
         this.out = out;
         this.in = in;
@@ -36,7 +39,8 @@ public class RouterClient implements Protocol {
         logger.info("Sending connect request to router!");
         
         out.writeUTF(factory.getLocalHost().toString());                
-        out.writeUTF(target.toString());                
+        out.writeUTF(target.toString());             
+        out.writeLong(id);
         out.writeLong(timeout);
         out.flush();
 
@@ -60,6 +64,10 @@ public class RouterClient implements Protocol {
         }
     }
                
+    public static synchronized long getID() { 
+        return clientID++;
+    }
+    
     public static RouterClient connectToRouter(VirtualSocketAddress router, 
             int timeout) throws IOException {
         
@@ -85,6 +93,6 @@ public class RouterClient implements Protocol {
             throw e;
         }
         
-        return new RouterClient(s, out, in);
+        return new RouterClient(getID(), s, out, in);
     }
 }

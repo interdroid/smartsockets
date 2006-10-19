@@ -99,7 +99,10 @@ public class Router extends Thread {
         return factory.createClientSocket(target, (int) timeout, properties);
     }
     
-    
+    public SocketAddressSet getLocalAddress() {
+        return factory.getLocalHost();
+    }
+        
     private final synchronized boolean getDone() { 
         return done;
     }
@@ -138,6 +141,8 @@ public class Router extends Thread {
                 result.append(c.from());
                 result.append(",");
                 result.append(c.to());
+                result.append(",");
+                result.append(c.linkID());
                 result.append(",");
                 
                 long tp = c.getThroughput();

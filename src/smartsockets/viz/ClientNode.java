@@ -1,14 +1,12 @@
 package smartsockets.viz;
 
-import smartsockets.hub.servicelink.ClientInfo;
-
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
 public class ClientNode extends Node {
 
-    private Edge edge;
-    private HubNode hub;
+    protected Edge edge;
+    protected HubNode hub;
     
     public ClientNode(String id, HubNode hub) { 
         
