@@ -195,8 +195,8 @@ public class Hub extends Thread {
             }
         } 
         
-        p.put("smartsockets.hub.port", port);
-                
+        p.put("smartsockets.hub.port", Integer.toString(port));
+               
         // TODO: use property file ?         
         if (clusters != null) { 
             p.put("smartsockets.hub.clusters", clusters);
@@ -216,7 +216,7 @@ public class Hub extends Thread {
                 System.exit(1);            
             }
         } 
-        
+                
         try {
             new Hub(hubs, p);
         } catch (IOException e) {

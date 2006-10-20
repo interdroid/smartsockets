@@ -8,7 +8,9 @@ import smartsockets.hub.Hub;
 import smartsockets.router.simple.Router;
 
 public class HubStarter {
-    
+
+    private static final int DEFAULT_ACCEPT_PORT = 17878;    
+
     private static Hub h;
     private static Router r;
         
@@ -18,6 +20,7 @@ public class HubStarter {
         
         SocketAddressSet [] hubs = new SocketAddressSet[args.length];
         TypedProperties p = new TypedProperties();
+        int port = DEFAULT_ACCEPT_PORT;
         
         for (int i=0;i<args.length;i++) {                
             
@@ -46,7 +49,16 @@ public class HubStarter {
                     System.out.println("-clusters option has incorrect " + 
                             "parameter: " + clusters);
                     System.exit(1);            
-                }                    
+                }                  
+                
+            } else if (args[i].equals("-port")) { 
+                if (i+1 >= args.length) { 
+                    System.out.println("-port option requires parameter!");
+                    System.exit(1);
+                }   
+                    
+                port = Integer.parseInt(args[++i]);
+                                
             } else {                
                 // Assume it's an address...
                 try { 
@@ -58,6 +70,8 @@ public class HubStarter {
             } 
         }
 
+        p.put("smartsockets.hub.port", Integer.toString(port));
+        
         try {            
             System.out.println("Starting hub....");            
             h = new Hub(hubs, p);            
