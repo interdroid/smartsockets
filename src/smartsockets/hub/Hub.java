@@ -165,6 +165,8 @@ public class Hub extends Thread {
         TypedProperties p = new TypedProperties();
         String clusters = null;
         
+        int port = DEFAULT_ACCEPT_PORT;
+        
         for (int i=0;i<args.length;i++) {
             
             if (args[i].equals("-clusters")) { 
@@ -174,6 +176,15 @@ public class Hub extends Thread {
                 }   
                 
                 clusters = args[++i];
+                
+            } else if (args[i].equals("-port")) { 
+                if (i+1 >= args.length) { 
+                    System.out.println("-port option requires parameter!");
+                    System.exit(1);
+                }   
+                    
+                port = Integer.parseInt(args[++i]);
+                
             } else {
                 // Assume it's a hub address.
                 try { 
@@ -184,8 +195,9 @@ public class Hub extends Thread {
             }
         } 
         
-        // TODO: use property file ? 
-        
+        p.put("smartsockets.hub.port", port);
+                
+        // TODO: use property file ?         
         if (clusters != null) { 
             p.put("smartsockets.hub.clusters", clusters);
             
@@ -204,7 +216,7 @@ public class Hub extends Thread {
                 System.exit(1);            
             }
         } 
-                
+        
         try {
             new Hub(hubs, p);
         } catch (IOException e) {
