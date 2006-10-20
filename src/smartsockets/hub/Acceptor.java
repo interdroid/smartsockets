@@ -22,6 +22,7 @@ import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
+import smartsockets.util.TypedProperties;
 
 public class Acceptor extends CommunicationThread {
     
@@ -56,13 +57,13 @@ public class Acceptor extends CommunicationThread {
    
     private HashMap spliceInfo = new HashMap();
         
-    Acceptor(StateCounter state, Connections connections, 
+    Acceptor(int port, StateCounter state, Connections connections, 
             HubList knownProxies, DirectSocketFactory factory) 
             throws IOException {
 
         super("HubAcceptor", state, connections, knownProxies, factory);        
 
-        server = factory.createServerSocket(DEFAULT_PORT, 50, null);        
+        server = factory.createServerSocket(port, 50, null);        
         setLocal(server.getAddressSet());
         
         System.err.println("Hub listnening at: " + localAsString);

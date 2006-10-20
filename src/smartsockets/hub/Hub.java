@@ -23,7 +23,8 @@ public class Hub extends Thread {
     private static int GOSSIP_SLEEP = 10000;
     
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
-    
+    private static final int DEFAULT_ACCEPT_PORT    = 17878;    
+
     protected static Logger misclogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.misc");
 
@@ -62,7 +63,9 @@ public class Hub extends Thread {
                 
         connections = new Connections();
         
-        acceptor = new Acceptor(state, connections, hubs, factory);        
+        int port = p.getIntProperty("smartsockets.hub.port", DEFAULT_ACCEPT_PORT);
+        
+        acceptor = new Acceptor(port, state, connections, hubs, factory);        
         connector = new Connector(state, connections, hubs, factory);
         
         SocketAddressSet local = acceptor.getLocal();         
