@@ -14,6 +14,7 @@ public class ClientNode extends Node {
         
         this.hub = hub;
         edge = new Edge(this, hub);
+        edge.useArrowHead(true);
     }
     
     public Edge getEdge() {

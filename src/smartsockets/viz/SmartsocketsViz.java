@@ -49,6 +49,7 @@
 
 package smartsockets.viz;
 
+import java.awt.Color;
 import java.awt.Frame;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
@@ -94,6 +95,8 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
     public SmartsocketsViz(SocketAddressSet hub) {
         super();
 
+        tgPanel.setBackground(Color.BLACK);
+        
         initPopups();
         
         try {

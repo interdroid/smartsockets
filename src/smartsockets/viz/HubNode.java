@@ -66,6 +66,7 @@ public class HubNode extends Node {
                 if (other != null) {
                     // we know the target
                     e = new Edge(this, other);
+                    e.useArrowHead(true);
                     parent.addEdge(e);
                 }
             }
