@@ -158,6 +158,7 @@ public class Hub extends Thread {
         }        
     }
     
+    /*
     public static void main(String [] args) { 
         
         SocketAddressSet [] hubs = new SocketAddressSet[args.length];
@@ -223,4 +224,5 @@ public class Hub extends Thread {
             misclogger.warn("Oops: ", e);
         }        
     }
+    */
 }
