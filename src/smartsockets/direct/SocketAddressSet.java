@@ -286,12 +286,32 @@ public class SocketAddressSet extends SocketAddress {
                 
         SocketAddressSet tmp = (SocketAddressSet) other;
       
-       // System.out.println("TcpSocketAdressSet.equals: ");
-       // System.out.println("arrays : " + Arrays.equals(sas, tmp.sas));
-       // System.out.println("address: " + address.equals(tmp.address));
+        // System.out.println("TcpSocketAdressSet.equals: ");
+        // System.out.println("arrays : " + Arrays.equals(sas, tmp.sas));
+        // System.out.println("address: " + address.equals(tmp.address));
         
         // Finally, compare ports and addresses
-        return (Arrays.equals(sas, tmp.sas) && address.equals(tmp.address)); 
+        
+        // TODO: this is only correct if the addresses are exactly the same.
+        // So how do we handle partial addresses ?         
+        for (int i=0;i<sas.length;i++) { 
+            InetSocketAddress a = sas[i];
+
+            boolean found = false;
+
+            for (int j=0;j<tmp.sas.length;j++) {               
+                if (a.equals(tmp.sas[j])) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) { 
+                return false;
+            }
+        }
+
+        return true;
     }
     
     /* (non-Javadoc)
