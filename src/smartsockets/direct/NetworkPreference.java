@@ -1,6 +1,6 @@
 package smartsockets.direct;
 
-import ibis.util.TypedProperties;
+import smartsockets.util.TypedProperties;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -100,9 +100,12 @@ public class NetworkPreference {
 
     private static Properties getPropertyFile() {
 
-        String file = TypedProperties
-                .stringProperty(smartsockets.direct.Properties.CONNECT_FILE);
+        //TypedProperties tp = new TypedProperties
         
+        String file = null; 
+            /*Properties
+                .stringProperty(smartsockets.direct.Properties.CONNECT_FILE);
+        */
         //System.err.println("GETTING FILE: "  + file);
         
         InputStream in = null;

@@ -15,6 +15,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Discovery;
 import smartsockets.hub.servicelink.ServiceLink;

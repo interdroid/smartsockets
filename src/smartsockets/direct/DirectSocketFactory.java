@@ -1,6 +1,6 @@
 package smartsockets.direct;
 
-import ibis.util.TypedProperties;
+import smartsockets.util.TypedProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +19,7 @@ import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
+import smartsockets.Properties;
 import smartsockets.util.NetworkUtils;
 import smartsockets.util.STUN;
 import smartsockets.util.UPNP;
@@ -40,23 +41,19 @@ import smartsockets.util.UPNP;
 public class DirectSocketFactory {
 
     private static final int TIMEOUT = 5000;
-
-    private static final boolean USE_NIO = TypedProperties.booleanProperty(
-            Properties.USE_NIO, false);
-
-    private static final boolean ALLOW_STUN = TypedProperties.booleanProperty(
-            Properties.USE_STUN, true);
     
-    private static final boolean ALLOW_UPNP = TypedProperties.booleanProperty(
-            Properties.USE_UPNP, false);
-
-    private static final boolean ALLOW_BOUNCER = TypedProperties
-            .booleanProperty(Properties.USE_BOUNCER, false);
-
+    private final TypedProperties properties;
+    
+    private final boolean USE_NIO;
+    private boolean ALLOW_UPNP;
+    
+    private final int inputBufferSize;
+    private final int outputBufferSize;
+        
     protected static Logger logger = ibis.util.GetLogger
             .getLogger(DirectSocketFactory.class.getName());
 
-    private static final DirectSocketFactory factory = new DirectSocketFactory();
+    //private static final DirectSocketFactory factory = new DirectSocketFactory();
 
     private IPAddressSet completeAddress;
 
@@ -72,15 +69,22 @@ public class DirectSocketFactory {
 
     private NetworkPreference preference;
 
-    private DirectSocketFactory() {
-
+    private DirectSocketFactory(TypedProperties p) {
+        
+        properties = p;
+        
+        ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
+        USE_NIO = p.booleanProperty(Properties.NIO, false);
+        
+        inputBufferSize = p.getIntProperty(Properties.IN_BUF_SIZE);
+        outputBufferSize = p.getIntProperty(Properties.OUT_BUF_SIZE);
+                        
         localAddress = IPAddressSet.getLocalHost();
 
         if (!localAddress.containsGlobalAddress()) {
             haveOnlyLocalAddresses = true;
 
-            getNATAddress();
-            getExternalAddress();
+            getExternalAddress(p);
 
             if (externalNATAddress != null) {
                 completeAddress = IPAddressSet.merge(localAddress,
@@ -92,7 +96,7 @@ public class DirectSocketFactory {
             completeAddress = localAddress;
         }
 
-        portRange = new PortRange();
+        portRange = new PortRange(p);
 
         preference = NetworkPreference.getPreference(completeAddress);
         preference.sort(completeAddress.getAddresses(), true);
@@ -165,7 +169,7 @@ public class DirectSocketFactory {
      * machine. When an address is found, it it stored in the externalAddress
      * field.
      */
-    private void getExternalAddress() {
+    private void getExternalAddress(TypedProperties p) {
 
         // Check if externalAddress is already known
         if (externalNATAddress != null) {
@@ -176,7 +180,7 @@ public class DirectSocketFactory {
             logger.debug("Checking properties for external address...");
         }
 
-        externalNATAddress = getExternalAddressProperty();
+        externalNATAddress = getExternalAddressProperty(p);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Properties lookup result: " + externalNATAddress);
@@ -186,12 +190,14 @@ public class DirectSocketFactory {
             return;
         }
 
-        if (ALLOW_STUN) { 
+        if (p.booleanProperty(Properties.STUN, false)) {
+            
             if (logger.isDebugEnabled()) {
                 logger.debug("Using STUN to find external address...");
             }
    
-            externalNATAddress = STUN.getExternalAddress(null);
+            externalNATAddress = STUN.getExternalAddress(
+                    p.getStringList(Properties.STUN_SERVERS, ",", null));
             
             if (logger.isDebugEnabled()) {
                 logger.debug("STUN lookup result: " + externalNATAddress);
@@ -219,12 +225,11 @@ public class DirectSocketFactory {
      * 
      * @return an InetAddress or null
      */
-    private InetAddress getExternalAddressProperty() {
+    private InetAddress getExternalAddressProperty(TypedProperties p) {
 
         InetAddress result = null;
 
-        String tmp = TypedProperties
-                .stringProperty(Properties.EXTERNAL_ADDR);
+        String tmp = p.getProperty(Properties.EXTERNAL_ADDR);
 
         if (tmp != null) {
             try {
@@ -259,6 +264,7 @@ public class DirectSocketFactory {
      */
     private SocketAddressSet[] getBouncerProperty() {
 
+        /*
         String tmp = TypedProperties.stringProperty(
                 Properties.BOUNCERS, Bouncer.DEFAULT_BOUNCER);
 
@@ -286,6 +292,9 @@ public class DirectSocketFactory {
         }
 
         return res;
+        */
+        
+        return new SocketAddressSet[0];
     }
 
     private Socket createUnboundSocket() throws IOException {
@@ -551,12 +560,16 @@ public class DirectSocketFactory {
      *                when the configation has failed for some reason.
      */
     protected static void tuneSocket(DirectSocket s) throws IOException {
+        
+        // TODO: fix!!!
+        /*
         if (Properties.inputBufferSize != 0) {
             s.setReceiveBufferSize(Properties.inputBufferSize);
         }
         if (Properties.outputBufferSize != 0) {
             s.setSendBufferSize(Properties.outputBufferSize);
-        }
+        }*/
+        
         s.setTcpNoDelay(true);
     }
 

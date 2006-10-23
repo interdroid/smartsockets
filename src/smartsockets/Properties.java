@@ -1,4 +1,4 @@
-package smartsockets.virtual;
+package smartsockets;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -23,6 +23,22 @@ public class Properties {
     public static final String BACKLOG = PREFIX + "backlog";  
     public static final String TIMEOUT = PREFIX + "timeout";  
         
+    public static final String NIO     = PREFIX + "nio";
+    
+    public static final String UPNP                 = PREFIX + "upnp";
+    public static final String UPNP_PORT_FORWARDING = PREFIX + "upnp.forwarding";
+        
+    public static final String STUN = PREFIX + "stun";   
+    public static final String STUN_SERVERS = PREFIX + "stun.servers";
+    
+    public static final String EXTERNAL_ADDR = PREFIX + "external_address";
+        
+    public static final String PORT_RANGE = PREFIX + "port_range";
+    //public static final String CONNECT_FILE = PREFIX + "preference_file";   
+    
+    public static final String IN_BUF_SIZE = PREFIX + "InputBufferSize";
+    public static final String OUT_BUF_SIZE = PREFIX + "OutputBufferSize";
+        
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
@@ -46,14 +62,22 @@ public class Properties {
     public static final String CLUSTER_DEFAULT    = "preference.default";
     
     private static final String [] defaults = new String [] {
-            BACKLOG,           "20", 
-            TIMEOUT,           "1000", 
+            BACKLOG,                "20", 
+            TIMEOUT,                "1000", 
             
-            MODULES_DEFINE,    "direct,reverse,splice,routed", 
-            MODULES_ORDER,     "direct,reverse,splice,routed",
+            NIO,                    "false", 
+            STUN,                   "false",
+            UPNP,                   "false",            
+            UPNP_PORT_FORWARDING,   "false", 
             
-            DISCOVERY_PORT,    "24545", 
-            DISCOVERY_TIMEOUT, "5000",             
+            IN_BUF_SIZE,            "65536", 
+            OUT_BUF_SIZE,           "65536",
+            
+            MODULES_DEFINE,         "direct,reverse,splice,routed", 
+            MODULES_ORDER,          "direct,reverse,splice,routed",
+            
+            DISCOVERY_PORT,         "24545", 
+            DISCOVERY_TIMEOUT,      "5000",             
     };
 
     
@@ -142,7 +166,7 @@ public class Properties {
             }
             
             // Finally, add the smartsockets related properties from the command
-            // line to the result, possibly overriding entries fromfile or the 
+            // line to the result, possibly overriding entries from file or the 
             // defaults.            
             defaultProperties.putAll(system);
         } 

@@ -8,11 +8,11 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.router.simple.RouterClient;
 import smartsockets.virtual.ModuleNotSuitableException;
-import smartsockets.virtual.Properties;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.modules.ConnectModule;
