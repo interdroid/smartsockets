@@ -202,7 +202,7 @@ public class NetworkPreference {
 
         boolean myNetwork = false;
 
-        String prefix = Properties.NETWORKS_PREFERENCE + name;
+        String prefix = Properties.NETWORKS_PREFERENCE + name + ".";
         String [] range = p.getStringList(prefix + Properties.NW_PREFERENCE_RANGE); 
         String [] network = p.getStringList(prefix + Properties.NW_PREFERENCE_INSIDE);
         String [] def = p.getStringList(prefix + Properties.NW_PREFERENCE_DEFAULT);
