@@ -1,7 +1,5 @@
 package smartsockets.direct;
 
-import smartsockets.util.TypedProperties;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,13 +13,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
 import smartsockets.Properties;
 import smartsockets.util.NetworkUtils;
 import smartsockets.util.STUN;
+import smartsockets.util.TypedProperties;
 import smartsockets.util.UPNP;
 
 /**
@@ -40,7 +38,14 @@ import smartsockets.util.UPNP;
  */
 public class DirectSocketFactory {
 
-    private static final int TIMEOUT = 5000;
+    protected static Logger logger = ibis.util.GetLogger
+        .getLogger(DirectSocketFactory.class.getName());
+
+    private static DirectSocketFactory defaultFactory; 
+    
+    
+    
+    private final int DEFAULT_TIMEOUT;
     
     private final TypedProperties properties;
     
@@ -50,11 +55,6 @@ public class DirectSocketFactory {
     private final int inputBufferSize;
     private final int outputBufferSize;
         
-    protected static Logger logger = ibis.util.GetLogger
-            .getLogger(DirectSocketFactory.class.getName());
-
-    //private static final DirectSocketFactory factory = new DirectSocketFactory();
-
     private IPAddressSet completeAddress;
 
     private IPAddressSet localAddress;
@@ -72,12 +72,13 @@ public class DirectSocketFactory {
     private DirectSocketFactory(TypedProperties p) {
         
         properties = p;
-        
+    
+        DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
         ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
         USE_NIO = p.booleanProperty(Properties.NIO, false);
         
-        inputBufferSize = p.getIntProperty(Properties.IN_BUF_SIZE);
-        outputBufferSize = p.getIntProperty(Properties.OUT_BUF_SIZE);
+        inputBufferSize = p.getIntProperty(Properties.IN_BUF_SIZE, 0);
+        outputBufferSize = p.getIntProperty(Properties.OUT_BUF_SIZE, 0);
                         
         localAddress = IPAddressSet.getLocalHost();
 
@@ -98,7 +99,7 @@ public class DirectSocketFactory {
 
         portRange = new PortRange(p);
 
-        preference = NetworkPreference.getPreference(completeAddress);
+        preference = NetworkPreference.getPreference(completeAddress, p);
         preference.sort(completeAddress.getAddresses(), true);
 
         // if (logger.isDebugEnabled()) {
@@ -229,14 +230,14 @@ public class DirectSocketFactory {
 
         InetAddress result = null;
 
-        String tmp = p.getProperty(Properties.EXTERNAL_ADDR);
+        String tmp = p.getProperty(Properties.EXTERNAL_MANUAL);
 
         if (tmp != null) {
             try {
                 result = InetAddress.getByName(tmp);
             } catch (UnknownHostException e) {
                 logger.warn("Failed to parse property \""
-                        + Properties.EXTERNAL_ADDR + "\"");
+                        + Properties.EXTERNAL_MANUAL + "\"");
             }
         }
 
@@ -407,7 +408,7 @@ public class DirectSocketFactory {
 
         // We never want to block, so ensure that timeout > 0
         if (timeout == 0 && !mayBlock) {
-            timeout = TIMEOUT;
+            timeout = DEFAULT_TIMEOUT;
         }
 
         Socket s = null;
@@ -559,16 +560,15 @@ public class DirectSocketFactory {
      * @exception IOException
      *                when the configation has failed for some reason.
      */
-    protected static void tuneSocket(DirectSocket s) throws IOException {
+    protected void tuneSocket(DirectSocket s) throws IOException {
         
-        // TODO: fix!!!
-        /*
-        if (Properties.inputBufferSize != 0) {
-            s.setReceiveBufferSize(Properties.inputBufferSize);
+        if (inputBufferSize != 0) {
+            s.setReceiveBufferSize(inputBufferSize);
         }
-        if (Properties.outputBufferSize != 0) {
-            s.setSendBufferSize(Properties.outputBufferSize);
-        }*/
+        
+        if (outputBufferSize != 0) {
+            s.setSendBufferSize(outputBufferSize);
+        }
         
         s.setTcpNoDelay(true);
     }
@@ -659,7 +659,7 @@ public class DirectSocketFactory {
             int localPort, Map properties) throws IOException {
 
         if (timeout < 0) {
-            timeout = TIMEOUT;
+            timeout = DEFAULT_TIMEOUT;
         }
 
         InetSocketAddress[] sas = target.getSocketAddresses();
@@ -770,18 +770,34 @@ public class DirectSocketFactory {
      * Returns if an address originated at this process.
      * 
      * @return boolean indicating if the address is local.
-     */
-    
-    public static boolean isLocalAddress(IPAddressSet a) {        
-        return (a.equals(factory.completeAddress));
+     */    
+    public boolean isLocalAddress(IPAddressSet a) {        
+        return (a.equals(completeAddress));
     }
-              
+        
     /**
-     * Returns an instance of PlainSocketFactory.
+     * Returns a custom instance of a DirectSocketFactory.
+     * 
+     * @return PlainSocketFactory
+     */
+    public static DirectSocketFactory getSocketFactory(TypedProperties p) {                
+        return new DirectSocketFactory(p);
+    }
+    
+    /**
+     * Returns the default instance of a DirectSocketFactory.
      * 
      * @return PlainSocketFactory
      */
     public static DirectSocketFactory getSocketFactory() {
-        return factory;
+        
+        if (defaultFactory == null) {             
+            defaultFactory = 
+                new DirectSocketFactory(Properties.getDefaultProperties());                         
+        }
+
+        return defaultFactory;
     }
+    
+    
 }

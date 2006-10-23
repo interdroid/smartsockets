@@ -1,15 +1,13 @@
 package smartsockets.direct;
 
+import smartsockets.Properties;
 import smartsockets.util.TypedProperties;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
@@ -17,24 +15,24 @@ import org.apache.log4j.Logger;
 import smartsockets.util.NetworkUtils;
 
 public class NetworkPreference {
-
-    private static final String DEFAULT_PREF_FILE = "connection.properties";
-
+   
     static Logger logger = ibis.util.GetLogger
             .getLogger(NetworkPreference.class.getName());
 
-    private static Properties properties;
+    private TypedProperties properties;
     
     private Preference defaultPreference;
 
-    private String clusterName;
+    private String networkName;
 
-    private Preference clusterPreference;
+    private Preference networksPreference;
 
-    private byte[] clusterSubnet;
+    //private byte[] networkSubnet;
+    //private byte[] networkMask;
 
-    private byte[] clusterMask;
-
+    private Network [] include;
+    private Network [] exclude;
+    
     /**
      * This constructor retrieves the 'ibis.connect.connect_preference'
      * property, which contains the preferred order in which network addresses
@@ -73,39 +71,33 @@ public class NetworkPreference {
      * 192.168.0.*,global
      * 
      * If the property is not set or the value could not be parsed, null is
-     * returned.
+     * returned.    
      */
-    private NetworkPreference(IPAddressSet myAddress) {
+    private NetworkPreference(IPAddressSet myAddress, TypedProperties p) {
 
-        Properties p = getPropertyFile();
-
-        if (p != null) {
-            handleProperties(myAddress, p);
-        }
-
-        handleProperties(myAddress, System.getProperties());
-
+        handleProperties(myAddress, p);
+        
         if (defaultPreference == null) {
             logger.info("No default network setup definitions found.");
             defaultPreference = new Preference("default", false);
         }
 
         logger.info("My cluster is: "
-                + (clusterName != null ? clusterName : "N/A"));
+                + (networkName != null ? networkName : "N/A"));
 
-        if (clusterPreference == null) {
+        if (networksPreference == null) {
             logger.info("No cluster definitions found.");
         }
     }
 
-    private static Properties getPropertyFile() {
+/*
+    private static TypedProperties getPropertyFile() {
 
         //TypedProperties tp = new TypedProperties
         
-        String file = null; 
-            /*Properties
+        String file = Properties
                 .stringProperty(smartsockets.direct.Properties.CONNECT_FILE);
-        */
+        
         //System.err.println("GETTING FILE: "  + file);
         
         InputStream in = null;
@@ -164,103 +156,81 @@ public class NetworkPreference {
 
         return null;
     }
+*/
 
-    private void handlePreference(Preference target, String property) {
+    private void handlePreference(Preference target, String [] property) {
 
-        StringTokenizer tok = new StringTokenizer(property, ",");
-
-        while (tok.hasMoreTokens()) {
-            String s = tok.nextToken();
-
-            if (s.equals("site")) {
+        for (int i=0;i<property.length;i++) {         
+            if (property[i].equals("site")) {
                 // all site local
                 target.addSite();
-            } else if (s.equals("link")) {
+            } else if (property[i].equals("link")) {
                 // all link local
                 target.addLink();
-            } else if (s.equals("global")) {
+            } else if (property[i].equals("global")) {
                 // all global
                 target.addGlobal();
             } else {
-                // either IP/MASK or IPMASK format
-                int index = s.indexOf('/');
-
-                byte[] sub;
-                byte[] mask;
-
-                if (index != -1) {
-                    // IP/MASK format
-                    sub = addressToBytes(s.substring(0, index));
-                    mask = addressToBytes(s.substring(index + 1));
-                } else {
-                    // IPMASK format
-                    // TODO: implement
-                    sub = mask = null;
-                }
-
-                target.addNetwork(sub, mask);
+                target.addNetwork(getNetwork(property[i]));
             }
         }
     }
 
     // This will overwrite any previous preferences.
-    private void handleProperties(IPAddressSet myAddress, Properties p) {
+    private void handleProperties(IPAddressSet myAddress, TypedProperties p) {
 
-        String def = p.getProperty("ibis.connect.preference");
+        String [] def = p.getStringList(Properties.NETWORKS_DEFAULT);
 
-        if (def != null) {
+        if (def != null && def.length > 0) {
             defaultPreference = new Preference("default", false);
             handlePreference(defaultPreference, def);
         }
 
-        String clusters = p.getProperty("ibis.connect.cluster.define");
+        String [] networks = p.getStringList(Properties.NETWORKS_DEFINE, ",");
 
-        if (clusters == null) {
+        if (networks == null || networks.length == 0) {
             return;
         }
 
-        StringTokenizer tok = new StringTokenizer(clusters, ",");
-
-        while (tok.hasMoreTokens()) {
-            String name = tok.nextToken();
-            handleClusterProperties(myAddress, name, p);
+        for (int i=0;i<networks.length;i++) { 
+            handleClusterProperties(myAddress, networks[i], p);
         }
     }
 
     private void handleClusterProperties(IPAddressSet myAddress, String name,
-            Properties p) {
+            TypedProperties p) {
 
-        boolean myCluster = false;
+        boolean myNetwork = false;
 
-        String prefix = "ibis.connect.cluster." + name;
-        String range = p.getProperty(prefix + ".range");
-        String cluster = p.getProperty(prefix + ".preference.cluster");
-        String def = p.getProperty(prefix + ".preference.default");
+        String prefix = Properties.NETWORKS_PREFERENCE + name;
+        String [] range = p.getStringList(prefix + Properties.NW_PREFERENCE_RANGE); 
+        String [] network = p.getStringList(prefix + Properties.NW_PREFERENCE_INSIDE);
+        String [] def = p.getStringList(prefix + Properties.NW_PREFERENCE_DEFAULT);
 
-        if (inCluster(myAddress, range)) {
+        if (parseNetworkRange(myAddress, range)) {
             logger.info("Cluster name: " + name + " (MY CLUSTER)");
-            clusterName = name;
-            myCluster = true;
+            networkName = name;
+            myNetwork = true;
         } else {
             logger.info("Cluster name: " + name);
         }
 
         logger.info("  range: " + range);
-        logger.info("  in cluster use: " + (cluster != null ? cluster : ""));
+        logger.info("  in cluster use: " + (network != null ? network : ""));
         logger.info("  to outside use: " + (def != null ? def : ""));
 
-        if (cluster != null && myCluster) {
-            clusterPreference = new Preference("cluster", true);
-            handlePreference(clusterPreference, cluster);
+        if (network != null && myNetwork) {
+            networksPreference = new Preference("cluster", true);
+            handlePreference(networksPreference, network);
         }
 
-        if (def != null && myCluster) {
+        if (def != null && myNetwork) {
             defaultPreference = new Preference("default", false);
             handlePreference(defaultPreference, def);
         }
     }
 
-    private boolean inCluster(InetSocketAddress[] ads, byte[] sub, byte[] mask) {
+    private boolean inNetwork(InetSocketAddress[] ads, byte[] sub, byte[] mask) {
 
         for (int i = 0; i < ads.length; i++) {
             if (NetworkUtils.matchAddress(ads[i].getAddress(), sub, mask)) {
@@ -271,7 +241,7 @@ public class NetworkPreference {
         return false;
     }
 
-    private boolean inCluster(InetAddress[] ads, byte[] sub, byte[] mask) {
+    private boolean inNetwork(InetAddress[] ads, byte[] sub, byte[] mask) {
 
         for (int i = 0; i < ads.length; i++) {
             if (NetworkUtils.matchAddress(ads[i], sub, mask)) {
@@ -282,7 +252,117 @@ public class NetworkPreference {
         return false;
     }
 
-    private boolean inCluster(IPAddressSet myAddress, String range) {
+    private boolean inNetwork(Network [] nw, InetAddress ad) {
+        
+        for (int i=0;i<nw.length;i++) { 
+            if (nw[i].match(ad)) { 
+                return true;
+            }            
+        }
+        
+        return false;
+    }
+
+    private boolean inNetwork(Network [] nw, InetAddress [] ads) {
+        
+        for (int i=0;i<nw.length;i++) { 
+            if (nw[i].match(ads)) { 
+                return true;
+            }            
+        }
+        
+        return false;
+    }
+    
+    private boolean inNetwork(Network [] nw, InetSocketAddress [] ads) {
+        
+        for (int i=0;i<nw.length;i++) { 
+            if (nw[i].match(ads)) { 
+                return true;
+            }            
+        }
+        
+        return false;
+    }
+    
+    private boolean inNetwork(InetAddress ad) {
+        return (inNetwork(include, ad) && !inNetwork(exclude, ad)); 
+    }
+
+    private boolean inNetwork(InetAddress[] ads) {
+        return (inNetwork(include, ads) && !inNetwork(exclude, ads)); 
+    }
+
+    private boolean inNetwork(InetSocketAddress[] ads) {
+        return (inNetwork(include, ads) && !inNetwork(exclude, ads)); 
+    }
+
+    private boolean parseNetworkRange(IPAddressSet myAddress, String [] range) {
+
+        ArrayList inc = new ArrayList();
+        ArrayList ex = new ArrayList();
+        
+        for (int i=0;i<range.length;i++) {
+            if (range[i].startsWith("!")) {
+                ex.add(getNetwork(range[i].substring(1)));
+            } else { 
+                inc.add(getNetwork(range[i]));
+            }            
+        }
+            
+        Network [] include = (Network[]) inc.toArray(new Network[inc.size()]); 
+        Network [] exclude = (Network[]) ex.toArray(new Network[ex.size()]); 
+        
+        InetAddress [] ads = myAddress.getAddresses();
+        
+        if (inNetwork(include, ads) && !inNetwork(exclude, ads)) { 
+            // this seems to be my network!
+            this.include = include;
+            this.exclude = exclude;
+            return true;
+        }
+        
+        return false;
+    }
+        
+    private Network getNetwork(String range) { 
+
+        int index = range.indexOf('/');
+
+        byte [] sub;
+        byte [] mask;
+
+        if (index != -1) {
+            // IP/MASK format
+            sub = addressToBytes(range.substring(0, index));
+            mask = addressToBytes(range.substring(index + 1));
+        } else {          
+            index = range.indexOf('*');
+        
+            if (index != -1) {
+                // IPMASK format                
+                range.replaceAll("*", "0");
+                sub = addressToBytes(range);                
+                mask = new byte[sub.length];                               
+                
+                for (int i=0;i<sub.length;i++) {
+                    if (sub[i] != 0) {
+                        mask[i] = (byte) 255;
+                    }
+                }
+            } else { 
+                // single address
+                sub = addressToBytes(range);                       
+                mask = new byte[sub.length];            
+                Arrays.fill(mask, (byte) 255);
+            }
+        }
+        
+        return new Network(sub, mask);                
+    }
+        
+/*
+    private boolean inNetwork(IPAddressSet myAddress, String range) {
 
         // either IP/MASK or IPMASK format
         int index = range.indexOf('/');
@@ -300,14 +380,15 @@ public class NetworkPreference {
             sub = mask = null;
         }
 
-        if (inCluster(myAddress.getAddresses(), sub, mask)) {
-            clusterSubnet = sub;
-            clusterMask = mask;
+        if (inNetwork(myAddress.getAddresses(), sub, mask)) {
+            networkSubnet = sub;
+            networkMask = mask;
             return true;
         } else {
             return false;
         }
     }
+*/
 
     private static byte[] addressToBytes(String address) {
 
@@ -322,9 +403,8 @@ public class NetworkPreference {
     public InetSocketAddress[] sort(InetSocketAddress[] ads, boolean inPlace) {
 
         // Check if the target belongs to our cluster.
-        if (clusterPreference != null
-                && inCluster(ads, clusterSubnet, clusterMask)) {
-            return clusterPreference.sort(ads, inPlace);
+        if (networksPreference != null && inNetwork(ads)) { 
+            return networksPreference.sort(ads, inPlace);
         }
 
         return defaultPreference.sort(ads, inPlace);
@@ -333,28 +413,24 @@ public class NetworkPreference {
     public InetAddress[] sort(InetAddress[] ads, boolean inPlace) {
 
         // Check if the target belongs to our cluster.
-        if (clusterPreference != null
-                && inCluster(ads, clusterSubnet, clusterMask)) {
-            return clusterPreference.sort(ads, inPlace);
+        if (networksPreference != null && inNetwork(ads)) { 
+            return networksPreference.sort(ads, inPlace);
         }
 
         return defaultPreference.sort(ads, inPlace);
     }
 
     public String getClusterName() {
-        return clusterName;
+        return networkName;
     }
 
     public String toString() {
         return defaultPreference.toString();
     }
     
-    public static NetworkPreference getPreference(IPAddressSet myAddress) { 
+    public static NetworkPreference getPreference(IPAddressSet myAddress, 
+            TypedProperties p) { 
         
-        if (properties == null) { 
-            properties = getPropertyFile();
-        }
-        
-        return new NetworkPreference(myAddress);
+        return new NetworkPreference(myAddress, p);
     }
 }

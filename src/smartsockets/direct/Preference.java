@@ -12,17 +12,6 @@ import smartsockets.util.NetworkUtils;
 
 class Preference {
 
-    final static class SpecificNetwork {
-
-        final byte[] network;
-        final byte[] mask;
-
-        SpecificNetwork(byte[] network, byte[] mask) {
-            this.network = network;
-            this.mask = mask;
-        }
-    }
-
     private static final int SITE = 0;
 
     private static final int LINK = 1;
@@ -105,6 +94,17 @@ class Preference {
         globalUsed = true;
     }
 
+    void addNetwork(Network nw) {
+
+        if (NetworkPreference.logger.isDebugEnabled()) {
+            NetworkPreference.logger.debug("Preference(" + name + "): "
+                    + "Adding network " + nw + " to connection preference");
+        }
+
+        preferences.add(nw);
+    }
+
+    
     void addNetwork(byte[] network, byte[] mask) {
 
         if (NetworkPreference.logger.isDebugEnabled()) {
@@ -114,7 +114,7 @@ class Preference {
                     + " to connection preference");
         }
 
-        preferences.add(new SpecificNetwork(network, mask));
+        preferences.add(new Network(network, mask));
     }
 
     private int score(InetAddress ad) {
@@ -146,8 +146,8 @@ class Preference {
                     break;
                 }
             } else {
-                byte[] network = ((Preference.SpecificNetwork) pref).network;
-                byte[] mask = ((Preference.SpecificNetwork) pref).mask;
+                byte[] network = ((Network) pref).network;
+                byte[] mask = ((Network) pref).mask;
 
                 if (NetworkUtils.matchAddress(ad.getAddress(), network, mask)) {
                     return i;
@@ -323,8 +323,8 @@ class Preference {
                     buf.append("global");
                 }
             } else {
-                byte[] network = ((Preference.SpecificNetwork) pref).network;
-                byte[] mask = ((Preference.SpecificNetwork) pref).mask;
+                byte[] network = ((Network) pref).network;
+                byte[] mask = ((Network) pref).mask;
 
                 buf.append(NetworkUtils.bytesToString(network));
                 buf.append('/');

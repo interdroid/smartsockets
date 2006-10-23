@@ -278,6 +278,14 @@ public class TypedProperties extends Properties {
         }
     }
     
+    public String[] getStringList(String key) {
+        return getStringList(key, ", ", new String[0]);
+    }
+   
+    public String[] getStringList(String key, String delim) {
+        return getStringList(key, delim, new String[0]);
+    }
+
     public String[] getStringList(String key, String delim, String [] defaultValue) {
         String value = getProperty(key);
 

@@ -22,23 +22,35 @@ public class Properties {
         
     public static final String BACKLOG = PREFIX + "backlog";  
     public static final String TIMEOUT = PREFIX + "timeout";  
-        
-    public static final String NIO     = PREFIX + "nio";
     
-    public static final String UPNP                 = PREFIX + "upnp";
-    public static final String UPNP_PORT_FORWARDING = PREFIX + "upnp.forwarding";
-        
-    public static final String STUN = PREFIX + "stun";   
-    public static final String STUN_SERVERS = PREFIX + "stun.servers";
     
-    public static final String EXTERNAL_ADDR = PREFIX + "external_address";
-        
-    public static final String PORT_RANGE = PREFIX + "port_range";
-    //public static final String CONNECT_FILE = PREFIX + "preference_file";   
     
-    public static final String IN_BUF_SIZE = PREFIX + "InputBufferSize";
-    public static final String OUT_BUF_SIZE = PREFIX + "OutputBufferSize";
+    
+    public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
+    
+    public static final String NIO             = NETWORKS_PREFIX + "nio";
+    public static final String PORT_RANGE      = NETWORKS_PREFIX + "port_range";    
+    public static final String IN_BUF_SIZE     = NETWORKS_PREFIX + "input_buffer";
+    public static final String OUT_BUF_SIZE    = NETWORKS_PREFIX + "output_buffer";
+    
+    public static final String NETWORKS_DEFAULT = NETWORKS_PREFIX + "default";
+    public static final String NETWORKS_DEFINE  = NETWORKS_PREFIX + "define";
+    
+    public static final String NETWORKS_PREFERENCE   = NETWORKS_PREFIX + "preference.";    
+    public static final String NW_PREFERENCE_RANGE   = "range";
+    public static final String NW_PREFERENCE_INSIDE  = "internal";
+    public static final String NW_PREFERENCE_DEFAULT = "default";
         
+    public static final String EXTERNAL_PREFIX      = NETWORKS_PREFIX + "external.";
+    public static final String UPNP                 = EXTERNAL_PREFIX + "upnp";
+    public static final String UPNP_PORT_FORWARDING = EXTERNAL_PREFIX + "upnp.forwarding";        
+    public static final String STUN                 = EXTERNAL_PREFIX + "stun";   
+    public static final String STUN_SERVERS         = EXTERNAL_PREFIX + "stun.servers";    
+    public static final String EXTERNAL_MANUAL      = EXTERNAL_PREFIX + "manual";
+    
+
+    
+    
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
@@ -72,6 +84,9 @@ public class Properties {
             
             IN_BUF_SIZE,            "65536", 
             OUT_BUF_SIZE,           "65536",
+            
+            NETWORKS_DEFAULT,       "site,link,global",
+            
             
             MODULES_DEFINE,         "direct,reverse,splice,routed", 
             MODULES_ORDER,          "direct,reverse,splice,routed",
