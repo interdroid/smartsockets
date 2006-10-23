@@ -36,10 +36,10 @@ public class Properties {
     public static final String NETWORKS_DEFAULT = NETWORKS_PREFIX + "default";
     public static final String NETWORKS_DEFINE  = NETWORKS_PREFIX + "define";
     
-    public static final String NETWORKS_PREFERENCE   = NETWORKS_PREFIX + "preference.";    
-    public static final String NW_PREFERENCE_RANGE   = "range";
-    public static final String NW_PREFERENCE_INSIDE  = "internal";
-    public static final String NW_PREFERENCE_DEFAULT = "default";
+    public static final String NW_PREFERENCE_PREFIX  = "preference.";    
+    public static final String NW_PREFERENCE_RANGE   = NW_PREFERENCE_PREFIX + "range";
+    public static final String NW_PREFERENCE_INSIDE  = NW_PREFERENCE_PREFIX + "internal";
+    public static final String NW_PREFERENCE_DEFAULT = NW_PREFERENCE_PREFIX + "default";
         
     public static final String EXTERNAL_PREFIX      = NETWORKS_PREFIX + "external.";
     public static final String UPNP                 = EXTERNAL_PREFIX + "upnp";
