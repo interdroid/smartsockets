@@ -208,16 +208,20 @@ public class NetworkPreference {
         String [] def = p.getStringList(prefix + Properties.NW_PREFERENCE_DEFAULT);
 
         if (parseNetworkRange(myAddress, range)) {
-            logger.info("Cluster name: " + name + " (MY CLUSTER)");
+            logger.info("Network name: " + name + " (MY NETWORK)");
             networkName = name;
             myNetwork = true;
         } else {
-            logger.info("Cluster name: " + name);
+            logger.info("Network name: " + name);
         }
 
-        logger.info("  range: " + range);
-        logger.info("  in cluster use: " + (network != null ? network : ""));
-        logger.info("  to outside use: " + (def != null ? def : ""));
+        logger.info("  range: " + Arrays.deepToString(range));
+        
+        logger.info("  in cluster use: " + 
+                (network != null ? Arrays.deepToString(network) : ""));
+        
+        logger.info("  to outside use: " + 
+                (def != null ? Arrays.deepToString(def) : ""));
 
         if (network != null && myNetwork) {
             networksPreference = new Preference("cluster", true);
