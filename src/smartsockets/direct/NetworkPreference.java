@@ -319,7 +319,8 @@ public class NetworkPreference {
         
         InetAddress [] ads = myAddress.getAddresses();
         
-        if (inNetwork(include, ads) && !inNetwork(exclude, ads)) { 
+        if ((include.length == 0 || inNetwork(include, ads)) && 
+                (exclude.length == 0 || !inNetwork(exclude, ads))) { 
             // this seems to be my network!
             this.include = include;
             this.exclude = exclude;
@@ -341,27 +342,19 @@ public class NetworkPreference {
             sub = addressToBytes(range.substring(0, index));
             mask = addressToBytes(range.substring(index + 1));
         } else {          
-            index = range.indexOf('*');
-        
-            if (index != -1) {
-                // IPMASK format                
-                range.replaceAll("*", "0");
-                sub = addressToBytes(range);                
-                mask = new byte[sub.length];                               
+            // IPMASK or SINGLE format                 
+            range = range.replaceAll("\\*", "0");
                 
-                for (int i=0;i<sub.length;i++) {
-                    if (sub[i] != 0) {
-                        mask[i] = (byte) 255;
-                    }
+            sub = addressToBytes(range);                
+            mask = new byte[sub.length];                               
+                
+            for (int i=0;i<sub.length;i++) {
+                if (sub[i] != 0) {
+                    mask[i] = (byte) 255;
                 }
-            } else { 
-                // single address
-                sub = addressToBytes(range);                       
-                mask = new byte[sub.length];            
-                Arrays.fill(mask, (byte) 255);
-            }
+            }            
         }
-        
+
         return new Network(sub, mask);                
     }
         

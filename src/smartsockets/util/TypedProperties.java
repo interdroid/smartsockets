@@ -279,7 +279,7 @@ public class TypedProperties extends Properties {
     }
     
     public String[] getStringList(String key) {
-        return getStringList(key, ", ", new String[0]);
+        return getStringList(key, ",", new String[0]);
     }
    
     public String[] getStringList(String key, String delim) {

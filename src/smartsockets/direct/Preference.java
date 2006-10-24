@@ -104,7 +104,7 @@ class Preference {
         preferences.add(nw);
     }
 
-    
+    /*
     void addNetwork(byte[] network, byte[] mask) {
 
         if (NetworkPreference.logger.isDebugEnabled()) {
@@ -116,7 +116,8 @@ class Preference {
 
         preferences.add(new Network(network, mask));
     }
-
+*/
+    
     private int score(InetAddress ad) {
 
         for (int i = 0; i < preferences.size(); i++) {
