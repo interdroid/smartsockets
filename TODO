@@ -1,6 +1,6 @@
 Todo:
 
-X User friendlyness!!
+User friendlyness!!
 
 X Create single app to start proxy + router
 
@@ -22,10 +22,10 @@ X Make sure STUN doesn't take too long ...
 X Add TCP splicing to Virtual  
 
 X Add cache to Virtual which remembers best connection setup order 
-   
-  Create Factory for service links 
 
-  Add support for multiple proxy addresses to VirtualSocketFactory
+  Add user readable name to proxy to make visualization easier to read
+  
+  Create Factory for service links 
 
   Check if timeouts make any sense....
   
@@ -37,13 +37,13 @@ X Add cache to Virtual which remembers best connection setup order
 
   NIO support
 
-  Routing for Mathijs...
+X Routing for Mathijs...
 
   UDP support for Niels
 
-  Check if the UDP mcast discovery works on DAS3.. 
+X Check if the UDP mcast discovery works on DAS3.. 
 
-  Check if client info is propagated correctly in proxies ...
+? Check if client info is propagated correctly in proxies ...
 
 Think about: 
 
@@ -68,10 +68,14 @@ X Add UDP/STUN like module to Virtual ? -> using STUN directly
 
   Cache info in servicelink instances ? 
 
-  Have multiple instances of VirtualSocketFactory based on properties ?
+X  Have multiple instances of VirtualSocketFactory based on properties ?
      
   Web interface to proxies to make it easier to add addresses ? 
 
   Make up unique ID for machines that only have local IP's (UUID ?)
 
   Add parallel streams (where ? Direct or Virtual or just Routers ?) 
+
+  Add support for multiple proxy addresses to VirtualSocketFactory ?
+
+  

@@ -160,4 +160,16 @@ public class VirtualSocketAddress implements Serializable {
     public int hashCode() {
         return machine.hashCode() ^ port;        
     }
+    
+    public static VirtualSocketAddress partialAddress(String hostname, 
+            int realport, int virtualport) throws UnknownHostException {
+     
+        return new VirtualSocketAddress(
+                new SocketAddressSet(hostname, realport), virtualport);
+    }
+    
+    public static VirtualSocketAddress partialAddress(String hostname, 
+            int port) throws UnknownHostException {     
+        return partialAddress(hostname, port, port);
+    }    
 }

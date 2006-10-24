@@ -132,7 +132,7 @@ public class SocketAddressSet extends SocketAddress {
     
     /**
      * Construct a new IbisSocketAddress from a String representation of an 
-     * IbisInetAddress and a port number.
+     * IPAddressSet and a port number.
      * 
      * A valid port value is between 0 and 65535. A port number of zero will let
      * the system pick up an ephemeral port in a bind operation. 

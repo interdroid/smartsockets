@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -745,5 +746,5 @@ public class VirtualSocketFactory {
 
     public VirtualSocket createBrokeredSocket(InputStream brokered_in, OutputStream brokered_out, boolean b, Map p) {
         throw new RuntimeException("createBrokeredSocket not implemented");
-    }
+    }   
 }
