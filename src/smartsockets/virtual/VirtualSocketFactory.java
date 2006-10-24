@@ -688,6 +688,9 @@ public class VirtualSocketFactory {
     }
            
     public static VirtualSocketFactory getSocketFactory() {
+        
+        logger.warn("Creating default VirtualSocketFactory!", new Exception());
+                        
         return getSocketFactory(Properties.getDefaultProperties(), false);        
     }
     
