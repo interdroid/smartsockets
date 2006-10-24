@@ -331,6 +331,9 @@ public class HubList {
         
         StringBuffer result = new StringBuffer();
        
+        result.append("Local hub:\n");        
+        result.append(localDescription).append("\n");
+        
         result.append("Hubs with a direct connection:\n");
         
         Iterator itt = connectedHubs.iterator();
