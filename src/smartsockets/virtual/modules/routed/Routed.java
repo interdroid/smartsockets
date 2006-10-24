@@ -154,7 +154,7 @@ public class Routed extends ConnectModule {
                 
         while (r != null && c == null) {         
             try { 
-                c = RouterClient.connectToRouter(r, timeout);
+                c = RouterClient.connectToRouter(r, parent, timeout);
             } catch (Exception e) {
                 logger.info("Failed to connect to router \"" + r + "\"", e);
                 removeRouter(r);

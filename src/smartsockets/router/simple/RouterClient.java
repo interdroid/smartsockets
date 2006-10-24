@@ -19,18 +19,21 @@ public class RouterClient implements Protocol {
     
     private static long clientID = 0;
     private static HashMap properties;       
-    private static VirtualSocketFactory factory;     
     
     public final long id;
     public final VirtualSocket s;
     public final DataOutputStream out;
     public final DataInputStream in;   
+    public final VirtualSocketFactory factory;     
                
-    RouterClient(long id, VirtualSocket s, DataOutputStream out, DataInputStream in) {
+    RouterClient(long id, VirtualSocketFactory factory, VirtualSocket s, 
+            DataOutputStream out, DataInputStream in) {
+        
         this.id = id;
         this.s = s;        
         this.out = out;
         this.in = in;
+        this.factory = factory;
     }
     
     public VirtualSocket connectToClient(VirtualSocketAddress target, 
@@ -69,14 +72,12 @@ public class RouterClient implements Protocol {
     }
     
     public static RouterClient connectToRouter(VirtualSocketAddress router, 
-            int timeout) throws IOException {
+            VirtualSocketFactory factory, int timeout) throws IOException {
         
         if (properties == null) {            
-            logger.info("Initializing client-side router code");
-            
+            logger.info("Initializing client-side router code");            
             properties = new HashMap();
             properties.put("connect.module.skip", "routed");            
-            factory = VirtualSocketFactory.getSocketFactory();          
         }
         
         VirtualSocket s = null;
@@ -93,6 +94,6 @@ public class RouterClient implements Protocol {
             throw e;
         }
         
-        return new RouterClient(getID(), s, out, in);
+        return new RouterClient(getID(), factory, s, out, in);
     }
 }

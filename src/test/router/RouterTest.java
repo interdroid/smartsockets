@@ -111,7 +111,8 @@ public class RouterTest {
                                 
             } else if (startClient) {         
                 
-                RouterClient c = RouterClient.connectToRouter(routerAddress, timeout);
+                RouterClient c = RouterClient.connectToRouter(routerAddress, 
+                        factory, timeout);
          
                 VirtualSocket s = c.connectToClient(serverAddress, timeout);
                 
