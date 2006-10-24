@@ -686,33 +686,55 @@ public class VirtualSocketFactory {
             serverSockets.remove(new Integer(port));           
         }                
     }
-           
-    public static VirtualSocketFactory getSocketFactory() {
-        return getSocketFactory(Properties.getDefaultProperties(), false);        
+    
+    public static VirtualSocketFactory getSocketFactory(String name) {        
+        return (VirtualSocketFactory) factories.get(name);
     }
-    
-    public static VirtualSocketFactory getSocketFactory(HashMap p, 
-            boolean addDefaults) {
-        return getSocketFactory(new TypedProperties(p), addDefaults);        
-    } 
         
-    public static VirtualSocketFactory getSocketFactory(TypedProperties p, 
+    public static VirtualSocketFactory createSocketFactory() {
+        
+        VirtualSocketFactory f = getSocketFactory("default");
+        
+        if (f == null) { 
+            TypedProperties p = Properties.getDefaultProperties();
+            p.put("smartsockets.factory.name", "default");            
+            f = createSocketFactory(p, false);
+        }
+        
+        return f;        
+    }
+           
+    public static VirtualSocketFactory createSocketFactory(HashMap p, 
             boolean addDefaults) {
-    
+        return createSocketFactory(new TypedProperties(p), addDefaults);        
+    } 
+            
+    public static VirtualSocketFactory createSocketFactory(TypedProperties p, 
+            boolean addDefaults) {
+        
         logger.warn("Creating VirtualSocketFactory(Prop, bool)!", new Exception());
-                
+        
         if (p == null) { 
             p = Properties.getDefaultProperties();            
         } else if (addDefaults) { 
             p.putAll(Properties.getDefaultProperties());
         } 
         
-        VirtualSocketFactory factory = (VirtualSocketFactory) factories.get(p);
+        VirtualSocketFactory factory = null;
+        
+        String name = p.getProperty("smartsockets.factory.name");
+
+        if (name != null) { 
+            factory = (VirtualSocketFactory) factories.get(name);
+        }
         
         if (factory == null) { 
             try { 
                 factory = new VirtualSocketFactory(p);
-                factories.put(p, factory);                
+                
+                if (name != null) {                 
+                    factories.put(name, factory);
+                }
             } catch (Exception e) {
                 logger.warn("Failed to create VirtualSocketFactory!", e);
             }                       

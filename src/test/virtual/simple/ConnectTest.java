@@ -87,7 +87,7 @@ public class ConnectTest {
     
     public static void main(String [] args) throws IOException { 
         
-        sf = VirtualSocketFactory.getSocketFactory();
+        sf = VirtualSocketFactory.createSocketFactory();
         
         connectProperties = new HashMap();
 

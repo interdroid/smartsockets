@@ -84,7 +84,7 @@ public class Server {
         
         try {         
             VirtualSocketFactory factory = 
-                VirtualSocketFactory.getSocketFactory();        
+                VirtualSocketFactory.createSocketFactory();        
             VirtualServerSocket ss = factory.createServerSocket(DEFAULT_PORT, 
                     50, null);
         

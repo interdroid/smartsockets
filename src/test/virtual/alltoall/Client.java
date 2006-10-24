@@ -277,7 +277,7 @@ public class Client {
         try {
             System.out.println("Client started");
 
-            factory = VirtualSocketFactory.getSocketFactory();
+            factory = VirtualSocketFactory.createSocketFactory();
             server = factory.createServerSocket(0, 50, null);
            
             System.out.println("Created server socket " 

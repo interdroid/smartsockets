@@ -15,7 +15,7 @@ public class MultiplexTest1 {
     
     public static void main(String [] args) throws IOException { 
         
-        VirtualSocketFactory sf = VirtualSocketFactory.getSocketFactory();  
+        VirtualSocketFactory sf = VirtualSocketFactory.createSocketFactory();  
         
         if (args.length > 0) {             
             for  (int i=0;i<args.length;i++) { 

@@ -50,7 +50,7 @@ public class Router extends Thread {
                 
         logger.debug("Router creating VirtualSocketFactory");
         
-        factory = VirtualSocketFactory.getSocketFactory(properties, true);        
+        factory = VirtualSocketFactory.createSocketFactory(properties, true);        
         serviceLink = factory.getServiceLink();
         
         if (serviceLink == null) { 

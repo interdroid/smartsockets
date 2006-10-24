@@ -62,7 +62,7 @@ public class RouterTest {
         
         parseOptions(args);
                 
-        factory = VirtualSocketFactory.getSocketFactory();
+        factory = VirtualSocketFactory.createSocketFactory();
         
         if (startRouter) { 
             try {

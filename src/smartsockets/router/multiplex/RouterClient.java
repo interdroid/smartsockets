@@ -67,7 +67,7 @@ public class RouterClient implements Protocol {
             
             properties = new HashMap();
             properties.put("connect.module.skip", "routed");            
-            factory = VirtualSocketFactory.getSocketFactory();          
+            factory = VirtualSocketFactory.createSocketFactory();          
         }
         
         VirtualSocket s = null;
