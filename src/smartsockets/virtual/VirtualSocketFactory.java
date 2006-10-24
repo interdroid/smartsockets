@@ -688,20 +688,19 @@ public class VirtualSocketFactory {
     }
            
     public static VirtualSocketFactory getSocketFactory() {
-        
-        logger.warn("Creating default VirtualSocketFactory!", new Exception());
-                        
         return getSocketFactory(Properties.getDefaultProperties(), false);        
     }
     
     public static VirtualSocketFactory getSocketFactory(HashMap p, 
-            boolean addDefaults) {    
+            boolean addDefaults) {
         return getSocketFactory(new TypedProperties(p), addDefaults);        
     } 
         
     public static VirtualSocketFactory getSocketFactory(TypedProperties p, 
             boolean addDefaults) {
     
+        logger.warn("Creating VirtualSocketFactory(Prop, bool)!", new Exception());
+                
         if (p == null) { 
             p = Properties.getDefaultProperties();            
         } else if (addDefaults) { 
