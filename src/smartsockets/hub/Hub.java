@@ -7,6 +7,7 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
+import smartsockets.Properties;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Discovery;
@@ -16,6 +17,7 @@ import smartsockets.hub.state.ConnectionsSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
+import smartsockets.util.NetworkUtils;
 import smartsockets.util.TypedProperties;
 
 public class Hub extends Thread {
@@ -47,7 +49,7 @@ public class Hub extends Thread {
         super("Hub");
         
         String [] clusters = 
-            p.getStringList("smartsockets.hub.clusters", ",", null);
+            p.getStringList(Properties.HUB_CLUSTERS, ",", null);
         
         if (clusters == null) { 
             clusters = new String[] { "" };
@@ -63,7 +65,7 @@ public class Hub extends Thread {
                 
         connections = new Connections();
         
-        int port = p.getIntProperty("smartsockets.hub.port", DEFAULT_ACCEPT_PORT);
+        int port = p.getIntProperty(Properties.HUB_PORT, DEFAULT_ACCEPT_PORT);
         
         acceptor = new Acceptor(port, state, connections, hubs, factory);        
         connector = new Connector(state, connections, hubs, factory);
@@ -74,8 +76,20 @@ public class Hub extends Thread {
                 
         goslogger.info("GossipAcceptor listning at " + local);
         
+        String name = p.getProperty(Properties.HUB_SIMPLE_NAME); 
+                
+        if (name == null) { 
+            // If the simple name is not set, we try to use the hostname 
+            // instead.            
+            try { 
+                name = NetworkUtils.getHostname();
+            }  catch (Exception e) {
+                misclogger.info("Failed to find simple name for hub!");
+            }
+        }        
+        
         // Create a description for the local machine. 
-        HubDescription localDesc = new HubDescription(local, state, true);        
+        HubDescription localDesc = new HubDescription(name, local, state, true);        
         localDesc.setReachable();
         localDesc.setCanReachMe();
         
@@ -93,10 +107,18 @@ public class Hub extends Thread {
         String [] prefixes = new String[clusters.length];
         
         for (int i=0;i<prefixes.length;i++) { 
-            prefixes[i] = "Any Proxies?" + " " + clusters[i];
+            
+            if (clusters[i].equals("*")) {
+                clusters[i] = "";
+            }  
+                
+            prefixes[i] = "Any Proxies?" + " " + clusters[i];            
         }
                 
-        discovery = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 0);         
+        int dp = p.getIntProperty(Properties.DISCOVERY_PORT, 
+                DEFAULT_DISCOVERY_PORT); 
+                
+        discovery = new Discovery(dp, 0, 0);         
         discovery.answeringMachine(prefixes, local.toString());
                         
         goslogger.info("Start Gossiping!");

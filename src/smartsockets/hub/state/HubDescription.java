@@ -21,6 +21,11 @@ public class HubDescription {
     public final SocketAddressSet hubAddress;
     public final String hubAddressAsString;
     
+    // The human-readable name of the hub. Note that this is not used for 
+    // anything other that printing information for the user, since the name is 
+    // not guaranteed to be set or unique.
+    private String name; 
+        
     // Easy access to the global state counter 
     final StateCounter state;        
     
@@ -73,12 +78,13 @@ public class HubDescription {
     private ArrayList connectedTo = new ArrayList();
     
     public HubDescription(SocketAddressSet address, StateCounter state) {
-        this(address, state, false);
+        this(null, address, state, false);
     } 
     
-    public HubDescription(SocketAddressSet address, StateCounter state, 
-            boolean local) {
+    public HubDescription(String namse, SocketAddressSet address, 
+            StateCounter state, boolean local) {
         
+        this.name = name;
         this.state = state;        
         this.hubAddress = address;
         this.hubAddressAsString = address.toString();
@@ -133,7 +139,7 @@ public class HubDescription {
     }
     
     public void update(ClientDescription [] clients, String [] connectedTo, 
-            long remoteState) {
+            String name, long remoteState) {
         
         if (local) { 
             throw new IllegalStateException("Cannot update the local"
@@ -156,6 +162,14 @@ public class HubDescription {
             }               
         }
             
+        if (name.length() > 0) {
+            synchronized (this) {
+                if (this.name.length() == 0) { 
+                    this.name = name;
+                }
+            }
+        }
+        
         homeState = remoteState;
         lastLocalUpdate = state.increment();
     }
@@ -405,8 +419,14 @@ public class HubDescription {
     public String toString() { 
     
         StringBuffer buffer = new StringBuffer();
-        buffer.append("Address      : ").append(hubAddress).append('\n');  
         
+        if (name != null) {         
+            buffer.append("Name         : ").append(name).append('\n');
+        } else { 
+            buffer.append("Name         : <unknown>").append('\n');
+        }
+        
+        buffer.append("Address      : ").append(hubAddress).append('\n');          
         buffer.append("Last Update  : ").append(lastLocalUpdate).append('\n');
         
         if (!local) {                 
@@ -472,5 +492,18 @@ public class HubDescription {
         synchronized (connectedTo) {
             connectedTo.remove(address);
         }        
+    }
+
+    public synchronized void setName(String name) {
+        this.name = name; 
+    }
+    
+    public synchronized String getName() {
+
+        if (name == null) { 
+            return "";
+        }  
+          
+        return name;
     }
 }

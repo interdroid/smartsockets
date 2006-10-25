@@ -116,6 +116,7 @@ public class HubConnection extends MessageForwardingConnection {
         out.write(HubProtocol.GOSSIP);
         
         out.writeUTF(d.hubAddress.toString());
+        out.writeUTF(d.getName());
         out.writeInt(d.getHops());
         
         if (d.isLocal()) { 
@@ -147,7 +148,9 @@ public class HubConnection extends MessageForwardingConnection {
         
     private void readProxy() throws IOException {
                 
-        SocketAddressSet address = new SocketAddressSet(in.readUTF());
+        SocketAddressSet address = new SocketAddressSet(in.readUTF());        
+        String name = in.readUTF();
+        
         HubDescription tmp = knownHubs.add(address);
                
         int hops = in.readInt();
@@ -181,11 +184,13 @@ public class HubConnection extends MessageForwardingConnection {
             // The peer send information about itself. This should 
             // always be up-to-date.
             if (state > tmp.getHomeState()) { 
-                tmp.update(c, a, state);
+                tmp.update(c, a, name, state);
             } else { 
                 goslogger.warn("EEK: got information directly from " 
-                        + peer.hubAddressAsString + " which seems to be "
-                        + "out of date! " + state + " " + tmp.getHomeState());
+                        + peer.hubAddressAsString 
+                        + (name.length() > 0 ? (" (" + name + ")") : "") 
+                        + " which seems to be out of date! " + state 
+                        + " " + tmp.getHomeState());
             }
         } else {
             // We got information about a 'third party'.               
@@ -196,11 +201,16 @@ public class HubConnection extends MessageForwardingConnection {
             
             // Check if the information is more recent than what I know...
             if (state > tmp.getHomeState()) { 
-                tmp.update(c, a, state);
+                tmp.update(c, a, name, state);
             } else {
-                goslogger.debug("Ignoring outdated information about " + 
-                        tmp.hubAddressAsString + " from "  
-                        + peer.hubAddressAsString + " " + state + " " 
+                String pn = peer.getName();
+                
+                goslogger.debug("Ignoring outdated information about " 
+                        + tmp.hubAddressAsString 
+                        + (name.length() > 0 ? (" (" + name + ")") : "")
+                        + " from " + peer.hubAddressAsString 
+                        + (pn.length() > 0 ? (" (" + pn + ") ") : " ")                        
+                        + state + " " 
                         + tmp.getHomeState());                
             }
         }

@@ -3,6 +3,7 @@ package smartsockets.util;
 
 import java.io.IOException;
 
+import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.Hub;
 import smartsockets.router.simple.Router;
@@ -19,9 +20,14 @@ public class HubStarter {
         boolean startRouter = true;
         
         SocketAddressSet [] hubs = new SocketAddressSet[args.length];
-        TypedProperties p = new TypedProperties();
         int port = DEFAULT_ACCEPT_PORT;
+
+        // Load the default properties. These include the defaults in the code, 
+        // the default property file, and any command line '-D' settings.
+        TypedProperties p = Properties.getDefaultProperties();
         
+        // Properties can be adjusted further using old-fashioned command 
+        // line options.  
         for (int i=0;i<args.length;i++) {                
             
             if (args[i].startsWith("-no-router")) {

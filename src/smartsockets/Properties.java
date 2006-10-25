@@ -16,15 +16,12 @@ public class Properties {
     
     public static final String PREFIX = "smartsockets.";
     
+
     public static final String FILE    = PREFIX + "file";
-    public static final String HUB     = PREFIX + "hub";            
     public static final String ROUTERS = PREFIX + "routers";  
         
     public static final String BACKLOG = PREFIX + "backlog";  
     public static final String TIMEOUT = PREFIX + "timeout";  
-    
-    
-    
     
     public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
     
@@ -48,9 +45,6 @@ public class Properties {
     public static final String STUN_SERVERS         = EXTERNAL_PREFIX + "stun.servers";    
     public static final String EXTERNAL_MANUAL      = EXTERNAL_PREFIX + "manual";
     
-
-    
-    
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
@@ -60,9 +54,12 @@ public class Properties {
     public static final String DISCOVERY_PORT    = DISCOVERY_PREFIX + "port";
     public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
     
-    public static final String HUB_PREFIX   = PREFIX + "hub.";
-    public static final String HUB_CLUSTERS = HUB_PREFIX + "clusters";       
-        
+    public static final String HUB_PREFIX         = PREFIX + "hub.";
+    public static final String HUB_LOCATION       = HUB_PREFIX + "location";
+    public static final String HUB_SIMPLE_NAME    = HUB_PREFIX + "simple_name";
+    public static final String HUB_CLUSTERS       = HUB_PREFIX + "clusters";       
+    public static final String HUB_PORT           = HUB_PREFIX + "port";                 
+    
     public static final String CLUSTER_PREFIX = PREFIX + "cluster.";
     public static final String CLUSTER_DEFINE = CLUSTER_PREFIX + "define";
     public static final String CLUSTER_MEMBER = CLUSTER_PREFIX + "member";
@@ -87,6 +84,8 @@ public class Properties {
             
             NETWORKS_DEFAULT,       "site,link,global",
             
+            DISCOVERY_PORT,         "24545", 
+            HUB_PORT,               "17878",
             
             MODULES_DEFINE,         "direct,reverse,splice,routed", 
             MODULES_ORDER,          "direct,reverse,splice,routed",
@@ -95,7 +94,7 @@ public class Properties {
             DISCOVERY_TIMEOUT,      "5000",             
     };
 
-    
+        
     private static TypedProperties defaultProperties;
 
     protected static Logger logger =         

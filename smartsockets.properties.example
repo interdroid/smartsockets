@@ -161,15 +161,15 @@
 
 ###
 # Most of the modules require out-of-band control messages to set up a  
-# connection to other machines. These control messages are send to 'proxy' 
-# who will forward them (possibly via several other proxies) to the destination 
-# machine. Using this property a default proxy location can be specified. If 
-# this property is not set, smartsockets will try to locate a proxy on the 
+# connection to other machines. These control messages are send to a 'hub' 
+# who will forward them (possibly via several other hubs) to the destination 
+# machine. Using this property a default hub location can be specified. If 
+# this property is not set, smartsockets will try to locate a hub on the 
 # local network using UDP multicast. If this fails, some of the modules will not 
 # work. Note that this property can also be set on the command line during 
 # application startup.    
 #
-# smartsockets.proxy=
+# smartsockets.hub.address=
 
 ###
 # Smartsockets can define 'virtual clusters'; sets of machines which have  
