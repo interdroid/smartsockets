@@ -95,6 +95,12 @@ public class VirtualSocketFactory {
         
         cluster = properties.getProperty(Properties.CLUSTER_MEMBER, null);               
         
+        if (cluster == null) {
+            // We don't belong to any cluster, so it's no use parsing the rest 
+            // of the cluster definitions...
+            return;
+        }
+        
         String [] clusters = 
             properties.getStringList(Properties.CLUSTER_DEFINE, ",", null);
                
