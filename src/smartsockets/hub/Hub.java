@@ -78,7 +78,7 @@ public class Hub extends Thread {
         
         String name = p.getProperty(Properties.HUB_SIMPLE_NAME); 
                 
-        if (name == null) { 
+        if (name == null || name.length() == 0) { 
             // If the simple name is not set, we try to use the hostname 
             // instead.            
             try { 
@@ -87,6 +87,8 @@ public class Hub extends Thread {
                 misclogger.info("Failed to find simple name for hub!");
             }
         }        
+        
+        misclogger.info("Hub got name: " + name);
         
         // Create a description for the local machine. 
         HubDescription localDesc = new HubDescription(name, local, state, true);        

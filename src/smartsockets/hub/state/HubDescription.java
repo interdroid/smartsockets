@@ -81,7 +81,7 @@ public class HubDescription {
         this(null, address, state, false);
     } 
     
-    public HubDescription(String namse, SocketAddressSet address, 
+    public HubDescription(String name, SocketAddressSet address, 
             StateCounter state, boolean local) {
         
         this.name = name;

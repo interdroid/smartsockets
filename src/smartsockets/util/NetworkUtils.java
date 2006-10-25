@@ -368,7 +368,7 @@ public class NetworkUtils {
 
         InetAddress a = InetAddress.getLocalHost();
             
-        if (a != null) {                    
+        if (a != null) {
             return a.getHostName();
         } else { 
             throw new IOException("Failed to get local address");
