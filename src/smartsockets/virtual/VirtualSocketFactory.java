@@ -51,7 +51,7 @@ public class VirtualSocketFactory {
     private int nextPort = 3000;    
     
     private SocketAddressSet myAddresses;      
-    private SocketAddressSet proxyAddress;    
+    private SocketAddressSet hubAddress;    
     private String cluster;
     
     private ServiceLink serviceLink;
@@ -232,11 +232,34 @@ public class VirtualSocketFactory {
         
         try { 
             serviceLink = ServiceLink.getServiceLink(address, myAddresses);            
-            proxyAddress = serviceLink.getAddress();            
+            hubAddress = serviceLink.getAddress();            
         } catch (Exception e) {
-            logger.warn("Failed to connect service link to proxy!", e);
+            logger.warn("Failed to connect service link to hub!", e);
             return;
-        }                        
+        }   
+        
+        // Check if the users want us to register any properties with the hub.
+        String [] props = properties.getStringList(
+                "smartsockets.register.property", ",", null);
+        
+        if (props != null && props.length > 0) {
+            try { 
+                if (props.length == 1) {             
+                    serviceLink.registerProperty(props[0], "");
+                } else { 
+                    serviceLink.registerProperty(props[0], props[1]);
+                }
+            } catch (Exception e) {
+                
+                if (props.length == 1) {             
+                    logger.warn("Failed to register user property: " + props[0]); 
+                } else { 
+                    logger.warn("Failed to register user property: " 
+                            + props[0] + "=" + props[1]); 
+                }
+            }
+        }
+        
     }
     
     private ConnectModule loadModule(String name) {         
@@ -663,7 +686,7 @@ public class VirtualSocketFactory {
             }
             
             VirtualSocketAddress a = 
-                new VirtualSocketAddress(myAddresses, port, proxyAddress, 
+                new VirtualSocketAddress(myAddresses, port, hubAddress, 
                         cluster);
             
             VirtualServerSocket vss = new VirtualServerSocket(this, a, port, 
@@ -687,7 +710,7 @@ public class VirtualSocketFactory {
     }
     
     public SocketAddressSet getLocalProxy() { 
-        return proxyAddress;        
+        return hubAddress;        
     }
     
     protected void closed(int port) {        
