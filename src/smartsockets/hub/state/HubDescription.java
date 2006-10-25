@@ -72,7 +72,7 @@ public class HubDescription {
     private HubDescription indirection;     
     
     // List of other hubs that this hub is connected to. Can be used by a client
-    // (e.g., a visualization) to get idea of who's connected to whom. Store in 
+    // (e.g., a visualization) to get idea of who's connected to whom. Stored in 
     // String form since it's not really worth the effort converting them all
     // the time.     
     private ArrayList connectedTo = new ArrayList();
@@ -164,7 +164,7 @@ public class HubDescription {
             
         if (name.length() > 0) {
             synchronized (this) {
-                if (this.name.length() == 0) { 
+                if (this.name == null || this.name.length() == 0) { 
                     this.name = name;
                 }
             }
@@ -420,7 +420,9 @@ public class HubDescription {
     
         StringBuffer buffer = new StringBuffer();
         
-        if (name != null) {         
+        String n = getName();
+        
+        if (n.length() > 0) {         
             buffer.append("Name         : ").append(name).append('\n');
         } else { 
             buffer.append("Name         : <unknown>").append('\n');
@@ -454,19 +456,35 @@ public class HubDescription {
                 buffer.append("no\n");
             }
         } 
-        
-        buffer.append("Clients      : ");
-        buffer.append(clients.size());
-        buffer.append("\n");
+
+        synchronized (connectedTo) {
+            buffer.append("Connections  : ");
+            buffer.append(connectedTo.size());
+            buffer.append("\n");
                 
-        Iterator itt = clients.values().iterator();
+            Iterator itt = connectedTo.iterator();
         
-        while (itt.hasNext()) { 
-            buffer.append("             : ");
-            buffer.append((ClientDescription) itt.next());
-            buffer.append("\n");                
-        } 
+            while (itt.hasNext()) { 
+                buffer.append("             : ");
+                buffer.append((String) itt.next());
+                buffer.append("\n");                
+            }         
+        }
         
+        
+        synchronized (clients) {
+            buffer.append("Clients      : ");
+            buffer.append(clients.size());
+            buffer.append("\n");
+                
+            Iterator itt = clients.values().iterator();
+        
+            while (itt.hasNext()) { 
+                buffer.append("             : ");
+                buffer.append((ClientDescription) itt.next());
+                buffer.append("\n");                
+            }         
+        }
         return buffer.toString();        
     }
 

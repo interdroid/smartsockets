@@ -52,6 +52,9 @@ public class HubNode extends Node {
         HashMap oldEdges = edges;
         edges = new HashMap();
 
+        System.out.println("Hub " + info.hubAddress.toString() 
+                + " connected to " + info.connectedTo.length + " others");
+        
         // Refresh existing edges and add new ones..
         for (int i=0;i<info.connectedTo.length;i++) { 
 
@@ -68,6 +71,8 @@ public class HubNode extends Node {
                     e = new Edge(this, other);
                     e.useArrowHead(true);
                     parent.addEdge(e);
+                } else { 
+                    System.out.println("Failed to find hub: " + to);
                 }
             }
 

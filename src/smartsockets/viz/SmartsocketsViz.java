@@ -140,6 +140,9 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         HubNode h = (HubNode) oldHubs.remove(info.hubAddress);
 
         if (h == null) {
+            
+            System.out.println("Found new hub " + info.hubAddress.toString());
+            
             h = new HubNode(this, info);
                         
             try {              
@@ -149,6 +152,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
                 e.printStackTrace();
             }
         } else { 
+            System.out.println("Updating hub " + info.hubAddress.toString());                        
             h.updateInfo(info);
         }
 
