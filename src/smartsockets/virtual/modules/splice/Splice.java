@@ -139,11 +139,9 @@ public class Splice extends AbstractDirectModule {
             addr = in.readUTF();
             port = in.readInt();
             
-        } catch (IOException e) {
-            
-            System.err.println("@@@@  EEK " + e);
-            e.printStackTrace(System.err);
-            
+        } catch (IOException e) {            
+            logger.warn("Got exception during splicing", e);
+
             // Failed to create the exception, to the shared proxy 
             // TODO: try to find other shared proxy ? 
             throw new ModuleNotSuitableException(module + ": Failed to " +

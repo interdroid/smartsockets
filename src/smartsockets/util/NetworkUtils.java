@@ -344,11 +344,7 @@ public class NetworkUtils {
             // Not sure how to mix IPv4 and IPv6 yet ...
             return false;
         }
-        
-        System.err.println("$$$$$$$$ ad " + ad.length + " sub " + sub.length 
-                + " mask " + mask.length);
-        
-        
+                
         for (int i=0;i<sub.length;i++) { 
             
             if ((ad[i] & mask[i]) != (sub[i] & mask[i])) { 

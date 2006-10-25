@@ -38,24 +38,16 @@ public class VirtualServerSocket {
 
     public synchronized boolean incomingConnection(VirtualSocket s) {  
             
-        System.err.println("****** VirtualServerSocket got incoming connection " + s);
-                
         if (closed) {
-            System.err.println("********* VirtualServerSocket refused incoming connection " + s);
-            
             return false;
         }
         
         if (incoming.size() < backlog) {
-            
-            System.err.println("********* VirtualServerSocket accepts incoming connection " + s);
-            
             incoming.add(s);
             notifyAll();
             return true;
         }
 
-        System.err.println("********* VirtualServerSocket refused incoming connection " + s);
         return false;
     }
     

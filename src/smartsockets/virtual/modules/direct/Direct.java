@@ -60,8 +60,6 @@ public class Direct extends AbstractDirectModule {
             }
         }
         
-        System.err.println("***** PORT SET TO " + port);
-        
         // Create a direct socket factory.
         direct = DirectSocketFactory.getSocketFactory();
                 
