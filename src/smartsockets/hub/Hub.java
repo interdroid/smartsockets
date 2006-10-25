@@ -51,8 +51,8 @@ public class Hub extends Thread {
         String [] clusters = 
             p.getStringList(Properties.HUB_CLUSTERS, ",", null);
         
-        if (clusters == null) { 
-            clusters = new String[] { "" };
+        if (clusters == null || clusters.length == 0) { 
+            clusters = new String[] { "*" };
         }
         
         misclogger.info("Creating Hub for clusters: " 
@@ -104,22 +104,27 @@ public class Hub extends Thread {
 
         misclogger.info("Listning for broadcast on LAN");
                       
-        String [] prefixes = new String[clusters.length];
+        String [] suffixes = new String[clusters.length];
         
-        for (int i=0;i<prefixes.length;i++) { 
-            
-            if (clusters[i].equals("*")) {
-                clusters[i] = "";
-            }  
-                
-            prefixes[i] = "Any Proxies?" + " " + clusters[i];            
+        // Check if there is a * in the list of clusters. If so, there is no 
+        // point is passing any other values. Note that there may also be a '+'
+        // which means 'any machine -NOT- belonging to a cluster. 
+        for (int i=0;i<clusters.length;i++) {             
+            if (clusters[i].equals("*") && clusters.length > 0) {
+                suffixes = new String[] { "*" };
+                break;
+            } else if (clusters[i].equals("+")) { 
+                suffixes[i] = "+";
+            } else { 
+                suffixes[i] = " " + clusters[i];
+            }
         }
                 
         int dp = p.getIntProperty(Properties.DISCOVERY_PORT, 
                 DEFAULT_DISCOVERY_PORT); 
                 
         discovery = new Discovery(dp, 0, 0);         
-        discovery.answeringMachine(prefixes, local.toString());
+        discovery.answeringMachine("Any Proxies?", suffixes, local.toString());
                         
         goslogger.info("Start Gossiping!");
         

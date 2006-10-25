@@ -197,13 +197,14 @@ public class DirectSocketFactory {
                 logger.debug("Using STUN to find external address...");
             }
    
-            externalNATAddress = STUN.getExternalAddress(
-                    p.getStringList(Properties.STUN_SERVERS, ",", null));
+            String [] servers = p.getStringList(Properties.STUN_SERVERS, ",", null); 
+            
+            externalNATAddress = STUN.getExternalAddress(servers);
             
             if (logger.isDebugEnabled()) {
                 logger.debug("STUN lookup result: " + externalNATAddress);
             }
-        }
+        } 
         
         if (ALLOW_UPNP) {
             // Try to obtain the global IP address by using UPNP.

@@ -55,7 +55,7 @@ public class Properties {
     public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
     
     public static final String HUB_PREFIX         = PREFIX + "hub.";
-    public static final String HUB_LOCATION       = HUB_PREFIX + "location";
+    public static final String HUB_ADDRESS        = HUB_PREFIX + "address";
     public static final String HUB_SIMPLE_NAME    = HUB_PREFIX + "simple_name";
     public static final String HUB_CLUSTERS       = HUB_PREFIX + "clusters";       
     public static final String HUB_PORT           = HUB_PREFIX + "port";                 
@@ -75,7 +75,7 @@ public class Properties {
             TIMEOUT,                "1000", 
             
             NIO,                    "false", 
-            STUN,                   "false",
+            STUN,                   "true",
             UPNP,                   "false",            
             UPNP_PORT_FORWARDING,   "false", 
             
@@ -84,7 +84,6 @@ public class Properties {
             
             NETWORKS_DEFAULT,       "site,link,global",
             
-            DISCOVERY_PORT,         "24545", 
             HUB_PORT,               "17878",
             
             MODULES_DEFINE,         "direct,reverse,splice,routed", 

@@ -10,4 +10,4 @@ do
     CP=$CP:$i
 done
 
-java -cp $CP -Dsmartsockets.cluster.member=viz smartsockets.viz.SmartsocketsViz $@
+java -cp $CP smartsockets.viz.SmartsocketsViz $@

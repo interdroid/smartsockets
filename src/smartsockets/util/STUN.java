@@ -160,7 +160,7 @@ public class STUN {
             return external;
         }
         
-        if (servers == null) { 
+        if (servers == null || servers.length == 0) { 
             servers = DEFAULT_SERVERS;
         }
         

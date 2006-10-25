@@ -85,7 +85,7 @@ smartsockets.networks.define=fs0,fs1,fs2,fs3,fs4,supermike,minimike,fwg
 
 # The network of the fs0 (VU) cluster
 #
-smartsockets.networks.fs0.range=130.37.199.0/255.255.255.0,!130.37.199.2
+smartsockets.networks.fs0.range=130.37.199.*,!130.37.199.2
 smartsockets.networks.fs0.preference.internal=192.168.0.0/255.255.255.0
 smartsockets.networks.fs0.preference.default=global
 

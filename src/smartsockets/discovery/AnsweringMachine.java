@@ -10,12 +10,16 @@ public class AnsweringMachine extends Thread {
     private final DatagramSocket socket; 
     private final DatagramPacket packet; 
     private final DatagramPacket replyPacket; 
-        
+    
+    private final String prefix;
     private final String [] tags;
           
-    AnsweringMachine(int port, String [] tags, String reply) throws SocketException {
+    AnsweringMachine(int port, String prefix, String [] tags, String reply) 
+        throws SocketException {
+        
         super("discovery.AnsweringMachine");
-            
+        
+        this.prefix = prefix;
         this.tags = tags;
         
         if (port == 0) {         
@@ -100,20 +104,37 @@ public class AnsweringMachine extends Thread {
                         + packet.getSocketAddress().toString());
                 
                 // If we have received a message, and it starts with the right 
-                // prefix, we send a reply.               
-                if (result != null) { 
+                // prefix, we send a reply.
+                if (result != null) {
                     
-                    boolean match = false;
+                    if (result.startsWith(prefix)) { 
                     
-                    for (int i=0;i<tags.length;i++) { 
-                        if (result.equals(tags[i])) {                     
-                            match = true;
-                            break;
+                        String tmp = result.substring(prefix.length());
+                        
+                        boolean match = false;
+                    
+                        for (int i=0;i<tags.length;i++) {
+                            
+                            if (tags[i].equals("*")) {
+                                // We match everything!
+                                match = true;
+                                break;
+                            } else if (tags[i].equals("+")) {
+                                // We match all request without a cluster 
+                                if (tmp.trim().length() == 0) {
+                                    match = true;
+                                    break;
+                                }
+                            } else if (tmp.equals(tags[i])) {
+                                // We do an exact match.
+                                match = true;
+                                break;
+                            }
                         }
-                    }
                     
-                    if (match) { 
-                        sendReply();
+                        if (match) { 
+                            sendReply();
+                        }
                     }
                 }
             } catch (Exception e) {

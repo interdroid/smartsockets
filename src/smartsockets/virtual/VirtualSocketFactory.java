@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,7 +45,7 @@ public class VirtualSocketFactory {
     
     private final int DEFAULT_BACKLOG;     
     private final int DEFAULT_TIMEOUT;         
-    private final int DEFAULT_DISCOVERY_PORT;
+  //  private final int DISCOVERY_PORT;
         
     private HashMap serverSockets = new HashMap();        
     private int nextPort = 3000;    
@@ -78,7 +77,7 @@ public class VirtualSocketFactory {
         
         DEFAULT_BACKLOG = p.getIntProperty(Properties.BACKLOG);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT);
-        DEFAULT_DISCOVERY_PORT = p.getIntProperty(Properties.DISCOVERY_PORT);
+       // DISCOVERY_PORT = 
     
         // NOTE: order is VERY important here!
         loadModules();        
@@ -178,7 +177,7 @@ public class VirtualSocketFactory {
         SocketAddressSet address = null;
         
         // Check if the proxy address was passed as a property.
-        String tmp = properties.getProperty(Properties.HUB_LOCATION);
+        String tmp = properties.getProperty(Properties.HUB_ADDRESS);
         
         if (tmp != null) {
             try { 
@@ -193,7 +192,10 @@ public class VirtualSocketFactory {
          
             logger.info("Attempting to discover proxy using UDP multicast...");                
                         
-            Discovery d = new Discovery(DEFAULT_DISCOVERY_PORT, 0, 10000);
+            int port = properties.getIntProperty(Properties.DISCOVERY_PORT);
+            int time = properties.getIntProperty(Properties.DISCOVERY_TIMEOUT);             
+                        
+            Discovery d = new Discovery(port, 0, time);
             
             String message = "Any Proxies? "; 
             

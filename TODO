@@ -23,8 +23,12 @@ X Add TCP splicing to Virtual
 
 X Add cache to Virtual which remembers best connection setup order 
 
-  Add user readable name to proxy to make visualization easier to read
-  
+X Add user readable name to proxy to make visualization easier to read
+ 
+  Fix hub to only accept conenctions from the 'right' virtual clusters 
+     (currently it only replies to the right cluster with UDP mcast, but accepts
+      any connection).
+ 
   Create Factory for service links 
 
   Check if timeouts make any sense....
