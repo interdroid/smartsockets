@@ -7,6 +7,7 @@ import smartsockets.direct.SocketAddressSet;
 public class HubInfo {
 
     public final SocketAddressSet hubAddress;
+    public final String name;
     public final long state;
     public final int clients;
     
@@ -26,6 +27,7 @@ public class HubInfo {
                 new StringTokenizer(info.substring(8, info.length()-1), ", ");
 
             hubAddress = new SocketAddressSet(t.nextToken());
+            name = t.nextToken();
             state = Long.parseLong(t.nextToken());
             clients = Integer.parseInt(t.nextToken());
 

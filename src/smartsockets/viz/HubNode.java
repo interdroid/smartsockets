@@ -31,10 +31,10 @@ public class HubNode extends Node {
         setType(Node.TYPE_CIRCLE);
         setBackColor(Color.decode("#8B2500"));
         setNodeBorderInactiveColor(Color.decode("#5c1800"));
-        setMouseOverText(new String[] { "Hub:", info.hubAddress.toString() });
         
         this.parent = parent;
-        this.info = info;
+        
+        updateInfo(info);
         
         clientCollection = new CollectionClientNode(info.clients, this);
     }
@@ -195,6 +195,10 @@ public class HubNode extends Node {
 
     public synchronized void updateInfo(HubInfo info) {
         this.info = info;
+        
+        setMouseOverText(new String[] { 
+                "Hub: " + info.name, 
+                "Loc: " + info.hubAddress.toString() });
     }
     
     public synchronized void expandClients() {        

@@ -16,6 +16,15 @@ public class DetailsSelector extends Selector {
 
         tmp.append(description.hubAddressAsString);
         tmp.append(",");
+        
+        String name = description.getName();
+        
+        if (name == null || name.length() == 0) { 
+            name = "<unknown>";
+        }
+        
+        tmp.append(name);
+        tmp.append(",");        
         tmp.append(description.getHomeState());        
         tmp.append(",");
         tmp.append(description.numberOfClients());                
