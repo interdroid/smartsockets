@@ -67,6 +67,8 @@ public class Hub extends Thread {
         
         int port = p.getIntProperty(Properties.HUB_PORT, DEFAULT_ACCEPT_PORT);
         
+        System.err.println("########### Using port: " + port);
+        
         acceptor = new Acceptor(port, state, connections, hubs, factory);        
         connector = new Connector(state, connections, hubs, factory);
         

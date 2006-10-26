@@ -112,7 +112,8 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                     break;
                 
                 default:
-                    Router.logger.debug("Connection setup returned junk!");
+                    Router.logger.debug("Connection setup to router returned "
+                            + "junk!: " + result);
                 }
             }            
         } catch (IOException e) {

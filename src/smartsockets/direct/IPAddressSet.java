@@ -368,8 +368,16 @@ public class IPAddressSet implements Serializable {
             // Get all the local addresses, including IPv6 ones, but excluding 
             // loopback addresses, and sort them.
             InetAddress [] addresses = 
-                sort(NetworkUtils.getAllHostAddresses(true, false));    
-                           
+                NetworkUtils.getAllHostAddresses(true, false);    
+
+            if (addresses == null || addresses.length == 0) {
+		// Oh dear, we don't have a network... Let's see if there is 
+                // a loopback available...
+		addresses = NetworkUtils.getAllHostAddresses(false, false);    
+	    } 
+                
+            addresses = sort(addresses);
+	                                
             DirectSocketFactory.logger.info("Result after sorting: ");
             DirectSocketFactory.logger.info(" " 
                     + NetworkUtils.ipToString(addresses));

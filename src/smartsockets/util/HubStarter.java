@@ -18,9 +18,11 @@ public class HubStarter {
     public static void main(String [] args) { 
         
         boolean startRouter = true;
+        boolean startHub = true;
         
         SocketAddressSet [] hubs = new SocketAddressSet[args.length];
         int port = DEFAULT_ACCEPT_PORT;
+        int numHubs = 0;
 
         // Load the default properties. These include the defaults in the code, 
         // the default property file, and any command line '-D' settings.
@@ -31,7 +33,9 @@ public class HubStarter {
         for (int i=0;i<args.length;i++) {                
             
             if (args[i].startsWith("-no-router")) {
-                startRouter = false;                
+                startRouter = false;
+            } else if (args[i].startsWith("-no-hub")) {
+                startHub = false;                
             } else if (args[i].equals("-clusters")) { 
                 if (i+1 >= args.length) { 
                     System.out.println("-clusters option requires parameter!");
@@ -69,6 +73,9 @@ public class HubStarter {
                 // Assume it's an address...
                 try { 
                     hubs[i] = new SocketAddressSet(args[i]);
+                    numHubs++;
+                    
+                    System.out.println("Got hub address: " + hubs[i].toString());
                 } catch (Exception e) {
                     System.err.println("Skipping hub address: " + args[i]);
                     e.printStackTrace(System.err);
@@ -76,22 +83,54 @@ public class HubStarter {
             } 
         }
 
-        p.put("smartsockets.hub.port", Integer.toString(port));
+        SocketAddressSet [] tmp = new SocketAddressSet[numHubs];
         
-        try {            
-            System.out.println("Starting hub....");            
-            h = new Hub(hubs, p);            
-            System.out.println("Hub running on: " + h.getHubAddress());            
-        } catch (IOException e) {
-            System.err.println("Oops: failed to start hub");
-            e.printStackTrace(System.err);
-            System.exit(1);
-        }   
+        int index = 0;
         
-        if (startRouter) { 
+        for (int i=0;i<hubs.length;i++) {             
+            if (hubs[i] != null) { 
+                tmp[index++] = hubs[i];
+            }             
+        }
+        
+        hubs = tmp;
+        
+        if (port != DEFAULT_ACCEPT_PORT && 
+                (p.getIntProperty("smartsockets.hub.port", -1) != -1)) {         
+            p.put("smartsockets.hub.port", Integer.toString(port));
+        }
+        
+        if (startHub) { 
+            try {            
+                System.out.println("Starting hub....");            
+                h = new Hub(hubs, p);            
+                System.out.println("Hub running on: " + h.getHubAddress());            
+            } catch (IOException e) {
+                System.err.println("Oops: failed to start hub");
+                e.printStackTrace(System.err);
+                System.exit(1);
+            }   
+        } 
+        
+        if (startRouter) {
+            
+            SocketAddressSet adr = null;
+            
+            if (h != null) { 
+                adr = h.getHubAddress();                
+            } else { 
+                adr = hubs[0];
+            }
+            
+            if (adr == null) {
+                System.err.println("Router requires hub address!");
+                System.exit(1);
+            }
+                                        
             try {         
-                System.out.println("Starting router...");            
-                r = new Router(h.getHubAddress());
+                System.out.println("Starting router...");
+                
+                r = new Router();
                 System.out.println("Router running on: " + r.getAddress());
                 r.start();                                
             } catch (IOException e) {

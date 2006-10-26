@@ -100,13 +100,17 @@ public class Properties {
             ibis.util.GetLogger.getLogger("smartsocket.properties");
     
     private static TypedProperties getPropertyFile(String file) {
+
+        System.out.println("Trying to load property file: " + file);
         
         InputStream in = null;
 
         try {
             in = new FileInputStream(file);
+            System.out.println("File: " + file + " found!");
         } catch (FileNotFoundException e) {
             logger.info("Property file \"" + file + "\" not found!");
+            System.out.println("File: " + file + " not found!");
         }
                 
         if (in == null) {
@@ -126,9 +130,13 @@ public class Properties {
         }
 
         try {
+            System.out.println("Loading properties!");
+            
             TypedProperties p = new TypedProperties();
             p.load(in);
 
+            System.out.println(p.toString());
+                        
             return p;
         } catch (IOException e) {
             logger.warn("Error while loading property file: " + file, e);

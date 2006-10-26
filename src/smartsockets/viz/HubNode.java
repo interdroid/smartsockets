@@ -134,7 +134,11 @@ public class HubNode extends Node {
                             if (cs[c].hasProperty("router")) { 
                                 ci = new RouterClientNode(cs[c], this);                                
                             } else if (cs[c].hasProperty("visualization")) {
-                                ci = new VizClientNode(cs[c], this);                                                            
+                                ci = new VizClientNode(cs[c], this);
+                            } else if (cs[c].hasProperty("nameserver")) {
+                                ci = new NameServerClientNode(cs[c], this);                                                            
+                            } else if (cs[c].hasProperty("ibis")) {
+                                ci = new IbisClientNode(cs[c], this);                           
                             } else { 
                                 ci = new NormalClientNode(cs[c], this);                           
                             }
