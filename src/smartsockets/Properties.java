@@ -97,7 +97,7 @@ public class Properties {
     private static TypedProperties defaultProperties;
 
     protected static Logger logger =         
-            ibis.util.GetLogger.getLogger("smartsocket.properties");
+            ibis.util.GetLogger.getLogger("smartsockets.properties");
     
     private static TypedProperties getPropertyFile(String file) {
 
@@ -174,11 +174,13 @@ public class Properties {
                 
                 TypedProperties fromFile = getPropertyFile(file);
                 
-                if (fromFile == null && !file.equals(DEFAULT_FILE)) { 
-                    // If we fail to load the user specified file, we give an
-                    // error, since only the default file may fail silently.                     
-                    logger.error("User specified preferences \"" + file 
-                            + "\" not found!");                                            
+                if (fromFile == null) { 
+	            if (!file.equals(DEFAULT_FILE)) { 
+                    	// If we fail to load the user specified file, we give an
+                    	// error, since only the default file may fail silently.                     
+                    	logger.error("User specified preferences \"" + file 
+                        	    + "\" not found!");
+                    }                                            
                 } else {                  
                     // If we managed to load the file, we add the properties to 
                     // the 'defaultProperties' possibly overwriting defaults.
