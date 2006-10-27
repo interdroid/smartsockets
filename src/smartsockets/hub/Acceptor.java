@@ -22,7 +22,6 @@ import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
-import smartsockets.util.TypedProperties;
 
 public class Acceptor extends CommunicationThread {
     
@@ -100,7 +99,7 @@ public class Acceptor extends CommunicationThread {
             // Now activate it. 
             c.activate();
             
-            connections.addConnection(otherAsString, c);
+            connections.addConnection(addr, c);
             return true;
         }     
     }
@@ -119,7 +118,9 @@ public class Acceptor extends CommunicationThread {
         try { 
             String src = in.readUTF();
             
-            if (connections.getConnection(src) != null) { 
+            SocketAddressSet srcAddr = new SocketAddressSet(src);
+                        
+            if (connections.getConnection(srcAddr) != null) { 
                 if (cconlogger.isDebugEnabled()) { 
                     cconlogger.debug("Incoming connection from " + src + 
                     " refused, since it already exists!"); 
@@ -139,12 +140,13 @@ public class Acceptor extends CommunicationThread {
             out.writeUTF(server.getAddressSet().toString());            
             out.flush();
 
-            ClientConnection c = new ClientConnection(src, s, in, out, 
+            ClientConnection c = new ClientConnection(srcAddr, s, in, out, 
                     connections, knownHubs);
-            connections.addConnection(src, c);                                               
+            
+            connections.addConnection(srcAddr, c);                                               
             c.activate();
 
-            knownHubs.getLocalDescription().addClient(src);
+            knownHubs.getLocalDescription().addClient(srcAddr);
             
             reglogger.info("Added client: " + src);            
             

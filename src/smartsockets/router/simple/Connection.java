@@ -92,7 +92,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                                                 
                 outToTarget.writeUTF(parent.getLocalAddress().toString());                                
                 outToTarget.writeUTF(target.toString());                
-                outToClient.writeLong(linkID);                
+                outToTarget.writeLong(linkID);                
                 outToTarget.writeLong(timeout);
                 outToTarget.flush();
 
@@ -113,7 +113,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                 
                 default:
                     Router.logger.debug("Connection setup to router returned "
-                            + "junk!: " + result);
+                            + "junk (1) !: " + result);
                 }
             }            
         } catch (IOException e) {

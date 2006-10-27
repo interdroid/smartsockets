@@ -87,7 +87,7 @@ public class HubConnection extends MessageForwardingConnection {
                         + tmp.getLastLocalUpdate()  
                         + " > lastSendState= " + lastSendState);
                     
-                writeProxy(tmp);                    
+                writeHub(tmp);                    
                 writes++;
             }        
             
@@ -99,8 +99,7 @@ public class HubConnection extends MessageForwardingConnection {
             out.flush();
             
         } catch (Exception e) {
-            goslogger.warn("Unhandled exception in ProxyConnection!!" + e);
-            // TODO: handle exception
+            goslogger.warn("Unhandled exception in HubConnection!!", e);            
         }
         
         lastSendState = newSendState;
@@ -112,7 +111,7 @@ public class HubConnection extends MessageForwardingConnection {
         out.write(HubProtocol.PING);
     } 
     
-    private void writeProxy(HubDescription d) throws IOException {        
+    private void writeHub(HubDescription d) throws IOException {        
         out.write(HubProtocol.GOSSIP);
         
         out.writeUTF(d.hubAddress.toString());
@@ -230,13 +229,13 @@ public class HubConnection extends MessageForwardingConnection {
     }
     
     protected String getName() { 
-        return "ProxyConnection(" + peer.hubAddress + ")";
+        return "HubConnection(" + peer.hubAddress + ")";
     }
     
     private void disconnect() {
                 
         // Update the administration
-        connections.removeConnection(peer.hubAddressAsString);        
+        connections.removeConnection(peer.hubAddress);        
         local.removeConnectedTo(peer.hubAddressAsString);
         
         DirectSocketFactory.close(s, out, in);            

@@ -184,7 +184,7 @@ class Connector extends CommunicationThread {
         
         if (result) {
             hconlogger.debug("Succesfully created connection!");
-            connections.addConnection(d.hubAddress.toString(), c);
+            connections.addConnection(d.hubAddress, c);
             c.activate();            
             
             knownHubs.getLocalDescription().addConnectedTo(d.hubAddressAsString);            

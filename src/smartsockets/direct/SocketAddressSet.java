@@ -21,7 +21,7 @@ import smartsockets.util.NetworkUtils;
  * @version 1.0 Dec 19, 2005
  * @since 1.0
  */
-public class SocketAddressSet extends SocketAddress {
+public class SocketAddressSet extends SocketAddress implements Comparable {
         
     private static final long serialVersionUID = -2662260670251814982L;
     
@@ -476,5 +476,25 @@ public class SocketAddressSet extends SocketAddress {
      */
     public static boolean sameProcess(SocketAddressSet a, SocketAddressSet b) {
         return a.sameProcess(b);
+    }
+
+    public int compareTo(Object other) {
+
+        if (this == other) { 
+            return 0;
+        }
+        
+        // Check type 
+        if (!(other instanceof SocketAddressSet)) {
+            return 0;
+        }
+                
+        SocketAddressSet tmp = (SocketAddressSet) other;
+        
+        if (hashCode() < tmp.hashCode()) { 
+            return -1;
+        } else { 
+            return 1;
+        }
     }
 }

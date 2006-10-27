@@ -3,10 +3,12 @@ package smartsockets.hub.connections;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
+import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 
@@ -21,7 +23,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     }
     
     // Directly sends a message to a hub.
-    private boolean directlyToHub(String hub, ClientMessage cm) {
+    private boolean directlyToHub(SocketAddressSet hub, ClientMessage cm) {
 
         BaseConnection c = connections.getConnection(hub); 
         
@@ -37,27 +39,25 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     // Tries to forward a message to a given proxy, directly or indirectly.  
     private void forwardMessageToHub(HubDescription p, ClientMessage cm) {
         
-        String address = p.hubAddressAsString;
-        
         meslogger.debug("Attempting to forward message to hub "
                 + p.hubAddress);
         
-        if (directlyToHub(address, cm)) {
+        if (directlyToHub(p.hubAddress, cm)) {
             
-            meslogger.debug("Succesfully forwarded message to proxy " 
-                    + address + " using direct link");
+            meslogger.debug("Succesfully forwarded message to hub " 
+                    + p.hubAddressAsString + " using direct link");
             return;            
         } 
          
         if (cm.hopsLeft == 0) {
-            meslogger.info("Failed to forward message to proxy " 
-                    + address + " and we are not allowed to use" 
+            meslogger.info("Failed to forward message to hub " 
+                    + p.hubAddressAsString + " and we are not allowed to use" 
                     +" an indirection!");
             return;
         } 
             
-        meslogger.debug("Failed to forward message to proxy " 
-                + address + " using direct link, " 
+        meslogger.debug("Failed to forward message to hub " 
+                + p.hubAddressAsString + " using direct link, " 
                 + "trying indirection");
 
         // We don't have a direct connection, but we should be able to reach the
@@ -66,18 +66,19 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (p2 == null) {
             // Oh dear, we don't have an indirection!
-            meslogger.warn("Indirection address of " + address + " is null!");
+            meslogger.warn("Indirection address of " + p.hubAddressAsString
+                    + " is null!");
             return;
         } 
 
-        if (directlyToHub(p2.hubAddressAsString, cm)) { 
+        if (directlyToHub(p2.hubAddress, cm)) { 
 
-            meslogger.debug("Succesfully forwarded message to proxy " 
+            meslogger.debug("Succesfully forwarded message to hub " 
                     + p2.hubAddressAsString + " using direct link");
             return;            
         } 
 
-        meslogger.info("Failed to forward message to proxy " + address 
+        meslogger.info("Failed to forward message to hub " + p.hubAddressAsString 
                 + " or it's indirection " + p2.hubAddressAsString);
     }   
     
@@ -87,6 +88,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         BaseConnection c = (BaseConnection) connections.getConnection(cm.target);
         
         if (c == null || !(c instanceof ClientConnection)) {
+            meslogger.debug("Cannot find client address locally: " + cm.target);                        
             return false;
         } 
 
@@ -105,13 +107,16 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     private boolean forwardToHub(ClientMessage cm, boolean setHops) {
         
         // Lets see if we directly know the targetHub and if it knows the target         
-        if (cm.targetHub == null || cm.targetHub.length() == 0) {
+        if (cm.targetHub == null) {
+            meslogger.debug("Target hub not set!");                        
             return false;
         }
         
         HubDescription p = knownHubs.get(cm.targetHub);
            
         if (p == null || !p.knowsClient(cm.target)) {
+            meslogger.debug("Target hub " + cm.targetHub + " does not known " +
+                    "client " + cm.target);                        
             return false;
         }
          

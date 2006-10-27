@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
+import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.AddressAsStringSelector;
 import smartsockets.hub.state.ClientDescription;
@@ -30,9 +31,9 @@ public class ClientConnection extends MessageForwardingConnection {
     protected static Logger reglogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
         
-    private final String clientAddress;
+    private final SocketAddressSet clientAddress;
     
-    public ClientConnection(String clientAddress, DirectSocket s, 
+    public ClientConnection(SocketAddressSet clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, Connections connections,
             HubList hubs) {
      
@@ -46,7 +47,7 @@ public class ClientConnection extends MessageForwardingConnection {
         // Read the message
         
         ClientMessage cm = new ClientMessage(clientAddress, 
-                knownHubs.getLocalDescription().hubAddressAsString, 0, in);
+                knownHubs.getLocalDescription().hubAddress, 0, in);
         
         meslogger.debug("Incoming message: " + cm);
         
@@ -192,7 +193,9 @@ public class ClientConnection extends MessageForwardingConnection {
                 
         reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         
-        LinkedList result = knownHubs.directionToClient(client);
+        SocketAddressSet adr = new SocketAddressSet(client); 
+        
+        LinkedList result = knownHubs.directionToClient(adr);
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            

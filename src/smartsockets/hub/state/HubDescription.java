@@ -2,8 +2,8 @@ package smartsockets.hub.state;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.TreeMap;
 
 import smartsockets.direct.SocketAddressSet;
@@ -60,7 +60,10 @@ public class HubDescription {
     // Maintain a list of machines that have registered themselves as clients. 
     // Note that this is probably a very bad idea from a scalability point of 
     // view...
-    private TreeMap clients = new TreeMap(); 
+    /*private TreeMap<SocketAddressSet, ClientDescription> clients = 
+        new TreeMap<SocketAddressSet, ClientDescription>(); 
+    */    
+    private HashMap clients = new HashMap(); 
     
     // A reference to the actual connection to the described hub. May be 
     // null if we are not directly connected.    
@@ -75,7 +78,7 @@ public class HubDescription {
     // (e.g., a visualization) to get idea of who's connected to whom. Stored in 
     // String form since it's not really worth the effort converting them all
     // the time.     
-    private ArrayList connectedTo = new ArrayList();
+    private ArrayList<String> connectedTo = new ArrayList<String>();
     
     public HubDescription(SocketAddressSet address, StateCounter state) {
         this(null, address, state, false);
@@ -96,7 +99,7 @@ public class HubDescription {
         this.local = local;
     }
     
-    public boolean addClient(String client) {
+    public boolean addClient(SocketAddressSet client) {
         
         if (!local) { 
             throw new IllegalStateException("Cannot add clients to remote"
@@ -114,13 +117,13 @@ public class HubDescription {
         } 
     }
     
-    public boolean knowsClient(String client) {
+    public boolean knowsClient(SocketAddressSet client) {
         synchronized (clients) {            
             return clients.containsKey(client);
         }
     }
 
-    public boolean removeClient(String client) {
+    public boolean removeClient(SocketAddressSet client) {
         
         if (!local) { 
             throw new IllegalStateException("Cannot remove clients from remote"
@@ -178,7 +181,7 @@ public class HubDescription {
         return homeState;
     }
     
-    public boolean addService(String client, String tag, String address) {
+    public boolean addService(SocketAddressSet client, String tag, String address) {
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -195,7 +198,7 @@ public class HubDescription {
         }
     }
 
-    public boolean updateService(String client, String tag, String address) {
+    public boolean updateService(SocketAddressSet client, String tag, String address) {
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -213,7 +216,7 @@ public class HubDescription {
         }
     }
 
-    public boolean removeService(String client, String tag) {
+    public boolean removeService(SocketAddressSet client, String tag) {
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -231,7 +234,7 @@ public class HubDescription {
         }
     }
     
-    boolean containsClient(String client) {
+    boolean containsClient(SocketAddressSet client) {
         synchronized (client) {
             return clients.containsKey(client);
         } 

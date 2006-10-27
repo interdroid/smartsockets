@@ -8,17 +8,19 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import smartsockets.direct.SocketAddressSet;
+
 public class ClientDescription {
 
-    long version = 0;
-    final String clientAddress;
+    long version = 0;    
+    final SocketAddressSet clientAddress;
     HashMap services;
     
-    public ClientDescription(String clientAddress) { 
+    public ClientDescription(SocketAddressSet clientAddress) { 
         this.clientAddress = clientAddress;
     }
     
-    private ClientDescription(String clientAddress, long version, 
+    private ClientDescription(SocketAddressSet clientAddress, long version, 
             HashMap services) {
         
         this.clientAddress = clientAddress;
@@ -134,7 +136,7 @@ public class ClientDescription {
     
     public static void write(ClientDescription c, DataOutputStream out) throws IOException { 
         
-        out.writeUTF(c.clientAddress);
+        out.writeUTF(c.clientAddress.toString());
         out.writeLong(c.version);
         
         if (c.services == null) { 
@@ -158,7 +160,7 @@ public class ClientDescription {
     
     public static ClientDescription read(DataInputStream in) throws IOException { 
         
-        String adress = in.readUTF();
+        SocketAddressSet adress = new SocketAddressSet(in.readUTF());
         long version = in.readLong();                      
         int services = in.readInt();
         

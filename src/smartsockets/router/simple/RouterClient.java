@@ -62,7 +62,7 @@ public class RouterClient implements Protocol {
             return null;
         
         default:
-            logger.info("Connection setup returned junk!: " + result);
+            logger.info("Connection setup returned junk (2) !: " + result);
             return null;
         }
     }

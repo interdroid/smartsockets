@@ -180,7 +180,7 @@ public class HubList {
         return tmp;
     }
     
-    public synchronized LinkedList directionToClient(String client) {
+    public synchronized LinkedList directionToClient(SocketAddressSet client) {
 
         // Collect the addresses of all proxies that claim to known this client 
         // and are reachable from our location in a single hop. For all proxies 
@@ -243,11 +243,11 @@ public class HubList {
         return good;
     }
     
-    public LinkedList findClient(String client) {
+    public LinkedList findClient(SocketAddressSet client) {
         return findClient(client, null);
     }
 
-    public synchronized LinkedList findClient(String client, List skip) {
+    public synchronized LinkedList findClient(SocketAddressSet client, List skip) {
 
         // Finds all proxies that claim to known this client. Return them in 
         // a list, sorted by how 'good an option' they are. We prefer proxies 
@@ -291,7 +291,7 @@ public class HubList {
         return good;
     }
     
-    public Iterator findHubsForTarget(String target, boolean includeLocal) { 
+    public Iterator findHubsForTarget(SocketAddressSet target, boolean includeLocal) { 
         
         PartialIterator result = new PartialIterator();
         
