@@ -202,14 +202,22 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         
         // Finally update router information (which may depend on information of 
         // other clients  
+        HashMap clients = new HashMap();
+        
         itt = hubs.values().iterator();
         
         while (itt.hasNext()) {            
             HubNode n = (HubNode) itt.next();             
-            n.updateRouters();
+            n.getClients(clients);
         }
 
+        itt = hubs.values().iterator();
         
+        while (itt.hasNext()) {            
+            HubNode n = (HubNode) itt.next();             
+            n.updateRouters(clients);
+        }
+
         
     }
 

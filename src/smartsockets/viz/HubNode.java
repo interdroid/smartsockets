@@ -131,7 +131,7 @@ public class HubNode extends Node {
 
                         if (ci == null) {
                             
-                            if (cs[c].hasProperty("router")) { 
+                            if (cs[c].hasProperty("router")) {                                 
                                 ci = new RouterClientNode(cs[c], this);                                
                             } else if (cs[c].hasProperty("visualization")) {
                                 ci = new VizClientNode(cs[c], this);
@@ -222,7 +222,7 @@ public class HubNode extends Node {
         updateClients();
     }
     
-    public synchronized void updateRouters() {
+    public synchronized void updateRouters(HashMap allClients) {
         
         if (collapseClients) { 
             return;
@@ -236,9 +236,13 @@ public class HubNode extends Node {
                 ClientNode n = (ClientNode) itt.next();
                 
                 if (n instanceof RouterClientNode) { 
-                    ((RouterClientNode) n).showConnections(clients);
+                    ((RouterClientNode) n).showConnections(allClients);
                 }
             }
         }
     }    
+    
+    public void getClients(HashMap target) {        
+        target.putAll(clients);        
+    }   
 }

@@ -228,7 +228,10 @@ public class RouterClientNode extends ClientNode {
                     c.edge2 = new Edge(this, to);
                     c.edge2.setColor(Color.LIGHT_GRAY);
                 } else { 
-                    System.out.println("Could not add edge: router to " + c.to);                                                                         
+                    System.out.println("Could not add edge: router to " + c.to);                    
+                    System.out.println("Clients:");
+                    System.out.println(clients.toString());
+                    System.out.println("\n\n\n");                    
                 }                         
             }
             
