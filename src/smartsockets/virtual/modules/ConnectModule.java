@@ -218,6 +218,10 @@ public abstract class ConnectModule implements CallBack {
         return matchAdditionalRuntimeRequirements(requirements);
     }
     
+    public String toString() { 
+        return name;
+    }
+    
     public abstract void initModule(Map properties) throws Exception; 
 
     public abstract void startModule() throws Exception; 

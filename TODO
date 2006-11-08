@@ -24,8 +24,20 @@ X Add TCP splicing to Virtual
 X Add cache to Virtual which remembers best connection setup order 
 
 X Add user readable name to proxy to make visualization easier to read
- 
-  Fix hub to only accept conenctions from the 'right' virtual clusters 
+
+  Add hierarchical clustering 
+        -- eg. 'das2.vu' or 'grid5000.orsay'
+
+  Fix 'winner' cache 
+	- add cluster based caching
+        - check how the connection properties interact with serversockets 
+          (e.g., what happens to reverse setups when I turn winner cache on) 
+   
+  Reuses inter router links ? 
+
+  Add parallel streams to routers ?  
+
+  Fix hub to only accept connections from the 'right' virtual clusters 
      (currently it only replies to the right cluster with UDP mcast, but accepts
       any connection).
  
@@ -36,10 +48,8 @@ X Add user readable name to proxy to make visualization easier to read
   Icing on cake: have the VirtualSocket transparently move from Routed 
                   to splice/stun type connection....
 
-  Check how the connection properties interact with serversockets 
-    (e.g., what happens to reverse setups when I turn winner cache on) 
 
-  NIO support
+X NIO support
 
 X Routing for Mathijs...
 

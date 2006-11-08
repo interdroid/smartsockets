@@ -60,16 +60,19 @@ public class Properties {
     public static final String HUB_CLUSTERS       = HUB_PREFIX + "clusters";       
     public static final String HUB_PORT           = HUB_PREFIX + "port";                 
     
-    public static final String CLUSTER_PREFIX = PREFIX + "cluster.";
-    public static final String CLUSTER_DEFINE = CLUSTER_PREFIX + "define";
-    public static final String CLUSTER_MEMBER = CLUSTER_PREFIX + "member";
-    
-    // NOTE: These properties require a which can only be determined at runtime.  
-    public static final String CLUSTER_PREFERENCE = "preference.";    
-    public static final String CLUSTER_MEMBERSHIP = "preference.membership";
-    public static final String CLUSTER_INSIDE     = "preference.inside";
-    public static final String CLUSTER_DEFAULT    = "preference.default";
-    
+    public static final String CLUSTER_PREFIX  = PREFIX + "cluster.";
+    public static final String CLUSTER_DEFINE  = CLUSTER_PREFIX + "define";
+    public static final String CLUSTER_MEMBER  = CLUSTER_PREFIX + "member";
+    public static final String CLUSTER_REORDER = CLUSTER_PREFIX + "reorder";
+        
+    // NOTE: These properties require a prefix which can only be determined at
+    // runtime.  
+    public static final String CLUSTER_PREFERENCE  = "preference.";    
+    public static final String CLUSTER_MEMBERSHIP  = "preference.membership";
+    public static final String CLUSTER_INSIDE      = "preference.inside";
+    public static final String CLUSTER_DEFAULT     = "preference.default";
+    public static final String CLUSTER_SUB_REORDER = "preference.reorder";
+        
     private static final String [] defaults = new String [] {
             BACKLOG,                "20", 
             TIMEOUT,                "1000", 
@@ -93,7 +96,6 @@ public class Properties {
             DISCOVERY_TIMEOUT,      "5000",             
     };
 
-        
     private static TypedProperties defaultProperties;
 
     protected static Logger logger =         
