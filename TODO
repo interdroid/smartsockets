@@ -1,5 +1,10 @@
 Todo:
 
+CHECK hub administration !!! Gossip sometimes fails if hub crashes and is 
+directy restarted: 
+
+  
+
 User friendlyness!!
 
 X Create single app to start proxy + router

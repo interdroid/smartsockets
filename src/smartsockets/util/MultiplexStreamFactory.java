@@ -105,7 +105,8 @@ public class MultiplexStreamFactory {
                     System.out.println("Reader: Stream closed");
                     return;                    
                 } else { 
-                    // TODO: handle exception
+                    System.out.println("Reader: got exception " + e);
+                    // TODO: handle exception ? 
                 } 
             }
         } 

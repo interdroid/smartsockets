@@ -1,6 +1,5 @@
 package smartsockets.router.multiplex;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -17,17 +16,23 @@ public class RouterClient implements Protocol {
     private static Logger logger = 
         ibis.util.GetLogger.getLogger(RouterClient.class.getName());
     
+    private static long clientID = 0;
     private static HashMap properties;       
-    private static VirtualSocketFactory factory;     
     
+    public final long id;
     public final VirtualSocket s;
     public final DataOutputStream out;
     public final DataInputStream in;   
+    public final VirtualSocketFactory factory;     
                
-    RouterClient(VirtualSocket s, DataOutputStream out, DataInputStream in) {         
+    RouterClient(long id, VirtualSocketFactory factory, VirtualSocket s, 
+            DataOutputStream out, DataInputStream in) {
+        
+        this.id = id;
         this.s = s;        
         this.out = out;
         this.in = in;
+        this.factory = factory;
     }
     
     public VirtualSocket connectToClient(VirtualSocketAddress target, 
@@ -35,7 +40,9 @@ public class RouterClient implements Protocol {
                         
         logger.info("Sending connect request to router!");
         
-        out.writeUTF(target.toString());                
+        out.writeUTF(factory.getLocalHost().toString());                
+        out.writeUTF(target.toString());             
+        out.writeLong(id);
         out.writeLong(timeout);
         out.flush();
 
@@ -54,20 +61,22 @@ public class RouterClient implements Protocol {
             return null;
         
         default:
-            logger.info("Connection setup returned junk!");
+            logger.info("Connection setup returned junk (2) !: " + result);
             return null;
         }
     }
                
+    public static synchronized long getID() { 
+        return clientID++;
+    }
+    
     public static RouterClient connectToRouter(VirtualSocketAddress router, 
-            int timeout) throws IOException {
+            VirtualSocketFactory factory, int timeout) throws IOException {
         
         if (properties == null) {            
-            logger.info("Initializing client-side router code");
-            
+            logger.info("Initializing client-side router code");            
             properties = new HashMap();
             properties.put("connect.module.skip", "routed");            
-            factory = VirtualSocketFactory.createSocketFactory();          
         }
         
         VirtualSocket s = null;
@@ -84,6 +93,6 @@ public class RouterClient implements Protocol {
             throw e;
         }
         
-        return new RouterClient(s, out, in);
+        return new RouterClient(getID(), factory, s, out, in);
     }
 }
