@@ -85,7 +85,7 @@ public class Properties {
             IN_BUF_SIZE,            "65536", 
             OUT_BUF_SIZE,           "65536",
             
-            NETWORKS_DEFAULT,       "site,link,global",
+            NETWORKS_DEFAULT,       "auto",
             
             HUB_PORT,               "17878",
             
