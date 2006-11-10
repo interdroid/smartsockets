@@ -21,7 +21,41 @@ public class NetworkUtils {
     protected static Logger logger = 
         ibis.util.GetLogger.getLogger(NetworkUtils.class.getName());
     
-     
+    // This matrix contains the possible IPv4 subnet/mask values. Note that the 
+    // each entry consists of three parts: the subnet, the mask needed to match 
+    // the address, and the real mask that is returned. This allows a range of 
+    // local addresses (e.g., 192.168.0.xxx to 192.168.255.xxx) to be matched in 
+    // one go.
+    private static byte [][] localSubnetMask = new byte[][] { 
+        
+         // host local, 127/8
+        { 127,0,0,0 }, 
+        { (byte) 0xff,0,0,0 },  
+        { (byte) 0xff,0,0,0 },  
+                
+        // site local, 10/8
+        { 10,0,0,0 },  
+        { (byte) 0xff,0,0,0 },
+        { (byte) 0xff,0,0,0 },       
+         
+        // site local, 172.16/12 to 172.31/12
+        { (byte) (172 & 0xff), (byte) (16 & 0xff), 0, 0 }, 
+        { (byte) 0xff, (byte) 0xf0, 0, 0 },  // <-- YES, it's really 0xf0!!   
+        { (byte) 0xff, (byte) 0xff, 0, 0 },
+        
+        // site local, 192.168.0/24 to 192.168.255/24 
+        { (byte) (192 & 0xff), (byte) (168 & 0xff), 0, 0 }, 
+        { (byte) 0xff, (byte) 0xff, 0, 0 },
+        { (byte) 0xff, (byte) 0xff, (byte) 0xff, 0 },
+                
+        // link local, 169.254/16
+        { (byte) (169 & 0xff), (byte) (254 & 0xff), 0, 0 }, 
+        { (byte) 0xff, (byte) 0xff, 0, 0 },
+        { (byte) 0xff, (byte) 0xff, 0, 0 }
+        
+        // TODO: add ipv6 ???
+    };
+
     private NetworkUtils() {
         // No instance allowed 
     }
@@ -76,10 +110,10 @@ public class NetworkUtils {
     /**
      * Adds all the network interfaces found on this machine to the list.
      */    
-    private static ArrayList getNetworkInterfacesList() { 
+    private static ArrayList<NetworkInterface> getNetworkInterfacesList() { 
         
-        ArrayList list = new ArrayList();        
-        Enumeration e = null;
+        ArrayList<NetworkInterface> list = new ArrayList<NetworkInterface>();        
+        Enumeration<NetworkInterface> e = null;
 
         try {
             e = NetworkInterface.getNetworkInterfaces();                       
@@ -88,7 +122,7 @@ public class NetworkUtils {
                 list.add(e.nextElement());
             }        
         } catch (SocketException ex) {
-            // logger.debug("Could not get network interfaces.");
+            logger.debug("Could not get network interfaces.");
         }
         
         return list;
@@ -100,10 +134,9 @@ public class NetworkUtils {
      * @return the network interfaces.
      */
     public static NetworkInterface [] getNetworkInterfaces() { 
-        ArrayList list = getNetworkInterfacesList();       
+        ArrayList<NetworkInterface> list = getNetworkInterfacesList();       
         
-        return (NetworkInterface []) list.toArray(
-                    new NetworkInterface[list.size()]);
+        return list.toArray(new NetworkInterface[list.size()]);
     }
     
     /**
@@ -115,16 +148,16 @@ public class NetworkUtils {
      * @param ignoreLoopback ignore loopback addresses 
      * @param ignoreIP6 ignore IPv6 addresses
      */
-    private static void getAllHostAddresses(NetworkInterface nw, List target, 
-            boolean ignoreLoopback, boolean ignoreIP6) { 
+    private static void getAllHostAddresses(NetworkInterface nw, 
+            List<InetAddress> target, boolean ignoreLoopback, boolean ignoreIP6) { 
                 
         logger.info("   " + nw.getDisplayName() + ":");
                         
-        Enumeration e2 = nw.getInetAddresses();
+        Enumeration<InetAddress> e2 = nw.getInetAddresses();
             
         while (e2.hasMoreElements()) {
             
-            InetAddress tmp = (InetAddress) e2.nextElement();
+            InetAddress tmp = e2.nextElement();
                        
             boolean t1 = !ignoreLoopback || !tmp.isLoopbackAddress();
             boolean t2 = !ignoreIP6 || (tmp instanceof Inet4Address); 
@@ -159,17 +192,16 @@ public class NetworkUtils {
     public static InetAddress [] getAllHostAddresses(boolean ignoreLoopback, 
             boolean ignoreIP6) { 
 
-        ArrayList nwl = getNetworkInterfacesList();
-        ArrayList list = new ArrayList();
+        ArrayList<NetworkInterface> nwl = getNetworkInterfacesList();
+        ArrayList<InetAddress> list = new ArrayList<InetAddress>();
             
         logger.info("Determining available addresses:");
         
-        for (int i=0;i<nwl.size();i++) {             
-            NetworkInterface nwi = (NetworkInterface) nwl.get(i);
+        for (NetworkInterface nwi : nwl) { 
             getAllHostAddresses(nwi, list, ignoreLoopback, ignoreIP6);
         } 
         
-        return (InetAddress []) list.toArray(new InetAddress[list.size()]);
+        return list.toArray(new InetAddress[list.size()]);
     }
     
     
@@ -197,9 +229,9 @@ public class NetworkUtils {
             boolean ignoreLoopback, boolean ignoreIP6) { 
 
         // Return the addresses that are bound to the given interface.                
-        ArrayList list = new ArrayList();
+        ArrayList<InetAddress> list = new ArrayList<InetAddress>();
         getAllHostAddresses(nw, list, ignoreLoopback, ignoreIP6);
-        return (InetAddress []) list.toArray(new InetAddress[list.size()]);
+        return list.toArray(new InetAddress[list.size()]);
     }
        
     /**
@@ -337,7 +369,16 @@ public class NetworkUtils {
         return bytesToString(ipv4, false, '.');
     }
     
-    
+    /**
+     * Checks if the given address (in byte representation) matches a certain 
+     * subnet/netmask. 
+     * 
+     * @param ad byte representation of the adress to check
+     * @param sub the array containing the subnet
+     * @param mask the array containing the netmask
+     * 
+     * @return if the address matches the subnet/netmask
+     */    
     public static boolean matchAddress(byte [] ad, byte [] sub, byte [] mask) { 
         
         if (sub.length != ad.length) {
@@ -355,9 +396,57 @@ public class NetworkUtils {
         return true;
     }
     
+    /**
+     * Checks if the given address matches a certain subnet/netmask 
+     * 
+     * @param ad the address to check
+     * @param sub the array containing the subnet
+     * @param mask the array containing the netmask
+     * 
+     * @return if the address matches the subnet/netmask
+     */            
     public static boolean matchAddress(InetAddress ad, byte [] sub, 
             byte [] mask) {         
         return matchAddress(ad.getAddress(), sub, mask);
+    }
+
+    /**
+     * Produces a sensible subnet/netmask for a give -local- address. 
+     * 
+     * @param ad the address for which to produce the subnet/netmask
+     * @param sub the array containing the subnet
+     * @param mask the array containing the netmask
+     * 
+     * @throws IllegalArgumentException if the given address isn't local or if 
+     * the given byte arrays have a different length than the subnet/netmask. 
+     *
+     */            
+    public static boolean getSubnetMask(byte [] a, byte [] sub, 
+            byte [] mask) {        
+        
+        if (sub.length != a.length) {  
+            throw new IllegalArgumentException("Subnet array has wrong size!");
+        }
+        
+        if (mask.length != a.length) {        
+            throw new IllegalArgumentException("Mask array has wrong size!");
+        }
+        
+        for (int i=0;i<localSubnetMask.length;i+=3) { 
+            
+            if (matchAddress(a, localSubnetMask[i], localSubnetMask[i+1])) { 
+                // Selectively copy the address....
+                for (int b=0;b<sub.length;b++) {
+                    mask[b] = localSubnetMask[i+2][b];
+                    sub[b] = (byte) (a[b] & mask[b]);
+                    return true;
+                } 
+            } 
+        }
+        
+        // oh dear,we didn't find the address (TODO: it may be IPv6). Just
+        // return false for now...
+        return false;
     }
     
     public static String getHostname() throws IOException {         
@@ -398,23 +487,22 @@ public class NetworkUtils {
     
     public static void main(String [] args) { 
         
-        ArrayList nwl = getNetworkInterfacesList();
+        ArrayList<NetworkInterface> nwl = getNetworkInterfacesList();
         
-        for (int i=0;i<nwl.size();i++) {             
-            NetworkInterface nwi = (NetworkInterface) nwl.get(i);
+        for (NetworkInterface nwi : nwl) { 
             
             System.out.println("Found network interface: " 
                     + nwi.getDisplayName()); 
             
-            ArrayList ips = new ArrayList(); 
+            ArrayList<InetAddress> ips = new ArrayList<InetAddress>(); 
             
             getAllHostAddresses(nwi, ips, false, true);
             
             String mac = null;
             
-            for (int j=0;j<ips.size();j++) {               
+            for (InetAddress ip : ips) { 
                 try { 
-                    mac = getMACAddressAsString((InetAddress) ips.get(j));
+                    mac = getMACAddressAsString(ip);
                 } catch (Exception e) {
                     // ignore
                 }
@@ -426,10 +514,7 @@ public class NetworkUtils {
 
             System.out.println("  MAC Address    : " + (mac != null ? mac : "unknown"));  
                        
-            for (int j=0;j<ips.size();j++) {
-
-                InetAddress ip = (InetAddress) ips.get(j);
-                
+            for (InetAddress ip : ips) { 
                 if (ip instanceof Inet4Address) { 
                 
                     String netmask = null;

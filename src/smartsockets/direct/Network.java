@@ -7,16 +7,50 @@ import smartsockets.util.NetworkUtils;
 
 public final class Network {
 
+    private enum Type { 
+        SITE, 
+        LINK, 
+        GLOBAL, 
+        SPECIFIC;            
+    }
+
+    public static final Network SITE = new Network(Type.SITE);
+    public static final Network LINK = new Network(Type.LINK);
+    public static final Network GLOBAL = new Network(Type.GLOBAL);
+    
+    final Type type;         
     final byte[] network;
     final byte[] mask;
 
+    Network(Type type) {
+        this.type = type;
+        this.network = null;
+        this.mask = null;
+    }
+       
     Network(byte[] network, byte[] mask) {
+        this.type = Type.SPECIFIC; 
         this.network = network;
         this.mask = mask;
     }
     
     boolean match(InetAddress addr) { 
-        return NetworkUtils.matchAddress(addr, network, mask);
+        
+        switch (type) { 
+        case SITE:
+            return addr.isSiteLocalAddress();
+        case LINK:
+            return addr.isLinkLocalAddress();
+        case GLOBAL:
+            return (!(addr.isSiteLocalAddress() || addr.isLinkLocalAddress() || 
+                    addr.isLoopbackAddress() || addr.isAnyLocalAddress() ||
+                    addr.isMulticastAddress()));
+        case SPECIFIC: 
+            return NetworkUtils.matchAddress(addr, network, mask);
+        }
+        
+        // stupid compiler!
+        return false;
     }
     
     boolean match(InetAddress [] addr) {
@@ -42,7 +76,20 @@ public final class Network {
     }    
     
     public String toString() { 
-        return NetworkUtils.bytesToString(network)
-            + "/" + NetworkUtils.bytesToString(mask);
+        
+        switch (type) { 
+        case SITE:
+            return "site";
+        case LINK:
+            return "link";
+        case GLOBAL:
+            return "global";
+        case SPECIFIC: 
+            return NetworkUtils.bytesToString(network) + "/" 
+                + NetworkUtils.bytesToString(mask);
+        }
+
+        // Stupid compiler!
+        return "";
     }
 }

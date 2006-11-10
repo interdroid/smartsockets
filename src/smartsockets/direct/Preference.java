@@ -12,17 +12,11 @@ import smartsockets.util.NetworkUtils;
 
 class Preference {
 
-    private static final int SITE = 0;
-
-    private static final int LINK = 1;
-
-    private static final int GLOBAL = 2;
-
     private final String name;
 
     private final boolean strict;
 
-    private ArrayList preferences = new ArrayList();
+    private ArrayList<Network> preferences = new ArrayList<Network>();
 
     private boolean siteUsed = false;
 
@@ -54,7 +48,7 @@ class Preference {
                     + "connection preference");
         }
 
-        preferences.add(new Integer(SITE));
+        preferences.add(Network.SITE);
         siteUsed = true;
     }
 
@@ -72,7 +66,7 @@ class Preference {
                     + "link-local addresses to connection preference");
         }
 
-        preferences.add(new Integer(LINK));
+        preferences.add(Network.LINK);
         linkUsed = true;
     }
 
@@ -90,7 +84,7 @@ class Preference {
                     + "Adding global addresses to connection preference");
         }
 
-        preferences.add(new Integer(GLOBAL));
+        preferences.add(Network.GLOBAL);
         globalUsed = true;
     }
 
@@ -120,43 +114,18 @@ class Preference {
     
     private int score(InetAddress ad) {
 
-        for (int i = 0; i < preferences.size(); i++) {
+        int score = 0;
+        
+        for (Network nw : preferences) { 
 
-            Object pref = preferences.get(i);
-
-            if (pref instanceof Integer) {
-                switch (((Integer) pref).intValue()) {
-                case SITE:
-                    if (ad.isSiteLocalAddress()) {
-                        return i;
-                    }
-                    break;
-
-                case LINK:
-                    if (ad.isLinkLocalAddress()) {
-                        return i;
-                    }
-                    break;
-
-                case GLOBAL:
-                    if (!(ad.isSiteLocalAddress() || ad.isLinkLocalAddress()
-                            || ad.isLoopbackAddress() || ad.isAnyLocalAddress() || ad
-                            .isMulticastAddress())) {
-                        return i;
-                    }
-                    break;
-                }
-            } else {
-                byte[] network = ((Network) pref).network;
-                byte[] mask = ((Network) pref).mask;
-
-                if (NetworkUtils.matchAddress(ad.getAddress(), network, mask)) {
-                    return i;
-                }
-            }
+            if (nw.match(ad)) { 
+                return score;
+            } else { 
+                score++;
+            } 
         }
 
-        return preferences.size() + 1;
+        return score + 1;
     }
 
     private void sort(Object[] objects, int[] scores) {
@@ -311,28 +280,12 @@ class Preference {
 
         StringBuffer buf = new StringBuffer(name + ": Connection preference:");
 
-        for (int i = 0; i < preferences.size(); i++) {
-            Object pref = preferences.get(i);
+        int i = 0;
+        
+        for (Network nw : preferences) { 
+            buf.append(nw.toString());
 
-            if (pref instanceof Integer) {
-                switch (((Integer) pref).intValue()) {
-                case SITE:
-                    buf.append("site");
-                case LINK:
-                    buf.append("link");
-                case GLOBAL:
-                    buf.append("global");
-                }
-            } else {
-                byte[] network = ((Network) pref).network;
-                byte[] mask = ((Network) pref).mask;
-
-                buf.append(NetworkUtils.bytesToString(network));
-                buf.append('/');
-                buf.append(NetworkUtils.bytesToString(mask));
-            }
-
-            if (i < preferences.size() - 1) {
+            if (++i < preferences.size() - 1) {
                 buf.append(",");
             }
         }

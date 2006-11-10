@@ -8,7 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.StringTokenizer;
+//import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
@@ -19,7 +19,7 @@ public class NetworkPreference {
     static Logger logger = ibis.util.GetLogger
             .getLogger(NetworkPreference.class.getName());
 
-    private TypedProperties properties;
+  //  private TypedProperties properties;
     
     private Preference defaultPreference;
 
@@ -77,11 +77,6 @@ public class NetworkPreference {
 
         handleProperties(myAddress, p);
         
-        if (defaultPreference == null) {
-            logger.info("No default network setup definitions found.");
-            defaultPreference = new Preference("default", false);
-        }
-
         logger.info("My cluster is: "
                 + (networkName != null ? networkName : "N/A"));
 
@@ -160,20 +155,87 @@ public class NetworkPreference {
 
     private void handlePreference(Preference target, String [] property) {
 
-        for (int i=0;i<property.length;i++) {         
-            if (property[i].equals("site")) {
+        // NOTE: Assumes that "auto" is NOT present in property.        
+        for (String p : property) {         
+            if (p.equals("site")) {
                 // all site local
                 target.addSite();
-            } else if (property[i].equals("link")) {
+            } else if (p.equals("link")) {
                 // all link local
                 target.addLink();
-            } else if (property[i].equals("global")) {
+            } else if (p.equals("global")) {
                 // all global
                 target.addGlobal();
             } else {
-                target.addNetwork(getNetwork(property[i]));
+                target.addNetwork(getNetwork(p));
             }
         }
+    }
+    
+    private void handlePreference(Preference target, IPAddressSet myAddress) {  
+        
+        InetAddress [] ads = myAddress.getAddresses();
+
+        boolean haveLinkLocal = false;
+                
+        // Handle all our site local addresses first. Try to determine the exact 
+        // subnet that we are connected to, and specifically add this network.
+        for (int i=0;i<ads.length;i++) { 
+
+            InetAddress a = ads[i];
+            
+            if (a.isSiteLocalAddress()) { 
+                
+                byte [] ab = a.getAddress();
+                byte [] sub = new byte[ab.length];
+                byte [] mask = new byte[ab.length];
+                
+                if (NetworkUtils.getSubnetMask(ab, sub, mask)) { 
+                    target.addNetwork(new Network(sub, mask));
+                } else { 
+                    logger.info("Failed to get subnet/mask for: " 
+                            + NetworkUtils.ipToString(a) + "!");
+                }
+            } 
+        }
+
+        // Followed by link-local addresses, provided that we have one 
+        // ourselves...
+        // TODO: do we really want this here, or at the end ?? 
+        for (int i=0;i<ads.length;i++) { 
+
+            InetAddress a = ads[i];
+            
+            if (a.isLinkLocalAddress()) { 
+                target.addLink();
+                haveLinkLocal = true;
+                break;
+            } 
+        }
+
+        // Finally accept all target global, site local, and (optionally) link
+        // local addresses (in that order!!)
+        target.addGlobal();        
+        target.addSite();        
+        
+        if (!haveLinkLocal) {
+            target.addLink();
+        }
+    }
+    
+    private void handlePreference(Preference target, IPAddressSet myAddress, 
+            String [] property) {
+
+        for (String p : property) {
+            if (p.equalsIgnoreCase("auto")) { 
+                logger.info("Using automatic network setup.");
+                handlePreference(target, myAddress);
+                return;
+            }            
+        }
+            
+        logger.info("Using manual network setup.");
+        handlePreference(target, property);
     }
 
     // This will overwrite any previous preferences.
@@ -181,11 +243,16 @@ public class NetworkPreference {
 
         String [] def = p.getStringList(Properties.NETWORKS_DEFAULT);
 
-        if (def != null && def.length > 0) {
-            defaultPreference = new Preference("default", false);
-            handlePreference(defaultPreference, def);
+        if (def == null || def.length == 0) {
+            logger.info("No default network setup definitions found.");
+            def = new String [] { "auto" };
         }
+        
+        defaultPreference = new Preference("default", false);
+        handlePreference(defaultPreference, myAddress, def);           
 
+        logger.info(defaultPreference.toString());
+                
         String [] networks = p.getStringList(Properties.NETWORKS_DEFINE, ",");
 
         if (networks == null || networks.length == 0) {
@@ -234,6 +301,7 @@ public class NetworkPreference {
         }
     }
 
+    /*
     private boolean inNetwork(InetSocketAddress[] ads, byte[] sub, byte[] mask) {
 
         for (int i = 0; i < ads.length; i++) {
@@ -266,7 +334,8 @@ public class NetworkPreference {
         
         return false;
     }
-
+*/
+    
     private boolean inNetwork(Network [] nw, InetAddress [] ads) {
         
         for (int i=0;i<nw.length;i++) { 
@@ -289,9 +358,9 @@ public class NetworkPreference {
         return false;
     }
     
-    private boolean inNetwork(InetAddress ad) {
-        return (inNetwork(include, ad) && !inNetwork(exclude, ad)); 
-    }
+    //private boolean inNetwork(InetAddress ad) {
+    //    return (inNetwork(include, ad) && !inNetwork(exclude, ad)); 
+   // }
 
     private boolean inNetwork(InetAddress[] ads) {
         return (inNetwork(include, ads) && !inNetwork(exclude, ads)); 
@@ -303,8 +372,8 @@ public class NetworkPreference {
 
     private boolean parseNetworkRange(IPAddressSet myAddress, String [] range) {
 
-        ArrayList inc = new ArrayList();
-        ArrayList ex = new ArrayList();
+        ArrayList<Network> inc = new ArrayList<Network>();
+        ArrayList<Network> ex = new ArrayList<Network>();
         
         for (int i=0;i<range.length;i++) {
             if (range[i].startsWith("!")) {
@@ -314,8 +383,8 @@ public class NetworkPreference {
             }            
         }
             
-        Network [] include = (Network[]) inc.toArray(new Network[inc.size()]); 
-        Network [] exclude = (Network[]) ex.toArray(new Network[ex.size()]); 
+        Network [] include = inc.toArray(new Network[inc.size()]); 
+        Network [] exclude = ex.toArray(new Network[ex.size()]); 
         
         InetAddress [] ads = myAddress.getAddresses();
         
