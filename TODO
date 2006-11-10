@@ -1,9 +1,20 @@
 Todo:
 
-CHECK hub administration !!! Gossip sometimes fails if hub crashes and is 
-directy restarted: 
+CHECK: hub administration !!! Gossip sometimes fails if hub crashes and is 
+directy restarted: seems the administration of the receiver is confused...
 
-  
+CHECK: with Ibis it very freqently occurs that the initial TCP ibis setup 
+fails due to an unlucky pick of the identifier (picking the same time twice)
+As a result, the whole init process is repeated, but then runs into problems 
+since the servicelink still exists but already has all the modules registered. 
+This will also be a problem when mutiple Ibises are created or even simpler,
+multiple VirtualSocketFactories ...
+   
+   - Fix for Ibis -> base the name on a port number. These are unique per 
+        machine unlike timestamps. 
+
+   - Fix for virtualsocketfactory ? Bit harder... maybe create new 
+        servicelink and new SocketAddressSet for each ?? 
 
 User friendlyness!!
 

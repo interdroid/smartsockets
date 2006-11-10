@@ -349,8 +349,7 @@ public class VirtualSocketFactory {
                      
     public ConnectModule findModule(String name) { 
 
-        for (int i=0;i<modules.size();i++) { 
-            ConnectModule m = (ConnectModule) modules.get(i);
+        for (ConnectModule m : modules) {
             if (m.module.equals(name)) { 
                 return m;
             }
@@ -385,21 +384,7 @@ public class VirtualSocketFactory {
             // ignore
         }        
     }
-    
-    private ConnectModule getModule(String name) { 
         
-        // TODO, not very efficient when number of modules is large ...         
-        for (int i=0;i<modules.size();i++) {            
-            ConnectModule m = (ConnectModule) modules.get(i);
-            
-            if (m.module.equals(name)) { 
-                return m;
-            }            
-        }
-            
-        return null;        
-    }
-    
     private VirtualSocket createClientSocket(ConnectModule m, 
             VirtualSocketAddress target, int timeout, Map properties) 
         throws IOException {
@@ -623,6 +608,10 @@ public class VirtualSocketFactory {
             boolean addDefaults) {
         
         //logger.warn("Creating VirtualSocketFactory(Prop, bool)!", new Exception());
+
+        System.err.println("Creating VirtualSocketFactory(Prop, bool)!");
+        new Exception().printStackTrace(System.err);
+
         
         if (p == null) { 
             p = Properties.getDefaultProperties();            

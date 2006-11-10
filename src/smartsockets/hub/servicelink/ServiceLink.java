@@ -60,6 +60,12 @@ public class ServiceLink implements Runnable {
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override callback " 
                     + identifier);
+            
+            System.err.println("AAP ServiceLink: refusing to override callback " 
+                    + identifier);
+            
+            new Exception().printStackTrace(System.err);
+            
             return;
         }
         
@@ -70,8 +76,14 @@ public class ServiceLink implements Runnable {
             SimpleCallBack cb) { 
         
         if (callbacks.containsKey(identifier)) { 
-            logger.warn("ServiceLink: refusing to override callback " 
+            logger.warn("ServiceLink: refusing to override simple callback " 
                     + identifier);
+            
+            System.err.println("NOOT ServiceLink: refusing to override simple callback " 
+                    + identifier);
+            
+            new Exception().printStackTrace(System.err);
+                        
             return;
         }
         
