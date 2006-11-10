@@ -102,7 +102,6 @@ public class HubStarter {
         
         if (startHub) { 
             try {            
-                System.out.println("Starting hub....");            
                 h = new Hub(hubs, p);            
                 System.out.println("Hub running on: " + h.getHubAddress());            
             } catch (IOException e) {
@@ -128,8 +127,6 @@ public class HubStarter {
             }
                                         
             try {         
-                System.out.println("Starting router...");
-                
                 r = new Router();
                 System.out.println("Router running on: " + r.getAddress());
                 r.start();                                

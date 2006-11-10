@@ -1,11 +1,10 @@
 package smartsockets.hub.state;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 
 public class StateSelector extends Selector {
 
-    private LinkedList result = new LinkedList();    
+    private LinkedList<HubDescription> result = new LinkedList<HubDescription>();    
     private final long state;
     
     public StateSelector(long state) { 
@@ -22,12 +21,7 @@ public class StateSelector extends Selector {
         }
     }
 
-    public LinkedList getResult() { 
+    public LinkedList<HubDescription> getResult() { 
         return result;
-    }   
-    
-    public Iterator iterator() { 
-        return result.iterator();
-    }
-    
+    }          
 }

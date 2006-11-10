@@ -114,7 +114,9 @@ public class Reverse extends ConnectModule {
             DirectVirtualSocket s = 
                 (DirectVirtualSocket) direct.connect(target, DEFAULT_TIMEOUT, null);
             
-            logger.info(module + ": Connection to " + target + " created!");                
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": Connection to " + target + " created!");                
+            }
             
             // NOTE: The socket is now accepted by the temporary serversocket 
             // we created on the other side. Now we must check if the server 
@@ -122,11 +124,15 @@ public class Reverse extends ConnectModule {
                         
             if (!ss.incomingConnection(s)) { 
                 // TODO: send reply ??
-                logger.info(module + ": ServerSocket refused " + target);
+                if (logger.isInfoEnabled()) {
+                    logger.info(module + ": ServerSocket refused " + target);
+                }
                 s.connectionRejected();
             }
         } catch (Exception e) {
-            logger.info(module + ": Connection to " + target + " failed!", e);                
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": Connection to " + target + " failed!", e);
+            }
         }
     }        
     
@@ -138,9 +144,11 @@ public class Reverse extends ConnectModule {
                    srcProxy + " opcode = " + opcode + ", message = " + message);
             return;
         }
-    
-        logger.info(module + ": handling connection request from " + src + "@" + 
-                srcProxy + " message = \"" + message + "\"");  
+        
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": handling connection request from " + src + "@" + 
+                    srcProxy + " message = \"" + message + "\"");
+        }
         
         int localport = 0;
         VirtualSocketAddress target = null;
@@ -158,7 +166,9 @@ public class Reverse extends ConnectModule {
         
         if (ss == null) {
             // TODO: send reply ??
-            logger.info(module + ": port " + localport + " not found!");
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": port " + localport + " not found!");
+            }
             return;            
         }
         

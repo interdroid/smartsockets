@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 
 import smartsockets.direct.SocketAddressSet;
 
@@ -24,30 +23,6 @@ public class HubList {
     private final HashMap map = new HashMap();    
     
     private HubDescription localDescription;
-    
-    private class PartialIterator implements Iterator {
-
-        private LinkedList elements = null; 
-
-        void add(Object o) { 
-            if (elements == null) { 
-                elements = new LinkedList();
-            }
-            elements.add(o);
-        }
-        
-        public boolean hasNext() {
-            return (elements != null && elements.size() > 0);
-        }
-
-        public Object next() {
-            return (elements == null ? null : elements.removeFirst());            
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException("ProxyList.remove not supported!");
-        } 
-    }
     
     public HubList(StateCounter state) { 
         this.state = state; 
@@ -104,7 +79,8 @@ public class HubList {
     }
     
     public HubDescription getLocalDescription() {
-        // NOTE: We assume that it is not required to be thread safe!
+        // NOTE: We assume that it is not required to be thread safe since the 
+        // local description reference is constant.   
         return localDescription;
     }
                   
@@ -112,17 +88,8 @@ public class HubList {
         return map.containsKey(m); 
     }
            
-    public HubDescription get(SocketAddressSet m) {                        
+    public synchronized HubDescription get(SocketAddressSet m) {                        
         return (HubDescription) map.get(m);
-    }
-            
-    public HubDescription get(String target) {        
-        // TODO: not very efficient ....        
-        try {
-            return get(new SocketAddressSet(target));
-        } catch (UnknownHostException e) {
-            return null;
-        }
     }
             
     public synchronized void select(Selector s) {
@@ -179,154 +146,7 @@ public class HubList {
         
         return tmp;
     }
-    
-    public synchronized LinkedList directionToClient(SocketAddressSet client) {
-
-        // Collect the addresses of all proxies that claim to known this client 
-        // and are reachable from our location in a single hop. For all proxies 
-        // that we can only reach in multiple hops, we return the address of the
-        // referring proxy instead (i.e., the 'reachable proxy' that informed us
-        // of the existance of the 'unreachable proxy').   
-        // 
-        // We return the results in list, sorted by how 'good an option' they 
-        // are. The order is as follows: 
-        // 
-        //  1. local proxy
-        //
-        //  2. proxies that can reach the client directly and, 
-        //      a. we can connect to directly
-        //      b. can connect directly to us
-        //
-        //  3. indirections for proxies that can reach the client directly, but 
-        //     which we cannot reach and,  
-        //      a. we can connect to directly
-        //      b. can connect directly to us
-        
-        LinkedList good = new LinkedList();
-        LinkedList bad = new LinkedList();
-        LinkedList ugly = new LinkedList();
-                
-        Iterator itt = map.values().iterator();
-        
-        while (itt.hasNext()) { 
-            
-            HubDescription tmp = (HubDescription) itt.next();
-            
-            if (tmp.containsClient(client)) {
-
-                System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
-                        + client + ":\n" + tmp + "\n");
-                
-                if (tmp == localDescription) {
-                    good.addFirst(tmp.hubAddressAsString);                    
-                } else if (tmp.isReachable()) {
-                    good.addLast(tmp.hubAddressAsString);
-                } else if (tmp.canReachMe()) { 
-                    bad.addLast(tmp.hubAddressAsString);
-                } else {                                         
-                    HubDescription indi = tmp.getIndirection();
-                    
-                    if (indi != null) { 
-                        if (indi.isReachable()) { 
-                            ugly.addFirst(indi.hubAddressAsString);
-                        } else if (indi.canReachMe()) {  
-                            ugly.addLast(indi.hubAddressAsString);
-                        }
-                    }
-                }
-            }
-        }
-        
-        good.addAll(bad);
-        good.addAll(ugly);
-        
-        return good;
-    }
-    
-    public LinkedList findClient(SocketAddressSet client) {
-        return findClient(client, null);
-    }
-
-    public synchronized LinkedList findClient(SocketAddressSet client, List skip) {
-
-        // Finds all proxies that claim to known this client. Return them in 
-        // a list, sorted by how 'good an option' they are. We prefer proxies 
-        // that we can connect to directly, followed by proxies that can connect 
-        // to us directly. Finally, we also accept proxies that we cannot create 
-        // a connection to in either direction.                
-        LinkedList good = new LinkedList();
-        LinkedList bad = new LinkedList();
-        LinkedList ugly = new LinkedList();
-                
-        Iterator itt = map.values().iterator();
-        
-        while (itt.hasNext()) { 
-            
-            HubDescription tmp = (HubDescription) itt.next();
-            
-            if (skip != null && skip.contains(tmp.hubAddress.toString())) { 
-                System.out.println("@@@@@@@@@@@@@ Skipping proxy: " 
-                        + tmp.hubAddress);                 
-            
-            } else if (tmp.containsClient(client)) {
-
-                System.out.println("@@@@@@@@@@@@@ Found proxy for client: " 
-                        + client + ":\n" + tmp + "\n");
-                
-                if (tmp == localDescription) {
-                    good.addFirst(tmp);                    
-                } else if (tmp.isReachable()) {
-                    good.addLast(tmp);
-                } else if (tmp.canReachMe()) { 
-                    bad.addLast(tmp);
-                } else {                     
-                    ugly.addLast(tmp);
-                }
-            }
-        }
-        
-        good.addAll(bad);
-        good.addAll(ugly);
-        
-        return good;
-    }
-    
-    public Iterator findHubsForTarget(SocketAddressSet target, boolean includeLocal) { 
-        
-        PartialIterator result = new PartialIterator();
-        
-        Iterator itt = map.values().iterator();
-        
-        while (itt.hasNext()) { 
-            
-            HubDescription tmp = (HubDescription) itt.next();
-            
-            if (tmp.containsClient(target)) {
-
-                // Alway add remote proxies, but only add the local one if 
-                // specified!
-                if (!tmp.isLocal() || includeLocal) { 
-                    result.add(tmp);
-                } 
-            } 
-        }
-        
-        return result;
-    }
-  
-    public synchronized ArrayList allClients(String tag) {
-        
-        ArrayList result = new ArrayList();        
-        Iterator itt = map.values().iterator();
-        
-        while (itt.hasNext()) { 
-            HubDescription tmp = (HubDescription) itt.next();           
-            result.addAll(tmp.getClients(tag));
-        }
-        
-        return result;
-    }
-    
+       
     public String toString() {
         
         StringBuffer result = new StringBuffer();

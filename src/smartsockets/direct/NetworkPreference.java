@@ -16,8 +16,8 @@ import smartsockets.util.NetworkUtils;
 
 public class NetworkPreference {
    
-    static Logger logger = ibis.util.GetLogger
-            .getLogger(NetworkPreference.class.getName());
+    private static final Logger logger = ibis.util.GetLogger
+            .getLogger("smartsockets.network.preference");
 
   //  private TypedProperties properties;
     
@@ -77,11 +77,13 @@ public class NetworkPreference {
 
         handleProperties(myAddress, p);
         
-        logger.info("My cluster is: "
-                + (networkName != null ? networkName : "N/A"));
+        if (logger.isInfoEnabled()) { 
+            logger.info("My cluster is: "
+                    + (networkName != null ? networkName : "N/A"));
 
-        if (networksPreference == null) {
-            logger.info("No cluster definitions found.");
+            if (networksPreference == null) {
+                logger.info("No cluster definitions found.");
+            }
         }
     }
 
@@ -193,8 +195,10 @@ public class NetworkPreference {
                 if (NetworkUtils.getSubnetMask(ab, sub, mask)) { 
                     target.addNetwork(new Network(sub, mask));
                 } else { 
-                    logger.info("Failed to get subnet/mask for: " 
-                            + NetworkUtils.ipToString(a) + "!");
+                    if (logger.isInfoEnabled()) { 
+                        logger.info("Failed to get subnet/mask for: " 
+                                + NetworkUtils.ipToString(a) + "!");
+                    }
                 }
             } 
         }
@@ -228,13 +232,17 @@ public class NetworkPreference {
 
         for (String p : property) {
             if (p.equalsIgnoreCase("auto")) { 
-                logger.info("Using automatic network setup.");
+                if (logger.isInfoEnabled()) { 
+                    logger.info("Using automatic network setup.");
+                }
                 handlePreference(target, myAddress);
                 return;
             }            
         }
             
-        logger.info("Using manual network setup.");
+        if (logger.isInfoEnabled()) { 
+            logger.info("Using manual network setup.");
+        }
         handlePreference(target, property);
     }
 
@@ -244,14 +252,18 @@ public class NetworkPreference {
         String [] def = p.getStringList(Properties.NETWORKS_DEFAULT);
 
         if (def == null || def.length == 0) {
-            logger.info("No default network setup definitions found.");
+            if (logger.isInfoEnabled()) { 
+                logger.info("No default network setup definitions found.");
+            }
             def = new String [] { "auto" };
         }
         
         defaultPreference = new Preference("default", false);
         handlePreference(defaultPreference, myAddress, def);           
 
-        logger.info(defaultPreference.toString());
+        if (logger.isInfoEnabled()) { 
+            logger.info(defaultPreference.toString());
+        }
                 
         String [] networks = p.getStringList(Properties.NETWORKS_DEFINE, ",");
 
@@ -275,21 +287,25 @@ public class NetworkPreference {
         String [] def = p.getStringList(prefix + Properties.NW_PREFERENCE_DEFAULT);
 
         if (parseNetworkRange(myAddress, range)) {
-            logger.info("Network name: " + name + " (MY NETWORK)");
+            if (logger.isInfoEnabled()) { 
+                logger.info("Network name: " + name + " (MY NETWORK)");
+            }
             networkName = name;
             myNetwork = true;
-        } else {
+        } else if (logger.isInfoEnabled()) { 
             logger.info("Network name: " + name);
         }
 
-        logger.info("  range: " + Arrays.deepToString(range));
+        if (logger.isInfoEnabled()) {        
+            logger.info("  range: " + Arrays.deepToString(range));
         
-        logger.info("  in cluster use: " + 
-                (network != null ? Arrays.deepToString(network) : ""));
+            logger.info("  in cluster use: " + 
+                    (network != null ? Arrays.deepToString(network) : ""));
         
-        logger.info("  to outside use: " + 
-                (def != null ? Arrays.deepToString(def) : ""));
-
+            logger.info("  to outside use: " + 
+                    (def != null ? Arrays.deepToString(def) : ""));
+        }
+        
         if (network != null && myNetwork) {
             networksPreference = new Preference("cluster", true);
             handlePreference(networksPreference, network);

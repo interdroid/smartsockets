@@ -39,18 +39,18 @@ import smartsockets.util.UPNP;
 public class DirectSocketFactory {
 
     protected static Logger logger = ibis.util.GetLogger
-        .getLogger(DirectSocketFactory.class.getName());
+        .getLogger("smartsockets.direct");
 
     private static DirectSocketFactory defaultFactory; 
-    
-    
     
     private final int DEFAULT_TIMEOUT;
     
     private final TypedProperties properties;
     
     private final boolean USE_NIO;
-    private boolean ALLOW_UPNP;
+    
+    private final boolean ALLOW_UPNP;
+    private final boolean ALLOW_UPNP_PORT_FORWARDING;    
     
     private final int inputBufferSize;
     private final int outputBufferSize;
@@ -75,6 +75,14 @@ public class DirectSocketFactory {
     
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
         ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
+        
+        if (!ALLOW_UPNP) { 
+            ALLOW_UPNP_PORT_FORWARDING = false;
+        } else { 
+            ALLOW_UPNP_PORT_FORWARDING = 
+                p.booleanProperty(Properties.UPNP_PORT_FORWARDING, false);
+        }
+        
         USE_NIO = p.booleanProperty(Properties.NIO, false);
         
         inputBufferSize = p.getIntProperty(Properties.IN_BUF_SIZE, 0);
@@ -102,9 +110,9 @@ public class DirectSocketFactory {
         preference = NetworkPreference.getPreference(completeAddress, p);
         preference.sort(completeAddress.getAddresses(), true);
 
-        // if (logger.isDebugEnabled()) {
-        logger.info("Local address: " + completeAddress);
-        // }
+        if (logger.isDebugEnabled()) {
+            logger.info("Local address: " + completeAddress);
+        }
     }
 
     private void applyMask(byte[] mask, byte[] address) {
@@ -245,60 +253,6 @@ public class DirectSocketFactory {
         return result;
     }
 
-    /**
-     * This method retrieves the 'ibis.connect.bouncers' property, which
-     * contains a comma seperates list of bouncer addresses. Each address is
-     * expected to be is the InetSetAddress or InetSetSockerAddress format:
-     * 
-     * IP1/IP2/.../IPx
-     * 
-     * or
-     * 
-     * IP1/IP2/.../IPx:PORT
-     * 
-     * A array of InetSetSocketAddress object will be returned. Note that this
-     * array may contain null values if a certain address could not be created.
-     * 
-     * When the property is not found, the Bouncer.DEFAULT_BOUNCER and
-     * Bouncer.DEFAULT_PORT will be used instead.
-     * 
-     * @return array of InetSetSocketAddresses
-     */
-    private SocketAddressSet[] getBouncerProperty() {
-
-        /*
-        String tmp = TypedProperties.stringProperty(
-                Properties.BOUNCERS, Bouncer.DEFAULT_BOUNCER);
-
-        StringTokenizer t = new StringTokenizer(tmp, ",");
-
-        int count = t.countTokens();
-        SocketAddressSet[] res = new SocketAddressSet[count];
-
-        count = 0;
-
-        while (t.hasMoreTokens()) {
-            try {
-                String b = t.nextToken();
-
-                if (b.lastIndexOf(':') >= 0) {
-                    // address contains a port
-                    res[count++] = new SocketAddressSet(b);
-                } else {
-                    // adress does not contain a port, so use default
-                    res[count++] = new SocketAddressSet(b, Bouncer.DEFAULT_PORT);
-                }
-            } catch (UnknownHostException e) {
-                logger.warn("Failed to create BOUNCER address" + e);
-            }
-        }
-
-        return res;
-        */
-        
-        return new SocketAddressSet[0];
-    }
-
     private Socket createUnboundSocket() throws IOException {
 
         Socket s = null;
@@ -314,23 +268,6 @@ public class DirectSocketFactory {
         return s;
     }
 
-    /*
-     * private Socket createBoundSocket() throws IOException {
-     * 
-     * Socket s = createUnboundSocket();
-     * 
-     * int port = portRange.getPort();
-     * 
-     * if (port == 0) { // We can use any port we like. If it fails, there's
-     * nothing we // can do about it. s.bind(null); return s; }
-     *  // We must use a specfic port range. Some of the ports in the range may //
-     * already be taken, so it may take a few tries before we find one that //
-     * is available.
-     *  // TODO: add timeout/max tries ?? while (true) { try { s.bind(new
-     * InetSocketAddress(port)); return s; } catch (BindException e) { // port
-     * in use, so get another one and try again. port = portRange.getPort(); } } }
-     */
-
     private ServerSocket createUnboundServerSocket() throws IOException {
         if (USE_NIO) {
             ServerSocketChannel channel = ServerSocketChannel.open();
@@ -338,69 +275,6 @@ public class DirectSocketFactory {
         } else {
             return new ServerSocket();
         }
-    }
-
-    private InetAddress contactBouncer(SocketAddressSet bouncer, int timeout) {
-
-        long start = System.currentTimeMillis();
-        long end = start;
-
-        while (timeout == 0 || ((end - start) < timeout)) {
-
-            DirectSocket s = null;
-
-            try {
-                s = createSocket(bouncer, timeout, null);
-                s.setSoTimeout(1000);
-
-                InputStream in = s.getInputStream();
-
-                byte[] address = new byte[16];
-
-                int index = 0;
-                boolean done = false;
-
-                while (!done) {
-                    int data = in.read();
-
-                    if (data == -1) {
-                        done = true;
-                    } else {
-                        address[index++] = (byte) data;
-                    }
-                }
-
-                in.close();
-
-                if (index == 4) {
-                    byte[] tmp = new byte[4];
-                    System.arraycopy(address, 0, tmp, 0, 4);
-                    address = tmp;
-                }
-
-                return InetAddress.getByAddress(address);
-
-            } catch (Exception e) {
-                logger.warn("Failed to contact Bouncer " + e);
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException ie) {
-                    // ignore
-                }
-
-            } finally {
-                try {
-                    s.close();
-                } catch (Throwable e) {
-                    // ignore
-                }
-            }
-
-            end = System.currentTimeMillis();
-        }
-
-        return null;
     }
 
     private DirectSocket attemptConnection(SocketAddressSet sas,
@@ -415,28 +289,31 @@ public class DirectSocketFactory {
         Socket s = null;
 
         try {
-
-            logger.info("Attempting connection to " + sas.toString()
-                    + " using network "
-                    + NetworkUtils.ipToString(target.getAddress()) + ":"
-                    + target.getPort());
-
+            if (logger.isInfoEnabled()) {
+                logger.info("Attempting connection to " + sas.toString()
+                        + " using network "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort());
+            }
+            
             s = createUnboundSocket();
 
-            logger.info("Unbound socket created");
-
+            if (logger.isInfoEnabled()) {
+                logger.info("Unbound socket created");
+            }
+            
             if (localPort > 0) {                 
                 s.bind(new InetSocketAddress(localPort));
             }
                 
             s.connect(target, timeout);
 
-            // if (logger.isDebugEnabled()) {
-            logger.info("Succesfully connected to " + sas.toString()
-                    + " using network "
-                    + NetworkUtils.ipToString(target.getAddress()) + ":"
-                    + target.getPort());
-            // }
+            if (logger.isInfoEnabled()) {
+                logger.info("Succesfully connected to " + sas.toString()
+                        + " using network "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort());
+            }
 
             // TODO: verify that we are actually talking to the right machine ?
             DirectSocket r = new DirectSocket(s);
@@ -445,11 +322,11 @@ public class DirectSocketFactory {
 
         } catch (Throwable e) {
 
-            // if (logger.isDebugEnabled()) {
-            logger.info("Failed to connect to "
-                    + NetworkUtils.ipToString(target.getAddress()) + ":"
-                    + target.getPort(), e);
-            // }
+            if (logger.isInfoEnabled()) {
+                logger.info("Failed to connect to "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort(), e);
+            }
 
             try {
                 s.close();
@@ -460,32 +337,7 @@ public class DirectSocketFactory {
             return null;
         }
     }
-
-    /*
-     * private PlainSocket attemptConnection(InetAddress[] from, InetAddress to,
-     * int port, boolean justTry) {
-     * 
-     * for (int i=0;i<from.length;i++) { PlainSocket result =
-     * attemptConnection(from[i], to, port, justTry);
-     * 
-     * if (result != null) { return result; } }
-     * 
-     * return null; }
-     * 
-     * private PlainSocket connect(IbisSocketAddress target) throws IOException {
-     * 
-     * InetAddress [] src = localAddress.getAddresses(); SocketAddress [] sas =
-     * target.getSocketAddresses();
-     * 
-     * for (int i=0;i<sas.length;i++) { InetSocketAddress sa =
-     * (InetSocketAddress)sas[i]; PlainSocket result = attemptConnection(src,
-     * sa.getAddress(), sa.getPort(), false);
-     * 
-     * if (result != null) { return result; } }
-     * 
-     * throw new ConnectException("Connection refused"); }
-     */
-
+   
     private DirectServerSocket createServerSocket(int port, int backlog,
             boolean portForwarding, boolean forwardingMayFail,
             boolean sameExternalPort) throws IOException {
@@ -497,12 +349,12 @@ public class DirectSocketFactory {
         ServerSocket ss = createUnboundServerSocket();
         ss.bind(new InetSocketAddress(port), backlog);
 
-        SocketAddressSet local = new SocketAddressSet(completeAddress, ss
-                .getLocalPort());
+        SocketAddressSet local = 
+            new SocketAddressSet(completeAddress, ss.getLocalPort());
 
         DirectServerSocket smss = new DirectServerSocket(local, ss);
-
-        if (!haveOnlyLocalAddresses || !portForwarding) {
+        
+        if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port
             // forwarding, so just return the server socket
 
@@ -513,17 +365,47 @@ public class DirectSocketFactory {
             return smss;
         }
 
-        // We only have a local address, and the user wants to try PF.
+        // We only have a local address, and the user wants to try port 
+        // forwarding. Check if we are allowed to do so in the first place...
+        
+        
+        if (!ALLOW_UPNP_PORT_FORWARDING) { 
+            // We are not allowed to do port forwarding. Check if this is OK by
+            // the user.
+            
+            if (forwardingMayFail) {
+                // It's OK, so return the socket.
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Port forwarding not allowed for: " + smss);
+                }
+                
+                return smss;
+            }
+
+            // The user does not want the serversocket if it's not forwarded, so 
+            // close it and throw an exception.
+
+            logger.warn("Port not allowed for: " + smss);
+            
+            try {                
+                ss.close();
+            } catch (Throwable t) {
+                // ignore
+            }
+
+            throw new IOException("Port forwarding not allowed!");
+        }
+
+        // Try to do port forwarding!        
         if (port == 0) {
             port = ss.getLocalPort();
         }
 
         try {
-
             int ePort = sameExternalPort ? port : 0;
             ePort = UPNP.addPortMapping(port, ePort, myNATAddress, 0, "TCP");
-            smss.addExternalAddress(new SocketAddressSet(externalNATAddress,
-                    ePort));
+            smss.addExternalAddress(
+                    new SocketAddressSet(externalNATAddress, ePort));
 
         } catch (Exception e) {
 
@@ -679,7 +561,9 @@ public class DirectSocketFactory {
 
             time = System.currentTimeMillis() -time;
             
-            logger.info("Connection setup took: "  + time + " ms.");                
+            if (logger.isInfoEnabled()) {              
+                logger.info("Connection setup took: "  + time + " ms.");                
+            }
             
             if (result != null) {
                 return result;
@@ -701,7 +585,9 @@ public class DirectSocketFactory {
 
                 time = System.currentTimeMillis() -time;
                 
-                logger.info("Connection setup took: "  + time + " ms.");                
+                if (logger.isInfoEnabled()) {                   
+                    logger.info("Connection setup took: "  + time + " ms.");
+                }
                                 
                 if (result != null) {
                     return result;

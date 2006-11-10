@@ -6,7 +6,12 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 
+import org.apache.log4j.Logger;
+
 public class Sender extends Thread {
+    
+    private static final Logger logger = 
+        ibis.util.GetLogger.getLogger("smartsockets.discovery");
     
     private final int sleep;
     
@@ -91,8 +96,9 @@ public class Sender extends Thread {
     
     private DatagramSocket create(InetAddress address, int port) 
                                                        throws SocketException { 
-        
-        Discovery.logger.info("Creating port " + address + ":" + port);
+        if (logger.isInfoEnabled()) { 
+            logger.info("Creating port " + address + ":" + port);
+        }
         
         if (!address.isLoopbackAddress()) {            
             DatagramSocket socket = 
@@ -113,15 +119,18 @@ public class Sender extends Thread {
         
         for (int i=0;i<sockets.length;i++) { 
             try {
-                Discovery.logger.info("MulticastSender sending data "
-                            + packet.getSocketAddress() + " " 
-                            + packet);
-                
+                if (logger.isInfoEnabled()) {
+                    logger.info("MulticastSender sending data "
+                                + packet.getSocketAddress() + " " 
+                                + packet);
+                }                
                 if (packet != null) {                         
                     sockets[i].send(packet);
                 }
             } catch (Exception e) {
-                Discovery.logger.info("MulticastSender got exception ", e);
+                if (logger.isInfoEnabled()) {
+                    logger.info("MulticastSender got exception ", e);
+                }
             }                
         }            
     }

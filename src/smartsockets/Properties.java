@@ -103,16 +103,22 @@ public class Properties {
     
     private static TypedProperties getPropertyFile(String file) {
 
-        System.out.println("Trying to load property file: " + file);
+        if (logger.isInfoEnabled()) { 
+            logger.info("Trying to load property file: " + file);
+        }
         
         InputStream in = null;
 
         try {
             in = new FileInputStream(file);
-            System.out.println("File: " + file + " found!");
+            
+            if (logger.isInfoEnabled()) {
+                logger.info("File: " + file + " found!");
+            }
         } catch (FileNotFoundException e) {
-            logger.info("Property file \"" + file + "\" not found!");
-            System.out.println("File: " + file + " not found!");
+            if (logger.isInfoEnabled()) {
+                logger.info("Property file \"" + file + "\" not found!");
+            }         
         }
                 
         if (in == null) {
@@ -122,22 +128,30 @@ public class Properties {
             in = loader.getResourceAsStream(file);
 
             if (in != null) {
-                logger.info("Found property file in classpath: \""
-                        + loader.getResource(file) + "\"");
+                if (logger.isInfoEnabled()) {
+                    logger.info("Found property file in classpath: \""
+                            + loader.getResource(file) + "\"");
+                }
             } else {
-                logger.info("Property file \"" + file + "\" not found "
-                        + "in classpath, giving up!");
+                if (logger.isInfoEnabled()) {
+                    logger.info("Property file \"" + file + "\" not found "
+                            + "in classpath, giving up!");
+                }
                 return null;
             }
         }
 
         try {
-            System.out.println("Loading properties!");
+            if (logger.isInfoEnabled()) {
+                logger.info("Loading properties!");
+            }
             
             TypedProperties p = new TypedProperties();
             p.load(in);
 
-            System.out.println(p.toString());
+            if (logger.isInfoEnabled()) {
+                logger.info(p.toString());
+            }
                         
             return p;
         } catch (IOException e) {

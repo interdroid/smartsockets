@@ -12,25 +12,26 @@ import smartsockets.direct.SocketAddressSet;
 
 public class ClientDescription {
 
-    long version = 0;    
     final SocketAddressSet clientAddress;
-    HashMap services;
+    
+    private long version = 0;    
+    private HashMap<String, String> services;
     
     public ClientDescription(SocketAddressSet clientAddress) { 
         this.clientAddress = clientAddress;
     }
     
     private ClientDescription(SocketAddressSet clientAddress, long version, 
-            HashMap services) {
+            HashMap<String, String> services) {
         
         this.clientAddress = clientAddress;
         this.version = version;
         this.services = services;
     }
         
-    public boolean addService(String tag, String info) { 
+    protected boolean addService(String tag, String info) { 
         if (services == null) { 
-            services = new HashMap();
+            services = new HashMap<String, String>();
         }
         
         if (services.containsKey(tag)) { 
@@ -42,7 +43,7 @@ public class ClientDescription {
         return true;        
     }
     
-    public boolean updateService(String tag, String info) { 
+    protected boolean updateService(String tag, String info) { 
         if (services == null) {
             return false;
         }
@@ -58,7 +59,7 @@ public class ClientDescription {
     }
     
     
-    public boolean removeService(String tag) { 
+    protected synchronized boolean removeService(String tag) { 
         if (services == null) { 
             return false;
         }
@@ -72,7 +73,7 @@ public class ClientDescription {
         return true;        
     }
 
-    public boolean containsService(String tag) { 
+    protected boolean containsService(String tag) { 
         
         if (tag == null || tag.length() == 0) { 
             return true;
@@ -92,27 +93,23 @@ public class ClientDescription {
         tmp.append(", ");
         tmp.append(version);
                 
-        if (services != null) { 
-            Iterator itt = services.keySet().iterator();
-            
-            while (itt.hasNext()) { 
-                String key = (String) itt.next();
-                String val = (String) services.get(key);
-                
-                tmp.append(", [");
-                tmp.append(key);
-                tmp.append(",");
-                tmp.append(val);
-                tmp.append("]");
-            }
-        }
+        for (String key : services.keySet()) { 
 
+            String val = services.get(key);
+                
+            tmp.append(", [");
+            tmp.append(key);
+            tmp.append(",");
+            tmp.append(val);
+            tmp.append("]");
+        }
+        
         tmp.append(")");
         
         return tmp.toString();
     }
-
-    public void update(ClientDescription c) {
+/*
+    protected void update(ClientDescription c) {
 
         if (c.version <= version) { 
             return;
@@ -121,6 +118,7 @@ public class ClientDescription {
         version = c.version;
         services = c.services;
     }
+  */  
     
     public boolean equals(Object other) { 
         if (!(other instanceof ClientDescription)) {
@@ -134,26 +132,29 @@ public class ClientDescription {
         return clientAddress.hashCode();
     }
     
-    public static void write(ClientDescription c, DataOutputStream out) throws IOException { 
+    public void write(DataOutputStream out) throws IOException { 
         
-        out.writeUTF(c.clientAddress.toString());
-        out.writeLong(c.version);
+        // TODO: is there a race condition here ??? The values below may change 
+        // while we are writing the object, but if we synchronize the lot, we 
+        // may get a deadlock if the streams block...             
+        out.writeUTF(clientAddress.toString());
+        out.writeLong(version);
         
-        if (c.services == null) { 
+        if (services == null) { 
             out.writeInt(0);                
-        } else {         
+        } else {
+            out.writeInt(services.size());
             
-            Collection ser = c.services.entrySet();
-            
-            out.writeInt(ser.size());
-        
-            Iterator itt = ser.iterator();
-            
-            while (itt.hasNext()) { 
-                Map.Entry entry = (Map.Entry) itt.next();                
-                out.writeUTF((String) entry.getKey());
-                out.writeUTF((String) entry.getValue());
-            }           
+            for (String key : services.keySet()) { 
+                String value = services.get(key);
+                
+                if (value == null) { 
+                    value = "";                   
+                }
+                
+                out.writeUTF(key);
+                out.writeUTF(value);
+            }                       
         } 
             
     }
@@ -164,7 +165,7 @@ public class ClientDescription {
         long version = in.readLong();                      
         int services = in.readInt();
         
-        HashMap m = new HashMap();
+        HashMap<String, String> m = new HashMap<String, String>();
         
         for (int s=0;s<services;s++) {
             m.put(in.readUTF(), in.readUTF());

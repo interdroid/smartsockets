@@ -59,7 +59,9 @@ public class VirtualSocketFactory {
     
     private VirtualSocketFactory(TypedProperties p) throws Exception {
                 
-        logger.info("Creating VirtualSocketFactory");    
+        if (logger.isInfoEnabled()) {
+            logger.info("Creating VirtualSocketFactory");
+        }
         
         properties = p;
         
@@ -100,8 +102,9 @@ public class VirtualSocketFactory {
 
         // Check if we can discover the proxy address using UDP multicast. 
         if (address == null) {
-         
-            logger.info("Attempting to discover proxy using UDP multicast...");                
+            if (logger.isInfoEnabled()) { 
+                logger.info("Attempting to discover proxy using UDP multicast...");
+            }
                         
             int port = properties.getIntProperty(Properties.DISCOVERY_PORT);
             int time = properties.getIntProperty(Properties.DISCOVERY_TIMEOUT);             
@@ -116,20 +119,28 @@ public class VirtualSocketFactory {
             
             if (result != null) { 
                 try { 
-                    address = new SocketAddressSet(result);                    
-                    logger.info("Proxy found at: " + address.toString());                                    
+                    address = new SocketAddressSet(result);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Proxy found at: " + address.toString());
+                    }
                 } catch (Exception e) {
-                    logger.info("Got unknown reply to proxy discovery!");                
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Got unknown reply to proxy discovery!");
+                    }
                 }
             } else { 
-                logger.info("No proxies found.");
+                if (logger.isInfoEnabled()) {                    
+                    logger.info("No proxies found.");
+                }
             }
         }
             
         // Still no address ? Give up...         
         if (address == null) { 
             // properties not set, so no central hub is available
-            logger.info("ServiceLink not created: no proxy address available!");                
+            if (logger.isInfoEnabled()) {
+                logger.info("ServiceLink not created: no proxy address available!");
+            }
             return;
         }  
         
@@ -166,8 +177,10 @@ public class VirtualSocketFactory {
     }
     
     private ConnectModule loadModule(String name) {         
-                        
-        logger.info("Loading module: " + name);
+             
+        if (logger.isInfoEnabled()) {
+            logger.info("Loading module: " + name);
+        }
         
         String classname = properties.getProperty(
                 Properties.MODULES_PREFIX + name, null);
@@ -187,14 +200,16 @@ public class VirtualSocketFactory {
             classname = tmp.toString();
         }
     
-        logger.info("    class name: " + classname);
+        if (logger.isInfoEnabled()) {
+            logger.info("    class name: " + classname);
+        }
                 
         try { 
             ClassLoader cl = Thread.currentThread().getContextClassLoader();        
             Class c = cl.loadClass(classname);
             
             // Check if the class we loaded is indeed a flavor of ConnectModule            
-            if (!ConnectModule.class.isAssignableFrom(c)) {
+            if (!ConnectModule.class.isAssignableFrom(c)) {                
                 logger.warn("Cannot load module " + classname + " since it is " 
                         + " not a subclass of ConnectModule!");
                 return null;
@@ -229,7 +244,9 @@ public class VirtualSocketFactory {
             for (int s=0;s<skip.length;s++) { 
                 for (int m=0;m<mods.length;m++) {
                     if (skip[s].equals(mods[m])) {
-                        logger.info("Skipping module " + mods[m]);                        
+                        if (logger.isInfoEnabled()) {
+                            logger.info("Skipping module " + mods[m]);
+                        }
                         mods[m] = null;
                         count--;
                     }
@@ -245,7 +262,9 @@ public class VirtualSocketFactory {
             }
         }
         
-        logger.info("Loading " + count + " modules: " + t);
+        if (logger.isInfoEnabled()) {
+            logger.info("Loading " + count + " modules: " + t);
+        }
                 
         for (int i=0;i<mods.length;i++) {
             
@@ -272,8 +291,10 @@ public class VirtualSocketFactory {
                 }
             } 
         }
-
-        logger.info(count + " modules loaded."); 
+        
+        if (logger.isInfoEnabled()) {
+            logger.info(count + " modules loaded.");
+        }
     }
 
     protected ConnectModule [] getModules() { 
@@ -384,9 +405,10 @@ public class VirtualSocketFactory {
         throws IOException {
         
         if (m.matchRuntimeRequirements(properties)) {
-            
-            logger.info("Using module " + m.module + " to set up " +
-                    "connection to " + target);
+            if (logger.isInfoEnabled()) {
+                logger.info("Using module " + m.module + " to set up " +
+                        "connection to " + target);
+            }
             
             long start = System.currentTimeMillis();
                             
@@ -398,10 +420,12 @@ public class VirtualSocketFactory {
                                     
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
-                    vs.setTcpNoDelay(true);                    
-                    logger.debug("Sucess with module " + m.module 
-                            + " connected to " + target + " (time = " + 
-                            (end-start) + " ms.)");
+                    vs.setTcpNoDelay(true);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Sucess with module " + m.module 
+                                + " connected to " + target + " (time = " + 
+                                (end-start) + " ms.)");
+                    }
                     
                     return vs;
                 } 
@@ -410,14 +434,17 @@ public class VirtualSocketFactory {
                 long end = System.currentTimeMillis();
                                     
                 // Just print and try the next module...
-                logger.info("Module not suitable (time = " + (end-start) 
-                        + " ms.)", e);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Module not suitable (time = " + (end-start) 
+                            + " ms.)", e);
+                }
             }            
             // NOTE: other exceptions are forwarded to the user!
         } else { 
-            logger.info("Module " + m.module + " may not be used to set " +
-                    "up connection to " + target);
-            
+            if (logger.isInfoEnabled()) {
+                logger.info("Module " + m.module + " may not be used to set " +
+                        "up connection to " + target);
+            }            
         }
         
         return null;
@@ -461,15 +488,19 @@ public class VirtualSocketFactory {
         }        
         
         if (notSuitableCount == order.length) {
-            logger.info("No suitable module found to connect to " + target);
-                    
+            if (logger.isInfoEnabled()) {
+                logger.info("No suitable module found to connect to " + target);
+            }
+            
             // No suitable modules found...
             throw new ConnectException("No suitable module found to connect to "
                     + target);
         } else { 
             // Apparently, some modules where suitable but failed to connect. 
-            // This is treated as a timeout            
-            logger.info("None of the modules could to connect to " + target);
+            // This is treated as a timeout
+            if (logger.isInfoEnabled()) {
+                logger.info("None of the modules could to connect to " + target);
+            }
                         
             // TODO: is this right ?
             throw new SocketTimeoutException("Timeout during connect to " 

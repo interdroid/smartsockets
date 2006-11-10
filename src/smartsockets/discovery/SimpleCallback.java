@@ -2,8 +2,13 @@ package smartsockets.discovery;
 
 import java.util.LinkedList;
 
-public class SimpleCallback implements Callback {
+import org.apache.log4j.Logger;
 
+public class SimpleCallback implements Callback {
+    
+    private static final Logger logger = 
+        ibis.util.GetLogger.getLogger("smartsockets.discovery");
+    
     private final LinkedList messages = new LinkedList();    
     private final boolean quitAfterMessage;
             
@@ -36,12 +41,16 @@ public class SimpleCallback implements Callback {
     public synchronized boolean gotMessage(String message) {
                       
         if (message != null) {             
-            Discovery.logger.info("Received: \"" + message + "\"");
+            if (logger.isInfoEnabled()) { 
+                logger.info("Received: \"" + message + "\"");
+            }
             messages.addLast(message);
             notifyAll();
             return !quitAfterMessage;                    
         } else {
-            Discovery.logger.info("Discarding message: \"" + message + "\"");
+            if (logger.isInfoEnabled()) {
+                logger.info("Discarding message: \"" + message + "\"");
+            }
             return true;
         }
     }          

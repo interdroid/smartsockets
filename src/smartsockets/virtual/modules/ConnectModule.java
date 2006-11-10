@@ -64,7 +64,9 @@ public abstract class ConnectModule implements CallBack {
         parent = p;        
         logger = l;               
                 
-        l.info("Initializing module: " + name + " -> " + module);
+        if (l.isInfoEnabled()) {         
+            l.info("Initializing module: " + name + " -> " + module);
+        }
                         
         // Now perform the implementation-specific initialization.
         initModule(properties);
@@ -103,8 +105,9 @@ public abstract class ConnectModule implements CallBack {
     // only returns true iff "?target?" is a substring of "csv", where the '?'
     // characters are either comma, space, or the beginning/end of the string. 
     private boolean contains(String csv, String target) { 
-        
-        logger.warn("Checking if \"" + target + "\" is part of \"" + csv + "\"");
+        if (logger.isInfoEnabled()) {
+            logger.info("Checking if \"" + target + "\" is part of \"" + csv + "\"");
+        }
                         
         int start = 0;
         int end = target.length();
@@ -114,7 +117,9 @@ public abstract class ConnectModule implements CallBack {
             end = start + target.length();
                         
             if (start == -1) {
-                logger.warn("\"" + target + "\" is NOT part of \"" + csv + "\"");                
+                if (logger.isInfoEnabled()) {
+                    logger.info("\"" + target + "\" is NOT part of \"" + csv + "\"");
+                }
                 return false;
             }
         
@@ -125,15 +130,19 @@ public abstract class ConnectModule implements CallBack {
                                 || csv.charAt(end+1) == ',' 
                                 || csv.charAt(end+1) == ' ');
             
-            if (startOK && endOK) { 
-                logger.warn("\"" + target + "\" IS part of \"" + csv + "\"");
+            if (startOK && endOK) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("\"" + target + "\" IS part of \"" + csv + "\"");
+                }
                 return true;
             }
         
             start += 1;            
         } 
         
-        logger.warn("\"" + target + "\" IS NOT part of \"" + csv + "\"");
+        if (logger.isInfoEnabled()) {
+            logger.info("\"" + target + "\" IS NOT part of \"" + csv + "\"");
+        }
         return false;
     }
     

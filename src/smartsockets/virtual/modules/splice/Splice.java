@@ -52,7 +52,9 @@ public class Splice extends AbstractDirectModule {
                 "a connection to myself!"); 
         }
         
-        logger.info(module + ": attempting connection setup to " + target);
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": attempting connection setup to " + target);
+        }
         
         // Start by extracting the machine address of the target.
         SocketAddressSet targetMachine = target.machine();
@@ -63,22 +65,28 @@ public class Splice extends AbstractDirectModule {
         // Generate a unique ID for this connection setup 
         String connectID = getID() + "@" + myMachine; 
         
-        logger.info(module + ": looking for shared proxy between " + myMachine 
-                + " and " + targetMachine);
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": looking for shared proxy between " 
+                    + myMachine + " and " + targetMachine);
+        }
         
         // Now try to find a proxy that both machines can reach.
         SocketAddressSet shared = 
             serviceLink.findSharedHub(myMachine, targetMachine);
         
-        if (shared == null) {            
-            logger.info(module + ": no shared proxy found!");
+        if (shared == null) {  
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": no shared proxy found!");
+            }
             
             // No shared proxy was found, so we give up!
             throw new ModuleNotSuitableException("Could not find shared " + 
                     "proxy for " + myMachine + " and " + targetMachine);
         }
 
-        logger.info(module + ": shared proxy found " + shared);
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": shared proxy found " + shared);
+        }
                 
         // Send a message to the target asking it to participate in the
         // connection attempt. We will not get a reply. 
@@ -91,8 +99,10 @@ public class Splice extends AbstractDirectModule {
         int localPort = getInfo(shared, connectID, timeout, a);
 
         // Check if proxy returned somethig usefull...
-        if (a[0] == null) {             
-            logger.info(module + ": failed to contact peer at shared proxy!");            
+        if (a[0] == null) {
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": failed to contact peer at shared proxy!");
+            }
             throw new ModuleNotSuitableException("Failed to contact peer at " +                    
                     "shared proxy " + shared);
         }
@@ -223,8 +233,10 @@ public class Splice extends AbstractDirectModule {
                         
             DirectSocket s = connect(a, local, timeout);
             
-            if (s == null) {  
-                logger.info(module + ": Incoming connection setup failed!");
+            if (s == null) {
+                if (logger.isInfoEnabled()) {
+                    logger.info(module + ": Incoming connection setup failed!");
+                }
                 return;
             }
                
@@ -238,8 +250,10 @@ public class Splice extends AbstractDirectModule {
     public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
             int opcode, String message) {
 
-        logger.info(module + ": got message " + src + "@" + srcProxy + " " 
-                + opcode + " \"" +  message + "\"");
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": got message " + src + "@" + srcProxy + " " 
+                    + opcode + " \"" +  message + "\"");
+        }
                
         // Check if the opcode makes any sense
         if (opcode != PLEASE_CONNECT) { 
@@ -279,7 +293,9 @@ public class Splice extends AbstractDirectModule {
         
         if (ss == null) {
             // TODO: send reply ??
-            logger.info(module + ": port " + port + " not found!");
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": port " + port + " not found!");
+            }
             return;            
         }
 

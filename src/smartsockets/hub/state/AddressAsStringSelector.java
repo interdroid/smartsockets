@@ -4,7 +4,7 @@ import java.util.LinkedList;
 
 public class AddressAsStringSelector extends Selector {
 
-    private LinkedList result = new LinkedList();
+    private LinkedList<String> result = new LinkedList<String>();
         
     public boolean needAll() {
         return true;
@@ -14,7 +14,7 @@ public class AddressAsStringSelector extends Selector {
         result.add(description.hubAddressAsString);
     }
     
-    public LinkedList getResult() { 
+    public LinkedList<String> getResult() { 
         return result;
     }   
 }

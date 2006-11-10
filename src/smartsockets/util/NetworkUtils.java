@@ -19,7 +19,7 @@ import smartsockets.util.net.NativeNetworkConfig;
 public class NetworkUtils {
 
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(NetworkUtils.class.getName());
+        ibis.util.GetLogger.getLogger("smartsocket.network.util");
     
     // This matrix contains the possible IPv4 subnet/mask values. Note that the 
     // each entry consists of three parts: the subnet, the mask needed to match 
@@ -122,7 +122,9 @@ public class NetworkUtils {
                 list.add(e.nextElement());
             }        
         } catch (SocketException ex) {
-            logger.debug("Could not get network interfaces.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Could not get network interfaces.");
+            }
         }
         
         return list;
@@ -151,7 +153,9 @@ public class NetworkUtils {
     private static void getAllHostAddresses(NetworkInterface nw, 
             List<InetAddress> target, boolean ignoreLoopback, boolean ignoreIP6) { 
                 
-        logger.info("   " + nw.getDisplayName() + ":");
+        if (logger.isInfoEnabled()) {
+            logger.info("   " + nw.getDisplayName() + ":");
+        }
                         
         Enumeration<InetAddress> e2 = nw.getInetAddresses();
             
@@ -163,10 +167,14 @@ public class NetworkUtils {
             boolean t2 = !ignoreIP6 || (tmp instanceof Inet4Address); 
             
             if (t1 && t2) {
-                logger.info("    - " + tmp.getHostAddress() + " (used)");                
+                if (logger.isInfoEnabled()) {
+                    logger.info("    - " + tmp.getHostAddress() + " (used)");
+                }
                 target.add(tmp);
-            } else { 
-                logger.info("    - " + tmp.getHostAddress() + " (ignored)");
+            } else {
+                if (logger.isInfoEnabled()) {
+                    logger.info("    - " + tmp.getHostAddress() + " (ignored)");
+                }
             }
         }
     }
@@ -195,7 +203,9 @@ public class NetworkUtils {
         ArrayList<NetworkInterface> nwl = getNetworkInterfacesList();
         ArrayList<InetAddress> list = new ArrayList<InetAddress>();
             
-        logger.info("Determining available addresses:");
+        if (logger.isInfoEnabled()) {
+            logger.info("Determining available addresses:");
+        }
         
         for (NetworkInterface nwi : nwl) { 
             getAllHostAddresses(nwi, list, ignoreLoopback, ignoreIP6);

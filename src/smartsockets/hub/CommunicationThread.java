@@ -1,10 +1,12 @@
 package smartsockets.hub;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
-import smartsockets.hub.connections.Connections;
+import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
 
@@ -14,10 +16,10 @@ abstract class CommunicationThread extends Thread {
        
     protected final StateCounter state;         
     
-    protected static Logger hublogger = 
+    protected static final Logger hublogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub"); 
         
-    protected final Connections connections;     
+    protected final Map<SocketAddressSet, BaseConnection> connections;     
     protected final HubList knownHubs;
     
     protected final DirectSocketFactory factory;    
@@ -26,8 +28,8 @@ abstract class CommunicationThread extends Thread {
     protected String localAsString;
     
     protected CommunicationThread(String name, StateCounter state, 
-            Connections connections, HubList knownHubs, 
-            DirectSocketFactory factory) {
+            Map<SocketAddressSet, BaseConnection> connections, 
+            HubList knownHubs, DirectSocketFactory factory) {
         
         super(name);        
         this.state = state;

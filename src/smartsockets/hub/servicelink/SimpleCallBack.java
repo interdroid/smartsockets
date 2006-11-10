@@ -22,6 +22,6 @@ public class SimpleCallBack {
         this.result = result;
         haveResult = true;
         notifyAll();
-    } 
+    }   
 }
 

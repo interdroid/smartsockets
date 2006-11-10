@@ -22,8 +22,8 @@ public class Router extends Thread {
 
     private static final long STATS_UPDATE_TIME = 10000;
 
-    protected static Logger logger = 
-        ibis.util.GetLogger.getLogger(Router.class.getName());
+    private static Logger logger = 
+        ibis.util.GetLogger.getLogger("smartsocket.router");
              
     private static int ACCEPT_TIMEOUT = 30000; 
         
@@ -59,7 +59,9 @@ public class Router extends Thread {
             properties.put("smartsockets.hub", hub.toString());
         }
              
-        logger.debug("Router creating VirtualSocketFactory");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Router creating VirtualSocketFactory");
+        }
         
         factory = VirtualSocketFactory.createSocketFactory(properties, true);        
         serviceLink = factory.getServiceLink();
@@ -73,13 +75,21 @@ public class Router extends Thread {
         
         local = ssc.getLocalSocketAddress();
 
-        logger.info("Router listening on " + local.toString());                 
+        if (logger.isInfoEnabled()) {
+            logger.info("Router listening on " + local.toString());
+        }
         
         boolean register = serviceLink.registerProperty("router", local.toString());        
-        logger.info("Router registration: " + register);
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("Router registration: " + register);
+        }
         
         register = serviceLink.registerProperty("statistics", currentStats);        
-        logger.info("Router connections: " + register);               
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("Router connections: " + register);
+        }
     } 
                
     synchronized SocketAddressSet [] locateMachine(SocketAddressSet machine) 
@@ -158,8 +168,9 @@ public class Router extends Thread {
         }
         
         if (!currentStats.equals(s)) { 
-
-            logger.info("Update router stats to: (" + s + ")");
+            if (logger.isInfoEnabled()) {
+                logger.info("Update router stats to: (" + s + ")");
+            }
                         
             try {
                 boolean ok = serviceLink.updateProperty("statistics", s);
@@ -186,7 +197,9 @@ public class Router extends Thread {
         
         while (!getDone()) {
             
-            System.err.println("Router waiting for connections....");
+            if (logger.isInfoEnabled()) {
+                logger.info("Router waiting fot connections...");
+            }
             
             try { 
                 VirtualSocket vs = ssc.accept();     

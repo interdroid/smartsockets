@@ -70,7 +70,7 @@ public class VirtualClusters {
             // of the cluster definitions...
             localCluster = "";            
             this.defaultOrder = new ClusterDefinition("default", order);
-            logger.info("I am not a member of any of the virtual clusters!");            
+            logger.info("I am not a member of any of the virtual clusters!");
             return;
         }
         
@@ -158,8 +158,10 @@ public class VirtualClusters {
             return defaultOrder.order;
         }
 
-        logger.info("Determine connect order for node: " + target.toString());
-                
+        if (logger.isInfoEnabled()) {
+            logger.info("Determine connect order for node: " + target.toString());
+        }
+            
         ClusterDefinition d = orphans.get(target);
         
         if (d == null) {
@@ -222,7 +224,9 @@ public class VirtualClusters {
             return getSingleNodeOrder(target);
         }
         
-        logger.info("Determine connect order for cluster: " + c);
+        if (logger.isInfoEnabled()) {
+            logger.info("Determine connect order for cluster: " + c);
+        }
                 
         // Get the cluster definition of the target cluster...
         ClusterDefinition d = clusters.get(c);
@@ -237,8 +241,10 @@ public class VirtualClusters {
                 // the default order 
                 return defaultOrder.order;
             }
-            
-            logger.info("New cluster found: " + c);
+         
+            if (logger.isInfoEnabled()) {
+                logger.info("New cluster found: " + c);
+            }
             
             // Let's get creative! 
             // NOTE: Don't forget to -clone- the default order!            
@@ -267,11 +273,16 @@ public class VirtualClusters {
         
         if (c == null || c.length() == 0) {
             // Handle 'orphan' nodes seperately...
-            logger.info("Caching connect order for node: " + target.toString());
+            if (logger.isInfoEnabled()) {
+                logger.info("Caching connect order for node: " 
+                        + target.toString());
+            }
             d = orphans.get(target);
         } else {         
-            //  Get the cluster definition of the target cluster...            
-            logger.info("Caching connect order for cluster: " + c);
+            //  Get the cluster definition of the target cluster...
+            if (logger.isInfoEnabled()) {
+                logger.info("Caching connect order for cluster: " + c);
+            }
             d = clusters.get(c);
         }
 

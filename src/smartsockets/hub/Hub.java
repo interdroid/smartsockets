@@ -3,7 +3,10 @@ package smartsockets.hub;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -11,7 +14,7 @@ import smartsockets.Properties;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Discovery;
-import smartsockets.hub.connections.Connections;
+import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.state.ConnectionsSelector;
 import smartsockets.hub.state.HubDescription;
@@ -27,14 +30,14 @@ public class Hub extends Thread {
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
     private static final int DEFAULT_ACCEPT_PORT    = 17878;    
 
-    protected static Logger misclogger = 
+    private static final Logger misclogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.misc");
 
-    protected static Logger goslogger = 
+    private static final Logger goslogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.gossip");
     
     private HubList hubs;    
-    private Connections connections;
+    private Map<SocketAddressSet, BaseConnection> connections;
     
     private Acceptor acceptor;
     private Connector connector;
@@ -55,20 +58,23 @@ public class Hub extends Thread {
             clusters = new String[] { "*" };
         }
         
-        misclogger.info("Creating Hub for clusters: " 
-                + Arrays.deepToString(clusters));
+        if (misclogger.isInfoEnabled()) { 
+            misclogger.info("Creating Hub for clusters: " 
+                    + Arrays.deepToString(clusters));
+        }
                 
         DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
         
         // Create the hub list
         hubs = new HubList(state);
                 
-        connections = new Connections();
+        connections = Collections.synchronizedMap(
+                new HashMap<SocketAddressSet, BaseConnection>());
         
         int port = p.getIntProperty(Properties.HUB_PORT, DEFAULT_ACCEPT_PORT);
         
-        System.err.println("########### Using port: " + port);
-        
+        // NOTE: These are not started until later. We first need to init the
+        // rest of the world!        
         acceptor = new Acceptor(port, state, connections, hubs, factory);        
         connector = new Connector(state, connections, hubs, factory);
         
@@ -76,7 +82,9 @@ public class Hub extends Thread {
         
         connector.setLocal(local);
                 
-        goslogger.info("GossipAcceptor listning at " + local);
+        if (goslogger.isInfoEnabled()) {
+            goslogger.info("GossipAcceptor listning at " + local);
+        }
         
         String name = p.getProperty(Properties.HUB_SIMPLE_NAME); 
                 
@@ -86,11 +94,15 @@ public class Hub extends Thread {
             try { 
                 name = NetworkUtils.getHostname();
             }  catch (Exception e) {
-                misclogger.info("Failed to find simple name for hub!");
+                if (misclogger.isInfoEnabled()) {
+                    misclogger.info("Failed to find simple name for hub!");
+                }
             }
         }        
         
-        misclogger.info("Hub got name: " + name);
+        if (misclogger.isInfoEnabled()) {
+            misclogger.info("Hub got name: " + name);
+        }
         
         // Create a description for the local machine. 
         HubDescription localDesc = new HubDescription(name, local, state, true);        
@@ -101,12 +113,16 @@ public class Hub extends Thread {
 
         addHubs(hubAddresses);
         
-        goslogger.info("Starting Gossip connector/acceptor");
+        if (goslogger.isInfoEnabled()) {
+            goslogger.info("Starting Gossip connector/acceptor");
+        }
                 
         acceptor.start();
         connector.start();
 
-        misclogger.info("Listning for broadcast on LAN");
+        if (misclogger.isInfoEnabled()) {
+            misclogger.info("Listning for broadcast on LAN");
+        }
                       
         String [] suffixes = new String[clusters.length];
         
@@ -129,8 +145,10 @@ public class Hub extends Thread {
                 
         discovery = new Discovery(dp, 0, 0);         
         discovery.answeringMachine("Any Proxies?", suffixes, local.toString());
-                        
-        goslogger.info("Start Gossiping!");
+               
+        if (goslogger.isInfoEnabled()) {
+            goslogger.info("Start Gossiping!");
+        }
         
         start();
     }
@@ -150,23 +168,25 @@ public class Hub extends Thread {
     
     private void gossip() { 
         
-        goslogger.info("Starting gossip round (local state = " + state.get() + ")");        
-        goslogger.info("I know the following hubs:\n" + hubs.toString());        
+        if (goslogger.isInfoEnabled()) {
+            goslogger.info("Starting gossip round (local state = " 
+                    + state.get() + ")");        
+            goslogger.info("I know the following hubs:\n" + hubs.toString());
+        }
             
         ConnectionsSelector selector = new ConnectionsSelector();
         
         hubs.select(selector);
         
-        Iterator itt = selector.getResult().iterator(); 
-        
-        while (itt.hasNext()) { 
-            HubConnection c = (HubConnection) itt.next();
+        for (HubConnection c : selector.getResult()) {
             
             if (c != null) {
                 c.gossip();
             } else { 
-                goslogger.debug("Cannot gossip with " + c
-                        + ": NO CONNECTION!");
+                if (goslogger.isDebugEnabled()) {
+                    goslogger.debug("Cannot gossip with " + c
+                            + ": NO CONNECTION!");
+                }
             }
         }                   
     }
@@ -179,7 +199,9 @@ public class Hub extends Thread {
         
         while (true) { 
             try { 
-                goslogger.info("Sleeping for " + GOSSIP_SLEEP + " ms.");
+                if (goslogger.isInfoEnabled()) {
+                    goslogger.info("Sleeping for " + GOSSIP_SLEEP + " ms.");
+                }
                 Thread.sleep(GOSSIP_SLEEP);
             } catch (InterruptedException e) {
                 // ignore
@@ -187,73 +209,5 @@ public class Hub extends Thread {
             
             gossip();
         }        
-    }
-    
-    /*
-    public static void main(String [] args) { 
-        
-        SocketAddressSet [] hubs = new SocketAddressSet[args.length];
-         
-        TypedProperties p = new TypedProperties();
-        String clusters = null;
-        
-        int port = DEFAULT_ACCEPT_PORT;
-        
-        for (int i=0;i<args.length;i++) {
-            
-            if (args[i].equals("-clusters")) { 
-                if (i+1 >= args.length) { 
-                    System.out.println("-clusters option requires parameter!");
-                    System.exit(1);
-                }   
-                
-                clusters = args[++i];
-                
-            } else if (args[i].equals("-port")) { 
-                if (i+1 >= args.length) { 
-                    System.out.println("-port option requires parameter!");
-                    System.exit(1);
-                }   
-                    
-                port = Integer.parseInt(args[++i]);
-                
-            } else {
-                // Assume it's a hub address.
-                try { 
-                    hubs[i] = new SocketAddressSet(args[i]);
-                } catch (Exception e) {
-                    misclogger.warn("Skipping hub address: " + args[i], e);              
-                }
-            }
-        } 
-        
-        p.put("smartsockets.hub.port", Integer.toString(port));
-               
-        // TODO: use property file ?         
-        if (clusters != null) { 
-            p.put("smartsockets.hub.clusters", clusters);
-            
-            // Check if the property is a comma seperated list of strings
-            String [] tmp = null;
-            
-            try {             
-                tmp = p.getStringList("smartsockets.hub.clusters", ",", null);               
-            } catch (Exception e) { 
-                // ignore
-            }
-            
-            if (tmp == null) { 
-                System.out.println("-clusters option has incorrect " + 
-                        "parameter: " + clusters);
-                System.exit(1);            
-            }
-        } 
-                
-        try {
-            new Hub(hubs, p);
-        } catch (IOException e) {
-            misclogger.warn("Oops: ", e);
-        }        
-    }
-    */
+    }     
 }

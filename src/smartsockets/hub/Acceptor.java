@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -16,8 +17,8 @@ import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.ClientConnection;
-import smartsockets.hub.connections.Connections;
 import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
@@ -25,19 +26,18 @@ import smartsockets.hub.state.StateCounter;
 
 public class Acceptor extends CommunicationThread {
     
-    protected static Logger hconlogger = 
+    private static final Logger hconlogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
     
-    protected static Logger cconlogger = 
+    private static final Logger cconlogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.connections.client"); 
     
-    protected static Logger reglogger = 
+    private static final Logger reglogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
     
-    protected static Logger reqlogger = 
+    private static final Logger reqlogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.request"); 
-    
-    
+        
     private DirectServerSocket server;
     private boolean done = false;
 
@@ -56,16 +56,15 @@ public class Acceptor extends CommunicationThread {
    
     private HashMap spliceInfo = new HashMap();
         
-    Acceptor(int port, StateCounter state, Connections connections, 
+    Acceptor(int port, StateCounter state, 
+            Map<SocketAddressSet, BaseConnection> connections, 
             HubList knownProxies, DirectSocketFactory factory) 
             throws IOException {
 
         super("HubAcceptor", state, connections, knownProxies, factory);        
 
         server = factory.createServerSocket(port, 50, null);        
-        setLocal(server.getAddressSet());
-        
-        System.err.println("Hub listnening at: " + localAsString);
+        setLocal(server.getAddressSet());        
     }
 
     private boolean handleIncomingHubConnect(DirectSocket s, 
@@ -74,7 +73,9 @@ public class Acceptor extends CommunicationThread {
         String otherAsString = in.readUTF();        
         SocketAddressSet addr = new SocketAddressSet(otherAsString); 
 
-        hconlogger.debug("Got connection from " + addr);
+        if (hconlogger.isDebugEnabled()) { 
+            hconlogger.debug("Got connection from " + addr);
+        }
 
         HubDescription d = knownHubs.add(addr);        
         d.setCanReachMe();
@@ -83,15 +84,19 @@ public class Acceptor extends CommunicationThread {
             new HubConnection(s, in, out, d, connections, knownHubs, state);
 
         if (!d.createConnection(c)) { 
-            // There already was a connection with this hub...            
-            hconlogger.info("Connection from " + addr + " refused (duplicate)");
+            // There already was a connection with this hub...  
+            if (hconlogger.isInfoEnabled()) {
+                hconlogger.info("Connection from " + addr + " refused (duplicate)");
+            }
 
             out.write(HubProtocol.CONNECTION_REFUSED);
             out.flush();
             return false;
-        } else {                         
+        } else {                                     
             // We just created a connection to this hub.
-            hconlogger.info("Connection from " + addr + " accepted");
+            if (hconlogger.isInfoEnabled()) {
+                hconlogger.info("Connection from " + addr + " accepted");
+            }
 
             out.write(HubProtocol.CONNECTION_ACCEPTED);            
             out.flush();
@@ -99,7 +104,7 @@ public class Acceptor extends CommunicationThread {
             // Now activate it. 
             c.activate();
             
-            connections.addConnection(addr, c);
+            connections.put(addr, c);
             return true;
         }     
     }
@@ -120,7 +125,7 @@ public class Acceptor extends CommunicationThread {
             
             SocketAddressSet srcAddr = new SocketAddressSet(src);
                         
-            if (connections.getConnection(srcAddr) != null) { 
+            if (connections.get(srcAddr) != null) { 
                 if (cconlogger.isDebugEnabled()) { 
                     cconlogger.debug("Incoming connection from " + src + 
                     " refused, since it already exists!"); 
@@ -143,12 +148,14 @@ public class Acceptor extends CommunicationThread {
             ClientConnection c = new ClientConnection(srcAddr, s, in, out, 
                     connections, knownHubs);
             
-            connections.addConnection(srcAddr, c);                                               
+            connections.put(srcAddr, c);                                               
             c.activate();
 
             knownHubs.getLocalDescription().addClient(srcAddr);
             
-            reglogger.info("Added client: " + src);            
+            if (reglogger.isInfoEnabled()) {
+                reglogger.info("Added client: " + src);
+            }
             
             return true;
 
@@ -177,13 +184,17 @@ public class Acceptor extends CommunicationThread {
         String connectID = in.readUTF();
         int time = in.readInt();
         
-        reqlogger.info("Got request for splice info: " + connectID + " " + time);
+        if (reqlogger.isInfoEnabled()) { 
+            reqlogger.info("Got request for splice info: " + connectID + " " + time);
+        }
         
         SpliceInfo info = (SpliceInfo) spliceInfo.remove(connectID);
         
         if (info == null) {
-            
-            reqlogger.info("Request " + connectID + " is first");
+        
+            if (reqlogger.isInfoEnabled()) {                
+                reqlogger.info("Request " + connectID + " is first");
+            }
                         
             // We're the first...            
             info = new SpliceInfo();
@@ -204,7 +215,9 @@ public class Acceptor extends CommunicationThread {
             // until the other side arrives...
             result = true;        
         } else {
-            reqlogger.info("Request " + connectID + " is second");            
+            if (reqlogger.isInfoEnabled()) {                
+                reqlogger.info("Request " + connectID + " is second");
+            }
             
             // The peer is already waiting...
             
@@ -218,9 +231,11 @@ public class Acceptor extends CommunicationThread {
                 info.out.writeUTF(tmp.getAddress().toString());
                 info.out.writeInt(tmp.getPort());
                 info.out.flush();
-                
-                reqlogger.info("Reply to first " + tmp.getAddress() + ":" 
-                        + tmp.getPort()); 
+            
+                if (reqlogger.isInfoEnabled()) {                     
+                    reqlogger.info("Reply to first " + tmp.getAddress() + ":" 
+                            + tmp.getPort());
+                }
                 
                 tmp = (InetSocketAddress) info.s.getRemoteSocketAddress();
 
@@ -228,12 +243,16 @@ public class Acceptor extends CommunicationThread {
                 out.writeInt(tmp.getPort());
                 out.flush();
 
-                reqlogger.info("Reply to second " + tmp.getAddress() + ":" 
-                        + tmp.getPort()); 
+                if (reqlogger.isInfoEnabled()) {                     
+                    reqlogger.info("Reply to second " + tmp.getAddress() + ":" 
+                            + tmp.getPort());
+                }
                 
             } catch (Exception e) {                
                 // The connections may have been closed already....
-                reqlogger.info("Failed to forward splice info!", e);               
+                if (reqlogger.isInfoEnabled()) {                     
+                    reqlogger.info("Failed to forward splice info!", e);
+                }
             } finally { 
                 // We should close the first connection. The second will be 
                 // closed for us when we return false

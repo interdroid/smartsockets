@@ -4,11 +4,15 @@ package smartsockets.hub.connections;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
+
+import com.sun.org.apache.bcel.internal.generic.InstructionConstants.Clinit;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
@@ -16,7 +20,9 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.AddressAsStringSelector;
 import smartsockets.hub.state.ClientDescription;
+import smartsockets.hub.state.ClientsByTagAsStringSelector;
 import smartsockets.hub.state.DetailsSelector;
+import smartsockets.hub.state.DirectionsAsStringSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 
@@ -34,13 +40,16 @@ public class ClientConnection extends MessageForwardingConnection {
     private final SocketAddressSet clientAddress;
     
     public ClientConnection(SocketAddressSet clientAddress, DirectSocket s, 
-            DataInputStream in, DataOutputStream out, Connections connections,
+            DataInputStream in, DataOutputStream out, 
+            Map<SocketAddressSet, BaseConnection> connections,
             HubList hubs) {
      
         super(s, in, out, connections, hubs);        
         this.clientAddress = clientAddress;
         
-        conlogger.debug("Created client connection: " + clientAddress);        
+        if (conlogger.isDebugEnabled()) {
+            conlogger.debug("Created client connection: " + clientAddress);
+        }
     }
 
     private void handleMessage() throws IOException { 
@@ -49,21 +58,25 @@ public class ClientConnection extends MessageForwardingConnection {
         ClientMessage cm = new ClientMessage(clientAddress, 
                 knownHubs.getLocalDescription().hubAddress, 0, in);
         
-        meslogger.debug("Incoming message: " + cm);
+        if (meslogger.isDebugEnabled()) {
+            meslogger.debug("Incoming message: " + cm);
+        }
         
         forward(cm, true);
     } 
                 
     private void disconnect() {
         
-        if (knownHubs.getLocalDescription().removeClient(clientAddress)) { 
-            conlogger.debug("Removed client connection " + clientAddress); 
-        } else { 
-            conlogger.debug("Failed to removed client connection " 
-                    + clientAddress + "!");
+        if (knownHubs.getLocalDescription().removeClient(clientAddress)) {
+            if (conlogger.isDebugEnabled()) {
+                conlogger.debug("Removed client connection " + clientAddress);
+            }
+        } else if (conlogger.isDebugEnabled()) {
+                conlogger.debug("Failed to removed client connection " 
+                        + clientAddress + "!");
         }
         
-        connections.removeConnection(clientAddress);
+        connections.remove(clientAddress);
         DirectSocketFactory.close(s, out, in);            
     } 
     
@@ -74,7 +87,7 @@ public class ClientConnection extends MessageForwardingConnection {
             m.writePartially(out);
             out.flush();
             return true;
-        } catch (IOException e) {
+        } catch (IOException e) {            
             meslogger.warn("Connection " + clientAddress + " is broken!", e);
             DirectSocketFactory.close(s, out, in);
             return false;                
@@ -85,22 +98,22 @@ public class ClientConnection extends MessageForwardingConnection {
         
         String id = in.readUTF();
         
-        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " return id: " + id);
+        }
                 
         AddressAsStringSelector as = new AddressAsStringSelector();
         
         knownHubs.select(as);
                 
-        LinkedList result = as.getResult();
+        LinkedList<String> result = as.getResult();
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(result.size());
-
-        Iterator itt = result.iterator();
-                
-        for (int i=0;i<result.size();i++) { 
-            out.writeUTF((String) itt.next());
+        
+        for (String s : result) {  
+            out.writeUTF(s);
         } 
             
         out.flush();        
@@ -110,25 +123,27 @@ public class ClientConnection extends MessageForwardingConnection {
         
         String id = in.readUTF();
         
-        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " return id: " + id);
+        }
         
         DetailsSelector as = new DetailsSelector();
         
         knownHubs.select(as);
         
-        LinkedList result = as.getResult();
+        LinkedList<String> result = as.getResult();
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(result.size());
 
-        reqlogger.debug("Connection " + clientAddress + " result: " 
-                + result.size() + " " + result);         
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " result: " 
+                    + result.size() + " " + result);
+        }
         
-        Iterator itt = result.iterator();
-        
-        for (int i=0;i<result.size();i++) { 
-            out.writeUTF((String) itt.next());
+        for (String s : result) { 
+            out.writeUTF(s);
         } 
             
         out.flush();        
@@ -140,24 +155,26 @@ public class ClientConnection extends MessageForwardingConnection {
         String hub = in.readUTF();
         String tag = in.readUTF();
         
-        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
-        
-        HubDescription p = knownHubs.get(hub); 
-        
-        ArrayList tmp = null;
-        
-        if (p != null) {
-            tmp = p.getClients(tag);      
-        } else { 
-            tmp = new ArrayList();
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
         }
         
+        LinkedList<String> result = new LinkedList<String>();
+        
+        try { 
+            HubDescription d = knownHubs.get(new SocketAddressSet(hub));            
+            d.getClientsAsString(result, tag);            
+        } catch (UnknownHostException e) {
+            reqlogger.warn("Connection " + clientAddress + " got illegal hub " 
+                    + "address: " + hub); 
+        }
+               
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
-        out.writeInt(tmp.size());
+        out.writeInt(result.size());
 
-        for (int i=0;i<tmp.size();i++) {
-            out.writeUTF(((ClientDescription) tmp.get(i)).toString());
+        for (String s : result) { 
+            out.writeUTF(s);
         } 
             
         out.flush();        
@@ -168,19 +185,27 @@ public class ClientConnection extends MessageForwardingConnection {
         String id = in.readUTF();
         String tag = in.readUTF();
         
-        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " return id: " + id);
+        }
         
-        ArrayList clients = knownHubs.allClients(tag);
+        ClientsByTagAsStringSelector css = new ClientsByTagAsStringSelector(tag);
+        
+        knownHubs.select(css);
+        
+        LinkedList<String> result = css.getResult();
 
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
-        out.writeInt(clients.size());
+        out.writeInt(result.size());
 
-        reqlogger.debug("Connection " + clientAddress + " returning : " 
-                + clients.size() + " clients");         
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " returning : " 
+                    + result.size() + " clients: " + result);
+        }
         
-        for (int i=0;i<clients.size();i++) {
-            out.writeUTF(((ClientDescription) clients.get(i)).toString());
+        for (String s : result) {
+            out.writeUTF(s);
         } 
             
         out.flush();        
@@ -190,25 +215,28 @@ public class ClientConnection extends MessageForwardingConnection {
     private void directions() throws IOException { 
         String id = in.readUTF();
         String client = in.readUTF();
-                
-        reqlogger.debug("Connection " + clientAddress + " return id: " + id); 
+         
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " return id: " + id);
+        }
         
-        SocketAddressSet adr = new SocketAddressSet(client); 
+        DirectionsAsStringSelector ds = 
+            new DirectionsAsStringSelector(new SocketAddressSet(client));
         
-        LinkedList result = knownHubs.directionToClient(adr);
+        knownHubs.select(ds);
+        
+        LinkedList<String> result = ds.getResult();
         
         out.write(ServiceLinkProtocol.INFO);           
         out.writeUTF(id);            
         out.writeInt(result.size());
 
-        reqlogger.debug("Connection " + clientAddress + " returning : " 
-                + result.size() + " possible directions!");         
+        if (reqlogger.isDebugEnabled()) {
+            reqlogger.debug("Connection " + clientAddress + " returning : " 
+                    + result.size() + " possible directions: " + result);
+        }
         
-        Iterator itt = result.iterator();
-       
-        while (itt.hasNext()) {             
-            String tmp = (String) itt.next();                       
-            reqlogger.debug(" -> " + tmp);                             
+        for (String tmp : result) { 
             out.writeUTF(tmp);
         } 
             
@@ -221,8 +249,10 @@ public class ClientConnection extends MessageForwardingConnection {
         String tag = in.readUTF();
         String info = in.readUTF();
 
-        reglogger.debug("Connection " + clientAddress + " return id: " + id +  
-                " adding info: " + tag + " " + info);         
+        if (reqlogger.isDebugEnabled()) {
+            reglogger.debug("Connection " + clientAddress + " return id: " + id +  
+                    " adding info: " + tag + " " + info);
+        }
                
         HubDescription localHub = knownHubs.getLocalDescription();
         
@@ -245,9 +275,11 @@ public class ClientConnection extends MessageForwardingConnection {
         String tag = in.readUTF();
         String info = in.readUTF();
 
-        reglogger.debug("Connection " + clientAddress + " return id: " + id +  
-                " updating info: " + tag + " " + info);         
-               
+        if (reqlogger.isDebugEnabled()) {
+            reglogger.debug("Connection " + clientAddress + " return id: " + id +  
+                    " updating info: " + tag + " " + info);         
+        }
+        
         HubDescription localHub = knownHubs.getLocalDescription();
         
         out.write(ServiceLinkProtocol.INFO);           
@@ -268,8 +300,10 @@ public class ClientConnection extends MessageForwardingConnection {
         String id = in.readUTF();
         String tag = in.readUTF();
         
-        reglogger.debug("Connection " + clientAddress + " return id: " + id +  
-                " removing info: " + tag);         
+        if (reqlogger.isDebugEnabled()) {
+            reglogger.debug("Connection " + clientAddress + " return id: " + id +  
+                    " removing info: " + tag);
+        }
                
         HubDescription localHub = knownHubs.getLocalDescription();
         

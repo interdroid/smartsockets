@@ -3,8 +3,7 @@ package smartsockets.hub.state;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.TreeMap;
+import java.util.LinkedList;
 
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.connections.HubConnection;
@@ -63,7 +62,8 @@ public class HubDescription {
     /*private TreeMap<SocketAddressSet, ClientDescription> clients = 
         new TreeMap<SocketAddressSet, ClientDescription>(); 
     */    
-    private HashMap clients = new HashMap(); 
+    private HashMap<SocketAddressSet, ClientDescription> clients = 
+        new HashMap<SocketAddressSet, ClientDescription>(); 
     
     // A reference to the actual connection to the described hub. May be 
     // null if we are not directly connected.    
@@ -188,7 +188,8 @@ public class HubDescription {
                 return false;
             } 
 
-            ClientDescription c = (ClientDescription) clients.get(client);
+            ClientDescription c = clients.get(client);
+            
             if (c.addService(tag, address)) {             
                 lastLocalUpdate = state.increment();
                 return true;
@@ -205,7 +206,7 @@ public class HubDescription {
                 return false;
             } 
 
-            ClientDescription c = (ClientDescription) clients.get(client);
+            ClientDescription c = clients.get(client);
             
             if (c.updateService(tag, address)) {             
                 lastLocalUpdate = state.increment();
@@ -223,7 +224,7 @@ public class HubDescription {
                 return false;
             } 
 
-            ClientDescription c = (ClientDescription) clients.get(client);
+            ClientDescription c = clients.get(client);
             
             if (c.removeService(tag)) {             
                 lastLocalUpdate = state.increment();
@@ -244,17 +245,13 @@ public class HubDescription {
         return clients.size();
     }
     
-    public ArrayList getClients(String tag) {
+    public ArrayList<ClientDescription> getClients(String tag) {
         
-        ArrayList result = new ArrayList();
+        ArrayList<ClientDescription> result = new ArrayList<ClientDescription>();
         
         synchronized (clients) {           
-            Iterator itt = clients.values().iterator();
             
-            while (itt.hasNext()) {
-                
-                ClientDescription c = (ClientDescription) itt.next();
-                
+            for (ClientDescription c : clients.values()) { 
                 if (c.containsService(tag)) { 
                     result.add(c);
                 } 
@@ -264,6 +261,16 @@ public class HubDescription {
         return result;
     }
     
+    public void getClientsAsString(LinkedList<String> result, String tag) {
+
+        synchronized (clients) {                       
+            for (ClientDescription c : clients.values()) { 
+                if (c.containsService(tag)) { 
+                    result.add(c.toString());
+                } 
+            }
+        }
+    }
     
     public synchronized void setContactTimeStamp(boolean connect) { 
         lastContact = System.currentTimeMillis();
@@ -396,7 +403,7 @@ public class HubDescription {
     
     public String [] connectedTo() {        
         synchronized (connectedTo) {
-            return (String []) connectedTo.toArray(new String [connectedTo.size()]);            
+            return connectedTo.toArray(new String [connectedTo.size()]);            
         }
     }
 
@@ -465,26 +472,21 @@ public class HubDescription {
             buffer.append(connectedTo.size());
             buffer.append("\n");
                 
-            Iterator itt = connectedTo.iterator();
-        
-            while (itt.hasNext()) { 
+            for (String s : connectedTo) { 
                 buffer.append("             : ");
-                buffer.append((String) itt.next());
+                buffer.append(s);
                 buffer.append("\n");                
             }         
         }
-        
-        
+                
         synchronized (clients) {
             buffer.append("Clients      : ");
             buffer.append(clients.size());
             buffer.append("\n");
                 
-            Iterator itt = clients.values().iterator();
-        
-            while (itt.hasNext()) { 
+            for (ClientDescription c : clients.values()) { 
                 buffer.append("             : ");
-                buffer.append((ClientDescription) itt.next());
+                buffer.append(c.toString());
                 buffer.append("\n");                
             }         
         }

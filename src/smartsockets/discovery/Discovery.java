@@ -11,8 +11,8 @@ import smartsockets.util.NetworkUtils;
 
 public class Discovery {
     
-    protected static final Logger logger = 
-            ibis.util.GetLogger.getLogger(Discovery.class.getName());
+    private static final Logger logger = 
+            ibis.util.GetLogger.getLogger("smartsockets.discovery");
     
     protected static final int MAGIC = (0x42<<24 | 0xff<<16 | 0x42<<8 | 0xff);
     

@@ -7,8 +7,13 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-class Receiver extends Thread {
+import org.apache.log4j.Logger;
 
+class Receiver extends Thread {
+    
+    private static final Logger logger = 
+        ibis.util.GetLogger.getLogger("smartsockets.discovery");
+    
     private DatagramSocket socket; 
     private DatagramPacket packet; 
     
@@ -45,7 +50,9 @@ class Receiver extends Thread {
         long left = timeout; 
 
         while (timeout == 0 || left > 0) { 
-            Discovery.logger.info("Receiver waiting for data");
+            if (logger.isInfoEnabled()) { 
+                logger.info("Receiver waiting for data");
+            }
         
             socket.receive(packet);
                 
@@ -53,14 +60,20 @@ class Receiver extends Thread {
 
             if (tmp.length > 8) {
                 if (Discovery.read(tmp, 0) != Discovery.MAGIC) {
-                    Discovery.logger.info("Discarding packet, wrong MAGIC"); 
+                    if (logger.isInfoEnabled()) { 
+                        logger.info("Discarding packet, wrong MAGIC");
+                    }
                 } else {             
                     int len = Discovery.read(tmp, 4);
-            
-                    Discovery.logger.info("MAGIC OK, data length = " + len);
+                    
+                    if (logger.isInfoEnabled()) { 
+                        logger.info("MAGIC OK, data length = " + len);
+                    }
                                 
                     if (len > 1024) {
-                        Discovery.logger.info("Discarding packet, wrong size");
+                        if (logger.isInfoEnabled()) { 
+                            logger.info("Discarding packet, wrong size");
+                        }
                     } else { 
                         byte [] data = new byte[len];
                         System.arraycopy(tmp, 8, data, 0, len);        
@@ -100,7 +113,9 @@ class Receiver extends Thread {
             } catch (SocketTimeoutException te) { 
                 // ignore
             } catch (Exception e) {
-                Discovery.logger.info("Receiver failed!", e);
+                if (logger.isInfoEnabled()) { 
+                    logger.info("Receiver failed!", e);
+                }
             }
         }
     }

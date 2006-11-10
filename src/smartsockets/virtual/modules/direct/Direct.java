@@ -76,8 +76,10 @@ public class Direct extends AbstractDirectModule {
                         
             server = direct.createServerSocket(port, 100, prop);
 
-            logger.info(module + ": ServerSocket created: "
-                    + server.getAddressSet());
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": ServerSocket created: "
+                        + server.getAddressSet());
+            }
             
         } catch (IOException e) {            
             logger.warn(module + ": Failed to create ServerSocket on port " 
@@ -85,7 +87,9 @@ public class Direct extends AbstractDirectModule {
             throw e;
         }
         
-        logger.info(module + ": Starting AcceptThread");
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": Starting AcceptThread");
+        }
 
         // Finally start a thread to handle the incoming connections.
         acceptThread = new AcceptThread();

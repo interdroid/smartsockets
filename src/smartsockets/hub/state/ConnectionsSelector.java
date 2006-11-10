@@ -6,7 +6,7 @@ import smartsockets.hub.connections.HubConnection;
 
 public class ConnectionsSelector extends Selector {
 
-    private LinkedList result = new LinkedList();
+    private LinkedList<HubConnection> result = new LinkedList<HubConnection>();
     
     public boolean needAll() {
         return true;
@@ -21,7 +21,7 @@ public class ConnectionsSelector extends Selector {
         }
     }
 
-    public LinkedList getResult() { 
+    public LinkedList<HubConnection> getResult() { 
         return result;
     }   
 }

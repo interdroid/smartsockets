@@ -14,8 +14,6 @@ public class HubInfo {
     public final SocketAddressSet [] connectedTo;
     
     public HubInfo(String info) { 
-  
-        System.out.println("Parsing HubInfo from string \"" + info + "\"");
         
         if (!info.startsWith("HubInfo(") || !info.endsWith(")")) { 
             throw new IllegalArgumentException("String does not contain " +

@@ -109,11 +109,15 @@ public class Routed extends ConnectModule {
             String tmp = st.nextToken();
             
             try { 
-                VirtualSocketAddress a = new VirtualSocketAddress(tmp);                
-                logger.info("Found router \"" + tmp + "\"");                
+                VirtualSocketAddress a = new VirtualSocketAddress(tmp);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Found router \"" + tmp + "\"");
+                }
                 userSpecified.add(a);
             } catch (Exception e) {
-                logger.info("Failed to add router \"" + tmp + "\"", e);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Failed to add router \"" + tmp + "\"", e);
+                }
             }           
         }
     }
@@ -156,7 +160,9 @@ public class Routed extends ConnectModule {
             try { 
                 c = RouterClient.connectToRouter(r, parent, timeout);
             } catch (Exception e) {
-                logger.info("Failed to connect to router \"" + r + "\"", e);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Failed to connect to router \"" + r + "\"", e);
+                }
                 removeRouter(r);
                 r = getRouter(false);
             }                        

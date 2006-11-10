@@ -4,7 +4,7 @@ import java.util.LinkedList;
 
 public class DetailsSelector extends Selector {
     
-    private LinkedList result = new LinkedList();
+    private LinkedList<String> result = new LinkedList<String>();
     
     public boolean needAll() {
         return true;
@@ -48,7 +48,7 @@ public class DetailsSelector extends Selector {
         result.add(tmp.toString());
     }
     
-    public LinkedList getResult() { 
+    public LinkedList<String> getResult() { 
         return result;
     }   
 }

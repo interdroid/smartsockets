@@ -5,7 +5,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
+import org.apache.log4j.Logger;
+
 public class AnsweringMachine extends Thread {
+
+    private static final Logger logger = 
+        ibis.util.GetLogger.getLogger("smartsockets.discovery");
 
     private final DatagramSocket socket; 
     private final DatagramPacket packet; 
@@ -53,14 +58,20 @@ public class AnsweringMachine extends Thread {
 
         if (tmp.length > 8) {
             if (Discovery.read(tmp, 0) != Discovery.MAGIC) {
-                Discovery.logger.info("Discarding packet, wrong MAGIC"); 
+                if (logger.isInfoEnabled()) { 
+                    logger.info("Discarding packet, wrong MAGIC");
+                }
             } else {             
                 int len = Discovery.read(tmp, 4);
         
-                Discovery.logger.info("MAGIC OK, data length = " + len);
+                if (logger.isInfoEnabled()) { 
+                    logger.info("MAGIC OK, data length = " + len);
+                }
                             
                 if (len > 1024) {
-                    Discovery.logger.info("Discarding packet, wrong size");
+                    if (logger.isInfoEnabled()) { 
+                        logger.info("Discarding packet, wrong size");
+                    }
                 } else { 
                     byte [] data = new byte[len];
                     System.arraycopy(tmp, 8, data, 0, len);        
@@ -77,18 +88,22 @@ public class AnsweringMachine extends Thread {
         try { 
             replyPacket.setSocketAddress(packet.getSocketAddress());
             
-            Discovery.logger.info("AnsweringMachine sending reply to " 
-                    + replyPacket.getSocketAddress().toString());
-                        
+            if (logger.isInfoEnabled()) { 
+                logger.info("AnsweringMachine sending reply to " 
+                        + replyPacket.getSocketAddress().toString());
+            }
+            
             socket.send(replyPacket);
         } catch (IOException e) { 
-            Discovery.logger.warn("Failed to send reply", e);               
+            logger.warn("Failed to send reply", e);               
         }        
     }
    
     public void run() {
-
-        Discovery.logger.info("AnsweringMachine waiting for calls...");
+        
+        if (logger.isInfoEnabled()) { 
+            logger.info("AnsweringMachine waiting for calls...");
+        }
         
         while (true) {
             try { 
@@ -98,10 +113,12 @@ public class AnsweringMachine extends Thread {
 
                 // Try to extract the message 
                 String result = parseMessage();
-
-                Discovery.logger.info("AnsweringMachine got message: \"" 
-                        + result + "\" from " 
-                        + packet.getSocketAddress().toString());
+                
+                if (logger.isInfoEnabled()) { 
+                    logger.info("AnsweringMachine got message: \"" 
+                            + result + "\" from " 
+                            + packet.getSocketAddress().toString());
+                }
                 
                 // If we have received a message, and it starts with the right 
                 // prefix, we send a reply.
@@ -138,7 +155,7 @@ public class AnsweringMachine extends Thread {
                     }
                 }
             } catch (Exception e) {
-                Discovery.logger.warn("Failed to receive packet", e);
+                logger.warn("Failed to receive packet", e);
             }
         }   
     }

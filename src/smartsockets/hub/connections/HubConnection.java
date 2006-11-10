@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -39,7 +40,8 @@ public class HubConnection extends MessageForwardingConnection {
             
     public HubConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, HubDescription peer, 
-            Connections connections, HubList proxies, StateCounter state) {
+            Map<SocketAddressSet, BaseConnection> connections, 
+            HubList proxies, StateCounter state) {
         
         super(s, in, out, connections, proxies);
         
@@ -59,7 +61,7 @@ public class HubConnection extends MessageForwardingConnection {
             m.write(out);            
             out.flush();
         } catch (IOException e) {
-            System.err.println("Unhandled exception in writeMessage!!" + e);            
+            meslogger.warn("Unhandled exception in writeMessage!!", e);            
             // TODO: handle exception
         }        
     }
@@ -68,7 +70,9 @@ public class HubConnection extends MessageForwardingConnection {
         
         long newSendState = state.get(); 
 
-        goslogger.info("Gossiping with: " + peer.hubAddress); 
+        if (goslogger.isInfoEnabled()) {             
+            goslogger.info("Gossiping with: " + peer.hubAddress);
+        }
         
         StateSelector ss = new StateSelector(lastSendState);
         
@@ -77,15 +81,17 @@ public class HubConnection extends MessageForwardingConnection {
         try {
             int writes = 0;
 
-            Iterator itt = ss.iterator();
-            
-            while (itt.hasNext()) { 
-                HubDescription tmp = (HubDescription) itt.next();
+            for (HubDescription tmp : ss.getResult()) { 
                 
-                goslogger.info("    Writing proxy: " + tmp.hubAddressAsString);                    
-                goslogger.debug("      since lastLocalUpdate="  
-                        + tmp.getLastLocalUpdate()  
-                        + " > lastSendState= " + lastSendState);
+                if (goslogger.isInfoEnabled()) { 
+                    goslogger.info("    Writing proxy: " + tmp.hubAddressAsString);
+                }
+                
+                if (goslogger.isDebugEnabled()) {
+                    goslogger.debug("      since lastLocalUpdate="  
+                            + tmp.getLastLocalUpdate()  
+                            + " > lastSendState= " + lastSendState);
+                }
                     
                 writeHub(tmp);                    
                 writes++;
@@ -124,11 +130,12 @@ public class HubConnection extends MessageForwardingConnection {
             out.writeLong(d.getHomeState());
         } 
         
-        ArrayList clients = d.getClients(null);        
+        ArrayList<ClientDescription> clients = d.getClients(null);        
+        
         out.writeInt(clients.size()); 
 
-        for (int i=0;i<clients.size();i++) {                 
-            ClientDescription.write((ClientDescription) clients.get(i), out);            
+        for (ClientDescription c : clients) {
+            c.write(out);
         }    
         
         String [] connectedTo = d.connectedTo();
@@ -140,8 +147,8 @@ public class HubConnection extends MessageForwardingConnection {
           
         out.writeInt(connectedTo.length);
         
-        for (int i=0;i<connectedTo.length;i++) {
-            out.writeUTF(connectedTo[i]);
+        for (String c : connectedTo) { 
+            out.writeUTF(c);
         }    
     } 
         
@@ -203,28 +210,37 @@ public class HubConnection extends MessageForwardingConnection {
                 tmp.update(c, a, name, state);
             } else {
                 String pn = peer.getName();
-                
-                goslogger.debug("Ignoring outdated information about " 
+        
+                if (goslogger.isDebugEnabled()) {
+                    goslogger.debug("Ignoring outdated information about " 
                         + tmp.hubAddressAsString 
                         + (name.length() > 0 ? (" (" + name + ")") : "")
                         + " from " + peer.hubAddressAsString 
                         + (pn.length() > 0 ? (" (" + pn + ") ") : " ")                        
                         + state + " " 
-                        + tmp.getHomeState());                
+                        + tmp.getHomeState());
+                }
             }
         }
         
         peer.setContactTimeStamp(false);
     }
         
-    private void handlePing() {        
-        goslogger.debug("Got ping from " + peer.hubAddress);
+    private void handlePing() {
+        if (goslogger.isInfoEnabled()) {
+            goslogger.debug("Got ping from " + peer.hubAddress);
+        }
+        
         peer.setContactTimeStamp(false);
     }
   
     private void handleClientMessage() throws IOException {        
         ClientMessage cm = new ClientMessage(in);        
-        meslogger.debug("Got message: " + cm);               
+        
+        if (meslogger.isDebugEnabled()) {
+            meslogger.debug("Got message: " + cm);
+        }
+        
         forward(cm, false);          
     }
     
@@ -235,7 +251,7 @@ public class HubConnection extends MessageForwardingConnection {
     private void disconnect() {
                 
         // Update the administration
-        connections.removeConnection(peer.hubAddress);        
+        connections.remove(peer.hubAddress);        
         local.removeConnectedTo(peer.hubAddressAsString);
         
         DirectSocketFactory.close(s, out, in);            
@@ -249,27 +265,35 @@ public class HubConnection extends MessageForwardingConnection {
             switch (opcode) { 
         
             case -1:
-                conlogger.info("HubConnection got EOF!");
+                if (conlogger.isInfoEnabled()) { 
+                    conlogger.info("HubConnection got EOF!");
+                }
                 disconnect();
                 return false;
                 
             case HubProtocol.GOSSIP:
-                goslogger.info("HubConnection got gossip!");                
+                if (goslogger.isInfoEnabled()) {
+                    goslogger.info("HubConnection got gossip!");
+                }
                 readProxy();
                 return true;
     
             case HubProtocol.PING:
-                goslogger.info("HubConnection got ping!");                                
+                if (goslogger.isInfoEnabled()) {
+                    goslogger.info("HubConnection got ping!");
+                }
                 handlePing();
                 return true;
 
             case HubProtocol.CLIENT_MESSAGE:
-                meslogger.info("HubConnection got message!");                                                
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got message!");
+                }
                 handleClientMessage();
                 return true;
                
             default:
-                conlogger.warn("HubConnection got junk!");
+                conlogger.warn("HubConnection got junk!");                   
                 disconnect();
                 return false;
             }

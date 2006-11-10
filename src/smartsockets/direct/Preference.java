@@ -8,10 +8,15 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.util.NetworkUtils;
 
 class Preference {
 
+    private static final Logger logger = ibis.util.GetLogger
+        .getLogger("smartsockets.network.preference");
+    
     private final String name;
 
     private final boolean strict;
@@ -36,14 +41,14 @@ class Preference {
     void addSite() {
 
         if (siteUsed) {
-            NetworkPreference.logger.warn("Preference(" + name + "): "
+            logger.warn("Preference(" + name + "): "
                     + "Site addresses already used.");
             throw new IllegalStateException(name + ": Site addresses "
                     + "already used.");
         }
 
-        if (NetworkPreference.logger.isDebugEnabled()) {
-            NetworkPreference.logger.debug("Preference(" + name
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preference(" + name
                     + "): Adding site-local addresses to "
                     + "connection preference");
         }
@@ -55,14 +60,14 @@ class Preference {
     void addLink() {
 
         if (linkUsed) {
-            NetworkPreference.logger.warn("Preference(" + name + "): "
+            logger.warn("Preference(" + name + "): "
                     + "Link addresses already used.");
             throw new IllegalStateException(name + ": Link addresses "
                     + "already used.");
         }
 
-        if (NetworkPreference.logger.isDebugEnabled()) {
-            NetworkPreference.logger.debug("Preference(" + name + "): Adding "
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preference(" + name + "): Adding "
                     + "link-local addresses to connection preference");
         }
 
@@ -73,14 +78,14 @@ class Preference {
     void addGlobal() {
 
         if (globalUsed) {
-            NetworkPreference.logger.warn("Preference(" + name + "): "
+            logger.warn("Preference(" + name + "): "
                     + "Global addresses already used.");
             throw new IllegalStateException(name + ": Global addresses "
                     + "already used.");
         }
 
-        if (NetworkPreference.logger.isDebugEnabled()) {
-            NetworkPreference.logger.debug("Preference(" + name + "): "
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preference(" + name + "): "
                     + "Adding global addresses to connection preference");
         }
 
@@ -90,8 +95,8 @@ class Preference {
 
     void addNetwork(Network nw) {
 
-        if (NetworkPreference.logger.isDebugEnabled()) {
-            NetworkPreference.logger.debug("Preference(" + name + "): "
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preference(" + name + "): "
                     + "Adding network " + nw + " to connection preference");
         }
 
@@ -101,8 +106,8 @@ class Preference {
     /*
     void addNetwork(byte[] network, byte[] mask) {
 
-        if (NetworkPreference.logger.isDebugEnabled()) {
-            NetworkPreference.logger.debug("Preference(" + name + "): "
+        if (logger.isDebugEnabled()) {
+            logger.debug("Preference(" + name + "): "
                     + "Adding network " + NetworkUtils.bytesToString(network)
                     + "/" + NetworkUtils.bytesToString(mask)
                     + " to connection preference");
@@ -149,8 +154,8 @@ class Preference {
 
         // Nothing to if there are no rules, or only 1 address....
         if (preferences.size() == 0 || ads.length == 1) {
-            if (NetworkPreference.logger.isDebugEnabled()) {
-                NetworkPreference.logger.debug("Preference(" + name + "):"
+            if (logger.isDebugEnabled()) {
+                logger.debug("Preference(" + name + "):"
                         + " No sorting required");
             }
             return ads;
@@ -177,8 +182,10 @@ class Preference {
             int[] tmp = new int[scored];
             int next = 0;
 
-            NetworkPreference.logger.info("Preference(" + name + "): Strict "
-                    + "mode on. Removing unwanted addresses.");
+            if (logger.isInfoEnabled()) {
+                logger.info("Preference(" + name + "): Strict "
+                        + "mode on. Removing unwanted addresses.");
+            }
 
             for (int i = 0; i < ads.length; i++) {
                 if (scores[i] < preferences.size() + 1) {
@@ -186,9 +193,11 @@ class Preference {
                     tmp[next] = scores[i];
                     next++;
                 } else {
-                    NetworkPreference.logger.info("Preference(" + name + "): "
-                            + "Removing address: "
-                            + NetworkUtils.ipToString(ads[i].getAddress()));
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Preference(" + name + "): "
+                                + "Removing address: "
+                                + NetworkUtils.ipToString(ads[i].getAddress()));
+                    }
                 }
             }
 
@@ -212,8 +221,8 @@ class Preference {
 
         // Nothing to if there are no rules, or only 1 address....
         if (preferences.size() == 0 || ads.length == 1) {
-            if (NetworkPreference.logger.isDebugEnabled()) {
-                NetworkPreference.logger.debug("Preference(" + name + "): "
+            if (logger.isDebugEnabled()) {
+                logger.debug("Preference(" + name + "): "
                         + "No sorting required");
             }
             return ads;
@@ -236,9 +245,10 @@ class Preference {
 
         if (strict && !inPlace) {
             // We now remove all the addresses which are not wanted.
-
-            NetworkPreference.logger.info("Preference(" + name + "): "
-                    + "Strict mode on. Removing unwanted addresses.");
+            if (logger.isInfoEnabled()) {
+                logger.info("Preference(" + name + "): "
+                        + "Strict mode on. Removing unwanted addresses.");
+            }
 
             result = new InetAddress[scored];
             int[] tmp = new int[scored];
@@ -250,9 +260,11 @@ class Preference {
                     tmp[next] = scores[i];
                     next++;
                 } else {
-                    NetworkPreference.logger.info("Preference(" + name + "): "
-                            + "Removing address: "
-                            + NetworkUtils.ipToString(ads[i]));
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Preference(" + name + "): "
+                                + "Removing address: "
+                                + NetworkUtils.ipToString(ads[i]));
+                    }
                 }
             }
 
@@ -285,7 +297,7 @@ class Preference {
         for (Network nw : preferences) { 
             buf.append(nw.toString());
 
-            if (++i < preferences.size() - 1) {
+            if (++i < preferences.size()) {
                 buf.append(",");
             }
         }

@@ -16,11 +16,11 @@ import smartsockets.hub.HubProtocol;
 public class ServiceLink implements Runnable {
     
     // TODO: create different loggers here!
-    protected static Logger logger = 
+    private static final Logger logger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.servicelink");
 
-    protected final HashMap callbacks = new HashMap();
-    
+    protected final HashMap<String, Object> callbacks= 
+        new HashMap<String, Object>();
     
     private static final int TIMEOUT = 5000;
     private static final int DEFAULT_WAIT_TIME = 10000;
@@ -66,7 +66,7 @@ public class ServiceLink implements Runnable {
         callbacks.put(identifier, callback);              
     }
     
-    protected synchronized void registerCallback(String identifier, 
+    protected synchronized void register(String identifier, 
             SimpleCallBack cb) { 
         
         if (callbacks.containsKey(identifier)) { 
@@ -95,7 +95,7 @@ public class ServiceLink implements Runnable {
         return connected;
     }
     
-    private synchronized boolean waitConnected(int time) {
+    private synchronized void waitConnected(int time) throws IOException {
         
         while (!connected) { 
             try { 
@@ -105,7 +105,9 @@ public class ServiceLink implements Runnable {
             }
         }
         
-        return connected;        
+        if (!connected) { 
+            throw new IOException("No connection to hub!");
+        }
     }
             
     private void closeConnection() {
@@ -138,8 +140,10 @@ public class ServiceLink implements Runnable {
             // address (since the user supplied one may be a partial).  
             hubAddress = new SocketAddressSet(in.readUTF());
             
-            logger.info("Hub at " + address + " accepted connection, " +
-                    "it's real address is: " + hubAddress);            
+            if (logger.isInfoEnabled()) { 
+                logger.info("Hub at " + address + " accepted connection, " +
+                        "it's real address is: " + hubAddress);
+            }
 
             hub.setSoTimeout(0);
             
@@ -160,8 +164,10 @@ public class ServiceLink implements Runnable {
         int opcode = in.readInt();
         String message = in.readUTF();
             
-        logger.info("ServiceLink: Received message for " + targetModule);
-                        
+        if (logger.isInfoEnabled()) {
+            logger.info("ServiceLink: Received message for " + targetModule);
+        }
+            
         CallBack target = (CallBack) findCallback(targetModule);
             
         if (target == null) { 
@@ -183,17 +189,23 @@ public class ServiceLink implements Runnable {
         String targetID = in.readUTF();        
         int count = in.readInt();        
         
-        logger.info("ServiceLink: Received info for " + targetID + ". " 
-                + " Receiving " + count + " strings....");
+        if (logger.isInfoEnabled()) {
+            logger.info("ServiceLink: Received info for " + targetID + ". " 
+                    + " Receiving " + count + " strings....");
+        }
         
         String [] info = new String[count];
         
         for (int i=0;i<count;i++) { 
             info[i] = in.readUTF();
-            logger.info(i + ": " + info[i]);
+            if (logger.isInfoEnabled()) {
+                logger.info(i + ": " + info[i]);
+            }
         }        
 
-        logger.info("done receiving info");
+        if (logger.isInfoEnabled()) {
+            logger.info("done receiving info");
+        }
         
         SimpleCallBack target = (SimpleCallBack) findCallback(targetID);
             
@@ -242,12 +254,16 @@ public class ServiceLink implements Runnable {
             String message) { 
 
         if (!connected) {
-            logger.info("Cannot send message: not connected to hub");            
+            if (logger.isInfoEnabled()) {
+                logger.info("Cannot send message: not connected to hub");
+            }
             return;
         }
-                
-        logger.info("Sending message to hub: [" + target.toString() + ", " +
-                targetModule + ", " + opcode + ", " + message + "]");
+             
+        if (logger.isInfoEnabled()) {
+            logger.info("Sending message to hub: [" + target.toString() 
+                    + ", " + targetModule + ", " + opcode + ", " + message + "]");
+        }
         
         try { 
             out.write(ServiceLinkProtocol.MESSAGE);
@@ -310,17 +326,16 @@ public class ServiceLink implements Runnable {
     
     public ClientInfo [] clients(SocketAddressSet hub, String tag) throws IOException {
 
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get clients: not connected to hub");            
-            throw new IOException("No connection to hub!");
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting client list from hub");
         }
-                
-        logger.info("Requesting client list from hub");
     
+        waitConnected(maxWaitTime);
+        
         String id = "GetClientsForHub" + getNextSimpleCallbackID();
     
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -346,17 +361,17 @@ public class ServiceLink implements Runnable {
     }
 
     public ClientInfo [] clients(String tag) throws IOException {        
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get clients: not connected to hub");            
-            throw new IOException("No connection to hub!");
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting client list from hub");
         }
-                
-        logger.info("Requesting client list from hub");
-    
+        
+        waitConnected(maxWaitTime);
+        
         String id = "GetAllClients" + getNextSimpleCallbackID();
                 
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -378,18 +393,17 @@ public class ServiceLink implements Runnable {
    
     
     public SocketAddressSet [] hubs() throws IOException {
+            
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting hub list from hub");
+        }
         
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get list of hubs: not connected to hub");            
-            throw new IOException("No connection to hub!");
-        }        
-        
-        logger.info("Requesting hub list from hub");
-        
+        waitConnected(maxWaitTime);
+                
         String id = "GetHubs" + getNextSimpleCallbackID();
                 
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -412,17 +426,16 @@ public class ServiceLink implements Runnable {
 
     public HubInfo [] hubDetails() throws IOException {
         
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get list of hubs: not connected to hub");            
-            throw new IOException("No connection to hub!");
-        }        
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting hub details from hub");
+        }
         
-        logger.info("Requesting hub details from hub");
+        waitConnected(maxWaitTime);        
         
         String id = "GetHubDetails" + getNextSimpleCallbackID();
                 
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -445,17 +458,16 @@ public class ServiceLink implements Runnable {
     
     public SocketAddressSet [] locateClient(String client) throws IOException {
 
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get direction to client: not connected to hub");            
-            throw new IOException("No connection to hub!");
-        }        
+        waitConnected(maxWaitTime);
         
-        logger.info("Requesting direction to client " + client + " from hub");
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting direction to client " + client + " from hub");
+        }
         
         String id = "GetDirection" + getNextSimpleCallbackID();
         
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -481,27 +493,21 @@ public class ServiceLink implements Runnable {
     
     public SocketAddressSet getAddress() throws IOException {
         
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot get hub address: not connected to hub");            
-            throw new IOException("No connection to hub!");
-        }
+        waitConnected(maxWaitTime);
         
         return hubAddress;
     }
     
     public boolean registerProperty(String tag, String value) throws IOException {
 
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot register info: not connected to hub");            
-            throw new IOException("No connection to hub!");
-        }        
-        
-        logger.info("Requesting info registration: " + tag + " " + value); 
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting info registration: " + tag + " " + value);
+        }
         
         String id = "RegisterInfo" + getNextSimpleCallbackID();
         
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -525,17 +531,17 @@ public class ServiceLink implements Runnable {
 
     public boolean updateProperty(String tag, String value) throws IOException {
 
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot update info: not connected to hub");            
-            throw new IOException("No connection to hub!");
-        }        
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting info update: " + tag + " " + value);
+        }
         
-        logger.info("Requesting info update: " + tag + " " + value); 
+        waitConnected(maxWaitTime);
+        
         
         String id = "UpdateInfo" + getNextSimpleCallbackID();
         
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -558,18 +564,17 @@ public class ServiceLink implements Runnable {
     }
 
     public boolean removeProperty(String tag) throws IOException {
-
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot remove info: not connected to hub");            
-            throw new IOException("No connection to hub!");
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("Requesting info removal: " + tag);
         }        
         
-        logger.info("Requesting info removal: " + tag); 
+        waitConnected(maxWaitTime);
         
         String id = "RemoveInfo" + getNextSimpleCallbackID();
         
         SimpleCallBack tmp = new SimpleCallBack();        
-        registerCallback(id, tmp);
+        register(id, tmp);
         
         try {
             synchronized (this) {         
@@ -616,11 +621,12 @@ public class ServiceLink implements Runnable {
     public SocketAddressSet findSharedHub(SocketAddressSet myMachine, 
             SocketAddressSet targetMachine) {
         
-        if (!waitConnected(maxWaitTime)) {
-            logger.info("Cannot find shared hub: not connected");            
+        try {             
+            waitConnected(maxWaitTime);
+        } catch (IOException e) {
             return null;
-        }   
-
+        }
+                
         // TODO DUMMY IMPLEMENTATION --- FIX!!!!!        
         return hubAddress;
     }
