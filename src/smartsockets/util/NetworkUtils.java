@@ -438,9 +438,9 @@ public class NetworkUtils {
                 // Selectively copy the address....
                 for (int b=0;b<sub.length;b++) {
                     mask[b] = localSubnetMask[i+2][b];
-                    sub[b] = (byte) (a[b] & mask[b]);
-                    return true;
+                    sub[b] = (byte) (a[b] & mask[b]);                    
                 } 
+                return true;
             } 
         }
         
