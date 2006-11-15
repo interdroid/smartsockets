@@ -78,7 +78,7 @@ public class Properties {
             TIMEOUT,                "1000", 
             
             NIO,                    "false", 
-            STUN,                   "true",
+            STUN,                   "false",
             UPNP,                   "false",            
             UPNP_PORT_FORWARDING,   "false", 
             

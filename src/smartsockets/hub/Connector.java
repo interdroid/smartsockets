@@ -167,7 +167,7 @@ class Connector extends CommunicationThread {
                 }
                 
                 c = new HubConnection(s, in, out, d, connections, 
-                        knownHubs, state);                                
+                        knownHubs, state, true);                                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -191,7 +191,7 @@ class Connector extends CommunicationThread {
 
                 if (result) {                 
                     c = new HubConnection(s, in, out, d, connections, 
-                            knownHubs, state);                
+                            knownHubs, state, false);                
                     result = d.createConnection(c);
                     
                     if (!result) { 

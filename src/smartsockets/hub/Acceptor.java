@@ -80,8 +80,8 @@ public class Acceptor extends CommunicationThread {
         HubDescription d = knownHubs.add(addr);        
         d.setCanReachMe();
 
-        HubConnection c = 
-            new HubConnection(s, in, out, d, connections, knownHubs, state);
+        HubConnection c = new HubConnection(s, in, out, d, connections, 
+                knownHubs, state, false);
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this hub...  
@@ -167,6 +167,7 @@ public class Acceptor extends CommunicationThread {
         return false;
     }
 
+    /*
     private boolean handleBounce(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
         
@@ -174,7 +175,7 @@ public class Acceptor extends CommunicationThread {
         out.flush();
         
         return false;
-    }
+    }*/
         
     private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
@@ -328,9 +329,9 @@ public class Acceptor extends CommunicationThread {
                 result = handleServiceLinkConnect(s, in, out);
                 break;                
 
-            case HubProtocol.BOUNCE_IP:
-                result = handleBounce(s, in, out);
-                break;                
+            //case HubProtocol.BOUNCE_IP:
+            //    result = handleBounce(s, in, out);
+            //    break;                
             
             case HubProtocol.GET_SPLICE_INFO:
                 result = handleSpliceInfo(s, in, out);

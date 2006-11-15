@@ -17,6 +17,10 @@ public interface HubProtocol {
     
     public static final byte GET_SPLICE_INFO = 50;
         
-    // TODO: Is this still needed now we us STUN ? 
-    public static final byte BOUNCE_IP = 127;            
+    public static final byte CREATE_VIRTUAL      = 60;    
+    public static final byte CLOSE_VIRTUAL       = 61;
+    public static final byte MESSAGE_VIRTUAL     = 62;
+    public static final byte MESSAGE_VIRTUAL_ACK = 63;
+    public static final byte REPLY_VIRTUAL       = 64;        
+    
 } 

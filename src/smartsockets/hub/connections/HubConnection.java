@@ -5,7 +5,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -14,6 +13,7 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
+import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.ClientDescription;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
@@ -22,10 +22,10 @@ import smartsockets.hub.state.StateSelector;
 
 public class HubConnection extends MessageForwardingConnection {
 
-    protected static Logger conlogger = 
+    private static final Logger conlogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
-    
-    protected static Logger goslogger = 
+     
+    private static final Logger goslogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.gossip"); 
           
     private final HubDescription peer;
@@ -33,6 +33,9 @@ public class HubConnection extends MessageForwardingConnection {
     
     // Keeps the current state of the system. 
     private final StateCounter state;        
+    
+    // Recordes if this side did the initial connection setup.
+    private final boolean master;
                          
     // Indicates the value of the local state the last time any data was send 
     // to the peer. Remembering this allows us to send delta's. 
@@ -41,15 +44,147 @@ public class HubConnection extends MessageForwardingConnection {
     public HubConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, HubDescription peer, 
             Map<SocketAddressSet, BaseConnection> connections, 
-            HubList proxies, StateCounter state) {
+            HubList proxies, StateCounter state, boolean master) {
         
         super(s, in, out, connections, proxies);
         
         this.peer = peer;        
         this.state = state;
+        this.master = master;
+        
         local = proxies.getLocalDescription();
     }
         
+    protected String incomingVirtualConnection(VirtualConnection origin, 
+            MessageForwardingConnection m, SocketAddressSet source, 
+            SocketAddressSet target, String info, int timeout) {
+        
+        // Incoming request for a virtual connection to the hub connected to 
+        // this HubConnection....
+        String id = getID();
+
+        // Register the fact that we expect a reply for this id.
+        replyPending(id);
+        
+        VirtualConnection vc = vcs.newVC(master);
+        
+        // Send the connect request to the hub
+        try { 
+            synchronized (this) {
+                out.write(HubProtocol.CREATE_VIRTUAL);           
+                out.writeUTF(id);            
+                out.writeInt(vc.number);
+                out.writeUTF(source.toString());
+                out.writeUTF(target.toString());
+                out.writeUTF(info);            
+                out.writeInt(timeout);            
+                out.flush();
+            }
+        } catch (Exception e) {
+            vclogger.warn("Connection to " + peer + " is broken!", e);
+            // TODO: close connection ????
+            return "Lost connection to target";
+        }
+        
+        // Wait for the reply. This will remove the id before it returns, even 
+        // if no reply was received (this is needed to discover that the client  
+        // has already left before the server has replied). 
+        String [] reply = waitForReply(id, timeout);
+        
+        if (reply == null) {
+            // receiver took too long to accept: timeout
+            vcs.freeVC(vc);            
+            return "Timeout";
+        }
+        
+        if (reply.length != 2) {
+            // got malformed reply
+            vcs.freeVC(vc);
+            return "Received malformed reply";
+        }
+        
+        if (reply[0].equals("DENIED")) { 
+            // connection refused
+            vcs.freeVC(vc);
+            return reply[1];
+        }
+
+        if (!reply[0].equals("OK")) {
+            // should be DENIED or OK, so we got a malformed reply
+            vcs.freeVC(vc);
+            return "Received malformed reply";
+        }
+
+        // Now tie the two together!
+        vc.init(m, origin.number, DEFAULT_CREDITS);
+        origin.init(this, vc.number, DEFAULT_CREDITS);
+        
+        // return null to indicate the lack of errors ;-)
+        return null;
+    }
+    
+    protected String closeVirtualConnection(int index) { 
+        
+        VirtualConnection vc = vcs.getVC(index);
+
+        if (vc == null) {             
+            return "Virtual connection " + index + " not found!";
+        }
+        
+        // forward the close
+        try {
+            synchronized (this) {
+                out.write(HubProtocol.CLOSE_VIRTUAL);           
+                out.writeInt(index);            
+                out.flush();
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + peer.hubAddressAsString 
+                    + " is broken!", e);
+            
+//          TODO: handle exception...
+        }        
+        
+        vcs.freeVC(vc);                
+        return null;                
+    }
+    
+    protected void forwardVirtualMessage(int index, byte [] data) {
+        
+        // forward the message
+        try {
+            synchronized (this) {
+                out.write(HubProtocol.MESSAGE_VIRTUAL);           
+                out.writeInt(index);
+                out.writeInt(data.length);
+                out.write(data);
+                out.flush();                
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + peer.hubAddressAsString 
+                    + " is broken!", e);
+            
+            // TODO: handle exception...
+        }        
+    }
+    
+    protected void forwardVirtualMessageAck(int index) { 
+
+        // forward the message
+        try {
+            synchronized (this) {
+                out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
+                out.writeInt(index);
+                out.flush();                
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + peer.hubAddressAsString 
+                    + " is broken!", e);
+            
+            // TODO: handle exception...
+        }        
+    }
+    
     public synchronized void setLastSendState() {
         lastSendState = state.get();
     }
@@ -244,6 +379,104 @@ public class HubConnection extends MessageForwardingConnection {
         forward(cm, false);          
     }
     
+    private void handleCreateVirtual() throws IOException { 
+    
+        String id = in.readUTF();
+        
+        int index = in.readInt();
+        
+        String source = in.readUTF();
+        String target = in.readUTF();        
+        String info = in.readUTF();        
+        
+        int timeout = in.readInt();
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("Connection " + peer.hubAddressAsString 
+                    + " return id: " + id + " creating virtual connection " 
+                    + source + " -->> " + target);
+        }
+        
+        String result = createVirtualConnection(index, 
+                new SocketAddressSet(source), new SocketAddressSet(target), 
+                info, timeout);
+    
+        synchronized (this) {
+            out.write(HubProtocol.REPLY_VIRTUAL);           
+            out.writeUTF(id);            
+            
+            if (result == null) { 
+                out.writeUTF("OK");
+                out.writeInt(index);                
+            } else { 
+                out.writeUTF("DENIED");
+                out.writeUTF(result);
+            }
+            
+            out.flush();
+        }         
+    }
+        
+    private void handleReplyVirtual() throws IOException { 
+        
+        String localID = in.readUTF();        
+        String result = in.readUTF();
+        
+        if (result.equals("DENIED")) { 
+            String error = in.readUTF();        
+            
+            // This store may fail, but we don't care since we don't have any 
+            // state on the other side anyway...
+            storeReply(localID, new String [] { result, error });
+           
+        } else if (result.equals("OK")) {
+            
+            int index = in.readInt();
+            
+            if (!storeReply(localID, new String [] { result, "" })) {
+                // We are too late, the client has already left...
+                // So we just do a disconnect for the rest of the path...
+                synchronized (this) {
+                    out.writeByte(HubProtocol.CLOSE_VIRTUAL);
+                    out.writeInt(index);
+                    out.flush();
+                }
+            }           
+        } else { 
+            vclogger.warn("HubConnection got junk in handleReplyVirtual!: " 
+                    + result);
+            
+            // TODO: close connection ?             
+        }
+    }     
+
+    private void handleCloseVirtual() throws IOException { 
+        
+        int index = in.readInt();        
+        String result = forwardAndCloseVirtualConnection(index);
+        
+        if (result != null) { 
+            vclogger.warn("Failed to close connetion " + index + ": " + result);
+        }
+    } 
+ 
+    private void handleMessageVirtual() throws IOException { 
+        
+        int vc = in.readInt();
+        int size = in.readInt();
+    
+        // TODO: optimize!
+        byte [] data = new byte[size];        
+        in.readFully(data);
+                      
+        forwardMessage(vc, data);
+    }
+    
+    private void handleMessageVirtualAck() throws IOException {
+        forwardMessageAck(in.readInt());
+    }
+        
+    
     protected String getName() { 
         return "HubConnection(" + peer.hubAddress + ")";
     }
@@ -291,7 +524,48 @@ public class HubConnection extends MessageForwardingConnection {
                 }
                 handleClientMessage();
                 return true;
-               
+            
+            case HubProtocol.CREATE_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual connect!");
+                }
+                
+                handleCreateVirtual();
+                return true;
+
+            case HubProtocol.REPLY_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual reply!");
+                }
+                
+                handleReplyVirtual();
+                return true;
+
+            case HubProtocol.CLOSE_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual reply!");
+                }
+                
+                handleCloseVirtual();
+                return true;
+
+            case HubProtocol.MESSAGE_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual message!");
+                }
+                
+                handleMessageVirtual();
+                return true;
+            
+            case HubProtocol.MESSAGE_VIRTUAL_ACK:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual ack!");
+                }
+                
+                handleMessageVirtualAck();
+                return true;
+            
+                
             default:
                 conlogger.warn("HubConnection got junk!");                   
                 disconnect();

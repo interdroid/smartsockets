@@ -3,21 +3,35 @@ package smartsockets.hub.connections;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.state.DirectionsSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.HubsForClientSelector;
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 
-    protected static Logger meslogger = 
+    protected final static Logger meslogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.messages"); 
+    
+    protected final static Logger vclogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.virtual"); 
+       
+    protected final static int DEFAULT_CREDITS = 10; 
+    
+    protected final VirtualConnections vcs = new VirtualConnections();
+    
+    private final HashMap<String, String []> connectReplies = 
+        new HashMap<String, String []>();
+        
+    private int nextConnect = 0;
         
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, 
@@ -26,6 +40,59 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         super(s, in, out, connections, proxies);
     }
     
+    // returns a unique id.
+    protected synchronized String getID() { 
+        return "Connect" + nextConnect++;
+    }
+
+    // registers that we expect a reply to appear for this id
+    protected synchronized void replyPending(String id) {
+        connectReplies.put(id, null);        
+    }
+
+    // store a reply this id
+    protected synchronized boolean storeReply(String id, String [] value) {
+        
+        if (!connectReplies.containsKey(id)) {
+            // reply came too late...
+            return false;
+        } 
+        
+        connectReplies.put(id, value);
+        notifyAll();
+        return true;
+    }
+    
+    // wait for a reply for this id
+    protected synchronized String [] waitForReply(String id, int timeout) { 
+        
+        String [] result = connectReplies.get(id);
+        
+        long endTime = System.currentTimeMillis() + timeout;
+        long timeleft = 0;
+        
+        while (result == null) {
+            
+            if (timeout > 0) { 
+                timeleft = endTime - System.currentTimeMillis();
+            
+                if (timeleft <= 0) {
+                    break;
+                }
+            }
+            
+            try { 
+                wait(timeleft);
+            } catch (Exception e) {
+                // ignore
+            }
+
+            result = connectReplies.get(id);
+        }
+        
+        return connectReplies.remove(id);
+    }
+        
     // Directly sends a message to a hub.
     private boolean directlyToHub(SocketAddressSet hub, ClientMessage cm) {
 
@@ -185,4 +252,142 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             forwardMessageToHub(h, m);
         }
     }    
+    
+    protected abstract String incomingVirtualConnection(
+            VirtualConnection origin, MessageForwardingConnection m, 
+            SocketAddressSet source, SocketAddressSet target, String info, 
+            int timeout);
+    
+    
+    protected abstract String closeVirtualConnection(int index);
+    
+    protected abstract void forwardVirtualMessage(int index, byte [] data);
+    
+    protected abstract void forwardVirtualMessageAck(int index);
+    
+    protected void forwardMessage(int index, byte [] data) {
+        
+        VirtualConnection vc = vcs.getVC(index);
+
+        if (vc == null) {
+            
+            vclogger.warn("Got virtual message for non-existing connection!" 
+                    + index);
+            
+            // TODO: send a close back ? 
+            return;
+        }
+        
+        if (vc.nextHop == null) { 
+            vclogger.warn("Got virtual message for unconnected virtual " +
+                    "connection!" + index);            
+            // TODO: send a close back ? 
+            return;
+        }
+        
+        // TODO: flow control at this point ? 
+        vc.nextHop.forwardVirtualMessage(vc.nextVC, data);
+    }
+
+    protected void forwardMessageAck(int index) {
+        
+        VirtualConnection vc = vcs.getVC(index);
+
+        if (vc == null) {
+            
+            vclogger.warn("Got virtual message ack for non-existing connection!" 
+                    + index);
+            
+            // TODO: send a close back ? 
+            return;
+        }
+        
+        if (vc.nextHop == null) { 
+            vclogger.warn("Got virtual message ack for unconnected virtual " +
+                    "connection!" + index);            
+            // TODO: send a close back ? 
+            return;
+        }
+        
+        // TODO: flow control at this point ? It's currently end to end...
+        vc.nextHop.forwardVirtualMessageAck(vc.nextVC);
+    }
+
+    
+    protected String forwardAndCloseVirtualConnection(int index) { 
+        
+        VirtualConnection vc = vcs.getVC(index);
+
+        if (vc == null) {             
+            return "Virtual connection " + index + " not found!";
+        }
+        
+        if (vc.nextHop == null) {
+            vcs.freeVC(vc);            
+            return "Virtual connection " + index + " not connected!";
+        }
+        
+        return vc.nextHop.closeVirtualConnection(vc.nextVC);
+    }
+    
+    protected String createVirtualConnection(int index, SocketAddressSet source,
+            SocketAddressSet target, String info, int timeout) {
+        
+        VirtualConnection vc = vcs.newVC(index);
+                        
+        System.err.println("EEEEEKEKEKEKEE ---- " + vc);
+        
+        // Check if the client is connected to the local hub...
+        BaseConnection tmp = connections.get(target);
+        
+        if (tmp != null) {
+            
+            if (!(tmp instanceof ClientConnection)) { 
+                // apparently, the user is trying to connect to a hub here, 
+                // which is not allowed!                 
+                return "Connection to hub not allowed";
+            }
+            
+            if (tmp == this) {
+                // connecting to oneself over a hub is generally not a good idea 
+                // although it should work ? 
+                return "Connection to self not allowed";                 
+            }
+            
+            ClientConnection cc = (ClientConnection) tmp;   
+            
+            return cc.incomingVirtualConnection(vc, this, source, target, info,
+                    timeout);
+        } 
+        
+        // Find the hubs that know the client...  
+        DirectionsSelector ds = new DirectionsSelector(target, false);
+        
+        knownHubs.select(ds);
+        
+        LinkedList<SocketAddressSet> result = ds.getResult();
+        
+        if (result.size() == 0) {
+            return "Unknown host";
+        }             
+        
+        for (SocketAddressSet s : result) { 
+            
+            HubConnection h = (HubConnection) connections.get(s);
+
+            if (h != null) { 
+                String r = h.incomingVirtualConnection(vc, this, source, target,
+                        info, timeout);
+
+                if (r == null) {
+                    // apparently, we have a connection 
+                    return null;
+                }
+            }
+        }
+        
+        // TODO: see if any of the attempts returned a better error ? 
+        return "No route to host";
+    }
+    
 }

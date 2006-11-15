@@ -5,21 +5,17 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants.Clinit;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.AddressAsStringSelector;
-import smartsockets.hub.state.ClientDescription;
 import smartsockets.hub.state.ClientsByTagAsStringSelector;
 import smartsockets.hub.state.DetailsSelector;
 import smartsockets.hub.state.DirectionsAsStringSelector;
@@ -28,17 +24,17 @@ import smartsockets.hub.state.HubList;
 
 public class ClientConnection extends MessageForwardingConnection {
 
-    protected static Logger conlogger = 
+    private static Logger conlogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.connections.client"); 
     
-    protected static Logger reqlogger = 
+    private static Logger reqlogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.request"); 
     
-    protected static Logger reglogger = 
+    private static Logger reglogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
-        
-    private final SocketAddressSet clientAddress;
     
+    private final SocketAddressSet clientAddress;
+           
     public ClientConnection(SocketAddressSet clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, 
             Map<SocketAddressSet, BaseConnection> connections,
@@ -51,7 +47,138 @@ public class ClientConnection extends MessageForwardingConnection {
             conlogger.debug("Created client connection: " + clientAddress);
         }
     }
+  
+    protected String incomingVirtualConnection(VirtualConnection origin, 
+            MessageForwardingConnection m, SocketAddressSet source, 
+            SocketAddressSet target, String info, int timeout) {
+       
+        // Incoming request for a virtual connection to the client connected to 
+        // this ClientConnection....
+        String id = getID();
 
+        // Register the fact that we expect a reply for this id.
+        replyPending(id);
+        
+        // Send the connect request to the client
+        try { 
+            synchronized (this) {
+                out.write(ServiceLinkProtocol.CREATE_VIRTUAL);           
+                out.writeUTF(id);            
+                out.writeUTF(source.toString());            
+                out.writeUTF(info);            
+                out.writeInt(timeout);            
+                out.flush();
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
+            disconnect();
+            return "Lost connection to target";
+        }
+            
+        // Wait for the reply. This will remove the id before it returns, even 
+        // if no reply was received (this is needed to discover that the client 
+        // has already left before the server has replied). 
+        String [] reply = waitForReply(id, timeout);
+        
+        if (reply == null) {
+            // receiver took too long to accept: timeout
+            return "Timeout";
+        }
+        
+        if (reply.length != 2) {
+            // got malformed reply
+            return "Received malformed reply";
+        }
+        
+        if (reply[0].equals("DENIED")) { 
+            // connection refused
+            return reply[1];
+        }
+
+        if (!reply[0].equals("OK")) {
+            // should be DENIED or OK, so we got a malformed reply
+            return "Received malformed reply";
+        }
+
+        int newIndex = 0;
+        
+        try { 
+            newIndex = Integer.parseInt(reply[1]);
+        } catch (Exception e) {
+            // got malformed reply
+            return "Received malformed reply";
+        }
+            
+        conlogger.warn("Got new connection: " + newIndex);
+        
+        // if the client accepts, get the virtual connection on this end...       
+        VirtualConnection v = vcs.newVC(newIndex);
+        
+        // And tie the two together!
+        v.init(m, origin.number, 42);
+        origin.init(this, newIndex, 42);
+        
+        // return null to indicate the lack of errors ;-)
+        return null;
+    }
+    
+    protected String closeVirtualConnection(int index) { 
+        
+        VirtualConnection vc = vcs.getVC(index);
+
+        if (vc == null) {             
+            return "Virtual connection " + index + " not found!";
+        }
+        
+        // forward the close
+        try {
+            synchronized (this) {
+                out.write(ServiceLinkProtocol.CLOSE_VIRTUAL);           
+                out.writeInt(index);            
+                out.flush();
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
+            disconnect();
+            return "Lost connection to target";
+        }        
+        
+        vcs.freeVC(vc);                
+        return null;                
+    }
+    
+    protected void forwardVirtualMessage(int index, byte [] data) {
+        
+        // forward the message
+        try {
+            synchronized (this) {
+                out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL);           
+                out.writeInt(index);
+                out.writeInt(data.length);
+                out.write(data);
+                out.flush();                
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
+            disconnect();
+        }        
+    }
+    
+    protected void forwardVirtualMessageAck(int index) { 
+
+        // forward the message
+        try {
+            synchronized (this) {
+                out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
+                out.writeInt(index);
+                out.flush();                
+            }
+        } catch (Exception e) {
+            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
+            disconnect();
+        }        
+    }
+        
     private void handleMessage() throws IOException { 
         // Read the message
         
@@ -80,7 +207,7 @@ public class ClientConnection extends MessageForwardingConnection {
         DirectSocketFactory.close(s, out, in);            
     } 
     
-    synchronized boolean sendMessage(ClientMessage m) {  
+    protected synchronized boolean sendMessage(ClientMessage m) {  
         
         try { 
             out.write(ServiceLinkProtocol.MESSAGE);            
@@ -108,15 +235,17 @@ public class ClientConnection extends MessageForwardingConnection {
                 
         LinkedList<String> result = as.getResult();
         
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(result.size());
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(result.size());
         
-        for (String s : result) {  
-            out.writeUTF(s);
-        } 
+            for (String s : result) {  
+                out.writeUTF(s);
+            } 
             
-        out.flush();        
+            out.flush();
+        }
     } 
 
     private void hubDetails() throws IOException { 
@@ -133,20 +262,22 @@ public class ClientConnection extends MessageForwardingConnection {
         
         LinkedList<String> result = as.getResult();
         
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(result.size());
-
-        if (reqlogger.isDebugEnabled()) {
-            reqlogger.debug("Connection " + clientAddress + " result: " 
-                    + result.size() + " " + result);
-        }
-        
-        for (String s : result) { 
-            out.writeUTF(s);
-        } 
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(result.size());
             
-        out.flush();        
+            if (reqlogger.isDebugEnabled()) {
+                reqlogger.debug("Connection " + clientAddress + " result: " 
+                        + result.size() + " " + result);
+            }
+        
+            for (String s : result) { 
+                out.writeUTF(s);
+            } 
+            
+            out.flush();
+        }
     } 
 
     
@@ -168,16 +299,18 @@ public class ClientConnection extends MessageForwardingConnection {
             reqlogger.warn("Connection " + clientAddress + " got illegal hub " 
                     + "address: " + hub); 
         }
-               
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(result.size());
+      
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(result.size());
 
-        for (String s : result) { 
-            out.writeUTF(s);
-        } 
+            for (String s : result) { 
+                out.writeUTF(s);
+            } 
             
-        out.flush();        
+            out.flush();
+        }
     } 
 
     private void clients() throws IOException { 
@@ -195,21 +328,22 @@ public class ClientConnection extends MessageForwardingConnection {
         
         LinkedList<String> result = css.getResult();
 
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(result.size());
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(result.size());
 
-        if (reqlogger.isDebugEnabled()) {
-            reqlogger.debug("Connection " + clientAddress + " returning : " 
-                    + result.size() + " clients: " + result);
-        }
+            if (reqlogger.isDebugEnabled()) {
+                reqlogger.debug("Connection " + clientAddress + " returning : " 
+                        + result.size() + " clients: " + result);
+            }
         
-        for (String s : result) {
-            out.writeUTF(s);
-        } 
+            for (String s : result) {
+                out.writeUTF(s);
+            } 
             
-        out.flush();        
-
+            out.flush();
+        }
     } 
 
     private void directions() throws IOException { 
@@ -227,20 +361,22 @@ public class ClientConnection extends MessageForwardingConnection {
         
         LinkedList<String> result = ds.getResult();
         
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(result.size());
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(result.size());
 
-        if (reqlogger.isDebugEnabled()) {
-            reqlogger.debug("Connection " + clientAddress + " returning : " 
-                    + result.size() + " possible directions: " + result);
-        }
+            if (reqlogger.isDebugEnabled()) {
+                reqlogger.debug("Connection " + clientAddress + " returning : " 
+                        + result.size() + " possible directions: " + result);
+            }
         
-        for (String tmp : result) { 
-            out.writeUTF(tmp);
-        } 
+            for (String tmp : result) { 
+                out.writeUTF(tmp);
+            } 
             
-        out.flush();        
+            out.flush();
+        }
     } 
     
     private void registerInfo() throws IOException { 
@@ -256,17 +392,19 @@ public class ClientConnection extends MessageForwardingConnection {
                
         HubDescription localHub = knownHubs.getLocalDescription();
         
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(1);
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(1);
         
-        if (localHub.addService(clientAddress, tag, info)) { 
-            out.writeUTF("OK");
-        } else { 
-            out.writeUTF("DENIED");
-        }
+            if (localHub.addService(clientAddress, tag, info)) { 
+                out.writeUTF("OK");
+            } else { 
+                out.writeUTF("DENIED");
+            }
             
-        out.flush();        
+            out.flush();
+        }
     } 
 
     private void updateInfo() throws IOException { 
@@ -282,17 +420,19 @@ public class ClientConnection extends MessageForwardingConnection {
         
         HubDescription localHub = knownHubs.getLocalDescription();
         
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(1);
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(1);
         
-        if (localHub.updateService(clientAddress, tag, info)) { 
-            out.writeUTF("OK");
-        } else { 
-            out.writeUTF("DENIED");
-        }
+            if (localHub.updateService(clientAddress, tag, info)) { 
+                out.writeUTF("OK");
+            } else { 
+                out.writeUTF("DENIED");
+            }
             
-        out.flush();        
+            out.flush();
+        }
     } 
 
     private void removeInfo() throws IOException { 
@@ -307,21 +447,142 @@ public class ClientConnection extends MessageForwardingConnection {
                
         HubDescription localHub = knownHubs.getLocalDescription();
         
-        out.write(ServiceLinkProtocol.INFO);           
-        out.writeUTF(id);            
-        out.writeInt(1);
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(1);
         
-        if (localHub.removeService(clientAddress, tag)) { 
-            out.writeUTF("OK");
-        } else { 
-            out.writeUTF("DENIED");
-        }
+            if (localHub.removeService(clientAddress, tag)) { 
+                out.writeUTF("OK");
+            } else { 
+                out.writeUTF("DENIED");
+            }
             
-        out.flush();        
+            out.flush();
+        }
+    } 
+           
+    private void createVirtual() throws IOException { 
+        
+        String id = in.readUTF();
+        
+        int index = in.readInt();
+        int timeout = in.readInt();
+        
+        String target = in.readUTF();
+        String info = in.readUTF();        
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("Connection " + clientAddress 
+                    + " return id: " + id + " creating virtual connection to " 
+                    + target);
+        }
+        
+        String result = createVirtualConnection(index, clientAddress, 
+                new SocketAddressSet(target), info, timeout);
+    
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);            
+            out.writeInt(2);
+        
+            if (result == null) { 
+                out.writeUTF("OK");
+                out.writeUTF(Integer.toString(DEFAULT_CREDITS));
+            } else { 
+                out.writeUTF("DENIED");
+                out.writeUTF(result);
+            }
+            
+            out.flush();
+        }         
+    } 
+
+    private void replyVirtual() throws IOException { 
+        
+        String localID = in.readUTF();        
+        String result = in.readUTF();
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("Got reply to VC: " + localID + " " + result);
+        }
+        
+        if (result.equals("DENIED")) { 
+            String error = in.readUTF();           
+            storeReply(localID, new String [] { result, error });
+            return;
+        }
+        
+        int index = in.readInt();
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("read index: " + index);
+        }
+        
+        String remoteID = in.readUTF();
+        
+        boolean b = storeReply(localID, 
+                new String [] { result, Integer.toString(index) });
+        
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(remoteID);            
+            out.writeInt(1);            
+            out.writeUTF(b ? "OK" : "DENIED");            
+            out.flush();
+        }         
+    } 
+
+    
+    private void closeVirtual() throws IOException { 
+
+        String id = in.readUTF();        
+        int vc = in.readInt();
+        
+        if (reqlogger.isDebugEnabled()) {
+            reglogger.debug("Connection " + clientAddress + " return id: " + id +  
+                    " closing vitual connection " + vc);
+        }
+               
+        String result = forwardAndCloseVirtualConnection(vc);
+        
+        synchronized (this) {
+            out.write(ServiceLinkProtocol.INFO);           
+            out.writeUTF(id);
+            
+            if (result == null) { 
+                out.writeInt(1);            
+                out.writeUTF("OK");
+            } else { 
+                out.writeInt(2);            
+                out.writeUTF("DENIED");
+                out.writeUTF(result);
+            }
+            
+            out.flush();
+        }         
     } 
     
+    private void messageVirtual() throws IOException {
+    
+        int vc = in.readInt();
+        int size = in.readInt();
+        
+        // TODO: optimize!
+        byte [] data = new byte[size];        
+        in.readFully(data);
+                      
+        forwardMessage(vc, data);
+    }
+    
+    private void messageVirtualAck() throws IOException {
+        
+        int vc = in.readInt();
+        forwardMessageAck(vc);
+    }
+        
     protected String getName() {
-        return "ServiceLink(" + clientAddress + ")";
+        return "ClientConnection(" + clientAddress + ")";
     }
 
     protected boolean runConnection() {           
@@ -407,7 +668,48 @@ public class ClientConnection extends MessageForwardingConnection {
                 }
                 removeInfo();
                 return true;
-                            
+            
+            case ServiceLinkProtocol.CREATE_VIRTUAL:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " requests" 
+                            + " setup of virtual connection");
+                }
+                createVirtual();
+                return true;
+          
+            case ServiceLinkProtocol.REPLY_VIRTUAL:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " replied" 
+                            + " to virtual connection setup");
+                }
+                replyVirtual();                
+                return true;                        
+                          
+            case ServiceLinkProtocol.CLOSE_VIRTUAL:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " requests" 
+                            + " close of virtual connection");
+                }
+                closeVirtual();
+                return true;            
+            
+            case ServiceLinkProtocol.MESSAGE_VIRTUAL:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " sends" 
+                            + " message over virtual connection");
+                }
+                messageVirtual();
+                return true;                        
+            
+            case ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK:
+                if (reglogger.isDebugEnabled()) {
+                    reglogger.debug("Connection " + clientAddress + " sends" 
+                            + " ack over virtual connection");
+                }               
+                messageVirtualAck();
+                return true;                        
+            
+                
             default:
                 conlogger.warn("Connection " + clientAddress 
                         + " got unknown " + "opcode " + opcode 
@@ -423,4 +725,6 @@ public class ClientConnection extends MessageForwardingConnection {
         
         return false;
     }
+
+   
 }
