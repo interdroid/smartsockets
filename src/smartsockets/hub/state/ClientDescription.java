@@ -3,10 +3,8 @@ package smartsockets.hub.state;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import javax.print.attribute.standard.Severity;
 
 import smartsockets.direct.SocketAddressSet;
 
@@ -92,16 +90,18 @@ public class ClientDescription {
         tmp.append(clientAddress);        
         tmp.append(", ");
         tmp.append(version);
-                
-        for (String key : services.keySet()) { 
+        
+        if (services != null) {                 
+            for (String key : services.keySet()) { 
 
-            String val = services.get(key);
+                String val = services.get(key);
                 
-            tmp.append(", [");
-            tmp.append(key);
-            tmp.append(",");
-            tmp.append(val);
-            tmp.append("]");
+                tmp.append(", [");
+                tmp.append(key);
+                tmp.append(",");
+                tmp.append(val);
+                tmp.append("]");
+            }
         }
         
         tmp.append(")");

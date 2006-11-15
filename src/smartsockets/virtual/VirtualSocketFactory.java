@@ -8,9 +8,8 @@ import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -32,7 +31,8 @@ import smartsockets.virtual.modules.ConnectModule;
  */
 public class VirtualSocketFactory {
     
-    private static final HashMap factories = new HashMap();
+    private static final Map<String, VirtualSocketFactory> factories = 
+       Collections.synchronizedMap(new HashMap<String, VirtualSocketFactory>());
         
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger("smartsockets.virtual.misc");
@@ -583,7 +583,12 @@ public class VirtualSocketFactory {
     }
     
     public static VirtualSocketFactory getSocketFactory(String name) {        
-        return (VirtualSocketFactory) factories.get(name);
+        return factories.get(name);
+    }
+    
+    public static void registerSocketFactory(String name, 
+            VirtualSocketFactory factory) {        
+        factories.put(name, factory);        
     }
         
     public static VirtualSocketFactory createSocketFactory() {
@@ -603,14 +608,14 @@ public class VirtualSocketFactory {
             boolean addDefaults) {
         return createSocketFactory(new TypedProperties(p), addDefaults);        
     } 
-            
+    
     public static VirtualSocketFactory createSocketFactory(TypedProperties p, 
             boolean addDefaults) {
         
         //logger.warn("Creating VirtualSocketFactory(Prop, bool)!", new Exception());
 
-        System.err.println("Creating VirtualSocketFactory(Prop, bool)!");
-        new Exception().printStackTrace(System.err);
+       // System.err.println("Creating VirtualSocketFactory(Prop, bool)!");
+        //new Exception().printStackTrace(System.err);
 
         
         if (p == null) { 
@@ -624,7 +629,7 @@ public class VirtualSocketFactory {
         String name = p.getProperty("smartsockets.factory.name");
 
         if (name != null) { 
-            factory = (VirtualSocketFactory) factories.get(name);
+            factory = factories.get(name);
         }
         
         if (factory == null) { 

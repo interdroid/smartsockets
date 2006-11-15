@@ -12,21 +12,18 @@ import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
 
-
 public class ServiceLink implements Runnable {
     
     // TODO: create different loggers here!
     private static final Logger logger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.servicelink");
 
-    protected final HashMap<String, Object> callbacks= 
-        new HashMap<String, Object>();
-    
     private static final int TIMEOUT = 5000;
     private static final int DEFAULT_WAIT_TIME = 10000;
-    
-    private static ServiceLink serviceLink;
-    
+        
+    private final HashMap<String, Object> callbacks= 
+        new HashMap<String, Object>();
+           
     private final DirectSocketFactory factory;
     private final SocketAddressSet myAddress; 
     
@@ -606,30 +603,7 @@ public class ServiceLink implements Runnable {
             removeCallback(id);
         }
     }
-    
-    public static ServiceLink getServiceLink(SocketAddressSet address, 
-            SocketAddressSet myAddress) { 
-                                       
-        if (address == null) {  
-            throw new NullPointerException("Hub address is null!");
-        }
-                
-        if (myAddress == null) { 
-            throw new NullPointerException("Local address is null!");
-        }
         
-        if (serviceLink == null) {            
-            try { 
-                serviceLink = new ServiceLink(address, myAddress);                 
-            } catch (Exception e) {
-                logger.warn("ServiceLink: Failed to connect to hub!", e);
-                return null;
-            }                        
-        }
-        
-        return serviceLink;
-    }
-
     public SocketAddressSet findSharedHub(SocketAddressSet myMachine, 
             SocketAddressSet targetMachine) {
         
@@ -668,5 +642,26 @@ public class ServiceLink implements Runnable {
         }
         
     }
-    
+
+    public static ServiceLink getServiceLink(SocketAddressSet address, 
+            SocketAddressSet myAddress) { 
+
+        // TODO: cache service linkes here ? Shared a link between multiple 
+        // clients that use the same hub ?  
+        
+        if (address == null) {  
+            throw new NullPointerException("Hub address is null!");
+        }
+                
+        if (myAddress == null) { 
+            throw new NullPointerException("Local address is null!");
+        }
+        
+        try { 
+            return new ServiceLink(address, myAddress);                 
+        } catch (Exception e) {
+            logger.warn("ServiceLink: Failed to connect to hub!", e);
+            return null;
+        }
+    }
 }

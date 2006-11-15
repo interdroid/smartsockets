@@ -15,7 +15,9 @@ public class VirtualServerSocket {
     private final VirtualSocketFactory parent;
     private final int port;
     
-    private final LinkedList incoming = new LinkedList();
+    private final LinkedList<VirtualSocket> incoming = 
+        new LinkedList<VirtualSocket>();
+    
     private final int backlog; 
         
     private int timeout = 0;
@@ -27,7 +29,8 @@ public class VirtualServerSocket {
     private Map properties;
     
     protected VirtualServerSocket(VirtualSocketFactory parent, 
-            VirtualSocketAddress address, int port, int backlog, Map p) {
+            VirtualSocketAddress address, int port, int backlog, 
+            Map p) {
         
         this.parent = parent;
         this.port = port;
@@ -68,7 +71,7 @@ public class VirtualServerSocket {
         }
      
         if (incoming.size() > 0) { 
-            return (VirtualSocket) incoming.removeFirst();
+            return incoming.removeFirst();
         } else { 
             return null;
         }        
@@ -106,8 +109,7 @@ public class VirtualServerSocket {
         notifyAll();   // wakes up any waiting accept
         
         while (incoming.size() != 0) {
-            VirtualSocket s = (VirtualSocket) incoming.removeFirst();
-            s.connectionRejected();
+            incoming.removeFirst().connectionRejected();
         } 
         
         parent.closed(port);            

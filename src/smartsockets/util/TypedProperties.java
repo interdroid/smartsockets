@@ -17,8 +17,10 @@ public class TypedProperties extends Properties {
 
     // 1.4 code
     //@SuppressWarnings("unchecked")
-    public TypedProperties(Map initialValues) {
-        putAll(initialValues);
+    public TypedProperties(Map initialValues) {        
+        if (initialValues != null) {        
+            putAll(initialValues);
+        }
     }
 
     public TypedProperties() {

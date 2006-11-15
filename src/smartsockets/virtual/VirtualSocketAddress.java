@@ -52,8 +52,6 @@ public class VirtualSocketAddress implements Serializable {
         int index1 = address.lastIndexOf('@');
         int index2 = address.lastIndexOf('#');                
 
-        String addr = null;
-            
         if (index2 < index1) {
             // The hub is after the cluster (or cluster does not exist).
             hub = new SocketAddressSet(address.substring(index1+1));
