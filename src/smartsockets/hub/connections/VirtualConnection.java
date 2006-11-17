@@ -2,7 +2,7 @@ package smartsockets.hub.connections;
 
 public class VirtualConnection {
     
-    public final int number;
+    public final int index;
 
     private int maxCredits;    
     private int credits;
@@ -10,26 +10,38 @@ public class VirtualConnection {
     private long bytesSend;
     private long bytesReceived;
     
-    protected MessageForwardingConnection nextHop;
-    protected int nextVC;
+    private boolean closed = false;
+    
+    protected MessageForwardingConnection targetConnection;
+    protected int targetConnectionIndex;
     
     VirtualConnection(int number) { 
-        this.number = number;
+        this.index = number;
     }
 
     public void init(int credits) { 
-        this.nextHop = null;
+        this.targetConnection = null;
         this.maxCredits = this.credits = credits;
         bytesSend = bytesReceived = 0;  
     }
     
     public void init(MessageForwardingConnection nextHop, int nextVC, int credits) { 
-        this.nextHop = nextHop;
-        this.nextVC = nextVC;
+        this.targetConnection = nextHop;
+        this.targetConnectionIndex = nextVC;
         this.maxCredits = this.credits = credits;
         bytesSend = bytesReceived = 0;  
     }
 
+    public synchronized boolean close() {
+        boolean prev = closed;         
+        closed = true;
+        return prev;
+    }
+    
+    public synchronized boolean isClosed() {
+        return closed;
+    }
+        
     public synchronized void getCredit() {
         
         while (credits == 0) { 

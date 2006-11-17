@@ -17,10 +17,13 @@ public interface ServiceLinkProtocol {
     public static final byte REMOVE_PROPERTY   = 32;
             
     public static final byte CREATE_VIRTUAL      = 60;    
+    public static final byte CREATE_VIRTUAL_ACK  = 64;       
+        
     public static final byte CLOSE_VIRTUAL       = 61;
+    public static final byte CLOSE_VIRTUAL_ACK   = 65;
+    
     public static final byte MESSAGE_VIRTUAL     = 62;
     public static final byte MESSAGE_VIRTUAL_ACK = 63;
-    public static final byte REPLY_VIRTUAL       = 64;       
     
     public final byte INFO              = 99;
 }

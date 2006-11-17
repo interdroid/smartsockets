@@ -259,7 +259,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             int timeout);
     
     
-    protected abstract String closeVirtualConnection(int index);
+    protected abstract void forwardVirtualClose(int index);
     
     protected abstract void forwardVirtualMessage(int index, byte [] data);
     
@@ -272,21 +272,21 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         if (vc == null) {
             
             vclogger.warn("Got virtual message for non-existing connection!" 
-                    + index);
+                    + index + " byte[" + data.length + "]");
             
             // TODO: send a close back ? 
             return;
         }
         
-        if (vc.nextHop == null) { 
+        if (vc.targetConnection == null) { 
             vclogger.warn("Got virtual message for unconnected virtual " +
-                    "connection!" + index);            
+                    "connection!" + index + " byte[" + data.length + "]");            
             // TODO: send a close back ? 
             return;
         }
         
         // TODO: flow control at this point ? 
-        vc.nextHop.forwardVirtualMessage(vc.nextVC, data);
+        vc.targetConnection.forwardVirtualMessage(vc.targetConnectionIndex, data);
     }
 
     protected void forwardMessageAck(int index) {
@@ -302,7 +302,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             return;
         }
         
-        if (vc.nextHop == null) { 
+        if (vc.targetConnection == null) { 
             vclogger.warn("Got virtual message ack for unconnected virtual " +
                     "connection!" + index);            
             // TODO: send a close back ? 
@@ -310,32 +310,49 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
         
         // TODO: flow control at this point ? It's currently end to end...
-        vc.nextHop.forwardVirtualMessageAck(vc.nextVC);
+        vc.targetConnection.forwardVirtualMessageAck(vc.targetConnectionIndex);
     }
 
-    
-    protected String forwardAndCloseVirtualConnection(int index) { 
-        
-        VirtualConnection vc = vcs.getVC(index);
+    private void doForwardAndCloseVirtualConnection(int index) {
 
+        VirtualConnection vc = vcs.removeVC(index);
+        
         if (vc == null) {             
-            return "Virtual connection " + index + " not found!";
+            vclogger.warn("Virtual connection " + index + " not found!");
+            return;
         }
         
-        if (vc.nextHop == null) {
-            vcs.freeVC(vc);            
-            return "Virtual connection " + index + " not connected!";
-        }
+        forwardVirtualClose(index);
         
-        return vc.nextHop.closeVirtualConnection(vc.nextVC);
+    }
+        
+    protected void closeVirtualConnection(int index) { 
+
+        VirtualConnection vc = vcs.removeVC(index);
+
+        if (vc == null) {
+            // Connection doesn't exist. It may already be closed (this can 
+            // happen if the other side beat us to closing it).        
+            vclogger.warn("Virtual connection " + index + " not found!");
+            return;
+        }  
+          
+        vclogger.warn("ANY forward and close for: " + vc.index + "<-->" + 
+                vc.targetConnectionIndex);
+
+        if (vc.targetConnection != null) {
+            // Attempt to close the other side 
+            vc.targetConnection.doForwardAndCloseVirtualConnection(
+                    vc.targetConnectionIndex);
+        }        
     }
     
     protected String createVirtualConnection(int index, SocketAddressSet source,
             SocketAddressSet target, String info, int timeout) {
         
         VirtualConnection vc = vcs.newVC(index);
-                        
-        System.err.println("EEEEEKEKEKEKEE ---- " + vc);
+        
+        vclogger.warn("ANY connection request for: " + index);
         
         // Check if the client is connected to the local hub...
         BaseConnection tmp = connections.get(target);
@@ -344,7 +361,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             
             if (!(tmp instanceof ClientConnection)) { 
                 // apparently, the user is trying to connect to a hub here, 
-                // which is not allowed!                 
+                // which is not allowed!                                 
                 return "Connection to hub not allowed";
             }
             
@@ -355,7 +372,6 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             }
             
             ClientConnection cc = (ClientConnection) tmp;   
-            
             return cc.incomingVirtualConnection(vc, this, source, target, info,
                     timeout);
         } 

@@ -253,10 +253,15 @@ public class ServiceLink implements Runnable {
             // ignore            
         }
             
-        if (cb == null) {         
+        if (cb == null) {
+            
+            if (logger.isInfoEnabled()) {
+                logger.info("DENIED connection: " + id + ": no callback!");
+            }
+                        
             try {
                 synchronized (this) {         
-                    out.write(ServiceLinkProtocol.REPLY_VIRTUAL);
+                    out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                     out.writeUTF(id);
                     out.writeUTF("DENIED");                    
                     out.writeUTF("No one will accept the connection");                
@@ -273,11 +278,17 @@ public class ServiceLink implements Runnable {
 
         VirtualConnection vc = vcs.newVC();
         
-        if (!cb.connect(new SocketAddressSet(source), info, timeout, vc.number, id)) {            
+        if (!cb.connect(new SocketAddressSet(source), info, timeout, vc.index, id)) {            
             // Connection refused....            
             try {
+                
+                if (logger.isInfoEnabled()) {
+                    logger.info("DENIED connection: " + id 
+                            + ": connection refused!");
+                }                
+                
                 synchronized (this) {         
-                    out.write(ServiceLinkProtocol.REPLY_VIRTUAL);
+                    out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                     out.writeUTF(id);
                     out.writeUTF("DENIED");
                     out.writeUTF("Connection refused");
@@ -293,18 +304,34 @@ public class ServiceLink implements Runnable {
         } 
         
         // Connection is now pending in the backlog of a serversocket somewhere.
-        // It may be accepted or rejected at any time. 
+        // It may be accepted or rejected at any time.
+        if (logger.isInfoEnabled()) {
+            logger.info("QUEUED connection: " + id + " (" + vc.index 
+                    + "): waiting for accept");
+        }                
     } 
 
     public void rejectIncomingConnection(int index, String id) {
         
-        // The incoming connection 'index' was rejected.         
+        // The incoming connection 'index' was rejected.
+        if (logger.isInfoEnabled()) {
+            logger.info("REJECTED connection: " + id + " (" + index 
+                    + "): serversocket did not accept");
+        }
+                
         VirtualConnection vc = vcs.getVC(index);
+        
+        if (vc == null) { 
+            logger.warn("Cannot close connection: " + index 
+                    + " since it does not exist!");            
+            return;
+        }
+        
         vcs.freeVC(vc);
         
         try { 
             synchronized (this) {         
-                out.write(ServiceLinkProtocol.REPLY_VIRTUAL);
+                out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                 out.writeUTF(id);
                 out.writeUTF("DENIED");  
                 out.writeUTF("Connection refused");
@@ -320,7 +347,11 @@ public class ServiceLink implements Runnable {
         
         // The incoming connection 'index' was accepted. The only problem is 
         // that we are not sure if we are in time. We therefore send a reply, 
-        // for which we get a reply back again...            
+        // for which we get a reply back again...
+        if (logger.isInfoEnabled()) {
+            logger.info("ACCEPTED connection: " + id + " (" + index + ")");
+        }
+        
         String localID = "ReplyVirtual" + getNextSimpleCallbackID();
             
         SimpleCallBack tmp = new SimpleCallBack();        
@@ -330,7 +361,7 @@ public class ServiceLink implements Runnable {
         
         try { 
             synchronized (this) {         
-                out.write(ServiceLinkProtocol.REPLY_VIRTUAL);
+                out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                 out.writeUTF(id);
                 out.writeUTF("OK");  
                 out.writeInt(index);
@@ -347,6 +378,10 @@ public class ServiceLink implements Runnable {
                 // We accepted the connection, but the other side refused. This 
                 // is most likely to be caused a timeout. All we have to do is 
                 // inform the user and free the connection.
+                if (logger.isInfoEnabled()) {
+                    logger.info("ACCEPTED connection FELL OVER: " + id 
+                            + " (" + index + "): client has already timed out");
+                }
                 
                 VirtualConnectionCallBack cb = null;
                 
@@ -357,8 +392,11 @@ public class ServiceLink implements Runnable {
                 }
                     
                 if (cb != null) {  
-                    cb.disconnect(vc.number);
-                } 
+                    cb.disconnect(vc.index);
+                } else { 
+                    logger.warn("Cannot forward disconnect: " + id + "(" 
+                            + index + "): no callback!");
+                }
                   
                 vcs.freeVC(vc);                
                 return false;
@@ -375,10 +413,21 @@ public class ServiceLink implements Runnable {
     }
        
     private void handleIncomingClose() throws IOException { 
-
+        
         int index = in.readInt();
         
-        VirtualConnection vc = vcs.getVC(index);        
+        //if (logger.isDebugEnabled()) {
+            logger.warn("Got close for connection: " + index);
+        //}
+        
+        VirtualConnection vc = vcs.getVC(index);
+        
+        if (vc == null) { 
+            logger.warn("Cannot close connection: " + index 
+                    + " since it does not exist!");            
+            return;
+        }
+        
         vcs.freeVC(vc);
         
         VirtualConnectionCallBack cb = null;
@@ -391,6 +440,9 @@ public class ServiceLink implements Runnable {
 
         if (cb != null) { 
             cb.disconnect(index);
+        } else { 
+            logger.warn("Cannot forward close for connection: " + index 
+                        + " to user: No callback registered!");            
         }
     }        
 
@@ -399,10 +451,14 @@ public class ServiceLink implements Runnable {
         int index = in.readInt();
         int len = in.readInt();
         
-        // TODO: optimize!
-        byte [] data = new byte[len];
+        if (logger.isDebugEnabled()) {
+            logger.debug("Reading virtual message(" + len + ") for connection: " 
+                    + index);
+        }
         
-        in.read(data);
+        // TODO: optimize!
+        byte [] data = new byte[len];        
+        in.readFully(data);
         
         VirtualConnectionCallBack cb = null;
         
@@ -412,22 +468,34 @@ public class ServiceLink implements Runnable {
             // ignore            
         }
 
-        if (cb != null) { 
+        if (cb != null) {            
+            if (logger.isDebugEnabled()) {
+                logger.debug("Delivering virtual message(" + len + ") for" +
+                        " connection: " + index);
+            }
+                        
             cb.gotMessage(index, data);
-        }
+        } else { 
+            logger.warn("Received virtual message(" + len + ") for connection: " 
+                        + index + " which doesn't exist!!");
+        }        
     }        
 
     private void handleIncomingAck() throws IOException { 
 
         int index = in.readInt();
-        
+                
+        if (logger.isDebugEnabled()) {
+            logger.debug("Got ACK for connection: " + index);
+        }
+                
         VirtualConnection vc = vcs.getVC(index);
             
         if (vc == null) { 
             logger.warn("Virtual connection: " + index + " does not exist!");            
             throw new IOException("Not connected");
         }
-            
+                
         vc.addCredit();                  
     } 
     
@@ -468,7 +536,9 @@ public class ServiceLink implements Runnable {
                     break;
                     
                 default:                     
-                    logger.warn("ServiceLink: Received unknown opcode!");
+                    logger.warn("ServiceLink: Received unknown opcode!: " 
+                            + header);
+                
                     closeConnection();                
                     break;                    
                 }
@@ -739,7 +809,7 @@ public class ServiceLink implements Runnable {
         VirtualConnection vc = vcs.newVC();
         
         if (logger.isInfoEnabled()) {
-            logger.info("Creating virtual connection: " + vc.number);
+            logger.info("Creating virtual connection: " + vc.index);
         }
         
         String id = "CreateVirtual" + getNextSimpleCallbackID();
@@ -752,7 +822,7 @@ public class ServiceLink implements Runnable {
             synchronized (this) {         
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL);
                 out.writeUTF(id);
-                out.writeInt(vc.number);
+                out.writeInt(vc.index);
                 out.writeInt(timeout);                          
                 out.writeUTF(target.toString());
                 out.writeUTF(info);                                   
@@ -797,16 +867,16 @@ public class ServiceLink implements Runnable {
             throw exc;
         }
         
-        return vc.number;
+        return vc.index;
     }    
     
     public void closeVirtualConnection(int index) throws IOException {
 
         IOException exc = null;
         
-        if (logger.isInfoEnabled()) {
-            logger.info("Closing virtual connection: " + index);
-        }
+        //if (logger.isInfoEnabled()) {
+            logger.warn("Closing virtual connection: " + index);
+        //}
 
         VirtualConnection vc = vcs.getVC(index);
         
@@ -862,6 +932,8 @@ public class ServiceLink implements Runnable {
         if (exc != null) { 
             throw exc;
         }                
+        
+        logger.warn("Virtual connection " + index + " closed!");
     }
     
     public void sendVirtualMessage(int index, byte [] message, int off, 

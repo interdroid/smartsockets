@@ -16,6 +16,8 @@ public class VirtualConnections {
     
     public synchronized VirtualConnection newVC() {
 
+        vclogger.warn("newVC()!");
+                
         VirtualConnection result = null;
         
         if (usedVCs == vcs.size()) { 
@@ -49,6 +51,8 @@ public class VirtualConnections {
 
     public synchronized VirtualConnection newVC(boolean even) {
 
+        vclogger.warn("newVC(" + even + ")!");
+        
         final int mod = even ? 0 : 1; 
         
         VirtualConnection result = null;
@@ -106,10 +110,14 @@ public class VirtualConnections {
         vcs.set(index, result);            
         usedVCs++;
         
+        vclogger.warn("newVC(" + index + ")!");
+        
         return result;
     }
    
     public synchronized VirtualConnection getVC(int index) {
+
+        vclogger.warn("getVC(" + index + ")!");
         
         if (index < 0 || index >= vcs.size()) { 
             return null;
@@ -117,8 +125,28 @@ public class VirtualConnections {
         
         return vcs.get(index);
     }
+
+    public synchronized VirtualConnection removeVC(int index) {
+
+        vclogger.warn("getVC(" + index + ")!");
+        
+        if (index < 0 || index >= vcs.size()) { 
+            return null;
+        }
+        
+        VirtualConnection result = vcs.get(index);
+        
+        if (result != null) {
+            vcs.set(index, null);
+        }
+        
+        return result;        
+    }
     
+    /*
     public synchronized void freeVC(VirtualConnection vc) {
+        
+        vclogger.warn("freeVC(" + vc.number + ")");
         
         if (vc.number < vcs.size()) {
             vcs.set(vc.number, null);
@@ -128,7 +156,7 @@ public class VirtualConnections {
         }
 
         usedVCs--;
-    }
+    }*/
 
     
 }

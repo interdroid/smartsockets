@@ -71,7 +71,7 @@ public class ClientConnection extends MessageForwardingConnection {
             }
         } catch (Exception e) {
             conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            disconnect();
+            handleDisconnect();
             return "Lost connection to target";
         }
             
@@ -115,21 +115,20 @@ public class ClientConnection extends MessageForwardingConnection {
         VirtualConnection v = vcs.newVC(newIndex);
         
         // And tie the two together!
-        v.init(m, origin.number, 42);
-        origin.init(this, newIndex, 42);
+        vclogger.warn("CLIENT Connection setup of: " + origin.index 
+                + "<-->" + v.index);
+        
+        v.init(m, origin.index, 0);
+        origin.init(this, v.index, 0);
         
         // return null to indicate the lack of errors ;-)
         return null;
     }
     
-    protected String closeVirtualConnection(int index) { 
-        
-        VirtualConnection vc = vcs.getVC(index);
+    protected void forwardVirtualClose(int index) { 
 
-        if (vc == null) {             
-            return "Virtual connection " + index + " not found!";
-        }
-        
+        vclogger.warn("CLIENT Sending closing connection: " + index);
+                
         // forward the close
         try {
             synchronized (this) {
@@ -139,12 +138,8 @@ public class ClientConnection extends MessageForwardingConnection {
             }
         } catch (Exception e) {
             conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            disconnect();
-            return "Lost connection to target";
-        }        
-        
-        vcs.freeVC(vc);                
-        return null;                
+            handleDisconnect();
+        }
     }
     
     protected void forwardVirtualMessage(int index, byte [] data) {
@@ -160,7 +155,7 @@ public class ClientConnection extends MessageForwardingConnection {
             }
         } catch (Exception e) {
             conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            disconnect();
+            handleDisconnect();
         }        
     }
     
@@ -175,7 +170,7 @@ public class ClientConnection extends MessageForwardingConnection {
             }
         } catch (Exception e) {
             conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            disconnect();
+            handleDisconnect();
         }        
     }
         
@@ -192,7 +187,7 @@ public class ClientConnection extends MessageForwardingConnection {
         forward(cm, true);
     } 
                 
-    private void disconnect() {
+    private void handleDisconnect() {
         
         if (knownHubs.getLocalDescription().removeClient(clientAddress)) {
             if (conlogger.isDebugEnabled()) {
@@ -221,7 +216,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     }
         
-    private void hubs() throws IOException { 
+    private void handleListHubs() throws IOException { 
         
         String id = in.readUTF();
         
@@ -248,7 +243,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     } 
 
-    private void hubDetails() throws IOException { 
+    private void handleListHubDetails() throws IOException { 
         
         String id = in.readUTF();
         
@@ -281,7 +276,7 @@ public class ClientConnection extends MessageForwardingConnection {
     } 
 
     
-    private void clientsForHub() throws IOException { 
+    private void handleListClientsForHub() throws IOException { 
         String id = in.readUTF();
         String hub = in.readUTF();
         String tag = in.readUTF();
@@ -313,7 +308,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     } 
 
-    private void clients() throws IOException { 
+    private void handleListClients() throws IOException { 
         
         String id = in.readUTF();
         String tag = in.readUTF();
@@ -346,7 +341,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     } 
 
-    private void directions() throws IOException { 
+    private void handleGetDirectionsToClient() throws IOException { 
         String id = in.readUTF();
         String client = in.readUTF();
          
@@ -435,7 +430,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     } 
 
-    private void removeInfo() throws IOException { 
+    private void handleRemoveProperty() throws IOException { 
         
         String id = in.readUTF();
         String tag = in.readUTF();
@@ -462,7 +457,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     } 
            
-    private void createVirtual() throws IOException { 
+    private void handleCreateVirtualConnection() throws IOException { 
         
         String id = in.readUTF();
         
@@ -498,7 +493,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }         
     } 
 
-    private void replyVirtual() throws IOException { 
+    private void handleAckCreateVirtualConnection() throws IOException { 
         
         String localID = in.readUTF();        
         String result = in.readUTF();
@@ -534,7 +529,7 @@ public class ClientConnection extends MessageForwardingConnection {
     } 
 
     
-    private void closeVirtual() throws IOException { 
+    private void handleCloseVirtualConnection() throws IOException { 
 
         String id = in.readUTF();        
         int vc = in.readInt();
@@ -544,7 +539,10 @@ public class ClientConnection extends MessageForwardingConnection {
                     " closing vitual connection " + vc);
         }
                
-        String result = forwardAndCloseVirtualConnection(vc);
+        vclogger.warn("CLIENT got request to close connection: " + vc, 
+                new Exception());
+                
+        String result = closeVirtualConnection(vc);
         
         synchronized (this) {
             out.write(ServiceLinkProtocol.INFO);           
@@ -563,7 +561,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }         
     } 
     
-    private void messageVirtual() throws IOException {
+    private void handleForwardVirtualMessage() throws IOException {
     
         int vc = in.readInt();
         int size = in.readInt();
@@ -575,7 +573,7 @@ public class ClientConnection extends MessageForwardingConnection {
         forwardMessage(vc, data);
     }
     
-    private void messageVirtualAck() throws IOException {
+    private void handleForwardVirtualMessageAck() throws IOException {
         
         int vc = in.readInt();
         forwardMessageAck(vc);
@@ -602,7 +600,7 @@ public class ClientConnection extends MessageForwardingConnection {
                 if (conlogger.isDebugEnabled()) {
                     conlogger.debug("Connection " + clientAddress + " disconnecting");
                 } 
-                disconnect();
+                handleDisconnect();
                 return false;
             
             case ServiceLinkProtocol.HUBS:
@@ -610,7 +608,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reqlogger.debug("Connection " + clientAddress + " requests " 
                             + "hubs");
                 } 
-                hubs();
+                handleListHubs();
                 return true;
 
             case ServiceLinkProtocol.HUB_DETAILS:
@@ -618,7 +616,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reqlogger.debug("Connection " + clientAddress + " requests " 
                             + "hub details");
                 } 
-                hubDetails();
+                handleListHubDetails();
                 return true;
                 
             case ServiceLinkProtocol.CLIENTS_FOR_HUB:
@@ -626,7 +624,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " local clients");
                 } 
-                clientsForHub();
+                handleListClientsForHub();
                 return true;
             
             case ServiceLinkProtocol.ALL_CLIENTS:
@@ -634,7 +632,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " all clients");
                 }
-                clients();
+                handleListClients();
                 return true;
             
             case ServiceLinkProtocol.DIRECTION:
@@ -642,7 +640,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reqlogger.debug("Connection " + clientAddress + " requests" 
                             + " direction to other client");
                 }
-                directions();
+                handleGetDirectionsToClient();
                 return true;
             
             case ServiceLinkProtocol.REGISTER_PROPERTY:
@@ -666,7 +664,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " requests" 
                             + " info removal");
                 }
-                removeInfo();
+                handleRemoveProperty();
                 return true;
             
             case ServiceLinkProtocol.CREATE_VIRTUAL:
@@ -674,15 +672,15 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " requests" 
                             + " setup of virtual connection");
                 }
-                createVirtual();
+                handleCreateVirtualConnection();
                 return true;
           
-            case ServiceLinkProtocol.REPLY_VIRTUAL:
+            case ServiceLinkProtocol.CREATE_VIRTUAL_ACK:
                 if (reglogger.isDebugEnabled()) {
                     reglogger.debug("Connection " + clientAddress + " replied" 
                             + " to virtual connection setup");
                 }
-                replyVirtual();                
+                handleAckCreateVirtualConnection();                
                 return true;                        
                           
             case ServiceLinkProtocol.CLOSE_VIRTUAL:
@@ -690,7 +688,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " requests" 
                             + " close of virtual connection");
                 }
-                closeVirtual();
+                handleCloseVirtualConnection();
                 return true;            
             
             case ServiceLinkProtocol.MESSAGE_VIRTUAL:
@@ -698,7 +696,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " sends" 
                             + " message over virtual connection");
                 }
-                messageVirtual();
+                handleForwardVirtualMessage();
                 return true;                        
             
             case ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK:
@@ -706,7 +704,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " sends" 
                             + " ack over virtual connection");
                 }               
-                messageVirtualAck();
+                handleForwardVirtualMessageAck();
                 return true;                        
             
                 
@@ -714,13 +712,13 @@ public class ClientConnection extends MessageForwardingConnection {
                 conlogger.warn("Connection " + clientAddress 
                         + " got unknown " + "opcode " + opcode 
                         + " -- disconnecting");
-                disconnect();
+                handleDisconnect();
                 return false;                
             } 
             
         } catch (Exception e) { 
             conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            disconnect();
+            handleDisconnect();
         }
         
         return false;

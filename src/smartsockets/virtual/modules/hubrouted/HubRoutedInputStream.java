@@ -11,24 +11,34 @@ public class HubRoutedInputStream extends InputStream {
     private int used = 0;
     private boolean closed = false;
         
+    private final byte [] single = new byte[1];
+    
     HubRoutedInputStream(HubRoutedVirtualSocket parent) { 
         this.parent = parent;
     }
     
     public int read() throws IOException {
         
-        byte [] tmp = new byte[1];
+        int result = read(single);
         
-        int result = read(tmp);
+        while (result == 0) {
+            // TODO: is this right ? 
+            result = read(single);
+        }
         
-        if (result == 1) { 
-            return tmp[0];
-        } else { 
+        if (result == 1) {
+            //System.err.println("InputStream returning single byte: " + single[0]);            
+            return (single[0] & 0xff);
+        } else {
+            //System.err.println("InputStream returning single result: " + result);            
             return result;
         }
     }
 
     public int read(byte[] b) throws IOException { 
+        
+ //       System.err.println("InputStream read(byte[])");
+        
         return read(b, 0, b.length);
     }
     
@@ -40,18 +50,34 @@ public class HubRoutedInputStream extends InputStream {
         
         if (buffer == null || used == buffer.length) {
             buffer = parent.getBuffer(buffer);
+            
+   //         System.err.println("InputStream got byte[" + buffer.length + "]");
+            
             used = 0;
         }
         
         int avail = buffer.length - used;
             
-        if (len < avail) { 
+        //System.err.println("InputStream has byte[" + buffer.length + "] used = "
+                //+ used + " avail = "+ avail); 
+        
+        if (len <= avail) { 
+            //System.err.println("InputStream has enough bytes: " + avail 
+                    //+ " (" + len + ")");            
+            
             System.arraycopy(buffer, used, b, off, len);
             used += len;
+            
+            //System.err.println("InputStream returning len: " + len);            
             return len;                
         } else { 
+            //System.err.println("InputStream has too few bytes: " + avail  
+              //      + " (" + len + ")");            
+            
             System.arraycopy(buffer, used, b, off, avail);
             used = buffer.length;
+            
+            //System.err.println("InputStream returning avail: " + avail);
             return avail;
         }               
     }

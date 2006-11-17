@@ -15,6 +15,7 @@ import smartsockets.virtual.VirtualSocketAddress;
 
 public class HubRoutedVirtualSocket extends VirtualSocket {
     
+    private final HubRouted parent;     
     private final ServiceLink serviceLink;
     private final int connectionIndex;
     private final String connectionID;
@@ -26,17 +27,19 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     
     private final LinkedList<byte[]> incoming = new LinkedList<byte[]>();
 
-    protected HubRoutedVirtualSocket(VirtualSocketAddress target, 
+    protected HubRoutedVirtualSocket(HubRouted parent, 
+            VirtualSocketAddress target, 
             ServiceLink serviceLink, int connectionIndex, Map p) {                
-        this(target, serviceLink, connectionIndex, null, p);        
+        this(parent, target, serviceLink, connectionIndex, null, p);        
     }
         
-    protected HubRoutedVirtualSocket(VirtualSocketAddress target, 
-            ServiceLink serviceLink, int connectionIndex, String connectionID, 
-            Map p) {        
+    protected HubRoutedVirtualSocket(HubRouted parent, 
+            VirtualSocketAddress target, ServiceLink serviceLink, 
+            int connectionIndex, String connectionID, Map p) {        
         
         super(target);
         
+        this.parent = parent;
         this.serviceLink = serviceLink;
         this.connectionIndex = connectionIndex;
         this.connectionID = connectionID;
@@ -91,8 +94,24 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         
     }
     
-    public synchronized void close() {          
-        closed = true;
+    public synchronized void close() {
+        
+        in.close();
+        
+        try {
+            out.close();
+        } catch (Exception e) { 
+            // ignore
+        }
+        
+        try {
+            serviceLink.closeVirtualConnection(connectionIndex);
+        } catch (Exception e) {
+            // TODO: handle exception!            
+        }
+
+        closed = true;        
+        parent.close(connectionIndex);        
     }
     
     public SocketChannel getChannel() {

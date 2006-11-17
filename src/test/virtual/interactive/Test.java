@@ -208,7 +208,9 @@ public class Test extends Thread {
                     // ignored                    
                 } catch (Exception e) {
                     done();
-                    gotMessage("Got exception on Connection " + number);                
+                    gotMessage("Got exception on Connection " + number + ": " 
+                            + e);                    
+                    e.printStackTrace(System.err);
                 }
                                
                 done = getDone();

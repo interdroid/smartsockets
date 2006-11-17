@@ -73,7 +73,7 @@ public class HubConnection extends MessageForwardingConnection {
             synchronized (this) {
                 out.write(HubProtocol.CREATE_VIRTUAL);           
                 out.writeUTF(id);            
-                out.writeInt(vc.number);
+                out.writeInt(vc.index);
                 out.writeUTF(source.toString());
                 out.writeUTF(target.toString());
                 out.writeUTF(info);            
@@ -116,20 +116,19 @@ public class HubConnection extends MessageForwardingConnection {
         }
 
         // Now tie the two together!
-        vc.init(m, origin.number, DEFAULT_CREDITS);
-        origin.init(this, vc.number, DEFAULT_CREDITS);
+        vc.init(m, origin.index, 0);
+        origin.init(this, vc.index, 0);
         
+        vclogger.warn("HUB Connection setup of: " + origin.index 
+                + "<-->" + vc.index);
+                
         // return null to indicate the lack of errors ;-)
         return null;
     }
     
-    protected String closeVirtualConnection(int index) { 
+    protected void forwardVirtualClose(int index) { 
         
-        VirtualConnection vc = vcs.getVC(index);
-
-        if (vc == null) {             
-            return "Virtual connection " + index + " not found!";
-        }
+        vclogger.warn("HUB Sending closing connection: " + index);
         
         // forward the close
         try {
@@ -143,10 +142,7 @@ public class HubConnection extends MessageForwardingConnection {
                     + " is broken!", e);
             
 //          TODO: handle exception...
-        }        
-        
-        vcs.freeVC(vc);                
-        return null;                
+        }                
     }
     
     protected void forwardVirtualMessage(int index, byte [] data) {
@@ -201,7 +197,7 @@ public class HubConnection extends MessageForwardingConnection {
         }        
     }
     
-    public synchronized void gossip() { 
+    public void gossip() { 
         
         long newSendState = state.get(); 
 
@@ -227,17 +223,23 @@ public class HubConnection extends MessageForwardingConnection {
                             + tmp.getLastLocalUpdate()  
                             + " > lastSendState= " + lastSendState);
                 }
-                    
-                writeHub(tmp);                    
+           
+                synchronized (this) {  
+                    writeHub(tmp);
+                } 
                 writes++;
             }        
             
             if (writes == 0) {
-                // No proxies where written, so write a ping instead.                 
-                writePing();
+                // No proxies where written, so write a ping instead.
+                synchronized (this) { 
+                    writePing();
+                } 
             } 
             
-            out.flush();
+            synchronized (this) { 
+                out.flush();
+            }
             
         } catch (Exception e) {
             goslogger.warn("Unhandled exception in HubConnection!!", e);            
@@ -391,6 +393,8 @@ public class HubConnection extends MessageForwardingConnection {
         
         int timeout = in.readInt();
         
+        vclogger.warn("HUB connection request for: " + index);
+        
         if (vclogger.isDebugEnabled()) {
             vclogger.debug("Connection " + peer.hubAddressAsString 
                     + " return id: " + id + " creating virtual connection " 
@@ -452,11 +456,14 @@ public class HubConnection extends MessageForwardingConnection {
 
     private void handleCloseVirtual() throws IOException { 
         
-        int index = in.readInt();        
-        String result = forwardAndCloseVirtualConnection(index);
+        int index = in.readInt();     
+        
+        vclogger.warn("HUB locally closing connection: " + index);
+        
+        String result = closeVirtualConnection(index);
         
         if (result != null) { 
-            vclogger.warn("Failed to close connetion " + index + ": " + result);
+            vclogger.warn("Failed to close connection " + index + ": " + result);
         }
     } 
  

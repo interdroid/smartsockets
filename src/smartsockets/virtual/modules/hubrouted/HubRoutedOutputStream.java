@@ -35,13 +35,22 @@ public class HubRoutedOutputStream extends OutputStream {
         
             int space = buffer.length-used;
             
-            if (len < space) {
+            if (len <= space) {
+                
+                //System.err.println("OutputStream has enough space: " + len 
+                  //      + "(" + space + ")");
+                
                 System.arraycopy(b, off, buffer, used, len);            
                 used += len;             
                 return;
             } 
          
+  ///          System.err.println("OutputStream has not enough space: " + len 
+                    //+ "(" + space + ")");
+                        
             System.arraycopy(b, off, buffer, used, space);        
+            
+            used = buffer.length;
             
             len -= space;
             off += space;
@@ -50,12 +59,24 @@ public class HubRoutedOutputStream extends OutputStream {
         }
     }
     
-    public void flush() throws IOException { 
+    public void flush() throws IOException {
+        
+//        System.err.println("OutputStream flushing: " + used + " bytes"); 
+
+        if (closed) { 
+            return;
+        }
+        
         parent.flush(buffer, 0, used);
         used = 0;        
     }
     
-    public void close() throws IOException { 
+    public void close() throws IOException {
+        
+        if (closed) { 
+            return;
+        }
+        
         flush();
         closed = true;
     }
