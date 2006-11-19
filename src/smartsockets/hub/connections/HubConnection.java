@@ -93,25 +93,25 @@ public class HubConnection extends MessageForwardingConnection {
         
         if (reply == null) {
             // receiver took too long to accept: timeout
-            vcs.freeVC(vc);            
+            vcs.removeVC(vc.index);            
             return "Timeout";
         }
         
         if (reply.length != 2) {
             // got malformed reply
-            vcs.freeVC(vc);
+            vcs.removeVC(vc.index);
             return "Received malformed reply";
         }
         
         if (reply[0].equals("DENIED")) { 
             // connection refused
-            vcs.freeVC(vc);
+            vcs.removeVC(vc.index);
             return reply[1];
         }
 
         if (!reply[0].equals("OK")) {
             // should be DENIED or OK, so we got a malformed reply
-            vcs.freeVC(vc);
+            vcs.removeVC(vc.index);
             return "Received malformed reply";
         }
 
@@ -460,11 +460,11 @@ public class HubConnection extends MessageForwardingConnection {
         
         vclogger.warn("HUB locally closing connection: " + index);
         
-        String result = closeVirtualConnection(index);
+        closeVirtualConnection(index);
         
-        if (result != null) { 
-            vclogger.warn("Failed to close connection " + index + ": " + result);
-        }
+        //if (result != null) { 
+        //    vclogger.warn("Failed to close connection " + index + ": " + result);
+       // }
     } 
  
     private void handleMessageVirtual() throws IOException { 

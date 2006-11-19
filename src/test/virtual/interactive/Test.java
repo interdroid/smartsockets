@@ -676,8 +676,8 @@ public class Test extends Thread {
         c.close();
         connections.set(target, null);        
     }
-    
     private void connectRepeat(String s) { 
+    
         
         int target = -1;
         

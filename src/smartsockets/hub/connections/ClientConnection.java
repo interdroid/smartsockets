@@ -542,20 +542,20 @@ public class ClientConnection extends MessageForwardingConnection {
         vclogger.warn("CLIENT got request to close connection: " + vc, 
                 new Exception());
                 
-        String result = closeVirtualConnection(vc);
+        closeVirtualConnection(vc);
         
         synchronized (this) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);
             
-            if (result == null) { 
+          //  if (result == null) { 
                 out.writeInt(1);            
                 out.writeUTF("OK");
-            } else { 
-                out.writeInt(2);            
-                out.writeUTF("DENIED");
-                out.writeUTF(result);
-            }
+          //  } else { 
+          //      out.writeInt(2);            
+           //     out.writeUTF("DENIED");
+           //     out.writeUTF(result);
+           // }
             
             out.flush();
         }         

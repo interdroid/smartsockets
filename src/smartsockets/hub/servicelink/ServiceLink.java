@@ -294,7 +294,7 @@ public class ServiceLink implements Runnable {
                     out.writeUTF("Connection refused");
                     out.flush();
                     
-                    vcs.freeVC(vc);
+                    vcs.removeVC(vc.index);
                 }
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while writing to hub!", e);
@@ -319,15 +319,13 @@ public class ServiceLink implements Runnable {
                     + "): serversocket did not accept");
         }
                 
-        VirtualConnection vc = vcs.getVC(index);
+        VirtualConnection vc = vcs.removeVC(index);
         
         if (vc == null) { 
             logger.warn("Cannot close connection: " + index 
                     + " since it does not exist!");            
             return;
         }
-        
-        vcs.freeVC(vc);
         
         try { 
             synchronized (this) {         
@@ -398,7 +396,7 @@ public class ServiceLink implements Runnable {
                             + index + "): no callback!");
                 }
                   
-                vcs.freeVC(vc);                
+                vcs.removeVC(vc.index);                
                 return false;
             } 
         } catch (IOException e) {
@@ -420,15 +418,13 @@ public class ServiceLink implements Runnable {
             logger.warn("Got close for connection: " + index);
         //}
         
-        VirtualConnection vc = vcs.getVC(index);
+        VirtualConnection vc = vcs.removeVC(index);
         
         if (vc == null) { 
             logger.warn("Cannot close connection: " + index 
                     + " since it does not exist!");            
             return;
         }
-        
-        vcs.freeVC(vc);
         
         VirtualConnectionCallBack cb = null;
         
@@ -838,18 +834,18 @@ public class ServiceLink implements Runnable {
                     int credits = Integer.parseInt(reply[1]);                    
                     vc.init(credits);
                 } else if (reply[0].equals("DENIED")) { 
-                    vcs.freeVC(vc);
+                    vcs.removeVC(vc.index);
                     exc = new IOException("Failed to setup connection to " 
                             + target + ": " + reply[1]);
                 } else { 
-                    vcs.freeVC(vc);
+                    vcs.removeVC(vc.index);
                     exc = new IOException("Failed to setup connection to " 
                             + target + ": got junk reply from hub: " 
                             + Arrays.deepToString(reply));                    
                 } 
 
             } else {                  
-                vcs.freeVC(vc);
+                vcs.removeVC(vc.index);
                 exc = new IOException("Failed to setup connection to " 
                         + target + ": got empty reply from hub!");                    
             } 
@@ -900,27 +896,19 @@ public class ServiceLink implements Runnable {
 
             String [] reply = (String []) tmp.getReply();
         
-            if (reply != null && reply.length > 0) { 
-                
-                if (reply[0].equals("OK")) {
-                    vcs.freeVC(vc);
-                } else if (reply[0].equals("DENIED")) {
-                    vcs.freeVC(vc);                    
-                    exc = new IOException("Failed to cleanly close virtual " +
-                            "connection " + index + ": " + reply[1]);
-                } else { 
-                    vcs.freeVC(vc);
-                    exc = new IOException("Failed to close virtual connection "
-                            + index + ": got junk reply from hub: "
-                            + Arrays.deepToString(reply));                    
-                } 
-
-            } else {
-                vcs.freeVC(vc);
+            vcs.removeVC(vc.index);
+            
+            if (reply == null || reply.length == 0) { 
                 exc = new IOException("Failed to close virtual connection " 
                         + index + ": got illegal reply from hub!");                    
+            } else if (reply[0].equals("DENIED")) {
+                exc = new IOException("Failed to cleanly close virtual " +
+                        "connection " + index + ": " + reply[1]);
+            } else if (!reply[0].equals("OK")) {
+                exc = new IOException("Failed to close virtual connection "
+                        + index + ": got junk reply from hub: "
+                        + Arrays.deepToString(reply));                    
             } 
-
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
