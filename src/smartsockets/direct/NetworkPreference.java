@@ -43,10 +43,11 @@ public class NetworkPreference {
      * 
      * where the variables (X and Y) have one of the following values:
      * 
-     * "site" indicating all site-local addresses "link" indicating all
-     * link-local addresses "global" indicating all global addresses IP/MASK an
-     * IP address and a netmask (used to indicate a network range). IPMASK short
-     * notation for IP and simple netmask (e.g, 192.168.*.*)
+     * "site" indicating all site-local addresses 
+     * "link" indicating all link-local addresses 
+     * "global" indicating all global addresses 
+     * IP/MASK an IP address and a netmask (used to indicate a network range). 
+     * IPMASK short notation for IP and simple netmask (e.g, 192.168.*.*)
      * 
      * When all matching network addresses have been tried, and the connection
      * setup has failed, all remaining network addresses which do not match any
@@ -78,11 +79,11 @@ public class NetworkPreference {
         handleProperties(myAddress, p);
         
         if (logger.isInfoEnabled()) { 
-            logger.info("My cluster is: "
+            logger.info("My network is: "
                     + (networkName != null ? networkName : "N/A"));
 
             if (networksPreference == null) {
-                logger.info("No cluster definitions found.");
+                logger.info("No network definitions found.");
             }
         }
     }
@@ -168,7 +169,11 @@ public class NetworkPreference {
             } else if (p.equals("global")) {
                 // all global
                 target.addGlobal();
+            } else if (p.equals("none")) {
+                // no connection allowed
+                target.addNone();
             } else {
+                // explicit network rule
                 target.addNetwork(getNetwork(p));
             }
         }
@@ -243,6 +248,7 @@ public class NetworkPreference {
         if (logger.isInfoEnabled()) { 
             logger.info("Using manual network setup.");
         }
+        
         handlePreference(target, property);
     }
 
@@ -272,11 +278,11 @@ public class NetworkPreference {
         }
 
         for (int i=0;i<networks.length;i++) { 
-            handleClusterProperties(myAddress, networks[i], p);
+            handleNetworkDefinition(myAddress, networks[i], p);
         }
     }
 
-    private void handleClusterProperties(IPAddressSet myAddress, String name,
+    private void handleNetworkDefinition(IPAddressSet myAddress, String name,
             TypedProperties p) {
 
         boolean myNetwork = false;
@@ -299,7 +305,7 @@ public class NetworkPreference {
         if (logger.isInfoEnabled()) {        
             logger.info("  range: " + Arrays.deepToString(range));
         
-            logger.info("  in cluster use: " + 
+            logger.info("  in network use: " + 
                     (network != null ? Arrays.deepToString(network) : ""));
         
             logger.info("  to outside use: " + 
@@ -307,7 +313,7 @@ public class NetworkPreference {
         }
         
         if (network != null && myNetwork) {
-            networksPreference = new Preference("cluster", true);
+            networksPreference = new Preference("lan", true);
             handlePreference(networksPreference, network);
         }
 
@@ -484,7 +490,7 @@ public class NetworkPreference {
 
     public InetSocketAddress[] sort(InetSocketAddress[] ads, boolean inPlace) {
 
-        // Check if the target belongs to our cluster.
+        // Check if the target belongs to our network.
         if (networksPreference != null && inNetwork(ads)) { 
             return networksPreference.sort(ads, inPlace);
         }
@@ -494,7 +500,7 @@ public class NetworkPreference {
 
     public InetAddress[] sort(InetAddress[] ads, boolean inPlace) {
 
-        // Check if the target belongs to our cluster.
+        // Check if the target belongs to our network.
         if (networksPreference != null && inNetwork(ads)) { 
             return networksPreference.sort(ads, inPlace);
         }
@@ -502,7 +508,7 @@ public class NetworkPreference {
         return defaultPreference.sort(ads, inPlace);
     }
 
-    public String getClusterName() {
+    public String getNetworkName() {
         return networkName;
     }
 

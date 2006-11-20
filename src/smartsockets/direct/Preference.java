@@ -14,14 +14,16 @@ import smartsockets.util.NetworkUtils;
 
 class Preference {
 
-    private static final Logger logger = ibis.util.GetLogger
-        .getLogger("smartsockets.network.preference");
+    private static final Logger logger = 
+        ibis.util.GetLogger.getLogger("smartsockets.network.preference");
     
     private final String name;
 
     private final boolean strict;
 
     private ArrayList<Network> preferences = new ArrayList<Network>();
+
+    private boolean noneAllowed = false;
 
     private boolean siteUsed = false;
 
@@ -47,6 +49,13 @@ class Preference {
                     + "already used.");
         }
 
+        if (noneAllowed) { 
+            logger.warn("Preference(" + name + "): "
+                    + "Cannot combine network rule 'site' with rule 'none'!");
+            throw new IllegalStateException(name + ": Cannot combine network " +
+                    "rule 'site' with rule 'none'!");
+        }
+               
         if (logger.isDebugEnabled()) {
             logger.debug("Preference(" + name
                     + "): Adding site-local addresses to "
@@ -66,6 +75,13 @@ class Preference {
                     + "already used.");
         }
 
+        if (noneAllowed) { 
+            logger.warn("Preference(" + name + "): "
+                    + "Cannot combine network rule 'link' with rule 'none'!");
+            throw new IllegalStateException(name + ": Cannot combine network " +
+                    "rule 'link' with rule 'none'!");
+        }
+                
         if (logger.isDebugEnabled()) {
             logger.debug("Preference(" + name + "): Adding "
                     + "link-local addresses to connection preference");
@@ -77,6 +93,13 @@ class Preference {
 
     void addGlobal() {
 
+        if (noneAllowed) { 
+            logger.warn("Preference(" + name + "): "
+                    + "Cannot combine network rule 'global' with rule 'none'!");
+            throw new IllegalStateException(name + ": Cannot combine network " +
+                    "rule 'global' with rule 'none'!");
+        }
+        
         if (globalUsed) {
             logger.warn("Preference(" + name + "): "
                     + "Global addresses already used.");
@@ -93,13 +116,34 @@ class Preference {
         globalUsed = true;
     }
 
+    public void addNone() {
+
+        if (siteUsed || linkUsed || globalUsed) {
+            logger.warn("Preference(" + name + "): "
+                    + "Cannot combine network rule 'none' with any rules that " +
+                            "allow connection!");
+            throw new IllegalStateException(name + ": network rule 'none' " +
+                    "specified, while other rules already apply!.");
+        }
+
+        preferences.add(Network.NONE);
+        noneAllowed = true;
+    }
+    
     void addNetwork(Network nw) {
+
+        if (noneAllowed) { 
+            logger.warn("Preference(" + name + "): "
+                    + "Cannot combine network rule with rule 'none'!");
+            throw new IllegalStateException(name + ": Cannot combine network " +
+                    "rule  with rule 'none'!");
+        }
 
         if (logger.isDebugEnabled()) {
             logger.debug("Preference(" + name + "): "
                     + "Adding network " + nw + " to connection preference");
         }
-
+        
         preferences.add(nw);
     }
 
@@ -122,7 +166,7 @@ class Preference {
         int score = 0;
         
         for (Network nw : preferences) { 
-
+            
             if (nw.match(ad)) { 
                 return score;
             } else { 
@@ -304,4 +348,6 @@ class Preference {
 
         return buf.toString();
     }
+
+    
 }

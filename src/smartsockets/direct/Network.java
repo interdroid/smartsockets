@@ -8,12 +8,14 @@ import smartsockets.util.NetworkUtils;
 public final class Network {
 
     private enum Type { 
+        NONE, 
         SITE, 
         LINK, 
         GLOBAL, 
         SPECIFIC;            
     }
 
+    public static final Network NONE = new Network(Type.NONE);
     public static final Network SITE = new Network(Type.SITE);
     public static final Network LINK = new Network(Type.LINK);
     public static final Network GLOBAL = new Network(Type.GLOBAL);
@@ -37,6 +39,8 @@ public final class Network {
     boolean match(InetAddress addr) { 
         
         switch (type) { 
+        case NONE:
+            return false;
         case SITE:
             return addr.isSiteLocalAddress();
         case LINK:
@@ -78,6 +82,8 @@ public final class Network {
     public String toString() { 
         
         switch (type) { 
+        case NONE:
+            return "none";
         case SITE:
             return "site";
         case LINK:
