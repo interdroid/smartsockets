@@ -20,7 +20,7 @@ public interface ServiceLinkProtocol {
     public static final byte CREATE_VIRTUAL_ACK  = 64;       
         
     public static final byte CLOSE_VIRTUAL       = 61;
-    public static final byte CLOSE_VIRTUAL_ACK   = 65;
+  //  public static final byte CLOSE_VIRTUAL_ACK   = 65;
     
     public static final byte MESSAGE_VIRTUAL     = 62;
     public static final byte MESSAGE_VIRTUAL_ACK = 63;

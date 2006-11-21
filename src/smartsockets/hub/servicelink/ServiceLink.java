@@ -3,8 +3,11 @@ package smartsockets.hub.servicelink;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -12,8 +15,7 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
-import smartsockets.hub.connections.VirtualConnection;
-import smartsockets.hub.connections.VirtualConnections;
+import smartsockets.hub.connections.VirtualConnectionIndex;
 
 public class ServiceLink implements Runnable {
     
@@ -23,6 +25,8 @@ public class ServiceLink implements Runnable {
 
     private static final int TIMEOUT = 5000;
     private static final int DEFAULT_WAIT_TIME = 10000;
+
+    private static final int DEFAULT_CREDITS = 100;
            
     private final HashMap<String, Object> callbacks= 
         new HashMap<String, Object>();
@@ -42,7 +46,14 @@ public class ServiceLink implements Runnable {
     
     private int maxWaitTime = DEFAULT_WAIT_TIME;
     
-    private final VirtualConnections vcs = new VirtualConnections();
+    private final VirtualConnectionIndex vcIndex = 
+        new VirtualConnectionIndex(true);
+    
+    private final Map<Long, Credits> credits = 
+        Collections.synchronizedMap(new HashMap<Long, Credits>());
+    
+    private final HashMap<Long, String []> connectionACKs = 
+        new HashMap<Long, String []>();
     
     private ServiceLink(SocketAddressSet hubAddress, 
             SocketAddressSet myAddress) throws IOException { 
@@ -235,16 +246,16 @@ public class ServiceLink implements Runnable {
     
     private void handleIncomingConnection() throws IOException { 
 
-        String id = in.readUTF();
         String source = in.readUTF();
         String info = in.readUTF();
         int timeout = in.readInt();
+        long index = in.readLong();
                 
         if (logger.isInfoEnabled()) {
             logger.info("ServiceLink: Received request for incoming connection "
-                    + "from " + source + " (" + id + ")"); 
+                    + "from " + source + " (" + index + ")"); 
         }
-       
+        
         VirtualConnectionCallBack cb = null;
         
         try {         
@@ -256,13 +267,13 @@ public class ServiceLink implements Runnable {
         if (cb == null) {
             
             if (logger.isInfoEnabled()) {
-                logger.info("DENIED connection: " + id + ": no callback!");
+                logger.info("DENIED connection: " + index + ": no callback!");
             }
                         
             try {
                 synchronized (this) {         
                     out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
-                    out.writeUTF(id);
+                    out.writeLong(index);
                     out.writeUTF("DENIED");                    
                     out.writeUTF("No one will accept the connection");                
                     out.flush();            
@@ -276,26 +287,26 @@ public class ServiceLink implements Runnable {
             return;
         } 
 
-        VirtualConnection vc = vcs.newVC();
+        credits.put(index, new Credits(DEFAULT_CREDITS));
         
-        if (!cb.connect(new SocketAddressSet(source), info, timeout, vc.index, id)) {            
+        if (!cb.connect(new SocketAddressSet(source), info, timeout, index)) {            
             // Connection refused....            
             try {
+                credits.remove(index);
                 
                 if (logger.isInfoEnabled()) {
-                    logger.info("DENIED connection: " + id 
+                    logger.info("DENIED connection: " + index
                             + ": connection refused!");
                 }                
                 
                 synchronized (this) {         
                     out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
-                    out.writeUTF(id);
+                    out.writeLong(index);
                     out.writeUTF("DENIED");
                     out.writeUTF("Connection refused");
                     out.flush();
-                    
-                    vcs.removeVC(vc.index);
                 }
+                
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while writing to hub!", e);
                 closeConnection();
@@ -306,31 +317,40 @@ public class ServiceLink implements Runnable {
         // Connection is now pending in the backlog of a serversocket somewhere.
         // It may be accepted or rejected at any time.
         if (logger.isInfoEnabled()) {
-            logger.info("QUEUED connection: " + id + " (" + vc.index 
-                    + "): waiting for accept");
+            logger.info("QUEUED connection: " + index + ": waiting for accept");
         }                
     } 
-
-    public void rejectIncomingConnection(int index, String id) {
+    
+    private void handleIncomingConnectionACK() throws IOException { 
+        
+        long index = in.readLong();
+        String result = in.readUTF();
+        String info = in.readUTF();
+        
+        // Not very efficient...
+        gotConnectionACK(index, new String [] { result, info });
+    }
+    
+    public void rejectIncomingConnection(long index) {
         
         // The incoming connection 'index' was rejected.
         if (logger.isInfoEnabled()) {
-            logger.info("REJECTED connection: " + id + " (" + index 
+            logger.info("REJECTED connection: (" + index 
                     + "): serversocket did not accept");
         }
                 
-        VirtualConnection vc = vcs.removeVC(index);
+        Credits c = credits.get(index);
         
-        if (vc == null) { 
+        if (c == null) { 
             logger.warn("Cannot close connection: " + index 
-                    + " since it does not exist!");            
+                    + " since it does not exist (anymore)!");            
             return;
         }
         
         try { 
             synchronized (this) {         
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
-                out.writeUTF(id);
+                out.writeLong(index);
                 out.writeUTF("DENIED");  
                 out.writeUTF("Connection refused");
                 out.flush();
@@ -341,110 +361,103 @@ public class ServiceLink implements Runnable {
         }
     }
     
-    public boolean acceptIncomingConnection(int index, String id) throws IOException { 
-        
-        // The incoming connection 'index' was accepted. The only problem is 
-        // that we are not sure if we are in time. We therefore send a reply, 
-        // for which we get a reply back again...
-        if (logger.isInfoEnabled()) {
-            logger.info("ACCEPTED connection: " + id + " (" + index + ")");
-        }
-        
-        String localID = "ReplyVirtual" + getNextSimpleCallbackID();
-            
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(localID, tmp);
-
-        VirtualConnection vc = vcs.getVC(index);
-        
-        try { 
-            synchronized (this) {         
-                out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
-                out.writeUTF(id);
-                out.writeUTF("OK");  
-                out.writeInt(index);
-                out.writeUTF(localID);                    
-                out.flush();
-
-                // TODO: fix credits here ?
-                vc.init(100);                    
-            }
-            
-            String [] reply = (String []) tmp.getReply();
-            
-            if (reply == null || reply.length != 1 || !reply[0].equals("OK")) { 
-                // We accepted the connection, but the other side refused. This 
-                // is most likely to be caused a timeout. All we have to do is 
-                // inform the user and free the connection.
-                if (logger.isInfoEnabled()) {
-                    logger.info("ACCEPTED connection FELL OVER: " + id 
-                            + " (" + index + "): client has already timed out");
-                }
-                
-                VirtualConnectionCallBack cb = null;
-                
-                try {         
-                    cb = (VirtualConnectionCallBack) findCallback("__virtual");
-                } catch (ClassCastException e) {
-                    // ignore            
-                }
-                    
-                if (cb != null) {  
-                    cb.disconnect(vc.index);
-                } else { 
-                    logger.warn("Cannot forward disconnect: " + id + "(" 
-                            + index + "): no callback!");
-                }
-                  
-                vcs.removeVC(vc.index);                
-                return false;
-            } 
-        } catch (IOException e) {
-            logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
-            throw new IOException("Connection to hub lost!");            
-        } finally { 
-            removeCallback(id);
-        }
-                
-        return true;
-    }
-       
-    private void handleIncomingClose() throws IOException { 
-        
-        int index = in.readInt();
-        
-        //if (logger.isDebugEnabled()) {
-            logger.warn("Got close for connection: " + index);
-        //}
-        
-        VirtualConnection vc = vcs.removeVC(index);
-        
-        if (vc == null) { 
-            logger.warn("Cannot close connection: " + index 
-                    + " since it does not exist!");            
-            return;
-        }
-        
+    private synchronized void disconnectCallback(long index) {
         VirtualConnectionCallBack cb = null;
-        
+
         try {         
             cb = (VirtualConnectionCallBack) findCallback("__virtual");
         } catch (ClassCastException e) {
             // ignore            
         }
 
-        if (cb != null) { 
+        if (cb != null) {  
             cb.disconnect(index);
         } else { 
-            logger.warn("Cannot forward close for connection: " + index 
+            logger.warn("Cannot forward disconnect(" 
+                    + index + "): no callback!");
+        }
+    }
+    
+    public boolean acceptIncomingConnection(long index) throws IOException { 
+        
+        // The incoming connection 'index' was accepted. The only problem is 
+        // that we are not sure if we are in time. We therefore send a reply, 
+        // for which we get a reply back again...
+        if (logger.isInfoEnabled()) {
+            logger.info("ACCEPTED connection: (" + index + ")");
+        }
+
+        Credits c = credits.get(index);
+        
+        if (c == null) { 
+            if (logger.isInfoEnabled()) {
+                logger.info("ACCEPTED connection disappeared: " 
+                        + " (" + index + "): client has already closed!");
+            }
+            
+            disconnectCallback(index);
+            return false;
+        }
+        
+        try { 
+            synchronized (this) {         
+                out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
+                out.writeLong(index);
+                out.writeUTF("OK");  
+                out.writeUTF("");                    
+                out.flush();
+            }
+            
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
+            closeConnection();
+            throw new IOException("Connection to hub lost!");            
+        }
+        
+        return true;
+    }
+       
+    private void handleIncomingClose() throws IOException { 
+        
+        long index = in.readLong();
+        
+        if (logger.isDebugEnabled()) {
+            logger.debug("Got close for connection: " + index);
+        }
+        
+        Credits c = credits.remove(index);
+        
+        if (c == null) {
+            // This may happen if we closed the connection while the other
+            // sides close was in transit...
+            if (logger.isInfoEnabled()) { 
+                logger.info("Cannot close connection: " + index 
+                        + " since it does not exist (anymore)!");
+            }
+            return;
+        }
+        
+        VirtualConnectionCallBack cb = null;
+        
+        synchronized (this) { 
+            try {         
+                cb = (VirtualConnectionCallBack) findCallback("__virtual");
+            } catch (ClassCastException e) {
+                // ignore            
+            }
+
+            if (cb != null) { 
+                cb.disconnect(index);
+            } else { 
+                logger.warn("Cannot forward close for connection: " + index 
                         + " to user: No callback registered!");            
+            }
         }
     }        
 
     private void handleIncomingMessage() throws IOException { 
 
-        int index = in.readInt();
+        long index = in.readLong();
         int len = in.readInt();
         
         if (logger.isDebugEnabled()) {
@@ -474,25 +487,29 @@ public class ServiceLink implements Runnable {
         } else { 
             logger.warn("Received virtual message(" + len + ") for connection: " 
                         + index + " which doesn't exist!!");
+            
+            // TODO: send close back ???
         }        
     }        
 
     private void handleIncomingAck() throws IOException { 
 
-        int index = in.readInt();
+        long index = in.readLong();
                 
         if (logger.isDebugEnabled()) {
-            logger.debug("Got ACK for connection: " + index);
+            logger.debug("Got Message ACK for connection: " + index);
         }
                 
-        VirtualConnection vc = vcs.getVC(index);
+        Credits c = credits.get(index);
+        
+        if (c == null) { 
+            logger.warn("Got ACK for non-existing virtual connection: " + index); 
             
-        if (vc == null) { 
-            logger.warn("Virtual connection: " + index + " does not exist!");            
-            throw new IOException("Not connected");
+            // TODO: send close back ???
+            return;
         }
                 
-        vc.addCredit();                  
+        c.addCredit();                  
     } 
     
     void receiveMessages() { 
@@ -501,6 +518,10 @@ public class ServiceLink implements Runnable {
          
             try { 
                 int header = in.read();
+                
+                if (logger.isDebugEnabled()) { 
+                    logger.debug("Servicelink got message: " + header);
+                }
                 
                 switch (header) { 
                 case -1: 
@@ -513,6 +534,10 @@ public class ServiceLink implements Runnable {
                 
                 case ServiceLinkProtocol.CREATE_VIRTUAL:
                     handleIncomingConnection();
+                    break;
+                
+                case ServiceLinkProtocol.CREATE_VIRTUAL_ACK:
+                    handleIncomingConnectionACK();
                     break;
                 
                 case ServiceLinkProtocol.CLOSE_VIRTUAL:
@@ -797,154 +822,199 @@ public class ServiceLink implements Runnable {
         return hubAddress;
     }
     
-    public int createVirtualConnection(SocketAddressSet target, String info, 
-            int timeout) throws IOException {
+    private void registerConnectionACK(long index) {        
+        synchronized (connectionACKs) {
+            connectionACKs.put(index, null);
+        }
+    }
+    
+    private void gotConnectionACK(long index, String [] result) {    
         
-        IOException exc = null;
-        
-        VirtualConnection vc = vcs.newVC();
-        
-        if (logger.isInfoEnabled()) {
-            logger.info("Creating virtual connection: " + vc.index);
+        //logger.warn("Got ACK: " + index + ": " + Arrays.deepToString(result));
+       
+        synchronized (connectionACKs) { 
+            if (connectionACKs.containsKey(index)) { 
+       
+             //   logger.warn("Delivering ACK: " + index);
+                
+                
+                connectionACKs.put(index, result);
+                connectionACKs.notifyAll();
+                return;
+            }             
         }
         
-        String id = "CreateVirtual" + getNextSimpleCallbackID();
+        // If we end up here, there was no one waiting for a connection ACK 
+        // for connection 'index' anymore. The connector probably timed out.
+        // To inform the other side of this, we send a 'close' back as a reply.
         
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+      //  logger.warn("Deleting ACK: " + index);
         
         try { 
+            closeVirtualConnection(index);
+        } catch (IOException e) {
+            // ignored... we did our best....
+        }
+    }
+    
+    private void waitForConnectionACK(long index, int timeout) 
+        throws IOException { 
+
+       // logger.warn("Waiting for ACK: " + index);
         
+        String [] result;
+        
+        synchronized (connectionACKs) {
+            
+            long endTime = System.currentTimeMillis() + timeout;
+            long timeLeft = timeout;
+            
+            result = connectionACKs.get(index);
+            
+            while (result == null && timeLeft >= 0) { 
+                try { 
+                    connectionACKs.wait(timeLeft);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+                
+                if (timeout > 0) { 
+                    timeLeft = endTime - System.currentTimeMillis();
+                    
+                    // Prevents us from accidentlyfalling into a wait(0)!!
+                    if (timeLeft == 0) { 
+                        timeLeft = -1;
+                    }
+                }
+                
+                result = connectionACKs.get(index);
+            }
+            
+            result = connectionACKs.remove(index);
+        }
+
+        // No result ? Timeout!
+        if (result == null) {
+            throw new SocketTimeoutException("Connect timed out!");
+        }
+        
+        // We have a result, but it may not be positive...
+        if (result[0].equals("DENIED")) {
+            throw new IOException("Connection failed: " + result[1]);
+        } 
+        
+        // Sanity check
+        if (!result[0].equals("OK")) {
+            throw new IOException("Connection failed: " + result[0]);
+        } 
+        
+        // Otherwise, the connection is accepted.
+        credits.put(index, new Credits(DEFAULT_CREDITS));
+    }
+    
+   
+    
+    public long createVirtualConnection(SocketAddressSet target, String info, 
+            int timeout) throws IOException {
+        
+        if (timeout < 0) { 
+            timeout = 0;
+        }
+        
+        long index = vcIndex.nextIndex();
+        
+        if (logger.isInfoEnabled()) {
+            logger.debug("Creating virtual connection: " + index);
+        }
+     
+        registerConnectionACK(index);
+        
+        try { 
             synchronized (this) {         
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL);
-                out.writeUTF(id);
-                out.writeInt(vc.index);
+                out.writeLong(index);
                 out.writeInt(timeout);                          
                 out.writeUTF(target.toString());
                 out.writeUTF(info);                                   
                 out.flush();            
-            } 
-
-            String [] reply = (String []) tmp.getReply();
-        
-            if (reply != null && reply.length > 0) { 
-                
-                if (reply[0].equals("OK")) {
-                    // ...
-                    int credits = Integer.parseInt(reply[1]);                    
-                    vc.init(credits);
-                } else if (reply[0].equals("DENIED")) { 
-                    vcs.removeVC(vc.index);
-                    exc = new IOException("Failed to setup connection to " 
-                            + target + ": " + reply[1]);
-                } else { 
-                    vcs.removeVC(vc.index);
-                    exc = new IOException("Failed to setup connection to " 
-                            + target + ": got junk reply from hub: " 
-                            + Arrays.deepToString(reply));                    
-                } 
-
-            } else {                  
-                vcs.removeVC(vc.index);
-                exc = new IOException("Failed to setup connection to " 
-                        + target + ": got empty reply from hub!");                    
-            } 
-
+            }
+            
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
             throw new IOException("Connection to hub lost!");
-        } finally { 
-            removeCallback(id);
         }
+        
+        // May throw several types of exceptions depending on the result....
+        waitForConnectionACK(index, timeout);
+        
+        return index;
+    }
+    
+    /*    
+      
+
+        
         
         if (exc != null) {
             // got an exception!
             throw exc;
         }
         
-        return vc.index;
+        return index;
     }    
-    
-    public void closeVirtualConnection(int index) throws IOException {
-
-        IOException exc = null;
-        
-        //if (logger.isInfoEnabled()) {
-            logger.warn("Closing virtual connection: " + index);
-        //}
-
-        VirtualConnection vc = vcs.getVC(index);
-        
-        if (vc == null) { 
-            logger.warn("Virtual connection: " + index + " does not exist!");
-            return;
+    */
+    public void closeVirtualConnection(long index) throws IOException {
+            
+        if (logger.isInfoEnabled()) {
+            logger.debug("Closing virtual connection: " + index);
         }
-        
-        String id = "CloseVirtual" + getNextSimpleCallbackID();
-        
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
-        
+
         try {         
             synchronized (this) {         
                 out.write(ServiceLinkProtocol.CLOSE_VIRTUAL);
-                out.writeUTF(id);
-                out.writeInt(index);
+                out.writeLong(index);
                 out.flush();            
             } 
 
-            String [] reply = (String []) tmp.getReply();
-        
-            vcs.removeVC(vc.index);
-            
-            if (reply == null || reply.length == 0) { 
-                exc = new IOException("Failed to close virtual connection " 
-                        + index + ": got illegal reply from hub!");                    
-            } else if (reply[0].equals("DENIED")) {
-                exc = new IOException("Failed to cleanly close virtual " +
-                        "connection " + index + ": " + reply[1]);
-            } else if (!reply[0].equals("OK")) {
-                exc = new IOException("Failed to close virtual connection "
-                        + index + ": got junk reply from hub: "
-                        + Arrays.deepToString(reply));                    
-            } 
+            if (logger.isDebugEnabled()) {                          
+                logger.debug("Closed: " + index);
+            }    
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
             throw new IOException("Connection to hub lost!");
-        } finally { 
-            removeCallback(id);
+        } finally {
+            credits.remove(index);
         }
-        
-        if (exc != null) { 
-            throw exc;
-        }                
-        
-        logger.warn("Virtual connection " + index + " closed!");
+       
+        if (logger.isDebugEnabled()) {                         
+            logger.warn("Virtual connection " + index + " closed!");
+        }
     }
     
-    public void sendVirtualMessage(int index, byte [] message, int off, 
+    public void sendVirtualMessage(long index, byte [] message, int off, 
             int len) throws IOException {
     
         if (logger.isInfoEnabled()) {
             logger.info("Sending virtual message: " + index);
         }
-
-        VirtualConnection vc = vcs.getVC(index);
         
-        if (vc == null) { 
+        // May block until credits are available....
+        Credits c = credits.get(index);
+        
+        if (c == null) { 
             logger.warn("Virtual connection: " + index + " does not exist!");            
             throw new IOException("Not connected");
         }
         
-        // May block until credits are available....
-        vc.getCredit();
+        // TODO: use timout here ? 
+        c.getCredit();
                 
         try { 
             synchronized (this) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL);           
-                out.writeInt(index);
+                out.writeLong(index);
                 out.writeInt(len);
                 out.write(message, off, len);
                 out.flush();
@@ -955,23 +1025,16 @@ public class ServiceLink implements Runnable {
         }                
     }
         
-    public void ackVirtualMessage(int index, byte [] message) throws IOException {
+    public void ackVirtualMessage(long index, byte [] message) throws IOException {
     
         if (logger.isInfoEnabled()) {
             logger.info("Ack virtual message: " + index);
         }
 
-        VirtualConnection vc = vcs.getVC(index);
-        
-        if (vc == null) { 
-            logger.warn("Virtual connection: " + index + " does not exist!");            
-            throw new IOException("Not connected");
-        }
-                
         try { 
             synchronized (this) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
-                out.writeInt(index);
+                out.writeLong(index);
                 out.flush();
             }                 
         } catch (IOException e) {
@@ -979,6 +1042,10 @@ public class ServiceLink implements Runnable {
             closeConnection();
         }        
     }
+    
+    
+    
+    
         
     public boolean registerProperty(String tag, String value) throws IOException {
 

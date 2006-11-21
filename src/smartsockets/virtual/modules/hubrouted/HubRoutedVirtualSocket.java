@@ -17,8 +17,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     
     private final HubRouted parent;     
     private final ServiceLink serviceLink;
-    private final int connectionIndex;
-    private final String connectionID;
+    private final long connectionIndex;
         
     private boolean closed = false;
     
@@ -28,36 +27,29 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     private final LinkedList<byte[]> incoming = new LinkedList<byte[]>();
 
     protected HubRoutedVirtualSocket(HubRouted parent, 
-            VirtualSocketAddress target, 
-            ServiceLink serviceLink, int connectionIndex, Map p) {                
-        this(parent, target, serviceLink, connectionIndex, null, p);        
-    }
-        
-    protected HubRoutedVirtualSocket(HubRouted parent, 
             VirtualSocketAddress target, ServiceLink serviceLink, 
-            int connectionIndex, String connectionID, Map p) {        
+            long connectionIndex, Map p) {        
         
         super(target);
         
         this.parent = parent;
         this.serviceLink = serviceLink;
         this.connectionIndex = connectionIndex;
-        this.connectionID = connectionID;
-        
+    
         this.out = new HubRoutedOutputStream(this, 16*1024);
         this.in = new HubRoutedInputStream(this);            
     }
     
     protected void connectionAccepted() throws IOException { 
         
-        if (!serviceLink.acceptIncomingConnection(connectionIndex, connectionID)) { 
+        if (!serviceLink.acceptIncomingConnection(connectionIndex)) { 
             // oops, we are too late!
             close();
         }
     }
     
     public void connectionRejected() { 
-        serviceLink.rejectIncomingConnection(connectionIndex, connectionID);         
+        serviceLink.rejectIncomingConnection(connectionIndex);         
     }
     
     public void waitForAccept() throws IOException {
@@ -94,7 +86,15 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         
     }
     
-    public synchronized void close() {
+    public void close() {
+        
+        synchronized (this) { 
+            if (closed) { 
+                return;
+            }
+            
+            closed = true;            
+        }
         
         in.close();
         
@@ -110,7 +110,6 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             // TODO: handle exception!            
         }
 
-        closed = true;        
         parent.close(connectionIndex);        
     }
     

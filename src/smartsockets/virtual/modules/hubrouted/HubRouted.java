@@ -17,8 +17,8 @@ public class HubRouted extends ConnectModule
 
     private static final int DEFAULT_TIMEOUT = 4000;   
     
-    private final HashMap<Integer, HubRoutedVirtualSocket> sockets = 
-        new HashMap<Integer, HubRoutedVirtualSocket>();
+    private final HashMap<Long, HubRoutedVirtualSocket> sockets = 
+        new HashMap<Long, HubRoutedVirtualSocket>();
     
     public HubRouted() {
         super("ConnectModule(HubRouted)", true);
@@ -59,7 +59,7 @@ public class HubRouted extends ConnectModule
         }
        
 
-        int index = -1;
+        long index = -1;
         
         try { 
             index = serviceLink.createVirtualConnection(tm,
@@ -90,7 +90,7 @@ public class HubRouted extends ConnectModule
     }
 
     public boolean connect(SocketAddressSet src, String info, int timeout, 
-            int vc, String replyID) {
+            long index) {
         
         // Incoming connect, find the port...        
         int port = -1;
@@ -110,14 +110,14 @@ public class HubRouted extends ConnectModule
             return false;
         }
         
-        //if (logger.isDebugEnabled()) { 
-            logger.warn("Got new connection: " + vc);
-//        }
+        if (logger.isInfoEnabled()) { 
+            logger.info("Got new connection: " + index);
+        }
         
         VirtualSocketAddress sa = new VirtualSocketAddress(src, 0);
         
         HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, sa, 
-                serviceLink, vc, replyID, null);
+                serviceLink, index, null);
         
         if (!ss.incomingConnection(s)) { 
             // not accepted 
@@ -125,23 +125,28 @@ public class HubRouted extends ConnectModule
         }
         
         synchronized (this) {
-            sockets.put(vc, s);
+            sockets.put(index, s);
         }
         
         return true;
     }
 
-    public synchronized void disconnect(int vc) {
+    public synchronized void disconnect(long vc) {
         
         HubRoutedVirtualSocket s = sockets.remove(vc);
         
         if (s == null) { 
-            logger.warn("Got disconnect for an unknown socket!: " + vc);
+            // This can happen if we have just closed the socket...
+            if (logger.isInfoEnabled()) {             
+                logger.info("Got disconnect for an unknown socket!: " + vc);
+            }
             return;
         } 
         
-        logger.warn("Got disconnect for: " + vc);
-
+        if (logger.isDebugEnabled()) { 
+            logger.debug("Got disconnect for: " + vc);
+        }
+        
         try { 
             s.close();
         } catch (Exception e) {
@@ -149,27 +154,35 @@ public class HubRouted extends ConnectModule
         }
     }
 
-    public synchronized void gotMessage(int vc, byte[] data) {
+    public synchronized void gotMessage(long vc, byte[] data) {
 
         HubRoutedVirtualSocket s = sockets.get(vc);
         
         if (s == null) { 
-            logger.warn("Got message for an unknown socket!: " + vc);
+            // This can happen if we have just been closed by the other side...
+            if (logger.isInfoEnabled()) {             
+                logger.info("Got message for an unknown socket!: " + vc);
+            }
             return;
         } 
 
         s.message(data);
     }
 
-    public synchronized void close(int vc) {
+    public synchronized void close(long vc) {
 
         HubRoutedVirtualSocket s = sockets.remove(vc);
         
         if (s == null) { 
-            logger.warn("Got disconnect from an unknown socket!: " + vc);
+            // This can happen if we have just been closed by the other side...
+            if (logger.isInfoEnabled()) {             
+                logger.info("Got disconnect from an unknown socket!: " + vc);
+            }
             return;
         } 
         
-        logger.warn("Got disconnect for: " + vc);
+        if (logger.isDebugEnabled()) { 
+            logger.debug("Got disconnect for: " + vc);
+        }
     }
 }

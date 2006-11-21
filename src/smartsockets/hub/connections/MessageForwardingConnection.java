@@ -1,9 +1,7 @@
 package smartsockets.hub.connections;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -26,73 +24,20 @@ public abstract class MessageForwardingConnection extends BaseConnection {
        
     protected final static int DEFAULT_CREDITS = 10; 
     
-    protected final VirtualConnections vcs = new VirtualConnections();
+    protected final VirtualConnections virtualConnections;
+    protected final VirtualConnectionIndex index;
     
-    private final HashMap<String, String []> connectReplies = 
-        new HashMap<String, String []>();
-        
-    private int nextConnect = 0;
-        
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, 
             Map<SocketAddressSet, BaseConnection> connections, 
-            HubList proxies) {
+            HubList proxies, VirtualConnections vcs, boolean master) {
+       
         super(s, in, out, connections, proxies);
-    }
-    
-    // returns a unique id.
-    protected synchronized String getID() { 
-        return "Connect" + nextConnect++;
+        
+        this.virtualConnections = vcs;
+        index = new VirtualConnectionIndex(master);
     }
 
-    // registers that we expect a reply to appear for this id
-    protected synchronized void replyPending(String id) {
-        connectReplies.put(id, null);        
-    }
-
-    // store a reply this id
-    protected synchronized boolean storeReply(String id, String [] value) {
-        
-        if (!connectReplies.containsKey(id)) {
-            // reply came too late...
-            return false;
-        } 
-        
-        connectReplies.put(id, value);
-        notifyAll();
-        return true;
-    }
-    
-    // wait for a reply for this id
-    protected synchronized String [] waitForReply(String id, int timeout) { 
-        
-        String [] result = connectReplies.get(id);
-        
-        long endTime = System.currentTimeMillis() + timeout;
-        long timeleft = 0;
-        
-        while (result == null) {
-            
-            if (timeout > 0) { 
-                timeleft = endTime - System.currentTimeMillis();
-            
-                if (timeleft <= 0) {
-                    break;
-                }
-            }
-            
-            try { 
-                wait(timeleft);
-            } catch (Exception e) {
-                // ignore
-            }
-
-            result = connectReplies.get(id);
-        }
-        
-        return connectReplies.remove(id);
-    }
-        
     // Directly sends a message to a hub.
     private boolean directlyToHub(SocketAddressSet hub, ClientMessage cm) {
 
@@ -253,106 +198,167 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
     }    
     
-    protected abstract String incomingVirtualConnection(
-            VirtualConnection origin, MessageForwardingConnection m, 
-            SocketAddressSet source, SocketAddressSet target, String info, 
-            int timeout);
+    //// Virtual connection parts...
+    protected abstract String getUniqueID(long index);
+    
+    protected abstract void forwardVirtualConnect(SocketAddressSet source, 
+            SocketAddressSet target, String info, int timeout, long index);
+    
+    protected abstract void forwardVirtualConnectAck(long index, String result, 
+            String info);
+    
+    protected abstract void forwardVirtualClose(long index);
+    
+    protected abstract void forwardVirtualMessage(long index, byte [] data);
+    
+    protected abstract void forwardVirtualMessageAck(long index);
+    
+   
     
     
-    protected abstract void forwardVirtualClose(int index);
-    
-    protected abstract void forwardVirtualMessage(int index, byte [] data);
-    
-    protected abstract void forwardVirtualMessageAck(int index);
-    
-    protected void forwardMessage(int index, byte [] data) {
+    protected void processMessage(long index, byte [] data) { 
         
-        VirtualConnection vc = vcs.getVC(index);
-
-        if (vc == null) {
-            
-            vclogger.warn("Got virtual message for non-existing connection!" 
-                    + index + " byte[" + data.length + "]");
-            
-            // TODO: send a close back ? 
-            return;
+        String key = getUniqueID(index);
+        
+        VirtualConnection vc = virtualConnections.find(key);
+        
+        if (vc == null) { 
+            // Connection doesn't exist. It may already be closed by the other 
+            // side due to a timeout. Send a close back to inform the sender 
+            // that the connection does no longer exist...
+            forwardVirtualClose(index);
+            return; 
         }
+  
+        // We found the connection so we have to figure out which of the two 
+        // entries in the VC is ours. The easiest way is to simply compare the 
+        // 'mfX' references to 'this'. Note that we cannot compare the index 
+        // values, since they are not unique!
+        if (this == vc.mfc1) { 
         
-        if (vc.targetConnection == null) { 
-            vclogger.warn("Got virtual message for unconnected virtual " +
-                    "connection!" + index + " byte[" + data.length + "]");            
-            // TODO: send a close back ? 
-            return;
-        }
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 2: " + vc.index2);
+            }
+            
+            vc.mfc2.forwardVirtualMessage(vc.index2, data);
+            
+        } else if (this == vc.mfc2) { 
+            
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 1: " + vc.index1);
+            }
+            
+            vc.mfc1.forwardVirtualMessage(vc.index1, data);
         
-        // TODO: flow control at this point ? 
-        vc.targetConnection.forwardVirtualMessage(vc.targetConnectionIndex, data);
+        } else { 
+            // This should never happen!        
+            vclogger.error("Virtual connection error: forwarder not found!", 
+                    new Exception());
+        }              
     }
-
-    protected void forwardMessageAck(int index) {
+    
+    protected void processMessageACK(long index) { 
         
-        VirtualConnection vc = vcs.getVC(index);
-
-        if (vc == null) {
+        String key = getUniqueID(index);
+        
+        VirtualConnection vc = virtualConnections.find(key);
+        
+        if (vc == null) { 
+            // Connection doesn't exist. It may already be closed by the other 
+            // side due to a timeout. Send a close back to inform the sender 
+            // that the connection does no longer exist...
+            forwardVirtualClose(index);
+            return; 
+        }
+  
+        // We found the connection so we have to figure out which of the two 
+        // entries in the VC is ours. The easiest way is to simply compare the 
+        // 'mfX' references to 'this'. Note that we cannot compare the index 
+        // values, since they are not unique!
+        if (this == vc.mfc1) { 
             
-            vclogger.warn("Got virtual message ack for non-existing connection!" 
-                    + index);
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 2: " + vc.index2);
+            }
             
-            // TODO: send a close back ? 
-            return;
-        }
+            vc.mfc2.forwardVirtualMessageAck(vc.index2);
+            
+        } else if (this == vc.mfc2) { 
+            
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 1: " + vc.index1);
+            }
+            
+            vc.mfc1.forwardVirtualMessageAck(vc.index1);
         
-        if (vc.targetConnection == null) { 
-            vclogger.warn("Got virtual message ack for unconnected virtual " +
-                    "connection!" + index);            
-            // TODO: send a close back ? 
-            return;
-        }
-        
-        // TODO: flow control at this point ? It's currently end to end...
-        vc.targetConnection.forwardVirtualMessageAck(vc.targetConnectionIndex);
+        } else { 
+            // This should never happen!        
+            vclogger.error("Virtual connection error: forwarder not found!", 
+                    new Exception());
+        }              
     }
+    
+    protected void closeVirtualConnection(long index) { 
 
-    private void doForwardAndCloseVirtualConnection(int index) {
-
-        VirtualConnection vc = vcs.removeVC(index);
+        String id = getUniqueID(index);
         
-        if (vc == null) {             
-            vclogger.warn("Virtual connection " + index + " not found!");
-            return;
-        }
+        VirtualConnection vc = virtualConnections.remove(id);
         
-        forwardVirtualClose(index);
-        
-    }
-        
-    protected void closeVirtualConnection(int index) { 
-
-        VirtualConnection vc = vcs.removeVC(index);
-
         if (vc == null) {
             // Connection doesn't exist. It may already be closed (this can 
-            // happen if the other side beat us to closing it).        
-            vclogger.warn("Virtual connection " + index + " not found!");
+            // happen if the other side beat us to closing it).    
+            if (vclogger.isInfoEnabled()) {
+                vclogger.info("Virtual connection " + index + " not found!");
+            } 
             return;
         }  
           
-        vclogger.warn("ANY forward and close for: " + vc.index + "<-->" + 
-                vc.targetConnectionIndex);
-
-        if (vc.targetConnection != null) {
-            // Attempt to close the other side 
-            vc.targetConnection.doForwardAndCloseVirtualConnection(
-                    vc.targetConnectionIndex);
-        }        
+        if (vclogger.isInfoEnabled()) {                                    
+            vclogger.info("Close virtual connection: " + vc);
+        }
+        
+        // We now have to figure out which of the two entries in the VC is ours.
+        // The easiest way is to simply compare the 'mfX' references.
+        if (this == vc.mfc1) { 
+        
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward close for 2: " + vc.index2);
+            }
+            
+            vc.mfc2.forwardVirtualClose(vc.index2);
+            
+        } else if (this == vc.mfc2) { 
+            
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward close for 1: " + vc.index1);
+            }
+            
+            vc.mfc1.forwardVirtualClose(vc.index1);
+        
+        } else { 
+            // This should never happen!        
+            vclogger.error("Virtual connection error: forwarder not found!", 
+                    new Exception());
+        }              
     }
-    
-    protected String createVirtualConnection(int index, SocketAddressSet source,
+        
+    private VirtualConnection createConnection(MessageForwardingConnection mfc1,
+            String id1, long index1) { 
+        
+        long index2 = index.nextIndex();
+        String id2 = getUniqueID(index2);
+        
+        return new VirtualConnection(mfc1, id1, index1, this, id2, index2);
+    }
+        
+    protected void processVirtualConnect(long index, SocketAddressSet source, 
             SocketAddressSet target, String info, int timeout) {
         
-        VirtualConnection vc = vcs.newVC(index);
+        if (vclogger.isInfoEnabled()) {                            
+            vclogger.info("ANY connection request for: " + index);
+        }
         
-        vclogger.warn("ANY connection request for: " + index);
+        MessageForwardingConnection mf = null;
         
         // Check if the client is connected to the local hub...
         BaseConnection tmp = connections.get(target);
@@ -361,49 +367,126 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             
             if (!(tmp instanceof ClientConnection)) { 
                 // apparently, the user is trying to connect to a hub here, 
-                // which is not allowed!                                 
-                return "Connection to hub not allowed";
+                // which is not allowed! Send a NACK back!
+                forwardVirtualConnectAck(index, "DENIED", 
+                        "Connection to hub not allowed");
+                
+                return;
             }
             
             if (tmp == this) {
                 // connecting to oneself over a hub is generally not a good idea 
-                // although it should work ? 
-                return "Connection to self not allowed";                 
+                // although it should work ?
+                forwardVirtualConnectAck(index, "DENIED", 
+                        "Connection to self not allowed");
+                
+                return;
             }
+        
+            mf = (MessageForwardingConnection) tmp;
+        
+        } else { 
+                 
+            // Find the hubs that know the client...  
+            DirectionsSelector ds = new DirectionsSelector(target, false);
             
-            ClientConnection cc = (ClientConnection) tmp;   
-            return cc.incomingVirtualConnection(vc, this, source, target, info,
-                    timeout);
+            knownHubs.select(ds);
+            
+            LinkedList<SocketAddressSet> result = ds.getResult();
+            
+            if (result.size() > 0) {
+                // TODO: send in Multiple directions.... ?
+                mf = (MessageForwardingConnection) connections.get(result.get(0));
+            }
         } 
         
-        // Find the hubs that know the client...  
-        DirectionsSelector ds = new DirectionsSelector(target, false);
-        
-        knownHubs.select(ds);
-        
-        LinkedList<SocketAddressSet> result = ds.getResult();
-        
-        if (result.size() == 0) {
-            return "Unknown host";
+        if (mf == null) {
+            // Connection setup failed!
+            forwardVirtualConnectAck(index, "DENIED", "Unknown host");
+            return;
         }             
         
-        for (SocketAddressSet s : result) { 
+        // We found a target connection, so let's create the necessary 
+        // connection administration....
             
-            HubConnection h = (HubConnection) connections.get(s);
+        // Get a unique id so that we can find the connection again later...
+        String id = getUniqueID(index);
 
-            if (h != null) { 
-                String r = h.incomingVirtualConnection(vc, this, source, target,
-                        info, timeout);
+        // We now delegate the actual creation of the connection object to 
+        // the target (since it has the rest of the required info).
+        VirtualConnection vc = mf.createConnection(this, id, index);
 
-                if (r == null) {
-                    // apparently, we have a connection 
-                    return null;
-                }
-            }
+        // Register the virtual connection, so everyone can find it 
+        virtualConnections.register(vc);
+
+        // Ask the target to forward the connect message to whoever it 
+        // represents (a client or a hub). This should be an asynchronous 
+        // call to prevent deadlocks!!
+        mf.forwardVirtualConnect(source, target, info, timeout, vc.index2);
+    }
+   
+    protected void processVirtualConnectACK(long index, String result, 
+            String info) { 
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("Got create connect ACK: " + index + " " + result 
+                    + " " + info);
         }
         
-        // TODO: see if any of the attempts returned a better error ? 
-        return "No route to host";
+        String key = getUniqueID(index);
+        
+        VirtualConnection vc = null; 
+       
+        // Check if we got an ACK or a NACK
+        if (result.equals("OK")) {
+            // It's an ACK, so we just retrieve the connection...
+            vc = virtualConnections.find(key);
+        } else {
+            // It's a NACK so we remove the connection, since it's no 
+            // longer used after we forwarded the reply
+            vc = virtualConnections.remove(key);
+        }
+        
+       // vclogger.warn("Got vc: " + vc);
+        
+        if (vc == null) { 
+            // Connection doesn't exist. It may already be closed by the other 
+            // side due to a timeout. 
+            
+            if (result.equals("OK")) { 
+                // if the reply is an ACK, we send a close back to inform the 
+                // sender that the connection does no longer exist...
+                forwardVirtualClose(index);
+            } 
+            
+            // else it's a NACK and we're done!   
+            return; 
+        }
+        
+        // We found the connection so we have to figure out which of the two 
+        // entries in the VC is ours. The easiest way is to simply compare the 
+        // 'mfX' references to 'this'. Note that we cannot compare the index 
+        // values, since they are not unique!
+        if (this == vc.mfc1) { 
+        
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 2: " + vc.index2);
+            }
+            
+            vc.mfc2.forwardVirtualConnectAck(vc.index2, result, info);
+            
+        } else if (this == vc.mfc2) { 
+            
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 1: " + vc.index1);
+            }
+            
+            vc.mfc1.forwardVirtualConnectAck(vc.index1, result, info);
+        
+        } else { 
+            // This should never happen!        
+            vclogger.error("Virtual connection error: forwarder not found!", 
+                    new Exception());
+        }    
     }
-    
 }

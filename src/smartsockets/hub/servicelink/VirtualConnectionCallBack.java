@@ -4,7 +4,7 @@ import smartsockets.direct.SocketAddressSet;
 
 public interface VirtualConnectionCallBack {
 
-    boolean connect(SocketAddressSet src, String info, int timeout, int vc, String replyID);    
-    void disconnect(int vc);
-    void gotMessage(int vc, byte [] data);
+    boolean connect(SocketAddressSet src, String info, int timeout, long index);   
+    void disconnect(long index);
+    void gotMessage(long index, byte [] data);
 }

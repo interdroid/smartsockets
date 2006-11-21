@@ -20,6 +20,7 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.ClientConnection;
 import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.connections.VirtualConnections;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
@@ -58,10 +59,10 @@ public class Acceptor extends CommunicationThread {
         
     Acceptor(int port, StateCounter state, 
             Map<SocketAddressSet, BaseConnection> connections, 
-            HubList knownProxies, DirectSocketFactory factory) 
-            throws IOException {
+            HubList knownProxies, VirtualConnections vcs,
+            DirectSocketFactory factory) throws IOException {
 
-        super("HubAcceptor", state, connections, knownProxies, factory);        
+        super("HubAcceptor", state, connections, knownProxies, vcs, factory);        
 
         server = factory.createServerSocket(port, 50, null);        
         setLocal(server.getAddressSet());        
@@ -81,7 +82,7 @@ public class Acceptor extends CommunicationThread {
         d.setCanReachMe();
 
         HubConnection c = new HubConnection(s, in, out, d, connections, 
-                knownHubs, state, false);
+                knownHubs, state, virtualConnections, false);
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this hub...  
@@ -146,7 +147,7 @@ public class Acceptor extends CommunicationThread {
             out.flush();
 
             ClientConnection c = new ClientConnection(srcAddr, s, in, out, 
-                    connections, knownHubs);
+                    connections, knownHubs, virtualConnections);
             
             connections.put(srcAddr, c);                                               
             c.activate();

@@ -15,6 +15,7 @@ import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.connections.VirtualConnections;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
@@ -28,9 +29,10 @@ class Connector extends CommunicationThread {
     
     Connector(StateCounter state, 
             Map<SocketAddressSet, BaseConnection> connections,
-            HubList knownProxies, DirectSocketFactory factory) {
+            HubList knownProxies, VirtualConnections vcs, 
+            DirectSocketFactory factory) {
         
-        super("HubConnector", state, connections, knownProxies, factory);
+        super("HubConnector", state, connections, knownProxies, vcs, factory);
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
@@ -167,7 +169,7 @@ class Connector extends CommunicationThread {
                 }
                 
                 c = new HubConnection(s, in, out, d, connections, 
-                        knownHubs, state, true);                                
+                        knownHubs, state, virtualConnections, true);                                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -191,7 +193,7 @@ class Connector extends CommunicationThread {
 
                 if (result) {                 
                     c = new HubConnection(s, in, out, d, connections, 
-                            knownHubs, state, false);                
+                            knownHubs, state, virtualConnections, false);                
                     result = d.createConnection(c);
                     
                     if (!result) { 

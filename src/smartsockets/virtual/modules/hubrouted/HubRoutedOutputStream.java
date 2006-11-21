@@ -67,8 +67,10 @@ public class HubRoutedOutputStream extends OutputStream {
             return;
         }
         
-        parent.flush(buffer, 0, used);
-        used = 0;        
+        if (used > 0) { 
+            parent.flush(buffer, 0, used);
+            used = 0;
+        }
     }
     
     public void close() throws IOException {

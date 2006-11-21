@@ -16,6 +16,7 @@ import smartsockets.direct.SocketAddressSet;
 import smartsockets.discovery.Discovery;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.HubConnection;
+import smartsockets.hub.connections.VirtualConnections;
 import smartsockets.hub.state.ConnectionsSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
@@ -36,16 +37,18 @@ public class Hub extends Thread {
     private static final Logger goslogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.gossip");
     
-    private HubList hubs;    
-    private Map<SocketAddressSet, BaseConnection> connections;
+    private final HubList hubs;    
+    private final Map<SocketAddressSet, BaseConnection> connections;
     
-    private Acceptor acceptor;
-    private Connector connector;
+    private final Acceptor acceptor;
+    private final Connector connector;
             
-    private StateCounter state = new StateCounter();
+    private final StateCounter state = new StateCounter();
             
-    private Discovery discovery;
+    private final Discovery discovery;
         
+    private final VirtualConnections virtualConnections;
+    
     public Hub(SocketAddressSet [] hubAddresses, TypedProperties p) 
         throws IOException { 
 
@@ -71,12 +74,14 @@ public class Hub extends Thread {
         connections = Collections.synchronizedMap(
                 new HashMap<SocketAddressSet, BaseConnection>());
         
+        virtualConnections = new VirtualConnections();
+       
         int port = p.getIntProperty(Properties.HUB_PORT, DEFAULT_ACCEPT_PORT);
         
         // NOTE: These are not started until later. We first need to init the
         // rest of the world!        
-        acceptor = new Acceptor(port, state, connections, hubs, factory);        
-        connector = new Connector(state, connections, hubs, factory);
+        acceptor = new Acceptor(port, state, connections, hubs, virtualConnections, factory);        
+        connector = new Connector(state, connections, hubs, virtualConnections, factory);
         
         SocketAddressSet local = acceptor.getLocal();         
         
