@@ -1025,7 +1025,7 @@ public class ServiceLink implements Runnable {
             closeConnection();
         }       
         
-        System.err.print("W");
+        System.err.println("W");
     }
         
     public void ackVirtualMessage(long index, byte [] message) throws IOException {
@@ -1045,7 +1045,7 @@ public class ServiceLink implements Runnable {
             closeConnection();
         }        
         
-        System.err.print("A");
+        System.err.println("A");
     }
     
     

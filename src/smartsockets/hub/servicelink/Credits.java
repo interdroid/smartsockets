@@ -10,17 +10,13 @@ public class Credits {
         credits = max;
     }
     
-    public synchronized void getCredit() { 
+    public void getCredit() { 
     
-        while (credits == 0) { 
-            try { 
-                wait();
-            } catch (Exception e) {
-                // ignore
-            }
+        try { 
+            getCredit(0);
+        } catch (Exception e) { 
+            // never happens!
         }
-        
-        credits--;
     }
 
     public synchronized void getCredit(int time) throws TimeOutException { 
@@ -59,6 +55,8 @@ public class Credits {
         }
         
         credits--;
+        
+        System.err.println("Credits: " + credits);
     }
 
     
@@ -69,6 +67,8 @@ public class Credits {
         }
         
         credits++;
+        
+        System.err.println("Credits: " + credits);
         
         // Sanity check 
         if (credits > MAX_CREDITS) { 
