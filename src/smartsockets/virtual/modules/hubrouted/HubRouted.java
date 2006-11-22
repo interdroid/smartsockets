@@ -223,6 +223,8 @@ public class HubRouted extends ConnectModule
             return;
         } 
         
+        s.closeIn();
+        
         if (logger.isDebugEnabled()) { 
             logger.debug("Got disconnect for: " + vc);
         }

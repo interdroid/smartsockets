@@ -27,6 +27,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     private final HubRoutedInputStream in;
     
     private final LinkedList<byte[]> incoming = new LinkedList<byte[]>();
+    
+    private boolean closeInPending = false;
 
     protected HubRoutedVirtualSocket(HubRouted parent, 
             VirtualSocketAddress target, ServiceLink serviceLink, 
@@ -41,6 +43,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         this.out = new HubRoutedOutputStream(this, 16*1024);
         this.in = new HubRoutedInputStream(this);            
     }
+   
     
     protected void connectionAccepted() throws IOException { 
         
@@ -255,10 +258,19 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             notifyAll();
         }        
     }
+    
+    public synchronized void closeIn() { 
+        closeInPending = true;       
+    }
 
     private synchronized byte [] getBuffer() { 
         
-        while (incoming.size() == 0) { 
+        while (incoming.size() == 0) {
+            
+            if (closeInPending) { 
+                return null;
+            }
+            
             try { 
                 wait();                
             } catch (Exception e) {

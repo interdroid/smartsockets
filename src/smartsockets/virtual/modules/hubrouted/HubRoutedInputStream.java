@@ -51,13 +51,13 @@ public class HubRoutedInputStream extends InputStream {
         }
         
         if (buffer == null || used == buffer.length) {
-            
-            if (closePending) { 
-                closed = true;
+          
+            buffer = parent.getBuffer(buffer);
+         
+            if (buffer == null) { 
+                close();
                 return -1;
             }
-            
-            buffer = parent.getBuffer(buffer);
             
    //         System.err.println("InputStream got byte[" + buffer.length + "]");
             
