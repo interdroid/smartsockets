@@ -253,10 +253,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
 
     public synchronized void message(byte[] data) {
         incoming.addLast(data);
-
-        if (incoming.size() == 1) { 
-            notifyAll();
-        }        
+        notifyAll();
     }
     
     public synchronized void closeIn() { 
@@ -274,11 +271,17 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             }
             
             try { 
-                wait();                
+                System.out.println("Socket " + connectionIndex 
+                        + " blocks for messages!!");
+                wait(1000);                
             } catch (Exception e) {
                 // ignore
             }
+        
+ 
         }
+        
+        
         
         return incoming.removeFirst();        
     }

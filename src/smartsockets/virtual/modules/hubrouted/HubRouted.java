@@ -221,9 +221,9 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
-            if (logger.isInfoEnabled()) {             
-                logger.info("Got disconnect from an unknown socket!: " + vc);
-            }
+        //    if (logger.isInfoEnabled()) {             
+                logger.warn("Got disconnect from an unknown socket!: " + vc);
+         //   }
             return;
         } 
         
