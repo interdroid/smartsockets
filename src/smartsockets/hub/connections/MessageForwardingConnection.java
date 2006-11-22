@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.sun.java_cup.internal.runtime.Symbol;
+
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.state.DirectionsSelector;
@@ -407,27 +409,52 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         } 
         
         if (mf == null) { 
+            
             // So far, we failed to get any connection to which we can forward 
             // the connect. Try to find the hubs that know the client...  
-            DirectionsSelector ds = new DirectionsSelector(target, false);
+            long endTime = System.currentTimeMillis() + timeout;
+            boolean timeLeft = true;
             
-            knownHubs.select(ds);
-            
-            LinkedList<SocketAddressSet> result = ds.getResult();
-            
-            if (result.size() > 0) {
-                // TODO: send in Multiple directions.... ?
-                mf = (MessageForwardingConnection) connections.get(result.get(0));
-            }
-            
-            if (mf == null) { 
-                // apparently, out local hub does not known the client (yet). 
-                // This may be caused by the fact that the client has just 
-                // started an the gossip of it's existence haven't reached us 
-                // yet...   
+            while (mf == null && timeLeft) { 
+
+                DirectionsSelector ds = new DirectionsSelector(target, false);
+
+                knownHubs.select(ds);
+
+                LinkedList<SocketAddressSet> result = ds.getResult();
+
+                if (result.size() > 0) {
+                    // TODO: send in Multiple directions.... ?
+                    mf = (MessageForwardingConnection) connections.get(result.get(0));
+                }
                 
-                // TODO: wait a while and try again ?? 
+                if (mf == null) {      
+                    try { 
+                        Thread.sleep(1000);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }
+                    
+                if (timeout > 0) { 
+                    timeLeft = (System.currentTimeMillis() < endTime);                   
+                }
             }
+
+            // adjust the timeout to reflect the time we have waited here...
+            if (timeout > 0) { 
+                timeout = (int) (endTime - System.currentTimeMillis()); 
+            
+                if (timeout <= 0) { 
+                    timeLeft = false;
+                }
+            } 
+            
+            if (!timeLeft) { 
+                // Connection setup timed out!
+                forwardVirtualConnectAck(index, "DENIED", "Timeout");
+                return;
+            }  
         } 
         
         if (mf == null) {
