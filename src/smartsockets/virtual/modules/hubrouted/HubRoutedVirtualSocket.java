@@ -260,9 +260,11 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     }
     
     public synchronized void closeIn() { 
-        closeInPending = true;       
+        closeInPending = true;     
+        notifyAll();
     }
-
+    
+    // TODO: addtimeout!!!!
     private synchronized byte [] getBuffer() { 
         
         while (incoming.size() == 0) {
