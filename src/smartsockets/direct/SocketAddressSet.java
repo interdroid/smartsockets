@@ -308,13 +308,13 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
 
             if (!found) { 
                 
-                System.err.println("SAS: " + this + " != SAS: " + tmp);
+           //    System.err.println("SAS: " + this + " != SAS: " + tmp);
                 
                 return false;
             }
         }
 
-        System.err.println("SAS: " + this + " == SAS: " + tmp);
+      //  System.err.println("SAS: " + this + " == SAS: " + tmp);
         
         
         return true;
