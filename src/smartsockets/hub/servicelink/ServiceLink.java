@@ -935,19 +935,7 @@ public class ServiceLink implements Runnable {
         return index;
     }
     
-    /*    
-      
-
-        
-        
-        if (exc != null) {
-            // got an exception!
-            throw exc;
-        }
-        
-        return index;
-    }    
-    */
+   
     public void closeVirtualConnection(long index) throws IOException {
             
         if (logger.isInfoEnabled()) {

@@ -640,7 +640,7 @@ public class Test extends Thread {
             
             VirtualSocket vs = sf.createClientSocket(a, TIMEOUT, null);
 
-            vs.setSoTimeout(TIMEOUT);
+            vs.setSoTimeout(10000);
             
             long end = System.currentTimeMillis();
            

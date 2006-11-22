@@ -141,7 +141,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
         }
                 
         // Now wait until the other side agrees to the connection (may throw an
-        // exceptionand close the socket if something is wrong) 
+        // exception and close the socket if something is wrong) 
         tmp.waitForAccept();
         
         // Reset the timeout to the default value (infinite). 
