@@ -19,6 +19,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     private final ServiceLink serviceLink;
     private final long connectionIndex;
         
+    private int timeout = 0;
+    
     private boolean closed = false;
     
     private final HubRoutedOutputStream out;
@@ -163,7 +165,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     }
     
     public int getSoTimeout() throws SocketException {
-        return 0;
+        return timeout;
     }
     
     public boolean getTcpNoDelay() throws SocketException {
@@ -223,7 +225,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     }
     
     public void setSoTimeout(int t) throws SocketException {
-        // ignored 
+        timeout = t;
     }
     
     public void setTcpNoDelay(boolean on) throws SocketException {
@@ -268,7 +270,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     }
     
     public void flush(byte[] buffer, int off, int len) throws IOException {        
-        serviceLink.sendVirtualMessage(connectionIndex, buffer, off, len);        
+        serviceLink.sendVirtualMessage(connectionIndex, buffer, off, len, 
+                timeout);        
     }
 
     public byte[] getBuffer(byte[] buffer) throws IOException {

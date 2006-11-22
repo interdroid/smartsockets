@@ -33,10 +33,7 @@ public class HubConnection extends MessageForwardingConnection {
     
     // Keeps the current state of the system. 
     private final StateCounter state;        
-    
-    // Recordes if this side did the initial connection setup.
-    private final boolean master;
-                         
+                      
     // Indicates the value of the local state the last time any data was send 
     // to the peer. Remembering this allows us to send delta's. 
     private long lastSendState;    
@@ -51,7 +48,6 @@ public class HubConnection extends MessageForwardingConnection {
         
         this.peer = peer;        
         this.state = state;
-        this.master = master;
         
         local = proxies.getLocalDescription();
     }

@@ -4,7 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -994,7 +993,7 @@ public class ServiceLink implements Runnable {
     }
     
     public void sendVirtualMessage(long index, byte [] message, int off, 
-            int len) throws IOException {
+            int len, int timeout) throws IOException {
     
         if (logger.isInfoEnabled()) {
             logger.info("Sending virtual message: " + index);
@@ -1008,9 +1007,26 @@ public class ServiceLink implements Runnable {
             throw new IOException("Not connected");
         }
         
-        // TODO: use timout here ? 
-        c.getCredit();
-                
+        int t = timeout > 0 ? timeout : DEFAULT_WAIT_TIME;
+       
+        boolean done = false;
+        
+        do { 
+            try {    
+                c.getCredit(t);
+                done = true;
+            } catch (TimeOutException e) {
+                if (timeout > 0) { 
+                    logger.warn("getCredit timed out after " + t 
+                            + " ms. (giving up)");
+                    throw new IOException("Timeout while writing data!");
+                } else { 
+                    logger.warn("getCredit timed out after " + t 
+                            + " ms. (will keep trying)");
+                }
+            }
+        } while (!done);
+                  
         try { 
             synchronized (this) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL);           

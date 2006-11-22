@@ -69,6 +69,11 @@ public class Credits {
         }
         
         credits++;
+        
+        // Sanity check 
+        if (credits > MAX_CREDITS) { 
+            System.err.println("EEK: credits exceeded " + MAX_CREDITS + "!");
+        }
     }
     
 }
