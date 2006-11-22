@@ -355,12 +355,13 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     }
          
     protected void processVirtualConnect(long index, SocketAddressSet source, 
-            SocketAddressSet target, SocketAddressSet hub, String info, 
+            SocketAddressSet target, SocketAddressSet targetHub, String info, 
             int timeout) {
         
-        if (vclogger.isInfoEnabled()) {                            
-            vclogger.info("ANY connection request for: " + index);
-        }
+        //if (vclogger.isInfoEnabled()) {                            
+            vclogger.info("ANY connection request for: " + index + " to " + 
+                    target);
+       // }
         
         MessageForwardingConnection mf = null;
         
@@ -389,11 +390,11 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
             mf = (MessageForwardingConnection) tmp;
            
-        } else if (hub != null) { 
+        } else if (targetHub != null) { 
             
-            vclogger.warn("trying to connect via hub: " + hub);
+            vclogger.warn("trying to connect via hub: " + targetHub);
             
-            mf = (MessageForwardingConnection) connections.get(hub);        
+            mf = (MessageForwardingConnection) connections.get(targetHub);        
             
             if (mf == null) {
                 
@@ -401,7 +402,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 
                 // Failed to get a connection to the specified hub. Maybe there 
                 // is an indirection ? 
-                HubDescription d = knownHubs.get(hub);
+                HubDescription d = knownHubs.get(targetHub);
                            
                 if (d != null) {  
                     HubDescription indirect = d.getIndirection();
@@ -461,7 +462,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Ask the target to forward the connect message to whoever it 
         // represents (a client or a hub). This should be an asynchronous 
         // call to prevent deadlocks!!
-        mf.forwardVirtualConnect(source, target, hub, info, timeout, vc.index2);
+        mf.forwardVirtualConnect(source, target, targetHub, info, timeout, vc.index2);
     }
    
     protected void processVirtualConnectACK(long index, String result, 
