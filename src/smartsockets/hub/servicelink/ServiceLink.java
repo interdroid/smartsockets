@@ -1038,7 +1038,9 @@ public class ServiceLink implements Runnable {
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
-        }                
+        }       
+        
+        System.err.print("W");
     }
         
     public void ackVirtualMessage(long index, byte [] message) throws IOException {
@@ -1057,6 +1059,8 @@ public class ServiceLink implements Runnable {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnection();
         }        
+        
+        System.err.print("A");
     }
     
     

@@ -640,6 +640,8 @@ public class Test extends Thread {
             
             VirtualSocket vs = sf.createClientSocket(a, TIMEOUT, null);
 
+            vs.setSoTimeout(TIMEOUT);
+            
             long end = System.currentTimeMillis();
            
             System.out.println("Connection setup took: " + (end-start) + " ms.");
