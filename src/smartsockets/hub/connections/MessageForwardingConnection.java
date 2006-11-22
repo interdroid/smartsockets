@@ -359,7 +359,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             int timeout) {
         
         //if (vclogger.isInfoEnabled()) {                            
-            vclogger.info("ANY connection request for: " + index + " to " + 
+            vclogger.warn("ANY connection request for: " + index + " to " + 
                     target);
        // }
         
