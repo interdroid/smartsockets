@@ -390,10 +390,10 @@ public class VirtualSocketFactory {
         throws IOException {
         
         if (m.matchRuntimeRequirements(properties)) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Using module " + m.module + " to set up " +
+          //  if (logger.isInfoEnabled()) {
+                logger.warn("Using module " + m.module + " to set up " +
                         "connection to " + target);
-            }
+          //  }
             
             long start = System.currentTimeMillis();
                             
@@ -406,11 +406,11 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Sucess with module " + m.module 
+            //        if (logger.isDebugEnabled()) {
+                        logger.warn("Sucess with module " + m.module 
                                 + " connected to " + target + " (time = " + 
                                 (end-start) + " ms.)");
-                    }
+             //       }
                     
                     return vs;
                 } 
@@ -419,17 +419,17 @@ public class VirtualSocketFactory {
                 long end = System.currentTimeMillis();
                                     
                 // Just print and try the next module...
-                if (logger.isInfoEnabled()) {
-                    logger.info("Module not suitable (time = " + (end-start) 
+            //    if (logger.isInfoEnabled()) {
+                    logger.warn("Module not suitable (time = " + (end-start) 
                             + " ms.)", e);
-                }
+          //      }
             }            
             // NOTE: other exceptions are forwarded to the user!
         } else { 
-            if (logger.isInfoEnabled()) {
-                logger.info("Module " + m.module + " may not be used to set " +
+     //       if (logger.isInfoEnabled()) {
+                logger.warn("Module " + m.module + " may not be used to set " +
                         "up connection to " + target);
-            }            
+         //   }            
         }
         
         return null;
