@@ -121,16 +121,16 @@ public class VirtualSocketFactory {
                 try { 
                     address = new SocketAddressSet(result);
                     if (logger.isInfoEnabled()) {
-                        logger.info("Proxy found at: " + address.toString());
+                        logger.info("Hub found at: " + address.toString());
                     }
                 } catch (Exception e) {
                     if (logger.isInfoEnabled()) {
-                        logger.info("Got unknown reply to proxy discovery!");
+                        logger.info("Got unknown reply to hub discovery!");
                     }
                 }
             } else { 
                 if (logger.isInfoEnabled()) {                    
-                    logger.info("No proxies found.");
+                    logger.info("No hubs found.");
                 }
             }
         }
@@ -139,7 +139,7 @@ public class VirtualSocketFactory {
         if (address == null) { 
             // properties not set, so no central hub is available
             if (logger.isInfoEnabled()) {
-                logger.info("ServiceLink not created: no proxy address available!");
+                logger.info("ServiceLink not created: no hub address available!");
             }
             return;
         }  
