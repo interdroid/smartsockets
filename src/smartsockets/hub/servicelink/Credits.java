@@ -22,7 +22,7 @@ public class Credits {
     public synchronized void getCredit(int time) throws TimeOutException { 
      
         if (credits > 0) { 
-            System.err.println("Credits: " + credits);
+          //  System.err.println("Credits: " + credits);
             credits--;
             return;
         }
@@ -57,7 +57,7 @@ public class Credits {
         
         credits--;
         
-        System.err.println("Credits: " + credits);
+        //System.err.println("Credits: " + credits);
     }
 
     
@@ -69,7 +69,7 @@ public class Credits {
         
         credits++;
         
-        System.err.println("Credits: " + credits);
+       // System.err.println("Credits: " + credits);
         
         // Sanity check 
         if (credits > MAX_CREDITS) { 

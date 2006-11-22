@@ -1013,7 +1013,7 @@ public class ServiceLink implements Runnable {
             closeConnection();
         }       
         
-        System.err.println("W");
+        //System.err.println("W");
     }
         
     public void ackVirtualMessage(long index, byte [] message) throws IOException {
@@ -1033,13 +1033,9 @@ public class ServiceLink implements Runnable {
             closeConnection();
         }        
         
-        System.err.println("A");
+        //System.err.println("A");
     }
-    
-    
-    
-    
-        
+           
     public boolean registerProperty(String tag, String value) throws IOException {
 
         if (logger.isInfoEnabled()) {
