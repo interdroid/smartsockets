@@ -152,9 +152,9 @@ public class HubRouted extends ConnectModule
             return false;
         }
         
-        if (logger.isInfoEnabled()) { 
-            logger.info("Got new connection: " + index);
-        }
+      //  if (logger.isInfoEnabled()) { 
+            logger.warn("Hubrouted got new connection: " + index);
+      //  }
         
         VirtualSocketAddress sa = new VirtualSocketAddress(src, 0);
         

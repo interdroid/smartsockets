@@ -252,10 +252,10 @@ public class ServiceLink implements Runnable {
         int timeout = in.readInt();
         long index = in.readLong();
                 
-        if (logger.isInfoEnabled()) {
-            logger.info("ServiceLink: Received request for incoming connection "
+     //   if (logger.isInfoEnabled()) {
+            logger.warn("ServiceLink: Received request for incoming connection "
                     + "from " + source + " (" + index + ")"); 
-        }
+      //  }
         
         VirtualConnectionCallBack cb = null;
         
@@ -267,9 +267,9 @@ public class ServiceLink implements Runnable {
             
         if (cb == null) {
             
-            if (logger.isInfoEnabled()) {
-                logger.info("DENIED connection: " + index + ": no callback!");
-            }
+           // if (logger.isInfoEnabled()) {
+                logger.warn("DENIED connection: " + index + ": no callback!");
+            //}
                         
             try {
                 synchronized (out) {         
@@ -296,10 +296,10 @@ public class ServiceLink implements Runnable {
             try {
                 credits.remove(index);
                 
-                if (logger.isInfoEnabled()) {
-                    logger.info("DENIED connection: " + index
+             //   if (logger.isInfoEnabled()) {
+                    logger.warn("DENIED connection: " + index
                             + ": connection refused!");
-                }                
+             //   }                
                 
                 synchronized (out) {         
                     out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
@@ -336,10 +336,10 @@ public class ServiceLink implements Runnable {
     public void rejectIncomingConnection(long index) {
         
         // The incoming connection 'index' was rejected.
-        if (logger.isInfoEnabled()) {
-            logger.info("REJECTED connection: (" + index 
+       // if (logger.isInfoEnabled()) {
+            logger.warn("REJECTED connection: (" + index 
                     + "): serversocket did not accept");
-        }
+       // }
                 
         Credits c = credits.get(index);
         
@@ -385,9 +385,9 @@ public class ServiceLink implements Runnable {
         // The incoming connection 'index' was accepted. The only problem is 
         // that we are not sure if we are in time. We therefore send a reply, 
         // for which we get a reply back again...
-        if (logger.isInfoEnabled()) {
-            logger.info("ACCEPTED connection: (" + index + ")");
-        }
+       // if (logger.isInfoEnabled()) {
+            logger.warn("ACCEPTED connection: (" + index + ")");
+       // }
 
         Credits c = credits.get(index);
         
@@ -882,7 +882,8 @@ public class ServiceLink implements Runnable {
 
         // No result ? Timeout!
         if (result == null) {
-            throw new SocketTimeoutException("Connect timed out!");
+            throw new SocketTimeoutException("Connect " + index 
+                    + " timed out!");
         }
         
         // We have a result, but it may not be positive...
@@ -896,12 +897,12 @@ public class ServiceLink implements Runnable {
                 throw new ConnectException(); 
             }
             
-            throw new IOException("Connection failed: " + result[1]);
+            throw new IOException("Connection " + index + " failed: " + result[1]);
         } 
         
         // Sanity check
         if (!result[0].equals("OK")) {
-            throw new IOException("Connection failed: " + result[0]);
+            throw new IOException("Connection + " + index + " failed: " + result[0]);
         } 
         
         // Otherwise, the connection is accepted.
