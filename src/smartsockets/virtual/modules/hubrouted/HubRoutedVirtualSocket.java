@@ -98,10 +98,14 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
                 return;
             }
             
-            closed = true;            
+            closed = true;        
+        
+            in.closePending();
+           
+            // Wakeup any thread blocked on a read....
+            notifyAll();
         }
         
-        in.close();
         
         try {
             out.close();
@@ -256,17 +260,12 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         notifyAll();
     }
     
-    public synchronized void closeIn() { 
-        closeInPending = true;     
-        notifyAll();
-    }
-    
     // TODO: addtimeout!!!!
     private synchronized byte [] getBuffer() { 
         
         while (incoming.size() == 0) {
             
-            if (closeInPending) { 
+            if (closed) { 
                 return null;
             }
             
@@ -277,11 +276,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             } catch (Exception e) {
                 // ignore
             }
-        
- 
         }
-        
-        
         
         return incoming.removeFirst();        
     }

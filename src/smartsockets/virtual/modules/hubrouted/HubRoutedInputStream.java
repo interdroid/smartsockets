@@ -100,6 +100,10 @@ public class HubRoutedInputStream extends InputStream {
     }
     
     public void close() { 
+        closed = true;
+    }
+    
+    public void closePending() { 
         closePending = true;
     }
     

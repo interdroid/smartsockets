@@ -183,15 +183,15 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just closed the socket...
-            if (logger.isInfoEnabled()) {             
-                logger.info("Got disconnect for an unknown socket!: " + vc);
-            }
+       //     if (logger.isInfoEnabled()) {             
+                logger.warn("Got disconnect for an unknown socket!: " + vc);
+        //    }
             return;
         } 
         
-        if (logger.isDebugEnabled()) { 
-            logger.debug("Got disconnect for: " + vc);
-        }
+       // if (logger.isDebugEnabled()) { 
+            logger.warn("Got disconnect for: " + vc);
+      //  }
         
         try { 
             s.close();
@@ -206,9 +206,9 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
-            if (logger.isInfoEnabled()) {             
-                logger.info("Got message for an unknown socket!: " + vc);
-            }
+           // if (logger.isInfoEnabled()) {             
+                logger.warn("Got message for an unknown socket!: " + vc);
+           // }
             return;
         } 
 
@@ -222,15 +222,15 @@ public class HubRouted extends ConnectModule
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
         //    if (logger.isInfoEnabled()) {             
-                logger.warn("Got disconnect from an unknown socket!: " + vc);
+                logger.warn("Got close from an unknown socket!: " + vc);
          //   }
             return;
         } 
         
-        s.closeIn();
+        s.close();
         
-        if (logger.isDebugEnabled()) { 
-            logger.debug("Got disconnect for: " + vc);
-        }
+       // if (logger.isDebugEnabled()) { 
+            logger.warn("Got close for: " + vc);
+        //}
     }
 }
