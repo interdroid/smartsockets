@@ -270,7 +270,7 @@ public class ServiceLink implements Runnable {
             }
                         
             try {
-                synchronized (this) {         
+                synchronized (out) {         
                     out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                     out.writeLong(index);
                     out.writeUTF("DENIED");                    
@@ -298,7 +298,7 @@ public class ServiceLink implements Runnable {
                             + ": connection refused!");
                 }                
                 
-                synchronized (this) {         
+                synchronized (out) {         
                     out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                     out.writeLong(index);
                     out.writeUTF("DENIED");
@@ -347,7 +347,7 @@ public class ServiceLink implements Runnable {
         }
         
         try { 
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                 out.writeLong(index);
                 out.writeUTF("DENIED");  
@@ -399,7 +399,7 @@ public class ServiceLink implements Runnable {
         }
         
         try { 
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                 out.writeLong(index);
                 out.writeUTF("OK");  
@@ -436,22 +436,7 @@ public class ServiceLink implements Runnable {
             return;
         }
         
-        VirtualConnectionCallBack cb = null;
-        
-        synchronized (this) { 
-            try {         
-                cb = (VirtualConnectionCallBack) findCallback("__virtual");
-            } catch (ClassCastException e) {
-                // ignore            
-            }
-
-            if (cb != null) { 
-                cb.disconnect(index);
-            } else { 
-                logger.warn("Cannot forward close for connection: " + index 
-                        + " to user: No callback registered!");            
-            }
-        }
+        disconnectCallback(index);
     }        
 
     private void handleIncomingMessage() throws IOException { 
@@ -570,7 +555,7 @@ public class ServiceLink implements Runnable {
         }               
     }
         
-    public synchronized void send(SocketAddressSet target, 
+    public void send(SocketAddressSet target, 
             SocketAddressSet targetHub, String targetModule, int opcode, 
             String message) { 
 
@@ -587,7 +572,7 @@ public class ServiceLink implements Runnable {
         }
         
         try { 
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE);
                 out.writeUTF(target.toString());
             
@@ -661,7 +646,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.CLIENTS_FOR_HUB);
                 out.writeUTF(id);
                 out.writeUTF(hub.toString());
@@ -697,7 +682,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.ALL_CLIENTS);
                 out.writeUTF(id);
                 out.writeUTF(tag);
@@ -729,7 +714,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.HUBS);
                 out.writeUTF(id);
                 out.flush();            
@@ -761,7 +746,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.HUB_DETAILS);
                 out.writeUTF(id);
                 out.flush();            
@@ -793,7 +778,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.DIRECTION);
                 out.writeUTF(id);
                 out.writeUTF(client);
@@ -929,7 +914,7 @@ public class ServiceLink implements Runnable {
         registerConnectionACK(index);
         
         try { 
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL);
                 out.writeLong(index);
                 out.writeInt(timeout);                          
@@ -970,7 +955,7 @@ public class ServiceLink implements Runnable {
         }
 
         try {         
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.CLOSE_VIRTUAL);
                 out.writeLong(index);
                 out.flush();            
@@ -1028,7 +1013,7 @@ public class ServiceLink implements Runnable {
         } while (!done);
                   
         try { 
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL);           
                 out.writeLong(index);
                 out.writeInt(len);
@@ -1050,7 +1035,7 @@ public class ServiceLink implements Runnable {
         }
 
         try { 
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
                 out.writeLong(index);
                 out.flush();
@@ -1079,7 +1064,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.REGISTER_PROPERTY);
                 out.writeUTF(id);
                 out.writeUTF(tag);
@@ -1113,7 +1098,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.UPDATE_PROPERTY);
                 out.writeUTF(id);
                 out.writeUTF(tag);
@@ -1146,7 +1131,7 @@ public class ServiceLink implements Runnable {
         register(id, tmp);
         
         try {
-            synchronized (this) {         
+            synchronized (out) {         
                 out.write(ServiceLinkProtocol.REMOVE_PROPERTY);
                 out.writeUTF(id);
                 out.writeUTF(tag);

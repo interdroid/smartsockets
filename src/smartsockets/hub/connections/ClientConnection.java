@@ -62,7 +62,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         // forward the ACK
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL);           
                 out.writeUTF(source.toString());
                 out.writeUTF(info);
@@ -83,7 +83,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         // forward the ACK
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);           
                 out.writeLong(index);     
                 out.writeUTF(result);
@@ -105,7 +105,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }    
         // forward the close
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.CLOSE_VIRTUAL);           
                 out.writeLong(index);            
                 out.flush();
@@ -122,7 +122,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         // forward the message
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL);           
                 out.writeLong(index);
                 out.writeInt(data.length);
@@ -141,7 +141,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         // forward the message ack
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
                 out.writeLong(index);
                 out.flush();                
@@ -214,7 +214,7 @@ public class ClientConnection extends MessageForwardingConnection {
                 
         LinkedList<String> result = as.getResult();
         
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(result.size());
@@ -241,7 +241,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         LinkedList<String> result = as.getResult();
         
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(result.size());
@@ -279,7 +279,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     + "address: " + hub); 
         }
       
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(result.size());
@@ -307,7 +307,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         LinkedList<String> result = css.getResult();
 
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(result.size());
@@ -340,7 +340,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         LinkedList<String> result = ds.getResult();
         
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(result.size());
@@ -371,7 +371,7 @@ public class ClientConnection extends MessageForwardingConnection {
                
         HubDescription localHub = knownHubs.getLocalDescription();
         
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(1);
@@ -399,7 +399,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         HubDescription localHub = knownHubs.getLocalDescription();
         
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(1);
@@ -426,7 +426,7 @@ public class ClientConnection extends MessageForwardingConnection {
                
         HubDescription localHub = knownHubs.getLocalDescription();
         
-        synchronized (this) {
+        synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
             out.writeUTF(id);            
             out.writeInt(1);
@@ -458,31 +458,6 @@ public class ClientConnection extends MessageForwardingConnection {
         processVirtualConnect(index, clientAddress, 
                 new SocketAddressSet(target), info, timeout);
     
-        
-        /*
-        
-        synchronized (this) {
-            out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
-            out.writeInt(2);
-            
-            if (vclogger.isInfoEnabled()) {
-                vclogger.info("Connection " + 
-                        index + " result =  " + result);
-            }
-            
-            if (result == null) { 
-                out.writeUTF("OK");
-                out.writeUTF(Integer.toString(DEFAULT_CREDITS));
-            } else { 
-                out.writeUTF("DENIED");
-                out.writeUTF(result);
-            }
-            
-            out.flush();
-        }*/
-        
-        
     } 
     
     private void handleCreateVirtualConnectionACK() throws IOException { 
@@ -497,49 +472,6 @@ public class ClientConnection extends MessageForwardingConnection {
     
         processVirtualConnectACK(index, result, info);
     } 
-/*
-    private void handleAckCreateVirtualConnection() throws IOException { 
-        
-        String id = in.readUTF();        
-        String result = in.readUTF();
-        String info = in.readUTF();
-        
-        if (vclogger.isDebugEnabled()) {
-            vclogger.debug("Got reply to VC: " + id + " " + result + " " + info);
-        }
-
-        
-        PendingReply reply = getReply(id);
-        
-        
-        
-        
-        
-        /*
-        
-        
-        if (result.equals("DENIED")) { 
-            String error = in.readUTF();           
-            storeReply(localID, new String [] { result, error });
-            return;
-        }
-        
-        String remoteID = in.readUTF();
-        
-        boolean b = storeReply(localID, new String [] { result });
-        
-        synchronized (this) {
-            out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(remoteID);            
-            out.writeInt(1);            
-            out.writeUTF(b ? "OK" : "DENIED");            
-            out.flush();
-        }
-        
-        
-                 
-    }*/ 
-
     
     private void handleCloseVirtualConnection() throws IOException { 
 

@@ -63,7 +63,7 @@ public class HubConnection extends MessageForwardingConnection {
         
         // Send the connect request to the hub
         try { 
-            synchronized (this) {
+            synchronized (out) {
                 out.write(HubProtocol.CREATE_VIRTUAL);           
                 out.writeLong(index);
                 out.writeUTF(source.toString());
@@ -85,7 +85,7 @@ public class HubConnection extends MessageForwardingConnection {
         
         // Send the connect request to the hub
         try { 
-            synchronized (this) {
+            synchronized (out) {
                 out.write(HubProtocol.CREATE_VIRTUAL_ACK);           
                 out.writeLong(index);
                 out.writeUTF(result);
@@ -107,7 +107,7 @@ public class HubConnection extends MessageForwardingConnection {
         }
         // forward the close
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(HubProtocol.CLOSE_VIRTUAL);           
                 out.writeLong(index);            
                 out.flush();
@@ -126,7 +126,7 @@ public class HubConnection extends MessageForwardingConnection {
         
         // forward the message
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(HubProtocol.MESSAGE_VIRTUAL);           
                 out.writeLong(index);
                 out.writeInt(data.length);
@@ -147,7 +147,7 @@ public class HubConnection extends MessageForwardingConnection {
         
         // forward the message
         try {
-            synchronized (this) {
+            synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
                 out.writeLong(index);
                 out.flush();                
@@ -206,21 +206,17 @@ public class HubConnection extends MessageForwardingConnection {
                             + tmp.getLastLocalUpdate()  
                             + " > lastSendState= " + lastSendState);
                 }
-           
-                synchronized (this) {  
-                    writeHub(tmp);
-                } 
+                
+                writeHub(tmp);
                 writes++;
             }        
             
             if (writes == 0) {
                 // No proxies where written, so write a ping instead.
-                synchronized (this) { 
-                    writePing();
-                } 
+                writePing();
             } 
             
-            synchronized (this) { 
+            synchronized (out) { 
                 out.flush();
             }
             
@@ -233,43 +229,48 @@ public class HubConnection extends MessageForwardingConnection {
         peer.setContactTimeStamp(false);        
     }
     
-    private void writePing() throws IOException {        
-        out.write(HubProtocol.PING);
+    private void writePing() throws IOException {      
+        synchronized (out) {
+            out.write(HubProtocol.PING);
+        }
     } 
     
-    private void writeHub(HubDescription d) throws IOException {        
-        out.write(HubProtocol.GOSSIP);
+    private void writeHub(HubDescription d) throws IOException {  
         
-        out.writeUTF(d.hubAddress.toString());
-        out.writeUTF(d.getName());
-        out.writeInt(d.getHops());
-        
-        if (d.isLocal()) { 
-            out.writeLong(d.getLastLocalUpdate());
-        } else { 
-            out.writeLong(d.getHomeState());
-        } 
-        
-        ArrayList<ClientDescription> clients = d.getClients(null);        
-        
-        out.writeInt(clients.size()); 
+        synchronized (out) {
+            out.write(HubProtocol.GOSSIP);
 
-        for (ClientDescription c : clients) {
-            c.write(out);
-        }    
-        
-        String [] connectedTo = d.connectedTo();
-        
-        if (connectedTo == null || connectedTo.length == 0) {         
-            out.writeInt(0);
-            return;
-        }  
-          
-        out.writeInt(connectedTo.length);
-        
-        for (String c : connectedTo) { 
-            out.writeUTF(c);
-        }    
+            out.writeUTF(d.hubAddress.toString());
+            out.writeUTF(d.getName());
+            out.writeInt(d.getHops());
+
+            if (d.isLocal()) { 
+                out.writeLong(d.getLastLocalUpdate());
+            } else { 
+                out.writeLong(d.getHomeState());
+            } 
+
+            ArrayList<ClientDescription> clients = d.getClients(null);        
+
+            out.writeInt(clients.size()); 
+
+            for (ClientDescription c : clients) {
+                c.write(out);
+            }    
+
+            String [] connectedTo = d.connectedTo();
+
+            if (connectedTo == null || connectedTo.length == 0) {         
+                out.writeInt(0);
+                return;
+            }  
+
+            out.writeInt(connectedTo.length);
+
+            for (String c : connectedTo) { 
+                out.writeUTF(c);
+            }
+        }
     } 
         
     private void readProxy() throws IOException {
