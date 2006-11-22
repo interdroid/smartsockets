@@ -392,7 +392,7 @@ public class VirtualSocketFactory {
         if (m.matchRuntimeRequirements(properties)) {
           //  if (logger.isInfoEnabled()) {
                 logger.warn("Using module " + m.module + " to set up " +
-                        "connection to " + target);
+                        "connection to " + target + " timeout = " + timeout);
           //  }
             
             long start = System.currentTimeMillis();
