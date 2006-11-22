@@ -57,7 +57,8 @@ public class HubConnection extends MessageForwardingConnection {
     }
     
     protected void forwardVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet target, String info, int timeout, long index) { 
+            SocketAddressSet target, SocketAddressSet targetHub, String info, 
+            int timeout, long index) { 
         
         // TODO: Should be asynchronous ???
         
@@ -68,6 +69,13 @@ public class HubConnection extends MessageForwardingConnection {
                 out.writeLong(index);
                 out.writeUTF(source.toString());
                 out.writeUTF(target.toString());
+                
+                if (targetHub != null) { 
+                    out.writeUTF(targetHub.toString());
+                } else { 
+                    out.writeUTF("");            
+                }
+                
                 out.writeUTF(info);            
                 out.writeInt(timeout);            
                 out.flush();
@@ -370,7 +378,8 @@ public class HubConnection extends MessageForwardingConnection {
         long index = in.readLong();
         
         String source = in.readUTF();
-        String target = in.readUTF();        
+        String target = in.readUTF();   
+        String targetHub = in.readUTF();  
         String info = in.readUTF();        
         
         int timeout = in.readInt();
@@ -385,8 +394,18 @@ public class HubConnection extends MessageForwardingConnection {
                     + source + " -->> " + target);
         }
         
+        SocketAddressSet hub = null;
+        
+        if (targetHub.length() > 0) { 
+            try { 
+                hub = new SocketAddressSet(targetHub);
+            } catch (Exception e) {
+                // ignore -- not critical
+            }
+        }
+        
         processVirtualConnect(index, new SocketAddressSet(source), 
-                new SocketAddressSet(target), info, timeout);
+                new SocketAddressSet(target), hub, info, timeout);
     }
          
     private void handleCloseVirtual() throws IOException { 

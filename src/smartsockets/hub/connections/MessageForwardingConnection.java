@@ -202,7 +202,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected abstract String getUniqueID(long index);
     
     protected abstract void forwardVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet target, String info, int timeout, long index);
+            SocketAddressSet target, SocketAddressSet targetHub, String info, 
+            int timeout, long index);
     
     protected abstract void forwardVirtualConnectAck(long index, String result, 
             String info);
@@ -350,9 +351,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         return new VirtualConnection(mfc1, id1, index1, this, id2, index2);
     }
-        
+         
     protected void processVirtualConnect(long index, SocketAddressSet source, 
-            SocketAddressSet target, String info, int timeout) {
+            SocketAddressSet target, SocketAddressSet hub, String info, 
+            int timeout) {
         
         if (vclogger.isInfoEnabled()) {                            
             vclogger.info("ANY connection request for: " + index);
@@ -384,10 +386,29 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             }
         
             mf = (MessageForwardingConnection) tmp;
+           
+        } else if (hub != null) { 
+            
+            mf = (MessageForwardingConnection) connections.get(hub);        
+            
+            if (mf == null) { 
+                // Failed to get a connection to the specified hub. Maybe there 
+                // is an indirection ? 
+                HubDescription d = knownHubs.get(hub);
+            
+                if (d != null) {  
+                    HubDescription indirect = d.getIndirection();
+                    
+                    if (indirect != null && indirect.haveConnection()) { 
+                        mf = (MessageForwardingConnection) connections.get(indirect.hubAddress);
+                    }
+                } 
+            }
+        } 
         
-        } else { 
-                 
-            // Find the hubs that know the client...  
+        if (mf == null) { 
+            // So far, we failed to get any connection to which we can forward 
+            // the connect. Try to find the hubs that know the client...  
             DirectionsSelector ds = new DirectionsSelector(target, false);
             
             knownHubs.select(ds);
@@ -397,6 +418,15 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             if (result.size() > 0) {
                 // TODO: send in Multiple directions.... ?
                 mf = (MessageForwardingConnection) connections.get(result.get(0));
+            }
+            
+            if (mf == null) { 
+                // apparently, out local hub does not known the client (yet). 
+                // This may be caused by the fact that the client has just 
+                // started an the gossip of it's existence haven't reached us 
+                // yet...   
+                
+                // TODO: wait a while and try again ?? 
             }
         } 
         
@@ -422,7 +452,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Ask the target to forward the connect message to whoever it 
         // represents (a client or a hub). This should be an asynchronous 
         // call to prevent deadlocks!!
-        mf.forwardVirtualConnect(source, target, info, timeout, vc.index2);
+        mf.forwardVirtualConnect(source, target, hub , info, timeout, vc.index2);
     }
    
     protected void processVirtualConnectACK(long index, String result, 

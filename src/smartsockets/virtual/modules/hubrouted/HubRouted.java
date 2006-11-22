@@ -46,6 +46,7 @@ public class HubRouted extends ConnectModule
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module...
         SocketAddressSet tm = target.machine(); 
+        SocketAddressSet hub = target.hub();
            
         /*
         if (tm.sameMachine(parent.getLocalHost())) { 
@@ -62,7 +63,7 @@ public class HubRouted extends ConnectModule
         long index = -1;
         
         try { 
-            index = serviceLink.createVirtualConnection(tm,
+            index = serviceLink.createVirtualConnection(tm, hub, 
                     Integer.toString(target.port()), timeout);
             
         } catch (Exception e) {

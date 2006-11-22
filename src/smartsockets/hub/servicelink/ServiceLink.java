@@ -898,8 +898,9 @@ public class ServiceLink implements Runnable {
     
    
     
-    public long createVirtualConnection(SocketAddressSet target, String info, 
-            int timeout) throws IOException {
+    public long createVirtualConnection(SocketAddressSet target, 
+            SocketAddressSet targetHub, String info, int timeout) 
+        throws IOException {
         
         if (timeout < 0) { 
             timeout = 0;
@@ -919,6 +920,13 @@ public class ServiceLink implements Runnable {
                 out.writeLong(index);
                 out.writeInt(timeout);                          
                 out.writeUTF(target.toString());
+                
+                if (targetHub != null) { 
+                    out.writeUTF(targetHub.toString());
+                } else { 
+                    out.writeUTF("");
+                }
+                
                 out.writeUTF(info);                                   
                 out.flush();            
             }

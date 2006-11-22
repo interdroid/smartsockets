@@ -56,7 +56,8 @@ public class ClientConnection extends MessageForwardingConnection {
     }
         
     protected void forwardVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet target, String info, int timeout, long index) { 
+            SocketAddressSet target, SocketAddressSet targetHub, String info, 
+            int timeout, long index) { 
         
         // TODO: Should be asynchronous ???
         
@@ -447,6 +448,8 @@ public class ClientConnection extends MessageForwardingConnection {
         int timeout = in.readInt();
         
         String target = in.readUTF();
+        String targetHub = in.readUTF();
+        
         String info = in.readUTF();        
         
         if (vclogger.isInfoEnabled()) {
@@ -455,8 +458,19 @@ public class ClientConnection extends MessageForwardingConnection {
                     index + " to " + target);
         }
         
+
+        SocketAddressSet hub = null;
+        
+        if (targetHub.length() > 0) { 
+            try { 
+                hub = new SocketAddressSet(targetHub);
+            } catch (Exception e) {
+                // ignore -- not critical
+            }
+        }
+      
         processVirtualConnect(index, clientAddress, 
-                new SocketAddressSet(target), info, timeout);
+                new SocketAddressSet(target), hub, info, timeout);
     
     } 
     
