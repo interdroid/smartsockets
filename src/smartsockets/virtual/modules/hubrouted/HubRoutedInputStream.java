@@ -9,6 +9,8 @@ public class HubRoutedInputStream extends InputStream {
     
     private byte [] buffer;    
     private int used = 0;
+    
+    private boolean closePending = false;
     private boolean closed = false;
         
     private final byte [] single = new byte[1];
@@ -49,6 +51,12 @@ public class HubRoutedInputStream extends InputStream {
         }
         
         if (buffer == null || used == buffer.length) {
+            
+            if (closePending) { 
+                closed = true;
+                return -1;
+            }
+            
             buffer = parent.getBuffer(buffer);
             
    //         System.err.println("InputStream got byte[" + buffer.length + "]");
@@ -92,7 +100,7 @@ public class HubRoutedInputStream extends InputStream {
     }
     
     public void close() { 
-        closed = true;
+        closePending = true;
     }
     
     public boolean closed() { 
