@@ -46,6 +46,9 @@ public class ClientConnection extends MessageForwardingConnection {
         this.clientAddress = clientAddress;
         this.clientAddressAsString = clientAddress.toString();
         
+        
+        conlogger.warn("new client: " + clientAddressAsString);
+        
         if (conlogger.isDebugEnabled()) {
             conlogger.debug("Created client connection: " + clientAddress);
         }
