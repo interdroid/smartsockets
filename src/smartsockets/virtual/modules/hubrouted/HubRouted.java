@@ -162,9 +162,13 @@ public class HubRouted extends ConnectModule
                 serviceLink, index, null);
         
         if (!ss.incomingConnection(s)) { 
+            
+            logger.warn("Connection " + index + " was refused by ss!");
             // not accepted 
             return false;            
         }
+        
+        logger.warn("Connection " + index + " was accepted by ss!");
         
         synchronized (this) {
             sockets.put(index, s);
