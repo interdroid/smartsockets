@@ -368,6 +368,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Check if the client is connected to the local hub...
         BaseConnection tmp = connections.get(target);
         
+        vclogger.warn("Local lookup of " + target + " result = " + tmp);
+        
         if (tmp != null) {
             
             if (!(tmp instanceof ClientConnection)) { 

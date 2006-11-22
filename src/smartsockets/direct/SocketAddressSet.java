@@ -286,7 +286,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 
         SocketAddressSet tmp = (SocketAddressSet) other;
       
-        // System.out.println("TcpSocketAdressSet.equals: ");
+        // System.out.println("SocketAdressSet.equals: ");
         // System.out.println("arrays : " + Arrays.equals(sas, tmp.sas));
         // System.out.println("address: " + address.equals(tmp.address));
         
@@ -307,10 +307,16 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             }
 
             if (!found) { 
+                
+                System.err.println("SAS: " + this + " != SAS: " + tmp);
+                
                 return false;
             }
         }
 
+        System.err.println("SAS: " + this + " == SAS: " + tmp);
+        
+        
         return true;
     }
     
