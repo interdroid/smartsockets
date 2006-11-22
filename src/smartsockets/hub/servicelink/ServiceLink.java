@@ -3,7 +3,9 @@ package smartsockets.hub.servicelink;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -274,7 +276,8 @@ public class ServiceLink implements Runnable {
                     out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                     out.writeLong(index);
                     out.writeUTF("DENIED");                    
-                    out.writeUTF("No one will accept the connection");                
+                   // out.writeUTF("No one will accept the connection");                
+                    out.writeUTF("Connection refused");
                     out.flush();            
                 }
             } catch (IOException e) {
@@ -884,6 +887,15 @@ public class ServiceLink implements Runnable {
         
         // We have a result, but it may not be positive...
         if (result[0].equals("DENIED")) {
+            
+            if (result[1].equals("Unknown host")) { 
+                throw new UnknownHostException(); 
+            }
+            
+            if (result[1].equals("Connection refused")) { 
+                throw new ConnectException(); 
+            }
+            
             throw new IOException("Connection failed: " + result[1]);
         } 
         

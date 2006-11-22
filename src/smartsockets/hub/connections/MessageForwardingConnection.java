@@ -391,70 +391,52 @@ public abstract class MessageForwardingConnection extends BaseConnection {
            
         } else if (hub != null) { 
             
+            vclogger.warn("trying to connect via hub: " + hub);
+            
             mf = (MessageForwardingConnection) connections.get(hub);        
             
-            if (mf == null) { 
+            if (mf == null) {
+                
+                vclogger.warn("failed, trying to connect via indirection");
+                
                 // Failed to get a connection to the specified hub. Maybe there 
                 // is an indirection ? 
                 HubDescription d = knownHubs.get(hub);
-            
+                           
                 if (d != null) {  
                     HubDescription indirect = d.getIndirection();
                     
                     if (indirect != null && indirect.haveConnection()) { 
-                        mf = (MessageForwardingConnection) connections.get(indirect.hubAddress);
+                        mf = (MessageForwardingConnection) 
+                            connections.get(indirect.hubAddress);
+                        
+                        vclogger.warn("GOT indirection!");
+                        
+                    } else { 
+                        vclogger.warn("failed, indirection not found");
                     }
-                } 
+                } else { 
+                    vclogger.warn("failed, hub not found");
+                }
             }
         } 
         
         if (mf == null) { 
-            
-            // So far, we failed to get any connection to which we can forward 
-            // the connect. Try to find the hubs that know the client...  
-            long endTime = System.currentTimeMillis() + timeout;
-            boolean timeLeft = true;
-            
-            while (mf == null && timeLeft) { 
+            DirectionsSelector ds = new DirectionsSelector(target, false);
 
-                DirectionsSelector ds = new DirectionsSelector(target, false);
+            knownHubs.select(ds);
 
-                knownHubs.select(ds);
+            LinkedList<SocketAddressSet> result = ds.getResult();
 
-                LinkedList<SocketAddressSet> result = ds.getResult();
-
-                if (result.size() > 0) {
-                    // TODO: send in Multiple directions.... ?
-                    mf = (MessageForwardingConnection) connections.get(result.get(0));
-                }
-                
-                if (mf == null) {      
-                    try { 
-                        Thread.sleep(1000);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-                }
-                    
-                if (timeout > 0) { 
-                    timeLeft = (System.currentTimeMillis() < endTime);                   
-                }
+            if (result.size() > 0) {
+                // TODO: send in Multiple directions.... ?
+                mf = (MessageForwardingConnection) connections.get(result.get(0));
             }
-
-            // adjust the timeout to reflect the time we have waited here...
-            if (timeout > 0) { 
-                timeout = (int) (endTime - System.currentTimeMillis()); 
             
-                if (timeout <= 0) { 
-                    timeLeft = false;
-                }
-            } 
-            
-            if (!timeLeft) { 
-                // Connection setup timed out!
-                forwardVirtualConnectAck(index, "DENIED", "Timeout");
-                return;
-            }  
+            // NOTE: we may not be able to find the client here, since we don't 
+            // know is exist yet (the gossip hasn't reached us). This case is 
+            // handled in the client-side code, by retrying the connect until 
+            // the timeout expires.. 
         } 
         
         if (mf == null) {
@@ -479,7 +461,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Ask the target to forward the connect message to whoever it 
         // represents (a client or a hub). This should be an asynchronous 
         // call to prevent deadlocks!!
-        mf.forwardVirtualConnect(source, target, hub , info, timeout, vc.index2);
+        mf.forwardVirtualConnect(source, target, hub, info, timeout, vc.index2);
     }
    
     protected void processVirtualConnectACK(long index, String result, 

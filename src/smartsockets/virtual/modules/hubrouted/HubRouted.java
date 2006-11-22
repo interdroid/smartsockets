@@ -1,6 +1,8 @@
 package smartsockets.virtual.modules.hubrouted;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,27 +57,66 @@ public class HubRouted extends ConnectModule
         }
         */
         
-        if (timeout == 0 || timeout > DEFAULT_TIMEOUT) { 
+        if (timeout == 0) { 
             timeout = DEFAULT_TIMEOUT; 
         }
        
-
         long index = -1;
+        long endTime = System.currentTimeMillis() + timeout;
+        boolean timeLeft = true;
         
-        try { 
-            index = serviceLink.createVirtualConnection(tm, hub, 
-                    Integer.toString(target.port()), timeout);
+        while (index == -1 && timeLeft) { 
+            try { 
+                index = serviceLink.createVirtualConnection(tm, hub, 
+                        Integer.toString(target.port()), timeout);
             
-        } catch (Exception e) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Failed to create virtual connection to " 
-                        + target, e);
+            } catch (UnknownHostException e) {
+            
+                // The target machine isn't known (yet) -- retry as long as we 
+                // stick to the timeout....
+                
+               // if (logger.isInfoEnabled()) {
+                    logger.warn("Failed to create virtual connection to " 
+                            + target + " (unknown host -> will retry)!");
+               // }
+                    
+                try { 
+                    Thread.sleep(1000);
+                } catch (Exception x) {
+                    // ignored
+                }
+                
+                if (timeout > 0) { 
+                    timeLeft = System.currentTimeMillis() < endTime; 
+                } 
+             
+                if (!timeLeft)  {
+                    throw new ModuleNotSuitableException("Failed to create virtual " +
+                            "connection to " + target + " within " + timeout 
+                            + " ms.", e);         
+                }
+                
+            } catch (ConnectException e) {
+                
+                //if (logger.isInfoEnabled()) {
+                logger.warn("Failed to create virtual connection to " 
+                        + target + " (connection refused -> giving up)", e);
+                //}
+        
+                // The target refused the connection (this is user error)
+                throw new ConnectException("Connection refused by: " + target);
+                
+            } catch (IOException e) {
+                //if (logger.isInfoEnabled()) {
+                    logger.warn("Failed to create virtual connection to " 
+                            + target + " (giving up)", e);
+                //}
+            
+                throw new ModuleNotSuitableException("Failed to create virtual " +
+                        "connection to " + target, e);
             }
-            
-            throw new ModuleNotSuitableException("Failed to create virtual " +
-                    "connection to " + target, e);                    
         } 
-
+        
         HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, target, 
                 serviceLink, index, null);
         

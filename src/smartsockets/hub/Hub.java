@@ -26,7 +26,7 @@ import smartsockets.util.TypedProperties;
 
 public class Hub extends Thread {
     
-    private static int GOSSIP_SLEEP = 10000;
+    private static int GOSSIP_SLEEP = 3000;
     
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
     private static final int DEFAULT_ACCEPT_PORT    = 17878;    

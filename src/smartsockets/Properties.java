@@ -75,7 +75,7 @@ public class Properties {
         
     private static final String [] defaults = new String [] {
             BACKLOG,                "20", 
-            TIMEOUT,                "1000", 
+            TIMEOUT,                "10000", 
             
             NIO,                    "false", 
             STUN,                   "false",
