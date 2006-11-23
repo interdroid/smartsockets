@@ -270,8 +270,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             }
             
             try { 
-                System.out.println("Socket " + connectionIndex 
-                        + " blocks for messages!!");
+               // System.out.println("Socket " + connectionIndex 
+               //         + " blocks for messages!!");
                 wait(1000);                
             } catch (Exception e) {
                 // ignore

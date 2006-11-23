@@ -75,10 +75,10 @@ public class HubRouted extends ConnectModule
                 // The target machine isn't known (yet) -- retry as long as we 
                 // stick to the timeout....
                 
-               // if (logger.isInfoEnabled()) {
-                    logger.warn("Failed to create virtual connection to " 
+                if (logger.isInfoEnabled()) {
+                    logger.info("Failed to create virtual connection to " 
                             + target + " (unknown host -> will retry)!");
-               // }
+                }
                     
                 try { 
                     Thread.sleep(1000);
@@ -99,8 +99,8 @@ public class HubRouted extends ConnectModule
             } catch (ConnectException e) {
                 
                 //if (logger.isInfoEnabled()) {
-                logger.warn("Failed to create virtual connection to " 
-                        + target + " (connection refused -> giving up)", e);
+                    logger.warn("Failed to create virtual connection to " 
+                            + target + " (connection refused -> giving up)", e);
                 //}
         
                 // The target refused the connection (this is user error)
@@ -152,9 +152,9 @@ public class HubRouted extends ConnectModule
             return false;
         }
         
-      //  if (logger.isInfoEnabled()) { 
-            logger.warn("Hubrouted got new connection: " + index);
-      //  }
+        if (logger.isInfoEnabled()) { 
+            logger.info("Hubrouted got new connection: " + index);
+        }
         
         VirtualSocketAddress sa = new VirtualSocketAddress(src, 0);
         
@@ -163,12 +163,12 @@ public class HubRouted extends ConnectModule
         
         if (!ss.incomingConnection(s)) { 
             
-            logger.warn("Connection " + index + " was refused by ss!");
+           // logger.warn("Connection " + index + " was refused by ss!");
             // not accepted 
             return false;            
         }
         
-        logger.warn("Connection " + index + " was accepted by ss!");
+        //logger.warn("Connection " + index + " was accepted by ss!");
         
         synchronized (this) {
             sockets.put(index, s);
@@ -183,14 +183,14 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just closed the socket...
-       //     if (logger.isInfoEnabled()) {             
+        //    if (logger.isInfoEnabled()) {             
                 logger.warn("Got disconnect for an unknown socket!: " + vc);
-        //    }
+        //   / }
             return;
         } 
         
        // if (logger.isDebugEnabled()) { 
-            logger.warn("Got disconnect for: " + vc);
+        //    logger.warn("Got disconnect for: " + vc);
       //  }
         
         try { 
@@ -230,7 +230,7 @@ public class HubRouted extends ConnectModule
         s.close();
         
        // if (logger.isDebugEnabled()) { 
-            logger.warn("Got close for: " + vc);
+        //    logger.warn("Got close for: " + vc);
         //}
     }
 }

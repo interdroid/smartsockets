@@ -38,6 +38,8 @@ public class HubConnection extends MessageForwardingConnection {
     // to the peer. Remembering this allows us to send delta's. 
     private long lastSendState;    
             
+    private final String uniquePrefix;
+    
     public HubConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, HubDescription peer, 
             Map<SocketAddressSet, BaseConnection> connections, 
@@ -49,11 +51,13 @@ public class HubConnection extends MessageForwardingConnection {
         this.peer = peer;        
         this.state = state;
         
+        this.uniquePrefix = peer.hubAddressAsString + "__";
+        
         local = proxies.getLocalDescription();
     }
          
     protected String getUniqueID(long index) { 
-        return peer.hubAddressAsString + index;
+        return uniquePrefix + index;
     }
     
     protected void forwardVirtualConnect(SocketAddressSet source, 
@@ -459,6 +463,8 @@ public class HubConnection extends MessageForwardingConnection {
         local.removeConnectedTo(peer.hubAddressAsString);
         
         DirectSocketFactory.close(s, out, in);            
+    
+        closeAllVirtualConnections(uniquePrefix);
     } 
     
     protected boolean runConnection() {

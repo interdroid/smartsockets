@@ -73,12 +73,7 @@ public class ServiceLink implements Runnable {
 
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override callback " 
-                    + identifier);
-            
-            System.err.println("AAP ServiceLink: refusing to override callback " 
-                    + identifier);
-            
-            new Exception().printStackTrace(System.err);
+                    + identifier, new Exception());
             
             return;
         }
@@ -91,12 +86,7 @@ public class ServiceLink implements Runnable {
         
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override simple callback " 
-                    + identifier);
-            
-            System.err.println("NOOT ServiceLink: refusing to override simple callback " 
-                    + identifier);
-            
-            new Exception().printStackTrace(System.err);
+                    + identifier, new Exception());
                         
             return;
         }
@@ -136,12 +126,23 @@ public class ServiceLink implements Runnable {
         }
     }
             
-    private void closeConnection() {
+    private synchronized void closeConnectionToHub() {
         
-        // TODO: Close all virtual connections here ??
+        // TODO: is the synchronization OK here ???
+        if (!getConnected()) { 
+            return;
+        }
         
         setConnected(false);
+            
         DirectSocketFactory.close(hub, out, in);                               
+        
+        Long [] tmp = credits.keySet().toArray(new Long[0]);
+        
+        for (long l : tmp) { 
+            closeConnection(l);
+        }
+        
     }
     
     private void connectToHub(SocketAddressSet address) throws IOException { 
@@ -180,7 +181,7 @@ public class ServiceLink implements Runnable {
         } catch (IOException e) {            
             logger.warn("Connection setup to hub at " + address 
                     + " failed: ", e);            
-            closeConnection();
+            closeConnectionToHub();
             throw e;
         } 
     }
@@ -252,10 +253,10 @@ public class ServiceLink implements Runnable {
         int timeout = in.readInt();
         long index = in.readLong();
                 
-     //   if (logger.isInfoEnabled()) {
-            logger.warn("ServiceLink: Received request for incoming connection "
+        if (logger.isInfoEnabled()) {
+            logger.info("ServiceLink: Received request for incoming connection "
                     + "from " + source + " (" + index + ")"); 
-      //  }
+        }
         
         VirtualConnectionCallBack cb = null;
         
@@ -267,9 +268,9 @@ public class ServiceLink implements Runnable {
             
         if (cb == null) {
             
-           // if (logger.isInfoEnabled()) {
-                logger.warn("DENIED connection: " + index + ": no callback!");
-            //}
+            if (logger.isInfoEnabled()) {
+                logger.info("DENIED connection: " + index + ": no callback!");
+            }
                         
             try {
                 synchronized (out) {         
@@ -282,7 +283,7 @@ public class ServiceLink implements Runnable {
                 }
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while writing to hub!", e);
-                closeConnection();
+                closeConnectionToHub();
                 throw new IOException("Connection to hub lost!");            
             }
             
@@ -296,7 +297,7 @@ public class ServiceLink implements Runnable {
             try {
                 credits.remove(index);
                 
-             //   if (logger.isInfoEnabled()) {
+              //  if (logger.isInfoEnabled()) {
                     logger.warn("DENIED connection: " + index
                             + ": connection refused!");
              //   }                
@@ -311,7 +312,7 @@ public class ServiceLink implements Runnable {
                 
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while writing to hub!", e);
-                closeConnection();
+                closeConnectionToHub();
                 throw new IOException("Connection to hub lost!");            
             }
         } 
@@ -340,7 +341,10 @@ public class ServiceLink implements Runnable {
             logger.warn("REJECTED connection: (" + index 
                     + "): serversocket did not accept");
        // }
-                
+        
+            
+            
+            
         Credits c = credits.get(index);
         
         if (c == null) { 
@@ -359,7 +363,7 @@ public class ServiceLink implements Runnable {
             }
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();                      
+            closeConnectionToHub();                      
         }
     }
     
@@ -385,9 +389,9 @@ public class ServiceLink implements Runnable {
         // The incoming connection 'index' was accepted. The only problem is 
         // that we are not sure if we are in time. We therefore send a reply, 
         // for which we get a reply back again...
-       // if (logger.isInfoEnabled()) {
-            logger.warn("ACCEPTED connection: (" + index + ")");
-       // }
+        if (logger.isInfoEnabled()) {
+            logger.info("ACCEPTED connection: (" + index + ")");
+        }
 
         Credits c = credits.get(index);
         
@@ -412,17 +416,14 @@ public class ServiceLink implements Runnable {
             
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");            
         }
         
         return true;
     }
        
-    private void handleIncomingClose() throws IOException { 
-        
-        long index = in.readLong();
-        
+    private void closeConnection(long index) { 
         if (logger.isDebugEnabled()) {
             logger.debug("Got close for connection: " + index);
         }
@@ -440,6 +441,10 @@ public class ServiceLink implements Runnable {
         }
         
         disconnectCallback(index);
+    }
+    
+    private void handleIncomingClose() throws IOException { 
+        closeConnection(in.readLong());
     }        
 
     private void handleIncomingMessage() throws IOException { 
@@ -474,8 +479,8 @@ public class ServiceLink implements Runnable {
         } else { 
             logger.warn("Received virtual message(" + len + ") for connection: " 
                         + index + " which doesn't exist!!");
-            
-            // TODO: send close back ???
+    
+            sendClose(index);
         }        
     }        
 
@@ -490,9 +495,8 @@ public class ServiceLink implements Runnable {
         Credits c = credits.get(index);
         
         if (c == null) { 
-            logger.warn("Got ACK for non-existing virtual connection: " + index); 
-            
-            // TODO: send close back ???
+            logger.warn("Got ACK for non-existing virtual connection: " + index);             
+            sendClose(index);
             return;
         }
                 
@@ -512,7 +516,7 @@ public class ServiceLink implements Runnable {
                 
                 switch (header) { 
                 case -1: 
-                    closeConnection();
+                    closeConnectionToHub();
                     break;
                 
                 case ServiceLinkProtocol.MESSAGE:
@@ -547,13 +551,13 @@ public class ServiceLink implements Runnable {
                     logger.warn("ServiceLink: Received unknown opcode!: " 
                             + header);
                 
-                    closeConnection();                
+                    closeConnectionToHub();                
                     break;                    
                 }
                                                                    
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while receiving!", e);
-                closeConnection();
+                closeConnectionToHub();
             }               
         }               
     }
@@ -592,7 +596,7 @@ public class ServiceLink implements Runnable {
             }
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
         }        
     }
     
@@ -641,7 +645,7 @@ public class ServiceLink implements Runnable {
             logger.info("Requesting client list from hub");
         }
     
-        waitConnected(maxWaitTime);
+        waitConnected(maxWaitTime); 
         
         String id = "GetClientsForHub" + getNextSimpleCallbackID();
     
@@ -660,7 +664,7 @@ public class ServiceLink implements Runnable {
             return convertToClientInfo((String []) tmp.getReply());        
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");            
         } finally { 
             removeCallback(id);
@@ -695,7 +699,7 @@ public class ServiceLink implements Runnable {
             return convertToClientInfo((String []) tmp.getReply());        
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");            
         } finally { 
             removeCallback(id);
@@ -728,7 +732,7 @@ public class ServiceLink implements Runnable {
                         
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
@@ -759,7 +763,7 @@ public class ServiceLink implements Runnable {
                         
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
@@ -793,7 +797,7 @@ public class ServiceLink implements Runnable {
                         
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
@@ -915,6 +919,10 @@ public class ServiceLink implements Runnable {
             SocketAddressSet targetHub, String info, int timeout) 
         throws IOException {
         
+        if (!getConnected()) { 
+            throw new IOException("No connection to hub!");
+        }
+        
         if (timeout < 0) { 
             timeout = 0;
         }
@@ -946,7 +954,7 @@ public class ServiceLink implements Runnable {
             
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         }
         
@@ -956,14 +964,12 @@ public class ServiceLink implements Runnable {
         return index;
     }
     
-   
-    public void closeVirtualConnection(long index) throws IOException {
+    private void sendClose(long index) throws IOException {
+       
+            if (!getConnected()) { 
+                throw new IOException("No connection to hub");
+            }
             
-        if (logger.isInfoEnabled()) {
-            logger.debug("Closing virtual connection: " + index);
-        }
-
-        try {         
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.CLOSE_VIRTUAL);
                 out.writeLong(index);
@@ -973,9 +979,22 @@ public class ServiceLink implements Runnable {
             if (logger.isDebugEnabled()) {                          
                 logger.debug("Closed: " + index);
             }    
+    }
+   
+    
+    public void closeVirtualConnection(long index) throws IOException {
+         
+        if (logger.isInfoEnabled()) {
+            logger.debug("Closing virtual connection: " + index);
+        }
+        
+        try { 
+            if (getConnected()) { 
+                sendClose(index);
+            }
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally {
             credits.remove(index);
@@ -989,6 +1008,10 @@ public class ServiceLink implements Runnable {
     public void sendVirtualMessage(long index, byte [] message, int off, 
             int len, int timeout) throws IOException {
     
+        if (!getConnected()) { 
+            throw new IOException("No connection to hub!");
+        }
+        
         if (logger.isInfoEnabled()) {
             logger.info("Sending virtual message: " + index);
         }
@@ -1031,7 +1054,7 @@ public class ServiceLink implements Runnable {
             }                 
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
         }       
         
         //System.err.println("W");
@@ -1039,6 +1062,10 @@ public class ServiceLink implements Runnable {
         
     public void ackVirtualMessage(long index, byte [] message) throws IOException {
     
+        if (!getConnected()) { 
+            throw new IOException("No connection to hub!");
+        }
+                
         if (logger.isInfoEnabled()) {
             logger.info("Ack virtual message: " + index);
         }
@@ -1051,7 +1078,7 @@ public class ServiceLink implements Runnable {
             }                 
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
         }        
         
         //System.err.println("A");
@@ -1076,12 +1103,13 @@ public class ServiceLink implements Runnable {
                 out.writeUTF(value);
                 out.flush();            
             } 
+;
 
             String [] reply = (String []) tmp.getReply();            
             return reply != null && reply.length == 1 && reply[0].equals("OK");
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
@@ -1115,7 +1143,7 @@ public class ServiceLink implements Runnable {
             return reply != null && reply.length == 1 && reply[0].equals("OK");
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);
@@ -1147,7 +1175,7 @@ public class ServiceLink implements Runnable {
             return reply != null && reply.length == 1 && reply[0].equals("OK");
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
-            closeConnection();
+            closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
             removeCallback(id);

@@ -35,6 +35,7 @@ public class ClientConnection extends MessageForwardingConnection {
     private final SocketAddressSet clientAddress;
     private final String clientAddressAsString;
     
+    private final String uniquePrefix;
     
     public ClientConnection(SocketAddressSet clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, 
@@ -46,8 +47,7 @@ public class ClientConnection extends MessageForwardingConnection {
         this.clientAddress = clientAddress;
         this.clientAddressAsString = clientAddress.toString();
         
-        
-        conlogger.warn("new client: " + clientAddressAsString);
+        this.uniquePrefix = clientAddressAsString + "__";
         
         if (conlogger.isDebugEnabled()) {
             conlogger.debug("Created client connection: " + clientAddress);
@@ -55,7 +55,7 @@ public class ClientConnection extends MessageForwardingConnection {
     }
         
     protected String getUniqueID(long index) {
-        return clientAddressAsString + index;
+        return uniquePrefix + index;
     }
         
     protected void forwardVirtualConnect(SocketAddressSet source, 
@@ -185,9 +185,12 @@ public class ClientConnection extends MessageForwardingConnection {
                 conlogger.debug("Failed to removed client connection " 
                         + clientAddress + "!");
         }
-        
+   
         connections.remove(clientAddress);
-        DirectSocketFactory.close(s, out, in);            
+        DirectSocketFactory.close(s, out, in);      
+        
+        // Close all connections that have an endpoint at our side
+        closeAllVirtualConnections(uniquePrefix);
     } 
     
     protected synchronized boolean sendMessage(ClientMessage m) {  

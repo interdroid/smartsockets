@@ -17,7 +17,7 @@ public class HubStarter {
         
     public static void main(String [] args) { 
         
-        boolean startRouter = true;
+        boolean startRouter = false;
         boolean startHub = true;
         
         SocketAddressSet [] hubs = new SocketAddressSet[args.length];
@@ -32,8 +32,8 @@ public class HubStarter {
         // line options.  
         for (int i=0;i<args.length;i++) {                
             
-            if (args[i].startsWith("-no-router")) {
-                startRouter = false;
+            if (args[i].startsWith("-external_router")) {
+                startRouter = true;
             } else if (args[i].startsWith("-no-hub")) {
                 startHub = false;                
             } else if (args[i].equals("-clusters")) { 

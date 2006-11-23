@@ -3,6 +3,7 @@ package smartsockets.hub.connections;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -216,9 +217,6 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected abstract void forwardVirtualMessageAck(long index);
     
-   
-    
-    
     protected void processMessage(long index, byte [] data) { 
         
         String key = getUniqueID(index);
@@ -358,17 +356,17 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             SocketAddressSet target, SocketAddressSet targetHub, String info, 
             int timeout) {
         
-        //if (vclogger.isInfoEnabled()) {                            
-            vclogger.warn("ANY connection request for: " + index + " to " + 
+        if (vclogger.isInfoEnabled()) {                            
+            vclogger.info("ANY connection request for: " + index + " to " + 
                     target);
-       // }
+        }
         
         MessageForwardingConnection mf = null;
         
         // Check if the client is connected to the local hub...
         BaseConnection tmp = connections.get(target);
         
-        vclogger.warn("Local lookup of " + target + " result = " + tmp);
+       // vclogger.warn("Local lookup of " + target + " result = " + tmp);
         
         if (tmp != null) {
             
@@ -394,13 +392,13 @@ public abstract class MessageForwardingConnection extends BaseConnection {
            
         } else if (targetHub != null) { 
             
-            vclogger.warn("trying to connect via hub: " + targetHub);
+         //   vclogger.warn("trying to connect via hub: " + targetHub);
             
             mf = (MessageForwardingConnection) connections.get(targetHub);        
             
             if (mf == null) {
                 
-                vclogger.warn("failed, trying to connect via indirection");
+             //   vclogger.warn("failed, trying to connect via indirection");
                 
                 // Failed to get a connection to the specified hub. Maybe there 
                 // is an indirection ? 
@@ -413,13 +411,14 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                         mf = (MessageForwardingConnection) 
                             connections.get(indirect.hubAddress);
                         
-                        vclogger.warn("GOT indirection!");
+                       // vclogger.warn("GOT indirection!");
                         
                     } else { 
-                        vclogger.warn("failed, indirection not found");
+                        vclogger.warn("Failed to find indirection for hub: " 
+                                + targetHub);
                     }
                 } else { 
-                    vclogger.warn("failed, hub not found");
+                    vclogger.warn("Failed to find hub: " + targetHub);
                 }
             }
         } 
@@ -531,4 +530,38 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                     new Exception());
         }    
     }
+    
+    // Called when a connection to a client/hub is lost....
+    protected void closeAllVirtualConnections(String prefix) { 
+     
+        LinkedList<VirtualConnection> l = virtualConnections.removeAll(prefix);
+        
+        for (VirtualConnection vc : l) { 
+            
+            // We now have to figure out which of the two entries in the VC 
+            // is ours. The easiest way is to simply compare the 'mfX' 
+            // references.
+            if (this == vc.mfc1) { 
+            
+                if (vclogger.isInfoEnabled()) {                                    
+                    vclogger.info("forward close for 2: " + vc.index2);
+                }
+                
+                vc.mfc2.forwardVirtualClose(vc.index2);
+                
+            } else if (this == vc.mfc2) { 
+                
+                if (vclogger.isInfoEnabled()) {                                    
+                    vclogger.info("forward close for 1: " + vc.index1);
+                }
+                
+                vc.mfc1.forwardVirtualClose(vc.index1);
+            
+            } else { 
+                // This should never happen!        
+                vclogger.warn("Virtual connection error: forwarder not found!", 
+                        new Exception());
+            }              
+        }
+    }    
 }
