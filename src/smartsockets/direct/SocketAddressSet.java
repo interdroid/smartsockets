@@ -503,4 +503,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             return 1;
         }
     }
+
+    public boolean isCompatible(SocketAddressSet target) {
+        return equals(target);
+    }
 }

@@ -46,7 +46,7 @@ public class VirtualServerSocket {
         }
         
         if (incoming.size() < backlog) {
-            incoming.add(s);
+            incoming.addLast(s);
             notifyAll();
             return true;
         }
@@ -87,7 +87,10 @@ public class VirtualServerSocket {
             if (result == null) { 
                 // Can only happen if socket has been closed
                 throw new IOException("Socket closed during accept");                
-            } else {
+            } else if (result.isClosed()) { 
+                // Check is the other side is already closed...
+                result = null;
+            } else { 
                 // See if the other side is still willing to connect ...                
                 try { 
                     result.connectionAccepted();

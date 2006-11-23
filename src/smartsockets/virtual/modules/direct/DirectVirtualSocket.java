@@ -73,9 +73,6 @@ public class DirectVirtualSocket extends VirtualSocket {
             case Direct.PORT_NOT_FOUND:
                 throw new SocketException("Remote port not found");                
                 
-            case Direct.WRONG_MACHINE:            
-                throw new SocketException("Connection ended up on wrong machine!");
-                
             case Direct.CONNECTION_REJECTED:
                 throw new SocketException("Connection rejected");
                 

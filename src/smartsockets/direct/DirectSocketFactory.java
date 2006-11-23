@@ -1,5 +1,8 @@
 package smartsockets.direct;
 
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -307,19 +310,62 @@ public class DirectSocketFactory {
             }
                 
             s.connect(target, timeout);
+            
+            s.setSoTimeout(10000);
+            
+            // Check if we are talking to the right machine...
+            OutputStream out = s.getOutputStream();
+            InputStream in = s.getInputStream();
+      
+            DataOutputStream dout = new DataOutputStream(out);
+            
+            dout.writeUTF(sas.toString());
+            dout.flush();
+      
+            int result = in.read();
+            
+            if (result == DirectServerSocket.ACCEPT) { 
+                if (logger.isInfoEnabled()) {
+                    logger.info("Succesfully connected to " + sas.toString()
+                            + " using network "
+                            + NetworkUtils.ipToString(target.getAddress()) + ":"
+                            + target.getPort());
+                }
+                
+                s.setSoTimeout(0);
+                
+                DirectSocket r = new DirectSocket(s, in, dout);
+                tuneSocket(r);
+                return r;
+                
+            } else { 
+                logger.warn("Got connecting to wrong machine: " + sas.toString()
+                            + " using network "
+                            + NetworkUtils.ipToString(target.getAddress()) + ":"
+                            + target.getPort() + " will retry!");
+    
+                try {
+                    in.close();
+                } catch (Exception e2) {
+                    // ignore
+                }
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Succesfully connected to " + sas.toString()
-                        + " using network "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort());
+                try {
+                    out.close();
+                } catch (Exception e2) {
+                    // ignore
+                }
+
+                try {
+                    s.close();
+                } catch (Exception e2) {
+                    // ignore
+                }
+
+                return null;
             }
 
-            // TODO: verify that we are actually talking to the right machine ?
-            DirectSocket r = new DirectSocket(s);
-            tuneSocket(r);
-            return r;
-
+            
         } catch (Throwable e) {
 
             if (logger.isInfoEnabled()) {
@@ -574,14 +620,16 @@ public class DirectSocketFactory {
 
         // else, we must try them all, so the connection attempt must return at 
         // some point, even if timeout == 0
+        int partialTimeout = timeout / sas.length;
+        
         while (true) {
             for (int i = 0; i < sas.length; i++) {
                 
                 long time = System.currentTimeMillis();
                                
                 InetSocketAddress sa = sas[i];
-                DirectSocket result = attemptConnection(target, sa, timeout,
-                        localPort, false);
+                DirectSocket result = attemptConnection(target, sa, 
+                        partialTimeout, localPort, false);
 
                 time = System.currentTimeMillis() -time;
                 

@@ -1,12 +1,20 @@
 package smartsockets.direct;
 
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.channels.ServerSocketChannel;
 
 public class DirectServerSocket {
 
+    protected static final byte ACCEPT = 47;
+    protected static final byte WRONG_MACHINE = 48;
+    
     // The real server socket
     private ServerSocket serverSocket; 
         
@@ -51,8 +59,61 @@ public class DirectServerSocket {
         }
     }
              
-    public DirectSocket accept() throws IOException {            
-        return new DirectSocket(serverSocket.accept());        
+    public DirectSocket accept() throws IOException {    
+        
+        DirectSocket result = null;
+        
+        while (result == null) { 
+            
+            // Note: may result in timeout, which is OK.
+            Socket s = serverSocket.accept();
+            
+            InputStream in = null;
+            OutputStream out = null;
+            
+            try { 
+                s.setSoTimeout(10000);
+                
+                in = s.getInputStream();
+                out = s.getOutputStream();
+                
+                DataInputStream din = new DataInputStream(in);
+            
+                SocketAddressSet target = new SocketAddressSet(din.readUTF());
+            
+                if (local.isCompatible(target)) {
+                    out.write(ACCEPT);
+                } else { 
+                    out.write(WRONG_MACHINE);
+                }
+        
+                out.flush();
+                
+                s.setSoTimeout(0);
+                
+                result = new DirectSocket(s, din, out);
+                
+            } catch (IOException ie) { 
+                try { 
+                    in.close();
+                } catch (Exception e) {
+                    // ignore
+                }
+                try { 
+                    out.close();
+                } catch (Exception e) {
+                    // ignore
+                }
+                
+                try { 
+                    s.close();
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        }
+        
+        return result;        
     }
 
     public void close() throws IOException {

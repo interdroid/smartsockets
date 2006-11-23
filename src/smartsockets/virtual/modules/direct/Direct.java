@@ -20,7 +20,6 @@ public class Direct extends AbstractDirectModule {
     
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
-    protected static final byte WRONG_MACHINE       = 3;     
     protected static final byte CONNECTION_REJECTED = 4;   
            
     private DirectSocketFactory direct;   

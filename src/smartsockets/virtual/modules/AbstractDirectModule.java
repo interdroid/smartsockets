@@ -17,7 +17,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
     
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
-    protected static final byte WRONG_MACHINE       = 3;     
+  //  protected static final byte WRONG_MACHINE       = 3;     
     protected static final byte CONNECTION_REJECTED = 4;   
     
     protected DirectSocketFactory direct;  
@@ -46,27 +46,14 @@ public abstract class AbstractDirectModule extends ConnectModule {
         try {         
             in = new DataInputStream(ds.getInputStream());
             out = new DataOutputStream(ds.getOutputStream());
-        
-            SocketAddressSet target = new SocketAddressSet(in.readUTF());            
+           
+            String remote = in.readUTF();
             int targetPort = in.readInt();
     
             if (logger.isDebugEnabled()) { 
                 logger.debug(module + ": Target port " + targetPort);
             }
-                    
-            // First check if we are the desired target machine...
-            if (!checkTarget(target)) { 
-                out.write(WRONG_MACHINE);
-                out.flush();                
-                DirectSocketFactory.close(ds, out, in);
-                
-                if (logger.isDebugEnabled()) { 
-                    logger.debug(module + ": Connection failed, WRONG machine!");
-                }
-                
-                return;
-            }
-            
+         
             // Next check if the port exists locally
             VirtualServerSocket vss = parent.getServerSocket(targetPort);
             
@@ -88,8 +75,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
             }
             
             VirtualSocket vs = createVirtualSocket(
-                    new VirtualSocketAddress(target, targetPort, 
-                            parent.getLocalProxy(), parent.getLocalCluster()), 
+                    new VirtualSocketAddress(remote), 
                             ds, out, in);
             
             // Next check if the serverSocket is willing to accept                        
@@ -125,8 +111,8 @@ public abstract class AbstractDirectModule extends ConnectModule {
             
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
-                        
-            out.writeUTF(target.machine().toString());
+                
+            out.writeUTF(parent.getVirtualAddressAsString()); 
             out.writeInt(target.port());
             out.flush();                
             

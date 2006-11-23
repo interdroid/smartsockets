@@ -54,6 +54,9 @@ public class VirtualSocketFactory {
     private SocketAddressSet myAddresses;      
     private SocketAddressSet hubAddress;    
     
+    private VirtualSocketAddress localVirtualAddress;
+    private String localVirtualAddressAsString;
+    
     private ServiceLink serviceLink;    
     private VirtualClusters clusters;
     
@@ -79,6 +82,11 @@ public class VirtualSocketFactory {
             logger.warn("Failed to load any modules!");
             throw new Exception("Failed to load any modules!");
         }       
+        
+        localVirtualAddress = new VirtualSocketAddress(myAddresses, 0, 
+                hubAddress, clusters.localCluster());
+        
+        localVirtualAddressAsString = localVirtualAddress.toString();
     } 
     
     private void loadClusterDefinitions() {         
@@ -406,11 +414,11 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Sucess with module " + m.module 
+                //    if (logger.isInfoEnabled()) {
+                        logger.warn("Sucess: " + m.module 
                                 + " connected to " + target + " (time = " + 
                                 (end-start) + " ms.)");
-                    }
+               //     }
                     
                     return vs;
                 } 
@@ -419,17 +427,17 @@ public class VirtualSocketFactory {
                 long end = System.currentTimeMillis();
                                     
                 // Just print and try the next module...
-                if (logger.isInfoEnabled()) {
-                    logger.warn("Module not suitable (time = " + (end-start) 
+                //if (logger.isInfoEnabled()) {
+                    logger.warn("Failed: not suitable (time = " + (end-start) 
                             + " ms.)", e);
-                }
+                //}
             }            
             // NOTE: other exceptions are forwarded to the user!
         } else { 
-            if (logger.isInfoEnabled()) {
-                logger.info("Module " + m.module + " may not be used to set " +
+            //if (logger.isInfoEnabled()) {
+                logger.warn("Failed: module " + m.module + " may not be used to set " +
                         "up connection to " + target);
-            }            
+            //}            
         }
         
         return null;
@@ -649,5 +657,13 @@ public class VirtualSocketFactory {
 
     public VirtualSocket createBrokeredSocket(InputStream brokered_in, OutputStream brokered_out, boolean b, Map p) {
         throw new RuntimeException("createBrokeredSocket not implemented");
+    }
+
+    public VirtualSocketAddress getLocalVirtual() {
+        return localVirtualAddress;
+    }
+    
+    public String getVirtualAddressAsString() {
+        return localVirtualAddressAsString;
     }   
 }

@@ -12,11 +12,15 @@ import java.nio.channels.SocketChannel;
 public class DirectSocket {
 
     private Socket socket;
+    private InputStream in;
+    private OutputStream out;
     
-    DirectSocket(Socket socket) { 
-        /*super(null);*/
-        this.socket = socket;        
+    DirectSocket(Socket socket, InputStream in, OutputStream out) { 
+        this.socket = socket;
+        this.in = in; 
+        this.out = out;
     }
+   
     
     public void close() throws IOException {
         socket.close();
@@ -27,7 +31,12 @@ public class DirectSocket {
     }
     
     public InputStream getInputStream() throws IOException {
-        return socket.getInputStream();
+        
+        if (in != null) { 
+            in = socket.getInputStream();
+        } 
+        
+        return in;
     }
 
     public boolean getKeepAlive() throws SocketException {
@@ -70,7 +79,12 @@ public class DirectSocket {
     }
 
     public OutputStream getOutputStream() throws IOException {
-        return socket.getOutputStream();
+        
+        if (out != null) { 
+            out = socket.getOutputStream();
+        } 
+        
+        return out;
     }
     
     public int getReceiveBufferSize() throws SocketException {
