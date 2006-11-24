@@ -368,11 +368,11 @@ public class DirectSocketFactory {
             
         } catch (Throwable e) {
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Failed to connect to "
+          //  if (logger.isInfoEnabled()) {
+                logger.warn("Failed to connect to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort(), e);
-            }
+          ///  }
 
             try {
                 s.close();
