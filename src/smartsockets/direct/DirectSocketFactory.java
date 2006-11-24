@@ -305,6 +305,8 @@ public class DirectSocketFactory {
                 logger.warn("Unbound socket created");
          //   }
             
+                localPort = 0;
+                
             if (localPort > 0) {
                 s.bind(new InetSocketAddress(localPort));
                 
