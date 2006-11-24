@@ -317,27 +317,27 @@ public class DirectSocketFactory {
 
          //   logger.warn("Attempting connect   ....");
             
-        //    String tmp = sas.toString();
+            String tmp = sas.toString();
             
             s.connect(target, timeout);
 
         //    logger.warn("Connect succeeded!");
             
-       //     s.setSoTimeout(10000);
-       //     s.setTcpNoDelay(true);
+             s.setSoTimeout(10000);
+             s.setTcpNoDelay(true);
             
             // Check if we are talking to the right machine...
              OutputStream out = s.getOutputStream();
              InputStream in = s.getInputStream();
       
-          //  DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(out));
+             DataOutputStream dout = new DataOutputStream(out);
             
-          //  dout.writeUTF(tmp);
-          //  dout.flush();
+             dout.writeUTF(tmp);
+             dout.flush();
       
-        //    int result = in.read();
+             int result = in.read();
             
-         //   if (result == DirectServerSocket.ACCEPT) { 
+             if (result == DirectServerSocket.ACCEPT) { 
               //  if (logger.isInfoEnabled()) {
     /*                logger.warn("Succesfully directly connected to " + sas.toString()
                             + " using network "
@@ -345,13 +345,13 @@ public class DirectSocketFactory {
                             + target.getPort());
       */        //  }
                 
-          //      s.setSoTimeout(0);
+                s.setSoTimeout(0);
                 
-                DirectSocket r = new DirectSocket(s, in, out);
+                DirectSocket r = new DirectSocket(s, in, dout);
                 tuneSocket(r);
                 return r;
                 
-        /*    } else { 
+           } else { 
                 logger.warn("Got connecting to wrong machine: " + sas.toString()
                             + " using network "
                             + NetworkUtils.ipToString(target.getAddress()) + ":"
@@ -378,7 +378,6 @@ public class DirectSocketFactory {
                 return null;
             }
 
-          */  
         } catch (Throwable e) {
 
           //  if (logger.isInfoEnabled()) {

@@ -91,28 +91,29 @@ public class DirectServerSocket {
             OutputStream out = null;
             
             try { 
-               // s.setSoTimeout(10000);
+                s.setSoTimeout(10000);
+                s.setTcpNoDelay(true);
                 
                 in = s.getInputStream();
                 out = s.getOutputStream();
                 
-          //      DataInputStream din = new DataInputStream(in);
+                DataInputStream din = new DataInputStream(in);
             
-          //      SocketAddressSet target = new SocketAddressSet(din.readUTF());
+                SocketAddressSet target = new SocketAddressSet(din.readUTF());
             
-           //     if (local.isCompatible(target)) {
-             //       out.write(ACCEPT);
-             //       out.flush();
+                if (local.isCompatible(target)) {
+                    out.write(ACCEPT);
+                    out.flush();
                     
-          //          s.setSoTimeout(0);
+                    s.setSoTimeout(0);
                     
                     result = new DirectSocket(s, in, out);
-           //     } else { 
-            //        out.write(WRONG_MACHINE);
-             //       out.flush();
+                } else { 
+                    out.write(WRONG_MACHINE);
+                    out.flush();
          
-        //            doClose(s, din, out);
-         //       }
+                    doClose(s, din, out);
+                }
         
                 
             } catch (IOException ie) { 
