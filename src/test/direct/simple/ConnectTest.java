@@ -15,8 +15,10 @@ public class ConnectTest {
     
     private static final int LOCAL_PORT = 16889;
     
-    public static void main(String [] args) throws IOException { 
+    public static void main(String [] args) { 
         
+        try { 
+            
         DirectSocketFactory sf = DirectSocketFactory.getSocketFactory();
         
         if (args.length > 0) {             
@@ -70,6 +72,11 @@ public class ConnectTest {
                 out.close();                               
                 s.close();
             }
+        }
+        
+        } catch (Exception e) {
+            System.out.println("EEK!");
+            e.printStackTrace(System.err);
         }
     }
 }
