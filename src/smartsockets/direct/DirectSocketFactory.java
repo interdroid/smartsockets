@@ -1,5 +1,6 @@
 package smartsockets.direct;
 
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
@@ -321,14 +322,14 @@ public class DirectSocketFactory {
 
             logger.warn("Connect succeeded!");
             
-            
             s.setSoTimeout(10000);
+            //s.setTcpNoDelay(true);
             
             // Check if we are talking to the right machine...
             OutputStream out = s.getOutputStream();
             InputStream in = s.getInputStream();
       
-            DataOutputStream dout = new DataOutputStream(out);
+            DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(out));
             
             dout.writeUTF(tmp);
             dout.flush();
