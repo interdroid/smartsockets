@@ -629,7 +629,7 @@ public class DirectSocketFactory {
 
         // Select the addresses we want from the target set. Some may be removed
         // thanks to the cluster configuration.
-      //  sas = preference.sort(sas, false);
+        sas = preference.sort(sas, false);
         
         // else, we must try them all, so the connection attempt must return at 
         // some point, even if timeout == 0
