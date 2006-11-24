@@ -606,10 +606,6 @@ public class DirectSocketFactory {
 
         InetSocketAddress[] sas = target.getSocketAddresses();
 
-        // Select the addresses we want from the target set. Some may be removed
-        // thanks to the cluster configuration.
-        sas = preference.sort(sas, false);
-
         if (sas.length == 1) {
             
             long time = System.currentTimeMillis();
@@ -631,6 +627,10 @@ public class DirectSocketFactory {
             throw new ConnectException("Connection setup failed");
         }
 
+        // Select the addresses we want from the target set. Some may be removed
+        // thanks to the cluster configuration.
+      //  sas = preference.sort(sas, false);
+        
         // else, we must try them all, so the connection attempt must return at 
         // some point, even if timeout == 0
         int partialTimeout = timeout / sas.length;
