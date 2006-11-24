@@ -12,38 +12,43 @@ import smartsockets.direct.SocketAddressSet;
  
 public class ConnectTest {
     
+    private final static int REPEAT = 100;
+    
     public static void main(String [] args) { 
         
         try { 
             
         DirectSocketFactory sf = DirectSocketFactory.getSocketFactory();
         
-        if (args.length > 0) {             
-            for (int i=0;i<args.length;i++) { 
-                SocketAddressSet target = new SocketAddressSet(args[i]);
-                
-                long time = System.currentTimeMillis();
-                
-                DirectSocket s = sf.createSocket(target, 0, 0, null);
-                
-                time = System.currentTimeMillis() - time;
-                
-                System.out.println("Created connection to " + target + 
-                        " on local address " + s.getLocalSocketAddress() 
-                        + " remote address " + s.getRemoteSocketAddress() 
-                        + " in " + time + " ms.");
+        if (args.length > 0) {
+            
+            for (int r=0;r<REPEAT;r++) {
+                for (int i=0;i<args.length;i++) { 
+                    SocketAddressSet target = new SocketAddressSet(args[i]);
 
-                DataInputStream in = new DataInputStream(s.getInputStream());
-                DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                    long time = System.currentTimeMillis();
 
-                out.writeUTF("Hello server!");
-                out.flush();
-                
-                System.out.println("Server says: " + in.readUTF());
-                
-                in.close();
-                out.close();                               
-                s.close();
+                    DirectSocket s = sf.createSocket(target, 0, 0, null);
+
+                    time = System.currentTimeMillis() - time;
+
+                    System.out.println("Created connection to " + target + 
+                            " on local address " + s.getLocalSocketAddress() 
+                            + " remote address " + s.getRemoteSocketAddress() 
+                            + " in " + time + " ms.");
+
+                    DataInputStream in = new DataInputStream(s.getInputStream());
+                    DataOutputStream out = new DataOutputStream(s.getOutputStream());
+
+                    out.writeUTF("Hello server!");
+                    out.flush();
+
+                    System.out.println("Server says: " + in.readUTF());
+
+                    in.close();
+                    out.close();                               
+                    s.close();
+                }
             }
         } else {                         
             System.out.println("Creating server socket");
