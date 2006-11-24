@@ -47,7 +47,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
             in = new DataInputStream(ds.getInputStream());
             out = new DataOutputStream(ds.getOutputStream());
            
-            String remote = in.readUTF();
+         //   String remote = in.readUTF();
             int targetPort = in.readInt();
     
             if (logger.isDebugEnabled()) { 
@@ -75,7 +75,8 @@ public abstract class AbstractDirectModule extends ConnectModule {
             }
             
             VirtualSocket vs = createVirtualSocket(
-                    new VirtualSocketAddress(remote), 
+                    parent.getLocalVirtual(), // TODO: WRONG!!!
+                   /* new VirtualSocketAddress(remote)*/
                             ds, out, in);
             
             // Next check if the serverSocket is willing to accept                        
@@ -112,7 +113,7 @@ public abstract class AbstractDirectModule extends ConnectModule {
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
                 
-            out.writeUTF(parent.getVirtualAddressAsString()); 
+        //    out.writeUTF(parent.getVirtualAddressAsString()); 
             out.writeInt(target.port());
             out.flush();                
             

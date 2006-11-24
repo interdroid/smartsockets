@@ -23,7 +23,7 @@ public class ConnectTest {
     private static HashMap connectProperties;
     
     public static void connect(VirtualSocketAddress target) { 
-
+        
         Random rand = new Random();
         
         for (int i=0;i<REPEAT;i++) {
