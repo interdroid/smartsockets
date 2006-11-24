@@ -323,7 +323,7 @@ public class DirectSocketFactory {
             logger.warn("Connect succeeded!");
             
             s.setSoTimeout(10000);
-            //s.setTcpNoDelay(true);
+            s.setTcpNoDelay(true);
             
             // Check if we are talking to the right machine...
             OutputStream out = s.getOutputStream();
