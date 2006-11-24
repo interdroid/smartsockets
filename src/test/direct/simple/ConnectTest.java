@@ -3,6 +3,7 @@ package test.direct.simple;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.Random;
 
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
@@ -20,12 +21,23 @@ public class ConnectTest {
             
         DirectSocketFactory sf = DirectSocketFactory.getSocketFactory();
         
+        Random rand = new Random();
+        
         if (args.length > 0) {
             
             for (int r=0;r<REPEAT;r++) {
                 for (int i=0;i<args.length;i++) { 
                     SocketAddressSet target = new SocketAddressSet(args[i]);
 
+                    int sleep = rand.nextInt(5000);
+                    
+                    try { 
+                        Thread.sleep(sleep);
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                    
+                    
                     long time = System.currentTimeMillis();
 
                     DirectSocket s = sf.createSocket(target, 0, 0, null);
