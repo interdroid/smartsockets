@@ -1,17 +1,15 @@
 package smartsockets.virtual.modules.routed;
 
-import ibis.util.TypedProperties;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.StringTokenizer;
 
 import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.router.simple.RouterClient;
+import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -23,8 +21,11 @@ public class Routed extends ConnectModule {
 
     private static final int DEFAULT_TIMEOUT = 4000;   
     
-    private LinkedList userSpecified = new LinkedList();    
-    private LinkedList routers = new LinkedList();
+    private LinkedList<VirtualSocketAddress> userSpecified = 
+        new LinkedList<VirtualSocketAddress>();    
+    
+    private LinkedList<VirtualSocketAddress> routers = 
+        new LinkedList<VirtualSocketAddress>();
     
     private long lastUpdate; 
     
@@ -57,15 +58,10 @@ public class Routed extends ConnectModule {
             }
             
             // Finally, add all routers that the user gave us, making sure that 
-            // we don't known them yet...             
-            if (userSpecified.size() > 0) { 
-                Iterator itt = userSpecified.iterator();
-                
-                while (itt.hasNext()) { 
-                    VirtualSocketAddress a = (VirtualSocketAddress) itt.next();
-                    if (!routers.contains(a)) { 
-                        routers.addLast(a);
-                    }
+            // we don't known them yet...   
+            for (VirtualSocketAddress a : userSpecified) { 
+                if (!routers.contains(a)) { 
+                    routers.addLast(a);
                 }
             }
             
@@ -91,23 +87,19 @@ public class Routed extends ConnectModule {
         
         // We get the first router and move it to the end of the list. This way,
         // we will use the routers in a round-robin fashion. 
-        VirtualSocketAddress a = (VirtualSocketAddress) routers.removeFirst();
+        VirtualSocketAddress a = routers.removeFirst();
         routers.addLast(a);
         
         return a;
     }
         
-    private void parseRouters(String routers) { 
+    private void parseRouters(String [] routers) { 
         
-        if (routers == null || routers.trim().length() == 0) { 
+        if (routers == null || routers.length == 0) { 
             return;
         }
         
-        StringTokenizer st = new StringTokenizer(routers, ",");
-        
-        while (st.hasMoreTokens()) {           
-            String tmp = st.nextToken();
-            
+        for (String tmp : routers) { 
             try { 
                 VirtualSocketAddress a = new VirtualSocketAddress(tmp);
                 if (logger.isInfoEnabled()) {
@@ -123,7 +115,10 @@ public class Routed extends ConnectModule {
     }
 
     public void initModule(Map properties) throws Exception {
-        parseRouters(TypedProperties.stringProperty(Properties.ROUTERS));
+        
+        // TODO: This only reads the default ???
+        TypedProperties p = Properties.getDefaultProperties();
+        parseRouters(p.getStringList(Properties.ROUTERS));
     }
 
     public void startModule() throws Exception {

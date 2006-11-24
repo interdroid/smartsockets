@@ -22,11 +22,17 @@ public class ConnectTest {
         if (args.length > 0) {             
             for (int i=0;i<args.length;i++) { 
                 SocketAddressSet target = new SocketAddressSet(args[i]);
+                
+                long time = System.currentTimeMillis();
+                
                 DirectSocket s = sf.createSocket(target, 0, LOCAL_PORT, null);
+                
+                time = System.currentTimeMillis() - time;
                 
                 System.out.println("Created connection to " + target + 
                         " on local address " + s.getLocalSocketAddress() 
-                        + " remote address " + s.getRemoteSocketAddress());
+                        + " remote address " + s.getRemoteSocketAddress() 
+                        + " in " + time + " ms.");
 
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
