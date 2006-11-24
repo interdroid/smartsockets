@@ -29,7 +29,7 @@ public class ConnectTest {
                 for (int i=0;i<args.length;i++) { 
                     SocketAddressSet target = new SocketAddressSet(args[i]);
 
-                    int sleep = rand.nextInt(5000);
+                    int sleep = rand.nextInt(15000);
                     
                     try { 
                         Thread.sleep(sleep);
