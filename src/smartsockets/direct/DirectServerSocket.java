@@ -59,6 +59,25 @@ public class DirectServerSocket {
         }
     }
              
+    private void doClose(Socket s, InputStream in, OutputStream out) { 
+        try { 
+            in.close();
+        } catch (Exception e) {
+            // ignore
+        }
+        try { 
+            out.close();
+        } catch (Exception e) {
+            // ignore
+        }
+        
+        try { 
+            s.close();
+        } catch (Exception e) {
+            // ignore
+        }
+    }
+    
     public DirectSocket accept() throws IOException {    
         
         DirectSocket result = null;
@@ -83,33 +102,21 @@ public class DirectServerSocket {
             
                 if (local.isCompatible(target)) {
                     out.write(ACCEPT);
+                    out.flush();
+                    
+                    s.setSoTimeout(0);
+                    
+                    result = new DirectSocket(s, din, out);
                 } else { 
                     out.write(WRONG_MACHINE);
+                    out.flush();
+         
+                    doClose(s, din, out);
                 }
         
-                out.flush();
-                
-                s.setSoTimeout(0);
-                
-                result = new DirectSocket(s, din, out);
                 
             } catch (IOException ie) { 
-                try { 
-                    in.close();
-                } catch (Exception e) {
-                    // ignore
-                }
-                try { 
-                    out.close();
-                } catch (Exception e) {
-                    // ignore
-                }
-                
-                try { 
-                    s.close();
-                } catch (Exception e) {
-                    // ignore
-                }
+                doClose(s, in, out);
             }
         }
         

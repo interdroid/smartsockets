@@ -297,7 +297,8 @@ public class DirectSocketFactory {
                 logger.warn("Attempting connection to " + sas.toString()
                         + " using network "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " local port = " + localPort);
+                        + target.getPort() + " local port = " + localPort
+                        + "timeout = " + timeout);
   //          }
             
             s = createUnboundSocket();

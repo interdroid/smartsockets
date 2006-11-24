@@ -25,12 +25,6 @@ public class ConnectTest {
 
         for (int i=0;i<REPEAT;i++) {
             
-            try { 
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                // ignored
-            }
-            
             long time = System.currentTimeMillis();
 
             try { 

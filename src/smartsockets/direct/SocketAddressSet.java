@@ -30,6 +30,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     
     private final IPAddressSet address;      
     private final InetSocketAddress [] sas;
+    
+    private String toStringCache = null;
             
     private SocketAddressSet(IPAddressSet as, InetSocketAddress [] sas) {
         this.address = as;
@@ -324,28 +326,34 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @see java.lang.Object#toString()
      */
     public String toString() {
-        StringBuffer b = new StringBuffer();
         
-        final int len = address.addresses.length; 
-        
-        for (int i=0;i<len;i++) { 
-            
-            b.append(NetworkUtils.ipToString(address.addresses[i]));
-           
-            if (i < len-1) {                
-                if (sas[i].getPort() != sas[i+1].getPort()) { 
+        if (toStringCache == null) { 
+            StringBuffer b = new StringBuffer();
+
+            final int len = address.addresses.length; 
+
+            for (int i=0;i<len;i++) { 
+
+                b.append(NetworkUtils.ipToString(address.addresses[i]));
+
+                if (i < len-1) {                
+                    if (sas[i].getPort() != sas[i+1].getPort()) { 
+                        b.append(IP_PORT_SEPERATOR);
+                        b.append(sas[i].getPort());
+                    } 
+
+                    b.append(ADDRESS_SEPERATOR);
+                } else { 
                     b.append(IP_PORT_SEPERATOR);
                     b.append(sas[i].getPort());
-                } 
-            
-                b.append(ADDRESS_SEPERATOR);
-            } else { 
-                b.append(IP_PORT_SEPERATOR);
-                b.append(sas[i].getPort());
+                }
             }
-        }
+
+            toStringCache = b.toString();
+        } 
         
-        return b.toString();
+        return toStringCache;
+        
     }
     
     /**
