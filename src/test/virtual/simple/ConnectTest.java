@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Random;
 
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
@@ -14,7 +15,7 @@ import smartsockets.virtual.VirtualSocketFactory;
  
 public class ConnectTest {
     
-    private static int REPEAT = 100;
+    private static int REPEAT = 1;
     private static int TIMEOUT = 5000;
         
     private static VirtualSocketFactory sf;
@@ -23,10 +24,21 @@ public class ConnectTest {
     
     public static void connect(VirtualSocketAddress target) { 
 
+        Random rand = new Random();
+        
         for (int i=0;i<REPEAT;i++) {
+           
+            
+            int sleep = rand.nextInt(15000);
+            
+            try { 
+                Thread.sleep(sleep);
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
             
             long time = System.currentTimeMillis();
-
+            
             try { 
                 VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
                         connectProperties);
