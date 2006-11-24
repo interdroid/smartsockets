@@ -74,7 +74,7 @@ public class Properties {
     public static final String CLUSTER_SUB_REORDER = "preference.reorder";
         
     private static final String [] defaults = new String [] {
-            BACKLOG,                "20", 
+            BACKLOG,                "100", 
             TIMEOUT,                "10000", 
             
             NIO,                    "false", 

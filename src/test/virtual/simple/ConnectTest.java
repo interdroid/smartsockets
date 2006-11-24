@@ -81,6 +81,7 @@ public class ConnectTest {
                 VirtualSocketFactory.close(s, out, in);
             } catch (Exception e) {
                 System.out.println("Server got exception " + e); 
+                e.printStackTrace();
             }
         }
     }
