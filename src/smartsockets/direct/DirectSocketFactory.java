@@ -292,24 +292,32 @@ public class DirectSocketFactory {
         Socket s = null;
 
         try {
-            if (logger.isInfoEnabled()) {
-                logger.info("Attempting connection to " + sas.toString()
+//            if (logger.isInfoEnabled()) {
+                logger.warn("Attempting connection to " + sas.toString()
                         + " using network "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort());
-            }
+                        + target.getPort() + " local port = " + localPort);
+  //          }
             
             s = createUnboundSocket();
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Unbound socket created");
-            }
+          //  if (logger.isInfoEnabled()) {
+                logger.warn("Unbound socket created");
+         //   }
             
-            if (localPort > 0) {                 
+            if (localPort > 0) {
                 s.bind(new InetSocketAddress(localPort));
+                
+                logger.warn("Socket bound");
             }
                 
+            logger.warn("Attempting connect   ....");
+            
+            
             s.connect(target, timeout);
+            
+            logger.warn("Connect succeeded!");
+            
             
             s.setSoTimeout(10000);
             
