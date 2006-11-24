@@ -317,23 +317,23 @@ public class DirectSocketFactory {
 
          //   logger.warn("Attempting connect   ....");
             
-            String tmp = sas.toString();
+        //    String tmp = sas.toString();
             
             s.connect(target, timeout);
 
         //    logger.warn("Connect succeeded!");
             
-            s.setSoTimeout(10000);
-            s.setTcpNoDelay(true);
+       //     s.setSoTimeout(10000);
+       //     s.setTcpNoDelay(true);
             
             // Check if we are talking to the right machine...
-            OutputStream out = s.getOutputStream();
-            InputStream in = s.getInputStream();
+             OutputStream out = s.getOutputStream();
+             InputStream in = s.getInputStream();
       
-            DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(out));
+          //  DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(out));
             
-            dout.writeUTF(tmp);
-            dout.flush();
+          //  dout.writeUTF(tmp);
+          //  dout.flush();
       
             int result = in.read();
             
@@ -347,7 +347,7 @@ public class DirectSocketFactory {
                 
                 s.setSoTimeout(0);
                 
-                DirectSocket r = new DirectSocket(s, in, dout);
+                DirectSocket r = new DirectSocket(s, in, out);
                 tuneSocket(r);
                 return r;
                 
