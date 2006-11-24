@@ -21,6 +21,7 @@ public class Properties {
     public static final String ROUTERS = PREFIX + "routers";  
         
     public static final String BACKLOG = PREFIX + "backlog";  
+    public static final String DIRECT_BACKLOG = PREFIX + "direct.backlog";  
     public static final String TIMEOUT = PREFIX + "timeout";  
     
     public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
@@ -74,6 +75,7 @@ public class Properties {
     public static final String CLUSTER_SUB_REORDER = "preference.reorder";
         
     private static final String [] defaults = new String [] {
+            DIRECT_BACKLOG,         "255", 
             BACKLOG,                "100", 
             TIMEOUT,                "10000", 
             

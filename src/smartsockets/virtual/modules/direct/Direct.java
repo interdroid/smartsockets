@@ -1,16 +1,20 @@
 package smartsockets.virtual.modules.direct;
 
 
+
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import smartsockets.Properties;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -61,6 +65,11 @@ public class Direct extends AbstractDirectModule {
         
         // Create a direct socket factory.
         direct = DirectSocketFactory.getSocketFactory();
+        
+        // TODO: why the default ??
+        TypedProperties p = Properties.getDefaultProperties();
+        
+        int backlog = p.getIntProperty(Properties.DIRECT_BACKLOG);
                 
         // Create a server socket to accept incoming connections. 
         HashMap prop = new HashMap();
@@ -73,7 +82,7 @@ public class Direct extends AbstractDirectModule {
                 logger.debug(module + ": Creating ServerSocket on port " + port);
             }
                         
-            server = direct.createServerSocket(port, 100, prop);
+            server = direct.createServerSocket(port, backlog, prop);
 
             if (logger.isInfoEnabled()) {
                 logger.info(module + ": ServerSocket created: "
