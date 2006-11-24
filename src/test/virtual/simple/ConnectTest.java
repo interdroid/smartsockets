@@ -28,7 +28,7 @@ public class ConnectTest {
         
         for (int i=0;i<REPEAT;i++) {
            
-            
+            /*
             int sleep = rand.nextInt(15000);
             
             try { 
@@ -36,6 +36,7 @@ public class ConnectTest {
             } catch (Exception e) {
                 // TODO: handle exception
             }
+            */
             
             long time = System.currentTimeMillis();
             

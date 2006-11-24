@@ -317,8 +317,6 @@ public class DirectSocketFactory {
 
          //   logger.warn("Attempting connect   ....");
             
-            String tmp = sas.toString();
-            
             s.connect(target, timeout);
 
         //    logger.warn("Connect succeeded!");
@@ -332,7 +330,7 @@ public class DirectSocketFactory {
       
              DataOutputStream dout = new DataOutputStream(out);
             
-             dout.writeUTF(tmp);
+             dout.writeUTF(sas.toString());
              dout.flush();
       
              int result = in.read();
