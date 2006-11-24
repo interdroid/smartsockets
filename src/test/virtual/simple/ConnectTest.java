@@ -24,6 +24,13 @@ public class ConnectTest {
     public static void connect(VirtualSocketAddress target) { 
 
         for (int i=0;i<REPEAT;i++) {
+            
+            try { 
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                // ignored
+            }
+            
             long time = System.currentTimeMillis();
 
             try { 
