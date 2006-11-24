@@ -36,6 +36,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private SocketAddressSet(IPAddressSet as, InetSocketAddress [] sas) {
         this.address = as;
         this.sas = sas;        
+        
+        toString();
     }
     
     /**
@@ -93,6 +95,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         for (int i=0;i<len;i++) { 
             sas[i] = new InetSocketAddress(address.addresses[i], port);
         }
+        
+        toString();
     }
         
     /**
@@ -130,6 +134,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             
             sas[i] = new InetSocketAddress(address.addresses[i], port[i]);
         }
+        
+        toString();
     }
     
     /**
@@ -227,6 +233,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         for (int i=0;i<len;i++) { 
             sas[i] = new InetSocketAddress(addr.addresses[i], ports[i]);
         }
+        
+        toString();
     }
    
     /**
