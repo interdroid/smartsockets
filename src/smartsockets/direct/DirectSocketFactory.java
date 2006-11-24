@@ -304,15 +304,13 @@ public class DirectSocketFactory {
           //  if (logger.isInfoEnabled()) {
                 logger.warn("Unbound socket created");
          //   }
-            
-                localPort = 0;
-                
-            if (localPort > 0) {
-                s.bind(new InetSocketAddress(localPort));
-                
-                logger.warn("Socket bound");
-            }
-                
+
+                if (localPort > 0) {
+                    s.bind(new InetSocketAddress(localPort));
+
+                    logger.warn("Socket bound");
+                }
+
             logger.warn("Attempting connect   ....");
             
             

@@ -3,7 +3,6 @@ package test.direct.simple;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
@@ -12,8 +11,6 @@ import smartsockets.direct.SocketAddressSet;
 
  
 public class ConnectTest {
-    
-    private static final int LOCAL_PORT = 16889;
     
     public static void main(String [] args) { 
         
@@ -27,7 +24,7 @@ public class ConnectTest {
                 
                 long time = System.currentTimeMillis();
                 
-                DirectSocket s = sf.createSocket(target, 0, LOCAL_PORT, null);
+                DirectSocket s = sf.createSocket(target, 0, 0, null);
                 
                 time = System.currentTimeMillis() - time;
                 
