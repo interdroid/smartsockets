@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -333,12 +334,12 @@ public class DirectSocketFactory {
             int result = in.read();
             
             if (result == DirectServerSocket.ACCEPT) { 
-                if (logger.isInfoEnabled()) {
-                    logger.info("Succesfully connected to " + sas.toString()
+              //  if (logger.isInfoEnabled()) {
+                    logger.warn("Succesfully directly connected to " + sas.toString()
                             + " using network "
                             + NetworkUtils.ipToString(target.getAddress()) + ":"
                             + target.getPort());
-                }
+              //  }
                 
                 s.setSoTimeout(0);
                 
@@ -377,7 +378,7 @@ public class DirectSocketFactory {
         } catch (Throwable e) {
 
           //  if (logger.isInfoEnabled()) {
-                logger.warn("Failed to connect to "
+                logger.warn("Failed to directly connect to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort(), e);
           ///  }
@@ -641,18 +642,24 @@ public class DirectSocketFactory {
 
                 time = System.currentTimeMillis() -time;
                 
-                if (logger.isInfoEnabled()) {                   
-                    logger.info("Connection setup took: "  + time + " ms.");
-                }
+             // if (logger.isInfoEnabled()) {      
+                
+                
+                //    logger.warn("Direct connection setup took: "  + time + " ms.");
+              //}
                                 
                 if (result != null) {
+                    logger.warn("Direct connection setup took: "  + time + " ms.");
                     return result;
                 }
+                
+                logger.warn("Direct connection failed: "  + time + " ms.");
+                
             }
 
             if (timeout > 0) {
                 // Enough tries so, throw exception
-                throw new ConnectException("Connection setup failed");
+                throw new SocketTimeoutException("Connection setup timed out!");
             } // else, the user wants us to keep trying!
         }
     }

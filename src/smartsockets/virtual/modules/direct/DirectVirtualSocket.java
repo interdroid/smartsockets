@@ -74,7 +74,7 @@ public class DirectVirtualSocket extends VirtualSocket {
                 throw new SocketException("Remote port not found");                
                 
             case Direct.CONNECTION_REJECTED:
-                throw new SocketException("Connection rejected");
+                throw new SocketException("Connection rejected, server overloaded");
                 
             default:
                 throw new SocketException("Got unknown reply during connect!");

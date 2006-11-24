@@ -49,6 +49,7 @@ public class ConnectTest {
 
                 System.out.println("Failed to create connection to " + target + 
                         " after " + time + " ms.");
+                e.printStackTrace();
             }
         }
     }
