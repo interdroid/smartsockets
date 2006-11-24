@@ -101,19 +101,19 @@ public class DirectServerSocket {
             
                 SocketAddressSet target = new SocketAddressSet(din.readUTF());
             
-                if (local.isCompatible(target)) {
+               // if (local.isCompatible(target)) {
                     out.write(ACCEPT);
                     out.flush();
                     
                     s.setSoTimeout(0);
                     
                     result = new DirectSocket(s, in, out);
-                } else { 
-                    out.write(WRONG_MACHINE);
-                    out.flush();
+            //    } else { 
+             //       out.write(WRONG_MACHINE);
+              //      out.flush();
          
-                    doClose(s, din, out);
-                }
+                //    doClose(s, din, out);
+            //    }
         
                 
             } catch (IOException ie) { 
