@@ -295,32 +295,33 @@ public class DirectSocketFactory {
 
         try {
 //            if (logger.isInfoEnabled()) {
-                logger.warn("Attempting connection to " + sas.toString()
+        /*        logger.warn("Attempting connection to " + sas.toString()
                         + " using network "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort() + " local port = " + localPort
                         + "timeout = " + timeout);
+                       */ 
   //          }
   
                 s = createUnboundSocket();
 
-          //  if (logger.isInfoEnabled()) {
-                logger.warn("Unbound socket created");
+         //     if (logger.isInfoEnabled()) {
+          //      logger.warn("Unbound socket created");
          //   }
 
                 if (localPort > 0) {
                     s.bind(new InetSocketAddress(localPort));
 
-                    logger.warn("Socket bound");
+            //        logger.warn("Socket bound");
                 }
 
-            logger.warn("Attempting connect   ....");
+         //   logger.warn("Attempting connect   ....");
             
             String tmp = sas.toString();
             
             s.connect(target, timeout);
 
-            logger.warn("Connect succeeded!");
+        //    logger.warn("Connect succeeded!");
             
             s.setSoTimeout(10000);
             s.setTcpNoDelay(true);
@@ -338,11 +339,11 @@ public class DirectSocketFactory {
             
             if (result == DirectServerSocket.ACCEPT) { 
               //  if (logger.isInfoEnabled()) {
-                    logger.warn("Succesfully directly connected to " + sas.toString()
+    /*                logger.warn("Succesfully directly connected to " + sas.toString()
                             + " using network "
                             + NetworkUtils.ipToString(target.getAddress()) + ":"
                             + target.getPort());
-              //  }
+      */        //  }
                 
                 s.setSoTimeout(0);
                 
