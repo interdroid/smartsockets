@@ -99,7 +99,9 @@ public class DirectServerSocket {
                 
                 DataInputStream din = new DataInputStream(in);
             
-                SocketAddressSet target = new SocketAddressSet(din.readUTF());
+                String target = din.readUTF();
+                
+                //SocketAddressSet target = new SocketAddressSet(din.readUTF());
             
                // if (local.isCompatible(target)) {
                     out.write(ACCEPT);

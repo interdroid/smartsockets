@@ -361,7 +361,6 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         } 
         
         return toStringCache;
-        
     }
     
     /**
