@@ -300,7 +300,7 @@ public class DirectSocketFactory {
                         + target.getPort() + " local port = " + localPort
                         + "timeout = " + timeout);
   //          }
-            
+           /* 
             s = createUnboundSocket();
 
           //  if (logger.isInfoEnabled()) {
@@ -312,11 +312,13 @@ public class DirectSocketFactory {
 
                     logger.warn("Socket bound");
                 }
-
+*/
             logger.warn("Attempting connect   ....");
             
             
-            s.connect(target, timeout);
+  //          s.connect(target, timeout);
+
+            s = new Socket(target.getAddress(), target.getPort());          
             
             logger.warn("Connect succeeded!");
             
