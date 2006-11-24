@@ -91,7 +91,7 @@ public class DirectServerSocket {
             OutputStream out = null;
             
             try { 
-                s.setSoTimeout(10000);
+               // s.setSoTimeout(10000);
                 
                 in = s.getInputStream();
                 out = s.getOutputStream();
@@ -101,8 +101,8 @@ public class DirectServerSocket {
           //      SocketAddressSet target = new SocketAddressSet(din.readUTF());
             
            //     if (local.isCompatible(target)) {
-                    out.write(ACCEPT);
-                    out.flush();
+             //       out.write(ACCEPT);
+             //       out.flush();
                     
           //          s.setSoTimeout(0);
                     

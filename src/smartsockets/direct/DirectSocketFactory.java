@@ -335,9 +335,9 @@ public class DirectSocketFactory {
           //  dout.writeUTF(tmp);
           //  dout.flush();
       
-            int result = in.read();
+        //    int result = in.read();
             
-            if (result == DirectServerSocket.ACCEPT) { 
+         //   if (result == DirectServerSocket.ACCEPT) { 
               //  if (logger.isInfoEnabled()) {
     /*                logger.warn("Succesfully directly connected to " + sas.toString()
                             + " using network "
@@ -345,13 +345,13 @@ public class DirectSocketFactory {
                             + target.getPort());
       */        //  }
                 
-                s.setSoTimeout(0);
+          //      s.setSoTimeout(0);
                 
                 DirectSocket r = new DirectSocket(s, in, out);
                 tuneSocket(r);
                 return r;
                 
-            } else { 
+        /*    } else { 
                 logger.warn("Got connecting to wrong machine: " + sas.toString()
                             + " using network "
                             + NetworkUtils.ipToString(target.getAddress()) + ":"
@@ -378,7 +378,7 @@ public class DirectSocketFactory {
                 return null;
             }
 
-            
+          */  
         } catch (Throwable e) {
 
           //  if (logger.isInfoEnabled()) {
