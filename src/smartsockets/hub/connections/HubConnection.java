@@ -324,7 +324,7 @@ public class HubConnection extends MessageForwardingConnection {
             // always be up-to-date.
             if (state > tmp.getHomeState()) { 
                 tmp.update(c, a, name, state);
-            } else { 
+            } else if (state < tmp.getHomeState()) { 
                 goslogger.warn("EEK: got information directly from " 
                         + peer.hubAddressAsString 
                         + (name.length() > 0 ? (" (" + name + ")") : "") 
@@ -341,7 +341,7 @@ public class HubConnection extends MessageForwardingConnection {
             // Check if the information is more recent than what I know...
             if (state > tmp.getHomeState()) { 
                 tmp.update(c, a, name, state);
-            } else {
+            } else if (state < tmp.getHomeState()) {
                 String pn = peer.getName();
         
                 if (goslogger.isDebugEnabled()) {
