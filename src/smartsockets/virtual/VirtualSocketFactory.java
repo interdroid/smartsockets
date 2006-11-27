@@ -37,6 +37,9 @@ public class VirtualSocketFactory {
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger("smartsockets.virtual.misc");
             
+    protected static Logger conlogger =         
+        ibis.util.GetLogger.getLogger("smartsockets.virtual.connect");
+   
     private final ArrayList<ConnectModule> modules = 
         new ArrayList<ConnectModule>();
 
@@ -76,7 +79,7 @@ public class VirtualSocketFactory {
         loadModules();        
         loadClusterDefinitions();                        
         createServiceLink();
-        passServiceLinkToModules();        
+        startModules();        
         
         if (modules.size() == 0) { 
             logger.warn("Failed to load any modules!");
@@ -107,9 +110,12 @@ public class VirtualSocketFactory {
                 logger.warn("Failed to understand proxy address: " + tmp, e);                                
             }           
         }
-
+        
+        boolean useDiscovery = 
+            properties.booleanProperty(Properties.DISCOVERY_ALLOWED, true);
+        
         // Check if we can discover the proxy address using UDP multicast. 
-        if (address == null) {
+        if (address == null && useDiscovery) {
             if (logger.isInfoEnabled()) { 
                 logger.info("Attempting to discover proxy using UDP multicast...");
             }
@@ -146,9 +152,9 @@ public class VirtualSocketFactory {
         // Still no address ? Give up...         
         if (address == null) { 
             // properties not set, so no central hub is available
-            if (logger.isInfoEnabled()) {
-                logger.info("ServiceLink not created: no hub address available!");
-            }
+          //  if (logger.isInfoEnabled()) {
+                logger.warn("ServiceLink not created: no hub address available!");
+          //  }
             return;
         }  
         
@@ -337,15 +343,34 @@ public class VirtualSocketFactory {
         return tmp.toArray(new ConnectModule[tmp.size()]);
     }
     
-    private void passServiceLinkToModules() { 
+    private void startModules() { 
         
-        for (ConnectModule c : modules) { 
-            try { 
-                c.startModule(serviceLink);
-            } catch (Exception e) { 
-                logger.warn("Module " + c.module 
-                        + " did not accept serviceLink!", e);
+        ArrayList<ConnectModule> failed = new ArrayList<ConnectModule>(); 
+        
+        if (serviceLink != null) { 
+            
+            for (ConnectModule c : modules) { 
+                try { 
+                    c.startModule(serviceLink);
+                } catch (Exception e) {
+                    // Remove all modules that fail to start...
+                    logger.warn("Module " + c.module 
+                            + " did not accept serviceLink!", e);
+                    failed.add(c);
+                }
             }
+            
+        } else { 
+            // No servicelink, so remove all modules that depend on it....
+            for (ConnectModule c : modules) {  
+                if (c.requiresServiceLink) { 
+                    failed.add(c);
+                }
+            }
+        }
+        
+        for (ConnectModule c : failed) { 
+            modules.remove(c);
         }        
     }
     
@@ -398,8 +423,8 @@ public class VirtualSocketFactory {
         throws IOException {
         
         if (m.matchRuntimeRequirements(properties)) {
-            if (logger.isDebugEnabled()) {
-                logger.info("Using module " + m.module + " to set up " +
+            if (conlogger.isDebugEnabled()) {
+                conlogger.debug("Using module " + m.module + " to set up " +
                         "connection to " + target + " timeout = " + timeout);
             }
             
@@ -414,11 +439,11 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);
-                //    if (logger.isInfoEnabled()) {
-                        logger.warn("Sucess: " + m.module 
+                    if (conlogger.isInfoEnabled()) {
+                        conlogger.info("Sucess: " + m.module 
                                 + " connected to " + target + " (time = " + 
                                 (end-start) + " ms.)");
-               //     }
+                    }
                     
                     return vs;
                 } 
@@ -427,17 +452,17 @@ public class VirtualSocketFactory {
                 long end = System.currentTimeMillis();
                                     
                 // Just print and try the next module...
-                //if (logger.isInfoEnabled()) {
-                    logger.warn("Failed: not suitable (time = " + (end-start) 
+                if (conlogger.isInfoEnabled()) {
+                    conlogger.info("Failed: not suitable (time = " + (end-start) 
                             + " ms.)", e);
-                //}
+                }
             }            
             // NOTE: other exceptions are forwarded to the user!
         } else { 
-            //if (logger.isInfoEnabled()) {
-                logger.warn("Failed: module " + m.module + " may not be used to set " +
+            if (conlogger.isInfoEnabled()) {
+                conlogger.warn("Failed: module " + m.module + " may not be used to set " +
                         "up connection to " + target);
-            //}            
+            }            
         }
         
         return null;

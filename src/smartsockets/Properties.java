@@ -52,6 +52,7 @@ public class Properties {
     public static final String MODULES_SKIP   = MODULES_PREFIX + "skip";
     
     public static final String DISCOVERY_PREFIX  = PREFIX + "discovery.";
+    public static final String DISCOVERY_ALLOWED = DISCOVERY_PREFIX + "allowed"; 
     public static final String DISCOVERY_PORT    = DISCOVERY_PREFIX + "port";
     public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
     
@@ -94,6 +95,7 @@ public class Properties {
             MODULES_DEFINE,         "direct,reverse,splice,routed", 
             MODULES_ORDER,          "direct,reverse,splice,routed",
             
+            DISCOVERY_ALLOWED,      "true",
             DISCOVERY_PORT,         "24545", 
             DISCOVERY_TIMEOUT,      "5000",             
     };
