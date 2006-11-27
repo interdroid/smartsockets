@@ -15,35 +15,40 @@ import smartsockets.direct.SocketAddressSet;
  
 public class ConnectTest {
     
+    private final static int REPEAT = 100;
+    
     public static void main(String [] args) { 
         
         try { 
             
         if (args.length > 0) {             
-            for (int i=0;i<args.length/2;i++) {
-                
-                long time = System.currentTimeMillis();
-                
-                Socket s = new Socket(args[0], Integer.parseInt(args[1]));
-                
-                time = System.currentTimeMillis() - time;
-                
-                System.out.println("Created connection to " + s +
-                        " on local address " + s.getLocalSocketAddress() 
-                        + " remote address " + s.getRemoteSocketAddress() 
-                        + " in " + time + " ms.");
+            
+            for (int r=0;r<REPEAT;r++) {
+                for (int i=0;i<args.length/2;i++) {
 
-                DataInputStream in = new DataInputStream(s.getInputStream());
-                DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                    long time = System.currentTimeMillis();
 
-                out.writeUTF("Hello server!");
-                out.flush();
-                
-                System.out.println("Server says: " + in.readUTF());
-                
-                in.close();
-                out.close();                               
-                s.close();
+                    Socket s = new Socket(args[0], Integer.parseInt(args[1]));
+
+                    time = System.currentTimeMillis() - time;
+
+                    System.out.println("Created connection to " + s +
+                            " on local address " + s.getLocalSocketAddress() 
+                            + " remote address " + s.getRemoteSocketAddress() 
+                            + " in " + time + " ms.");
+
+                    DataInputStream in = new DataInputStream(s.getInputStream());
+                    DataOutputStream out = new DataOutputStream(s.getOutputStream());
+
+                    out.writeUTF("Hello server!");
+                    out.flush();
+
+                    System.out.println("Server says: " + in.readUTF());
+
+                    in.close();
+                    out.close();                               
+                    s.close();
+                }
             }
         } else {                         
       
