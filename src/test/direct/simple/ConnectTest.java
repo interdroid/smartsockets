@@ -28,7 +28,7 @@ public class ConnectTest {
             for (int r=0;r<REPEAT;r++) {
                 for (int i=0;i<args.length;i++) { 
                     SocketAddressSet target = new SocketAddressSet(args[i]);
-
+/*
                     int sleep = rand.nextInt(15000);
                     
                     try { 
@@ -36,7 +36,7 @@ public class ConnectTest {
                     } catch (Exception e) {
                         // TODO: handle exception
                     }
-                    
+  */                  
                     
                     long time = System.currentTimeMillis();
 
