@@ -30,7 +30,7 @@ public class ConnectTest {
             
             int targetCount = args.length;
             
-            for (int i=0;i<0;i++) { 
+            for (int i=0;i<args.length;i++) { 
                 if (args[i].equals("-repeat")) { 
                     repeat = Integer.parseInt(args[i+1]);
                     args[i+1] = null;
