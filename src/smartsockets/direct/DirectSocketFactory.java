@@ -346,20 +346,24 @@ public class DirectSocketFactory {
              out = s.getOutputStream();
                           
              if (!server.isCompatible(sas)) { 
-                // out.write(DirectServerSocket.WRONG_MACHINE);
-                // out.flush();
+                 out.write(DirectServerSocket.WRONG_MACHINE);
+                 out.flush();
                  close(s, out, in);     
  
-                 logger.warn("Got connecting to wrong machine: " + sas.toString()
+                 logger.warn("Got connecting to wrong machine: "  
+                         + sas.toString()
                          + " using network "
                          + NetworkUtils.ipToString(target.getAddress()) + ":"
-                         + target.getPort() + " will retry!");
+                         + target.getPort() 
+                         + " got me a connection to " 
+                         + server.toString() 
+                         + " will retry!");
                  
                  return null;
              }
              
- //            out.write(DirectServerSocket.ACCEPT);
-  //           out.flush();
+             out.write(DirectServerSocket.ACCEPT);
+             out.flush();
              
              s.setSoTimeout(0);
                 
@@ -376,7 +380,6 @@ public class DirectSocketFactory {
           ///  }
 
             close(s, out, in);
-           
             return null;
         }
     }

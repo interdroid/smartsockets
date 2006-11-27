@@ -111,16 +111,15 @@ public class DirectServerSocket {
                     
                 in = s.getInputStream();
               
-                // Very unfortunate that this is synchronous.....
+                // Very unfortunate that this is synchronous.....   
+                int opcode = in.read();
                 
-        //        int opcode = in.read();
-                
-         //       if (opcode == ACCEPT) { 
-          //          s.setSoTimeout(0);
-           //         result = new DirectSocket(s, in, out);
-            //    } else { 
-             //       doClose(s, in, out);
-             //   }
+                if (opcode == ACCEPT) { 
+                    s.setSoTimeout(0);
+                    result = new DirectSocket(s, in, out);
+                } else { 
+                     doClose(s, in, out);
+                }
                 
             } catch (IOException ie) { 
                 doClose(s, in, out);
