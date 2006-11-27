@@ -347,31 +347,41 @@ public class VirtualSocketFactory {
         
         ArrayList<ConnectModule> failed = new ArrayList<ConnectModule>(); 
         
-        if (serviceLink != null) { 
-            
-            for (ConnectModule c : modules) { 
-                try { 
-                    c.startModule(serviceLink);
-                } catch (Exception e) {
-                    // Remove all modules that fail to start...
-                    logger.warn("Module " + c.module 
-                            + " did not accept serviceLink!", e);
-                    failed.add(c);
-                }
-            }
-            
-        } else { 
+        if (serviceLink == null) { 
             // No servicelink, so remove all modules that depend on it....
             for (ConnectModule c : modules) {  
-                if (c.requiresServiceLink) { 
+                if (c.requiresServiceLink) {
                     failed.add(c);
                 }
+            }  
+        
+            for (ConnectModule c : failed) {
+                logger.warn("Module " + c.module 
+                        + " removed (no serviceLink)!");  
+                modules.remove(c);
+            }
+            
+            failed.clear();
+        } 
+         
+        for (ConnectModule c : modules) { 
+            try { 
+                c.startModule(serviceLink);
+            } catch (Exception e) {
+                // Remove all modules that fail to start...
+                logger.warn("Module " + c.module 
+                        + " did not accept serviceLink!", e);
+                failed.add(c);
             }
         }
         
-        for (ConnectModule c : failed) { 
+        for (ConnectModule c : failed) {
+            logger.warn("Module " + c.module 
+                    + " removed (exception during setup)!");  
             modules.remove(c);
-        }        
+        }    
+        
+        failed.clear();
     }
     
     public VirtualServerSocket getServerSocket(int port) {        
