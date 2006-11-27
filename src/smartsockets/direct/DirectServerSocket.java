@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.nio.channels.ServerSocketChannel;
 
 public class DirectServerSocket {
@@ -16,11 +15,15 @@ public class DirectServerSocket {
     protected static final byte WRONG_MACHINE = 48;
     
     // The real server socket
-    private ServerSocket serverSocket; 
+    private final ServerSocket serverSocket; 
         
     // This is the local address, i.e., the SocketAddress that uses IP's + ports
     // that are directly found on this machine.    
-    private SocketAddressSet local;
+    private final SocketAddressSet local;
+    
+    // This is the initial message which contains the local address in coded 
+    // form. The first two bytes contain the size of the address..
+    private final byte [] handShake;
     
     // These are the external addresses, i.e., SocketAddresses which use IP's         
     // which cannot be found on this machine, but which can still be used to 
@@ -33,10 +36,18 @@ public class DirectServerSocket {
     // network.     
     private SocketAddressSet external;
     
+    
+    
     protected DirectServerSocket(SocketAddressSet local, ServerSocket ss) {
         /*super(null);*/
         this.local = local;
         this.serverSocket = ss;
+        
+        byte [] tmp = local.getAddress();
+        
+        handShake = new byte[2 + tmp.length];
+        handShake[0] = (byte) (tmp.length & 0xFF);
+        handShake[1] = (byte) ((tmp.length >> 8) & 0xFF);
     }
                
     /**
@@ -94,25 +105,21 @@ public class DirectServerSocket {
                 s.setSoTimeout(10000);
                 s.setTcpNoDelay(true);
                 
-                in = s.getInputStream();
                 out = s.getOutputStream();
+                out.write(handShake);
+                out.flush();
+                    
+                in = s.getInputStream();
+              
+                // Very unfortunate that this is synchronous.....
                 
-                DataInputStream din = new DataInputStream(in);
-            
-                SocketAddressSet target = new SocketAddressSet(din.readUTF());
-            
-                if (local.isCompatible(target)) {
-                    out.write(ACCEPT);
-                    out.flush();
-                    
+                int opcode = in.read();
+                
+                if (opcode == ACCEPT) { 
                     s.setSoTimeout(0);
-                    
                     result = new DirectSocket(s, in, out);
                 } else { 
-                    out.write(WRONG_MACHINE);
-                    out.flush();
-         
-                    doClose(s, din, out);
+                    doClose(s, in, out);
                 }
                 
             } catch (IOException ie) { 

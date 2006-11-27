@@ -1,6 +1,7 @@
 package smartsockets.direct;
 
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -31,13 +32,66 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private final IPAddressSet address;      
     private final InetSocketAddress [] sas;
     
+    private byte [] codedForm = null;
     private String toStringCache = null;
             
     private SocketAddressSet(IPAddressSet as, InetSocketAddress [] sas) {
         this.address = as;
         this.sas = sas;        
+    }
+    
+    /**
+     * Construct a new IbisSocketAddress, starting from a byte encode version
+     * 
+     * @param address The InetSocketAddress.
+     * @throws UnknownHostException 
+     */    
+    public SocketAddressSet(byte [] coded) throws UnknownHostException {
+    
+        byte [] tmp4 = null;
+        byte [] tmp16 = null;
         
-        toString();
+        int index = 0;
+        int len = coded[index++] & 0xFF;
+        
+        sas = new InetSocketAddress[len];
+        
+        InetAddress [] tmp = new InetAddress[len];
+        
+        for (int i=0;i<len;i++) { 
+            
+            int adlen = coded[index++] & 0xFF;
+            
+            int port = 0;
+            
+            if (adlen == 4) { 
+                // IPv4
+                if (tmp4 == null) { 
+                    tmp4 = new byte[4];
+                }
+                
+                System.arraycopy(coded, index, tmp4, 0, 4);
+                index += 4;
+                
+                port = (coded[index] & 0xFF) | (coded[index++] & 0xFF) << 8;
+                tmp[i] = InetAddress.getByAddress(tmp4);
+            } else { 
+                // IPv6
+                if (tmp16 == null) { 
+                    tmp16 = new byte[16];
+                }
+                
+                System.arraycopy(coded, index, tmp16, 0, 16);
+                index += 16;
+                
+                port = (coded[index++] &0xFF) | (coded[index++] & 0xFF) << 8;
+                tmp[i] = InetAddress.getByAddress(tmp16);
+            }
+            
+            sas[i] = new InetSocketAddress(tmp[i], port);
+        } 
+        
+        address = IPAddressSet.getFromAddress(tmp);
     }
     
     /**
@@ -238,6 +292,59 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     }
    
     /**
+     * This method returns the byte coded form of the SocketAddressSet.
+     * 
+     * This representation is either contains the 6 or 18 bytes of a single 
+     * InetAddress + port number, or it has the form (N (SAP)*) where:
+     *  
+     *   N is the number of addresses that follow (1 byte) 
+     *   S is the length of the next address (1 byte)
+     *   A is an InetAddress (4 or 16 bytes)
+     *   P is the port number (2 bytes)
+     * 
+     * @return the bytes
+     */
+    
+    public byte [] getAddress() { 
+        
+        if (codedForm == null) {
+            
+            // First calculate the size of the address n bytes....
+            int len = 1;
+            
+            for (InetSocketAddress s : sas) { 
+                
+                if (s.getAddress() instanceof Inet4Address) {
+                    len += 1 + 4 + 2;                    
+                } else { 
+                    len += 1 + 16 + 2;
+                }
+            }
+            
+            // Now encode it...
+            codedForm = new byte[len];
+            
+            int index = 0;
+            
+            codedForm[index++] = (byte) len;
+            
+            for (InetSocketAddress s : sas) { 
+                byte [] tmp = s.getAddress().getAddress();
+                codedForm[index++] = (byte) tmp.length;
+                System.arraycopy(tmp, 0, codedForm, index, tmp.length);                
+                index += tmp.length;
+
+                
+                int port = s.getPort();
+                codedForm[index++] = (byte) (port & 0xFF);
+                codedForm[index++] = (byte) ((port >> 8) & 0xFF);
+            }  
+        }
+        
+        return codedForm;
+    }
+    
+    /**
      * This method appends a value a specified number of times to an existing 
      * int array. A new array is returned.
      * 
@@ -269,7 +376,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      */
     public InetSocketAddress [] getSocketAddresses() { 
         return sas; 
-    }
+    } 
         
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()

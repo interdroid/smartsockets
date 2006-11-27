@@ -292,7 +292,9 @@ public class DirectSocketFactory {
         }
 
         Socket s = null;
-
+        InputStream in = null;
+        OutputStream out = null;
+        
         try {
 //            if (logger.isInfoEnabled()) {
         /*        logger.warn("Attempting connection to " + sas.toString()
@@ -317,65 +319,56 @@ public class DirectSocketFactory {
 
          //   logger.warn("Attempting connect   ....");
             
-            s.connect(target, timeout);
+             s.connect(target, timeout);
 
         //    logger.warn("Connect succeeded!");
             
-             s.setSoTimeout(10000);
+             s.setSoTimeout(5000);
              s.setTcpNoDelay(true);
             
-            // Check if we are talking to the right machine...
-             OutputStream out = s.getOutputStream();
-             InputStream in = s.getInputStream();
-      
-             DataOutputStream dout = new DataOutputStream(out);
-            
-             dout.writeUTF(sas.toString());
-             dout.flush();
-      
-             int result = in.read();
-            
-             if (result == DirectServerSocket.ACCEPT) { 
-              //  if (logger.isInfoEnabled()) {
-    /*                logger.warn("Succesfully directly connected to " + sas.toString()
-                            + " using network "
-                            + NetworkUtils.ipToString(target.getAddress()) + ":"
-                            + target.getPort());
-      */        //  }
+             // Check if we are talking to the right machine...
+             in = s.getInputStream();
+             
+             // Read the size of the machines address
+             int size = (in.read() & 0xFF) | ((in.read() & 0xFF) << 8); 
+             
+             // Read the address itself....
+             byte [] tmp = new byte[size];
+             
+             int off = 0; 
+             
+             while (off < size) { 
+                 off += in.read(tmp, off, size-off);
+             }
+             
+             // Create the address and see if we are to talking to the right 
+             // machine...
+             SocketAddressSet server = new SocketAddressSet(tmp);
+             
+             out = s.getOutputStream();
+                          
+             if (!server.isCompatible(sas)) { 
+                 out.write(DirectServerSocket.WRONG_MACHINE);
+                 out.flush();
+                 close(s, out, in);     
+ 
+                 logger.warn("Got connecting to wrong machine: " + sas.toString()
+                         + " using network "
+                         + NetworkUtils.ipToString(target.getAddress()) + ":"
+                         + target.getPort() + " will retry!");
+                 
+                 return null;
+             }
+             
+             out.write(DirectServerSocket.ACCEPT);
+             out.flush();
+             
+             s.setSoTimeout(0);
                 
-                s.setSoTimeout(0);
-                
-                DirectSocket r = new DirectSocket(s, in, dout);
-                tuneSocket(r);
-                return r;
-                
-           } else { 
-                logger.warn("Got connecting to wrong machine: " + sas.toString()
-                            + " using network "
-                            + NetworkUtils.ipToString(target.getAddress()) + ":"
-                            + target.getPort() + " will retry!");
-    
-                try {
-                    in.close();
-                } catch (Exception e2) {
-                    // ignore
-                }
-
-                try {
-                    out.close();
-                } catch (Exception e2) {
-                    // ignore
-                }
-
-                try {
-                    s.close();
-                } catch (Exception e2) {
-                    // ignore
-                }
-
-                return null;
-            }
-
+             DirectSocket r = new DirectSocket(s, in, out);
+             tuneSocket(r);
+             return r;
+ 
         } catch (Throwable e) {
 
           //  if (logger.isInfoEnabled()) {
@@ -384,12 +377,8 @@ public class DirectSocketFactory {
                         + target.getPort(), e);
           ///  }
 
-            try {
-                s.close();
-            } catch (Exception e2) {
-                // ignore
-            }
-
+            close(s, out, in);
+           
             return null;
         }
     }
@@ -559,6 +548,33 @@ public class DirectSocketFactory {
             }
         } 
         
+        if (i != null) { 
+            try { 
+                i.close();
+            } catch (Exception e) {
+                // ignore
+            }
+        } 
+        
+        if (s != null) { 
+            try { 
+                s.close();
+            } catch (Exception e) {
+                // ignore
+            }
+        }        
+    } 
+   
+    public static void close(Socket s, OutputStream o, InputStream i) {
+        
+        if (o != null) { 
+            try {
+                o.close();
+            } catch (Exception e) {
+                // ignore
+            }
+        } 
+   
         if (i != null) { 
             try { 
                 i.close();
