@@ -1,9 +1,5 @@
 package smartsockets.direct;
 
-import java.io.BufferedOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,6 +45,7 @@ public class DirectSocketFactory {
     private static DirectSocketFactory defaultFactory; 
     
     private final int DEFAULT_TIMEOUT;
+    private final int DEFAULT_BACKLOG;
     
     private final TypedProperties properties;
     
@@ -78,6 +75,7 @@ public class DirectSocketFactory {
         
         properties = p;
     
+        DEFAULT_BACKLOG = p.getIntProperty(Properties.DIRECT_BACKLOG, 100);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
         ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
         
@@ -389,6 +387,10 @@ public class DirectSocketFactory {
 
         if (port == 0) {
             port = portRange.getPort();
+        }
+        
+        if (backlog == 0) { 
+            backlog = DEFAULT_BACKLOG;
         }
 
         ServerSocket ss = createUnboundServerSocket();
