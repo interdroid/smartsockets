@@ -130,7 +130,7 @@ public class ConnectTest {
         
         if (targets > 0) {             
             
-            for (int r=0;r<REPEAT;r++) {        
+            for (int r=0;r<repeat;r++) {        
                 for (VirtualSocketAddress a : targetAds) { 
                     
                     if (sleep) { 
