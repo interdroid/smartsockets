@@ -20,7 +20,7 @@ public class ConnectTest {
         try { 
             
         if (args.length > 0) {             
-            for (int i=0;i<args.length;i++) {
+            for (int i=0;i<args.length/2;i++) {
                 
                 long time = System.currentTimeMillis();
                 

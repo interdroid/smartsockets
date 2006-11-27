@@ -13,7 +13,7 @@ import smartsockets.direct.SocketAddressSet;
  
 public class ConnectTest {
     
-    private final static int REPEAT = 1;
+    private final static int REPEAT = 10;
     
     public static void main(String [] args) { 
         
