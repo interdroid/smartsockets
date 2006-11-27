@@ -346,8 +346,8 @@ public class DirectSocketFactory {
              out = s.getOutputStream();
                           
              if (!server.isCompatible(sas)) { 
-                 out.write(DirectServerSocket.WRONG_MACHINE);
-                 out.flush();
+                // out.write(DirectServerSocket.WRONG_MACHINE);
+                // out.flush();
                  close(s, out, in);     
  
                  logger.warn("Got connecting to wrong machine: " + sas.toString()
@@ -358,8 +358,8 @@ public class DirectSocketFactory {
                  return null;
              }
              
-             out.write(DirectServerSocket.ACCEPT);
-             out.flush();
+ //            out.write(DirectServerSocket.ACCEPT);
+  //           out.flush();
              
              s.setSoTimeout(0);
                 
