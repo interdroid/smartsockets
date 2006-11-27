@@ -36,6 +36,7 @@ public class ConnectTest {
                     args[i+1] = null;
                     args[i] = null;
                     targetCount =- 2;
+                    i++;
                 } else if (args[i].equals("-sleep")) { 
                     sleep = true;
                     args[i] = null;
