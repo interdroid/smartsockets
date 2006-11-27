@@ -664,19 +664,18 @@ public class DirectSocketFactory {
 
                 time = System.currentTimeMillis() -time;
                 
-             // if (logger.isInfoEnabled()) {      
-                
-                
-                //    logger.warn("Direct connection setup took: "  + time + " ms.");
-              //}
+         
                                 
                 if (result != null) {
-                    logger.warn("Direct connection setup took: "  + time + " ms.");
+                    if (logger.isInfoEnabled()) {      
+                        logger.info("Direct connection setup took: "  + time + " ms.");
+                    }
                     return result;
                 }
-                
-                logger.warn("Direct connection failed: "  + time + " ms.");
-                
+               
+                if (logger.isInfoEnabled()) {      
+                    logger.info("Direct connection failed: "  + time + " ms.");
+                }
             }
 
             if (timeout > 0) {
