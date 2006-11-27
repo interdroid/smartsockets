@@ -35,7 +35,7 @@ public class ConnectTest {
                     repeat = Integer.parseInt(args[i+1]);
                     args[i+1] = null;
                     args[i] = null;
-                    targetCount =- 2;
+                    targetCount -= 2;
                     i++;
                 } else if (args[i].equals("-sleep")) { 
                     sleep = true;
