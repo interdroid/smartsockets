@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Map;
@@ -260,8 +261,10 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         notifyAll();
     }
     
-    // TODO: addtimeout!!!!
-    private synchronized byte [] getBuffer() { 
+    private synchronized byte [] getBuffer(int timeout) throws IOException { 
+        
+        long start = System.currentTimeMillis(); 
+        long endTime = start + timeout;
         
         while (incoming.size() == 0) {
             
@@ -269,10 +272,18 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
                 return null;
             }
             
-            try { 
-               // System.out.println("Socket " + connectionIndex 
-               //         + " blocks for messages!!");
-                wait(1000);                
+            try {
+                int timeleft = 1000;
+                
+                if (timeout > 0) { 
+                    timeleft = (int) (endTime - System.currentTimeMillis()); 
+                
+                    if (timeleft <= 0) { 
+                        throw new SocketTimeoutException("Failed to receive data in time");
+                    }
+                }
+                
+                wait(timeleft);                
             } catch (Exception e) {
                 // ignore
             }
@@ -286,13 +297,13 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
                 timeout);        
     }
 
-    public byte[] getBuffer(byte[] buffer) throws IOException {
+    public byte[] getBuffer(byte[] buffer, int timeout) throws IOException {
         
         if (buffer != null) {
             // Ack a previous buffer 
             serviceLink.ackVirtualMessage(connectionIndex, buffer);
         }
 
-        return getBuffer(); 
+        return getBuffer(timeout); 
     }   
 }

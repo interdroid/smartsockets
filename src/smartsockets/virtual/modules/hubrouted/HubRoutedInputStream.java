@@ -52,7 +52,7 @@ public class HubRoutedInputStream extends InputStream {
         
         if (buffer == null || used == buffer.length) {
           
-            buffer = parent.getBuffer(buffer);
+            buffer = parent.getBuffer(buffer, parent.getSoTimeout());
          
             if (buffer == null) { 
                 close();
