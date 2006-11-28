@@ -27,8 +27,6 @@ public class ConnectTest {
     
     public static void connect(VirtualSocketAddress target) { 
         
-
-
         long time = System.currentTimeMillis();
 
         try { 
@@ -147,5 +145,7 @@ public class ConnectTest {
         } else {
             accept();
         }
+        
+        sf.printStatistics();
     }
 }

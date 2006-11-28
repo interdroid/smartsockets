@@ -17,9 +17,16 @@ public abstract class AbstractDirectModule extends ConnectModule {
     
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
-  //  protected static final byte WRONG_MACHINE       = 3;     
     protected static final byte CONNECTION_REJECTED = 4;   
     
+    protected long incomingConnections; 
+    protected long acceptedIncomingConnections; 
+    protected long rejectedIncomingConnections; 
+    protected long failedIncomingConnections; 
+    
+    protected long acceptedOutgoingConnections; 
+    protected long failedOutgoingConnections; 
+   
     protected DirectSocketFactory direct;  
     
     protected AbstractDirectModule(String name, boolean requiresServiceLink) { 
@@ -38,6 +45,8 @@ public abstract class AbstractDirectModule extends ConnectModule {
         
         DataInputStream in = null;
         DataOutputStream out = null;
+        
+        incomingConnections++;
         
         if (logger.isDebugEnabled()) { 
             logger.debug(module + ": Got incoming connection on " + ds);
@@ -62,6 +71,8 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 out.flush();                
                 DirectSocketFactory.close(ds, out, in);
                 
+                rejectedIncomingConnections++;
+                
                 if (logger.isDebugEnabled()) { 
                     logger.debug(module + ": Connection failed, PORT not found!");
                 }                
@@ -83,6 +94,9 @@ public abstract class AbstractDirectModule extends ConnectModule {
             boolean accept = vss.incomingConnection(vs);
             
             if (!accept) {
+                
+                rejectedIncomingConnections++;
+                
                 out.write(CONNECTION_REJECTED);
                 out.flush();                
                 DirectSocketFactory.close(ds, out, in);
@@ -94,7 +108,10 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 return;
             }
             
-        } catch (Exception e) {            
+            acceptedIncomingConnections++;
+            
+        } catch (Exception e) {          
+            failedIncomingConnections++;
             logger.warn(module + ": Got exception during connection setup!", e);            
             DirectSocketFactory.close(ds, out, in);
         }
@@ -122,7 +139,8 @@ public abstract class AbstractDirectModule extends ConnectModule {
         } catch (IOException e) {
             // This module worked fine, but we got a 'normal' exception while 
             // connecting (i.e., because the other side refused to connection). 
-            // There is no use trying other modules.            
+            // There is no use trying other modules.          
+            failedOutgoingConnections++;
             DirectSocketFactory.close(s, out, in);
             throw e;
         }
@@ -131,9 +149,10 @@ public abstract class AbstractDirectModule extends ConnectModule {
         // exception and close the socket if something is wrong) 
         tmp.waitForAccept();
         
+        acceptedOutgoingConnections++;
+        
         // Reset the timeout to the default value (infinite). 
         s.setSoTimeout(0);
-        
         return tmp;        
     }
 }

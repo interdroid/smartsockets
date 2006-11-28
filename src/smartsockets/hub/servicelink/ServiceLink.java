@@ -24,6 +24,9 @@ public class ServiceLink implements Runnable {
     private static final Logger logger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.servicelink");
 
+    private static final Logger statslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.statistics");
+    
     private static final int TIMEOUT = 5000;
     private static final int DEFAULT_WAIT_TIME = 10000;
 
@@ -55,7 +58,29 @@ public class ServiceLink implements Runnable {
     
     private final HashMap<Long, String []> connectionACKs = 
         new HashMap<Long, String []>();
-    
+   
+    // Some statistics
+    private long incomingConnections;
+    private long acceptedIncomingConnections;
+    private long rejectedIncomingConnections;
+    private long failedIncomingConnections;
+
+    private long outgoingConnections;
+    private long acceptedOutgoingConnections;
+    private long rejectedOutgoingConnections;
+    private long failedOutgoingConnections;
+
+    private long incomingBytes;
+    private long outgoingBytes;
+
+    private long incomingDataMessages;
+    private long outgoingDataMessages;
+
+    private long incomingMetaMessages;
+    private long outgoingMetaMessages;
+
+    private long lastStatsPrint = 0;
+        
     private ServiceLink(SocketAddressSet hubAddress, 
             SocketAddressSet myAddress) throws IOException { 
         
@@ -64,6 +89,8 @@ public class ServiceLink implements Runnable {
         this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;              
                
+        this.lastStatsPrint = System.currentTimeMillis();
+        
         Thread t = new Thread(this, "ServiceLink Message Reader");
         t.setDaemon(true);
         t.start();
@@ -212,6 +239,8 @@ public class ServiceLink implements Runnable {
             
             target.gotMessage(src, srcHub, opcode, message);
         } 
+        
+        incomingMetaMessages++;
     }
 
     private void handleInfo() throws IOException { 
@@ -243,11 +272,13 @@ public class ServiceLink implements Runnable {
             logger.warn("ServiceLink: Callback " + targetID + " not found");                                       
         } else {             
             target.storeReply(info);
-        } 
+        }
     }
     
     private void handleIncomingConnection() throws IOException { 
 
+        incomingConnections++;
+        
         String source = in.readUTF();
         String info = in.readUTF();
         int timeout = in.readInt();
@@ -281,6 +312,9 @@ public class ServiceLink implements Runnable {
                     out.writeUTF("Connection refused");
                     out.flush();            
                 }
+                
+                rejectedIncomingConnections++;
+                
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while writing to hub!", e);
                 closeConnectionToHub();
@@ -309,6 +343,8 @@ public class ServiceLink implements Runnable {
                     out.writeUTF("Connection refused");
                     out.flush();
                 }
+               
+                rejectedIncomingConnections++;
                 
             } catch (IOException e) {
                 logger.warn("ServiceLink: Exception while writing to hub!", e);
@@ -337,17 +373,16 @@ public class ServiceLink implements Runnable {
     public void rejectIncomingConnection(long index) {
         
         // The incoming connection 'index' was rejected.
-       // if (logger.isInfoEnabled()) {
-            logger.warn("REJECTED connection: (" + index 
+        if (logger.isInfoEnabled()) {
+            logger.info("REJECTED connection: (" + index 
                     + "): serversocket did not accept");
-       // }
-        
-            
-            
+       }
             
         Credits c = credits.get(index);
         
         if (c == null) { 
+            failedIncomingConnections++;
+            
             logger.warn("Cannot close connection: " + index 
                     + " since it does not exist (anymore)!");            
             return;
@@ -365,6 +400,8 @@ public class ServiceLink implements Runnable {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();                      
         }
+        
+        rejectedIncomingConnections++;
     }
     
     private synchronized void disconnectCallback(long index) {
@@ -386,6 +423,8 @@ public class ServiceLink implements Runnable {
     
     public boolean acceptIncomingConnection(long index) throws IOException { 
         
+        acceptedIncomingConnections++;
+        
         // The incoming connection 'index' was accepted. The only problem is 
         // that we are not sure if we are in time. We therefore send a reply, 
         // for which we get a reply back again...
@@ -401,6 +440,7 @@ public class ServiceLink implements Runnable {
                         + " (" + index + "): client has already closed!");
             }
             
+            failedIncomingConnections++;
             disconnectCallback(index);
             return false;
         }
@@ -419,6 +459,8 @@ public class ServiceLink implements Runnable {
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");            
         }
+        
+        acceptedIncomingConnections++;
         
         return true;
     }
@@ -460,6 +502,9 @@ public class ServiceLink implements Runnable {
         // TODO: optimize!
         byte [] data = new byte[len];        
         in.readFully(data);
+      
+        incomingDataMessages++;
+        incomingBytes += len;
         
         VirtualConnectionCallBack cb = null;
         
@@ -597,7 +642,9 @@ public class ServiceLink implements Runnable {
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
-        }        
+        }
+        
+        outgoingMetaMessages++;
     }
     
     private synchronized int getNextSimpleCallbackID() { 
@@ -848,7 +895,7 @@ public class ServiceLink implements Runnable {
         }
     }
     
-    private void waitForConnectionACK(long index, int timeout) 
+    public void waitForConnectionACK(long index, int timeout) 
         throws IOException { 
 
        // logger.warn("Waiting for ACK: " + index);
@@ -872,7 +919,7 @@ public class ServiceLink implements Runnable {
                 if (timeout > 0) { 
                     timeLeft = endTime - System.currentTimeMillis();
                     
-                    // Prevents us from accidentlyfalling into a wait(0)!!
+                    // Prevents us from accidently falling into a wait(0)!!
                     if (timeLeft == 0) { 
                         timeLeft = -1;
                     }
@@ -886,6 +933,7 @@ public class ServiceLink implements Runnable {
 
         // No result ? Timeout!
         if (result == null) {
+            failedOutgoingConnections++;
             throw new SocketTimeoutException("Connect " + index 
                     + " timed out!");
         }
@@ -894,28 +942,35 @@ public class ServiceLink implements Runnable {
         if (result[0].equals("DENIED")) {
             
             if (result[1].equals("Unknown host")) { 
+                failedOutgoingConnections++;
                 throw new UnknownHostException(); 
             }
             
-            if (result[1].equals("Connection refused")) { 
+            if (result[1].equals("Connection refused")) {
+                rejectedOutgoingConnections++;
                 throw new ConnectException(); 
             }
             
+            failedOutgoingConnections++;
             throw new IOException("Connection " + index + " failed: " + result[1]);
         } 
         
         // Sanity check
         if (!result[0].equals("OK")) {
+            failedOutgoingConnections++;
             throw new IOException("Connection + " + index + " failed: " + result[0]);
         } 
         
         // Otherwise, the connection is accepted.
         credits.put(index, new Credits(DEFAULT_CREDITS));
+        acceptedOutgoingConnections++;
     }
     
-   
+    public long getConnectionNumber() { 
+        return vcIndex.nextIndex();
+    }
     
-    public long createVirtualConnection(SocketAddressSet target, 
+    public void createVirtualConnection(long index, SocketAddressSet target, 
             SocketAddressSet targetHub, String info, int timeout) 
         throws IOException {
         
@@ -926,8 +981,6 @@ public class ServiceLink implements Runnable {
         if (timeout < 0) { 
             timeout = 0;
         }
-        
-        long index = vcIndex.nextIndex();
         
         if (logger.isInfoEnabled()) {
             logger.debug("Creating virtual connection: " + index);
@@ -952,18 +1005,17 @@ public class ServiceLink implements Runnable {
                 out.flush();            
             }
             
+            outgoingConnections++;
+            
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         }
-        
-        // May throw several types of exceptions depending on the result....
+       
         waitForConnectionACK(index, timeout);
-        
-        return index;
-    }
-    
+    } 
+  
     private void sendClose(long index) throws IOException {
        
             if (!getConnected()) { 
@@ -1023,7 +1075,7 @@ public class ServiceLink implements Runnable {
             logger.warn("Virtual connection: " + index + " does not exist!");            
             throw new IOException("Not connected");
         }
-        
+       
         int t = timeout > 0 ? timeout : DEFAULT_WAIT_TIME;
        
         boolean done = false;
@@ -1056,7 +1108,9 @@ public class ServiceLink implements Runnable {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
         }       
-        
+       
+        outgoingDataMessages++;
+        outgoingBytes += len;
         //System.err.println("W");
     }
         
@@ -1090,6 +1144,12 @@ public class ServiceLink implements Runnable {
             logger.info("Requesting info registration: " + tag + " " + value);
         }
         
+        if (value == null) { 
+            value = "";
+        }
+       
+        waitConnected(maxWaitTime);
+        
         String id = "RegisterInfo" + getNextSimpleCallbackID();
         
         SimpleCallBack tmp = new SimpleCallBack();        
@@ -1103,7 +1163,6 @@ public class ServiceLink implements Runnable {
                 out.writeUTF(value);
                 out.flush();            
             } 
-;
 
             String [] reply = (String []) tmp.getReply();            
             return reply != null && reply.length == 1 && reply[0].equals("OK");
@@ -1122,8 +1181,11 @@ public class ServiceLink implements Runnable {
             logger.info("Requesting info update: " + tag + " " + value);
         }
         
+        if (value == null) { 
+            value = "";
+        }
+       
         waitConnected(maxWaitTime);
-        
         
         String id = "UpdateInfo" + getNextSimpleCallbackID();
         
@@ -1193,6 +1255,37 @@ public class ServiceLink implements Runnable {
                 
         // TODO DUMMY IMPLEMENTATION --- FIX!!!!!        
         return hubAddress;
+    }
+    
+    public void printStatistics() { 
+        
+        if (statslogger.isInfoEnabled()) { 
+            
+            statslogger.info("----- ServiceLink statistics -----");
+            statslogger.info("");
+            statslogger.info("Incoming connections: " + incomingConnections);
+            statslogger.info("          - accepted: " + acceptedIncomingConnections);
+            statslogger.info("          - rejected: " + rejectedIncomingConnections);
+            statslogger.info("          - failed  : " + failedIncomingConnections);
+            statslogger.info("");            
+            statslogger.info("Outgoing connections: " + outgoingConnections);
+            statslogger.info("          - accepted: " + acceptedOutgoingConnections);
+            statslogger.info("          - rejected: " + rejectedOutgoingConnections);
+            statslogger.info("          - failed  : " + failedOutgoingConnections);
+            statslogger.info("");
+            statslogger.info("Incoming messages: ");
+            statslogger.info("          - data : " + incomingDataMessages);
+            statslogger.info("          - bytes: " + incomingBytes);
+            statslogger.info("          - meta : " + incomingMetaMessages);
+            statslogger.info("");
+            statslogger.info("Outgoing messages: ");
+            statslogger.info("          - data : " + outgoingDataMessages);
+            statslogger.info("          - bytes: " + outgoingBytes);
+            statslogger.info("          - meta : " + outgoingMetaMessages);            
+            statslogger.info("");
+            statslogger.info("----------------------------------");
+        }
+        
     }
     
     public void run() {

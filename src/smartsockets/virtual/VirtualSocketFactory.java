@@ -39,6 +39,9 @@ public class VirtualSocketFactory {
             
     protected static Logger conlogger =         
         ibis.util.GetLogger.getLogger("smartsockets.virtual.connect");
+    
+    private static final Logger statslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.statistics");
    
     private final ArrayList<ConnectModule> modules = 
         new ArrayList<ConnectModule>();
@@ -114,8 +117,11 @@ public class VirtualSocketFactory {
         boolean useDiscovery = 
             properties.booleanProperty(Properties.DISCOVERY_ALLOWED, true);
         
+        boolean discoveryPreferred = 
+            properties.booleanProperty(Properties.DISCOVERY_PREFERRED, false);
+        
         // Check if we can discover the proxy address using UDP multicast. 
-        if (address == null && useDiscovery) {
+        if (useDiscovery && (discoveryPreferred || address == null)) {
             if (logger.isInfoEnabled()) { 
                 logger.info("Attempting to discover proxy using UDP multicast...");
             }
@@ -455,8 +461,12 @@ public class VirtualSocketFactory {
                                 (end-start) + " ms.)");
                     }
                     
+                    m.success(end-start);
                     return vs;
                 } 
+            
+                m.failed(end-start);
+                
             } catch (ModuleNotSuitableException e) {
                 
                 long end = System.currentTimeMillis();
@@ -466,6 +476,8 @@ public class VirtualSocketFactory {
                     conlogger.info("Failed: not suitable (time = " + (end-start) 
                             + " ms.)", e);
                 }
+                
+                m.failed(end-start);
             }            
             // NOTE: other exceptions are forwarded to the user!
         } else { 
@@ -475,6 +487,7 @@ public class VirtualSocketFactory {
             }            
         }
         
+        m.notAllowed();
         return null;
     }
     
@@ -701,4 +714,41 @@ public class VirtualSocketFactory {
     public String getVirtualAddressAsString() {
         return localVirtualAddressAsString;
     }   
+    
+    public void printStatistics() { 
+     
+        if (statslogger.isInfoEnabled()) { 
+            statslogger.info("======= VirtualSocketFactory ======");
+            statslogger.info("");
+            statslogger.info("Modules: " + modules.size());
+            
+            for (ConnectModule c : modules) { 
+                statslogger.info("  -- module: " + c.module);
+                statslogger.info("  -- succes: " + c.succesfullConnects);
+                statslogger.info("  --   time: " + c.connectTime);
+                statslogger.info("  -- failed: " + c.failedConnects);
+                statslogger.info("  --   time: " + c.failedTime);
+                statslogger.info("  --skipped: " + c.failedConnects); 
+            }
+            
+            statslogger.info("");
+            statslogger.info("Details:");  
+            statslogger.info("");  
+             
+            for (ConnectModule c : modules) { 
+                c.printStatistics();
+                statslogger.info("");
+            }
+            
+            if (serviceLink != null) {
+                serviceLink.printStatistics();
+                statslogger.info("");
+            } else { 
+                statslogger.info("No servicelink available");
+            }    
+            
+            statslogger.info("===================================");
+        }
+        
+    }
 }

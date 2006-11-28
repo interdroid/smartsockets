@@ -25,7 +25,14 @@ public abstract class ConnectModule implements CallBack {
     protected ServiceLink serviceLink;     
     protected Map properties; 
     
-    private String name;
+    protected String name;
+    
+    public long succesfullConnects;
+    public long failedConnects;
+    public long notAllowed;
+    
+    public long connectTime;
+    public long failedTime;
     
     protected ConnectModule(String name, boolean requiresServiceLink) { 
         this(name, requiresServiceLink, null);
@@ -228,6 +235,20 @@ public abstract class ConnectModule implements CallBack {
         return name;
     }
     
+    public void success(long time) { 
+        succesfullConnects++;
+        connectTime += time;
+    }
+    
+    public void failed(long time) { 
+        failedConnects++;
+        failedTime += time;
+    }
+    
+    public void notAllowed() { 
+        notAllowed++;
+    }
+    
     public abstract void initModule(Map properties) throws Exception; 
 
     public abstract void startModule() throws Exception; 
@@ -237,5 +258,9 @@ public abstract class ConnectModule implements CallBack {
     public abstract SocketAddressSet getAddresses(); 
     
     public abstract VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map properties) throws ModuleNotSuitableException, IOException;        
+            Map properties) throws ModuleNotSuitableException, IOException;
+
+    public void printStatistics() {
+        // default is empty....
+    }        
 }

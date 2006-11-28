@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import smartsockets.Properties;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
@@ -22,6 +24,9 @@ import smartsockets.virtual.modules.AbstractDirectModule;
 
 public class Direct extends AbstractDirectModule {
     
+    private static final Logger statslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.statistics");
+    
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
     protected static final byte CONNECTION_REJECTED = 4;   
@@ -29,6 +34,8 @@ public class Direct extends AbstractDirectModule {
     private DirectSocketFactory direct;   
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
+    
+    private long outgoingConnectionAttempts;
     
     private class AcceptThread extends Thread { 
         
@@ -199,6 +206,7 @@ public class Direct extends AbstractDirectModule {
     void handleAccept() {    
         try { 
             handleAccept(server.accept());    
+            incomingConnections++;
         } catch (IOException e) {
             logger.warn(module + ": Got exception while waiting " +
                     "for connection!", e);
@@ -208,17 +216,19 @@ public class Direct extends AbstractDirectModule {
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
             Map properties) throws ModuleNotSuitableException, IOException {
 
+        outgoingConnectionAttempts++;
+        
         DirectSocket s = null;
 
         try { 
-            s = direct.createSocket(target.machine(), timeout, properties);                    
+            s = direct.createSocket(target.machine(), timeout, properties);
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            
             throw new ModuleNotSuitableException(module + ": Failed to " +
                     "connect to " + target + " " + e);           
         }
-        
+
         return handleConnect(target, s, timeout, properties);
         
         /*
@@ -263,4 +273,18 @@ public class Direct extends AbstractDirectModule {
             DirectSocket s, DataOutputStream out, DataInputStream in) {        
         return new DirectVirtualSocket(a, s, out, in, null); 
     }   
+    
+    public void printStatistics() {
+        
+        if (statslogger.isInfoEnabled()) {
+            statslogger.info("Module: Direct");
+            statslogger.info(" -- attempts: " + outgoingConnectionAttempts);
+            statslogger.info("    - succes: " + acceptedOutgoingConnections);
+            statslogger.info("    - failed: " + failedOutgoingConnections);
+            statslogger.info(" -- incoming: " + incomingConnections); 
+            statslogger.info("    - accept: " + acceptedIncomingConnections);
+            statslogger.info("    - reject: " + rejectedIncomingConnections);
+            statslogger.info("    - failed: " + failedIncomingConnections);
+        }        
+    }
 }

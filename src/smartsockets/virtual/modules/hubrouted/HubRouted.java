@@ -65,13 +65,32 @@ public class HubRouted extends ConnectModule
         long endTime = System.currentTimeMillis() + timeout;
         boolean timeLeft = true;
         
+        HubRoutedVirtualSocket s = null;
+        
         while (index == -1 && timeLeft) { 
+        
+            index = serviceLink.getConnectionNumber();
+            
+            // As soon as we get an index back we create the socket. Otherwise 
+            // there may be a race between the accept being handled and the 
+            // receipt of the first message...
+            s = new HubRoutedVirtualSocket(this, target, serviceLink, index, null);
+            
+            synchronized (this) {
+                sockets.put(index, s);
+            }
+            
             try { 
-                index = serviceLink.createVirtualConnection(tm, hub, 
+                serviceLink.createVirtualConnection(index, tm, hub, 
                         Integer.toString(target.port()), timeout);
             
             } catch (UnknownHostException e) {
-            
+                synchronized (this) {
+                    sockets.remove(index);
+                }
+                   
+                index = -1;
+    
                 // The target machine isn't known (yet) -- retry as long as we 
                 // stick to the timeout....
                 
@@ -107,6 +126,7 @@ public class HubRouted extends ConnectModule
                 throw new ConnectException("Connection refused by: " + target);
                 
             } catch (IOException e) {
+              
                 //if (logger.isInfoEnabled()) {
                     logger.warn("Failed to create virtual connection to " 
                             + target + " (giving up)", e);
@@ -117,13 +137,6 @@ public class HubRouted extends ConnectModule
             }
         } 
         
-        HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, target, 
-                serviceLink, index, null);
-        
-        synchronized (this) {
-            sockets.put(index, s);
-        }
-            
         return s; 
     }
 
@@ -207,7 +220,8 @@ public class HubRouted extends ConnectModule
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
            // if (logger.isInfoEnabled()) {             
-                logger.warn("Got message for an unknown socket!: " + vc);
+                logger.warn("Got message for an unknown socket!: " + vc 
+                        + " size = " + data.length);
            // }
             return;
         } 
@@ -218,6 +232,8 @@ public class HubRouted extends ConnectModule
     public synchronized void close(long vc) {
 
         HubRoutedVirtualSocket s = sockets.remove(vc);
+        
+        //logger.warn("Got close for socket!: " + vc);
         
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
