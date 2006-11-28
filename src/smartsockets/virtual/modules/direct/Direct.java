@@ -274,9 +274,18 @@ public class Direct extends AbstractDirectModule {
         return new DirectVirtualSocket(a, s, out, in, null); 
     }   
     
-    public void printStatistics() {
+    public void printStatistics(String prefix) {
         
-        if (statslogger.isInfoEnabled()) {
+        if (true) { 
+            System.out.println(prefix + "Module: Direct");
+            System.out.println(prefix + " -- attempts: " + outgoingConnectionAttempts);
+            System.out.println(prefix + "    - succes: " + acceptedOutgoingConnections);
+            System.out.println(prefix + "    - failed: " + failedOutgoingConnections);
+            System.out.println(prefix + " -- incoming: " + incomingConnections); 
+            System.out.println(prefix + "    - accept: " + acceptedIncomingConnections);
+            System.out.println(prefix + "    - reject: " + rejectedIncomingConnections);
+            System.out.println(prefix + "    - failed: " + failedIncomingConnections);        
+        } else if (statslogger.isInfoEnabled()) {
             statslogger.info("Module: Direct");
             statslogger.info(" -- attempts: " + outgoingConnectionAttempts);
             statslogger.info("    - succes: " + acceptedOutgoingConnections);

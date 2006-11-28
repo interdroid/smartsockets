@@ -95,9 +95,9 @@ public class Acceptor extends CommunicationThread {
             return false;
         } else {                                     
             // We just created a connection to this hub.
-            if (hconlogger.isInfoEnabled()) {
-                hconlogger.info("Connection from " + addr + " accepted");
-            }
+          //  if (hconlogger.isInfoEnabled()) {
+                hconlogger.warn("Connection accepted from hub " + addr);
+           // }
 
             out.write(HubProtocol.CONNECTION_ACCEPTED);            
             out.flush();

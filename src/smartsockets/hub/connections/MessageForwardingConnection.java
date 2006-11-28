@@ -417,10 +417,14 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                         
                     } else { 
                         vclogger.warn("Failed to find indirection for hub: " 
-                                + targetHub);
+                                + targetHub 
+                                + " during virtual connection setup ("
+                                + source + " -> " + target + ") : "  + index);
                     }
                 } else { 
-                    vclogger.warn("Failed to find hub: " + targetHub);
+                    vclogger.warn("Failed to find hub: " + targetHub 
+                            + " during virtual connection setup ("
+                            + source + " -> " + target + ") : "  + index); 
                 }
             }
         } 

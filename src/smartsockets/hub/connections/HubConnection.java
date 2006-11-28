@@ -335,7 +335,14 @@ public class HubConnection extends MessageForwardingConnection {
             // We got information about a 'third party'.               
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
-                tmp.addIndirection(peer, hops+1);
+                if (tmp.addIndirection(peer, hops+1)) { 
+                    
+                    vclogger.warn("Found shortcut to hub: " 
+                            + tmp.hubAddressAsString + " via "
+                            + peer.hubAddressAsString + " in " + (hops+1) 
+                            + " hops");
+                    
+                }
             } 
             
             // Check if the information is more recent than what I know...

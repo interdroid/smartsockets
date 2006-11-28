@@ -1257,9 +1257,35 @@ public class ServiceLink implements Runnable {
         return hubAddress;
     }
     
-    public void printStatistics() { 
+    public void printStatistics(String prefix) { 
         
-        if (statslogger.isInfoEnabled()) { 
+        if (true) { 
+
+            System.out.println(prefix + "----- ServiceLink statistics -----");
+            System.out.println(prefix + "");
+            System.out.println(prefix + "Incoming connections: " + incomingConnections);
+            System.out.println(prefix + "          - accepted: " + acceptedIncomingConnections);
+            System.out.println(prefix + "          - rejected: " + rejectedIncomingConnections);
+            System.out.println(prefix + "          - failed  : " + failedIncomingConnections);
+            System.out.println(prefix + "");            
+            System.out.println(prefix + "Outgoing connections: " + outgoingConnections);
+            System.out.println(prefix + "          - accepted: " + acceptedOutgoingConnections);
+            System.out.println(prefix + "          - rejected: " + rejectedOutgoingConnections);
+            System.out.println(prefix + "          - failed  : " + failedOutgoingConnections);
+            System.out.println(prefix + "");
+            System.out.println(prefix + "Incoming messages: ");
+            System.out.println(prefix + "          - data : " + incomingDataMessages);
+            System.out.println(prefix + "          - bytes: " + incomingBytes);
+            System.out.println(prefix + "          - meta : " + incomingMetaMessages);
+            System.out.println(prefix + "");
+            System.out.println(prefix + "Outgoing messages: ");
+            System.out.println(prefix + "          - data : " + outgoingDataMessages);
+            System.out.println(prefix + "          - bytes: " + outgoingBytes);
+            System.out.println(prefix + "          - meta : " + outgoingMetaMessages);            
+            System.out.println(prefix + "");
+            System.out.println(prefix + "----------------------------------");
+        
+        } else if (statslogger.isInfoEnabled()) { 
             
             statslogger.info("----- ServiceLink statistics -----");
             statslogger.info("");

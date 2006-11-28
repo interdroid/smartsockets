@@ -215,9 +215,9 @@ class Connector extends CommunicationThread {
        }
         
         if (result) {
-            if (hconlogger.isDebugEnabled()) {
-                hconlogger.debug("Succesfully created connection!");
-            }
+           // if (hconlogger.isDebugEnabled()) {
+                hconlogger.warn("Succesfully created connection to " + d.hubAddressAsString);
+           // }
             
             connections.put(d.hubAddress, c);
             c.activate();            

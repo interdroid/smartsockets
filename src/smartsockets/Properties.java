@@ -16,13 +16,13 @@ public class Properties {
     
     public static final String PREFIX = "smartsockets.";
     
-
-    public static final String FILE    = PREFIX + "file";
-    public static final String ROUTERS = PREFIX + "routers";  
+    public static final String FILE                = PREFIX + "file";
+    public static final String ROUTERS             = PREFIX + "routers";  
+    public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
         
-    public static final String BACKLOG = PREFIX + "backlog";  
-    public static final String DIRECT_BACKLOG = PREFIX + "direct.backlog";  
-    public static final String TIMEOUT = PREFIX + "timeout";  
+    public static final String BACKLOG             = PREFIX + "backlog";  
+    public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
+    public static final String TIMEOUT             = PREFIX + "timeout";  
     
     public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
     

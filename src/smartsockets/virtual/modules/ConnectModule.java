@@ -260,7 +260,7 @@ public abstract class ConnectModule implements CallBack {
     public abstract VirtualSocket connect(VirtualSocketAddress target, int timeout,
             Map properties) throws ModuleNotSuitableException, IOException;
 
-    public void printStatistics() {
+    public void printStatistics(String prefix) {
         // default is empty....
     }        
 }

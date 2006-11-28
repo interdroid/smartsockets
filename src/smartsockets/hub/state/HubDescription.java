@@ -341,13 +341,17 @@ public class HubDescription {
         setContactTimeStamp(false);
     }
     
-    public synchronized void addIndirection(HubDescription indirection, int hops) {
+    public synchronized boolean addIndirection(HubDescription indirection, int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;
             this.indirection = indirection;
             lastLocalUpdate = state.increment();
+            
+            return true;
         } 
+        
+        return false;
     }
     
     public synchronized HubDescription getIndirection() {

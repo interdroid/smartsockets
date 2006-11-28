@@ -1,6 +1,8 @@
 package smartsockets.virtual;
 
 
+import ibis.util.ThreadPool;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 
@@ -31,9 +34,46 @@ import smartsockets.virtual.modules.ConnectModule;
  */
 public class VirtualSocketFactory {
     
+    private static class StatisticsPrinter implements Runnable {
+        
+        private final int timeout;
+        
+        StatisticsPrinter(int timeout) { 
+            
+            if (timeout < 1000) { 
+                timeout *= 1000;
+            }
+            
+            this.timeout = timeout;
+        }
+        
+        public void run() {
+            
+            while (true) { 
+                try { 
+                    Thread.sleep(timeout);
+                } catch (Exception e){ 
+                    // ignore
+                }
+         
+                try { 
+                    for (String s : VirtualSocketFactory.factories.keySet()) {
+                        VirtualSocketFactory.factories.get(s).printStatistics(s);
+                    }
+                } catch (Exception e) {
+                    // TODO: IGNORE ?
+                }
+            }
+        } 
+    }
+    
     private static final Map<String, VirtualSocketFactory> factories = 
        Collections.synchronizedMap(new HashMap<String, VirtualSocketFactory>());
         
+    private static StatisticsPrinter printer = null;
+    
+    private static int printerInterval = -1;
+    
     protected static Logger logger =         
         ibis.util.GetLogger.getLogger("smartsockets.virtual.misc");
             
@@ -673,6 +713,16 @@ public class VirtualSocketFactory {
        // System.err.println("Creating VirtualSocketFactory(Prop, bool)!");
         //new Exception().printStackTrace(System.err);
 
+        if (printerInterval == -1 && printer == null) { 
+            
+            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 0);
+            
+            if (printerInterval > 0) {
+                printer = new StatisticsPrinter(printerInterval);
+                ThreadPool.createNew(printer, "SmartSockets Statistics Printer");
+            }
+        }
+        
         
         if (p == null) { 
             p = Properties.getDefaultProperties();            
@@ -715,9 +765,47 @@ public class VirtualSocketFactory {
         return localVirtualAddressAsString;
     }   
     
-    public void printStatistics() { 
+    public void printStatistics(String prefix) { 
      
-        if (statslogger.isInfoEnabled()) { 
+        if (true) { 
+           
+            if (prefix == null) { 
+                Random r = new Random();
+                prefix = "*" + r.nextInt(2500) + "*" + r.nextInt(2500) + "* ";
+            }
+            
+            System.out.println(prefix + "======= VirtualSocketFactory ======");
+            System.out.println(prefix + "");
+            System.out.println(prefix + "Modules: " + modules.size());
+            
+            for (ConnectModule c : modules) { 
+                System.out.println(prefix + "  -- module: " + c.module);
+                System.out.println(prefix + "  -- succes: " + c.succesfullConnects);
+                System.out.println(prefix + "  --   time: " + c.connectTime);
+                System.out.println(prefix + "  -- failed: " + c.failedConnects);
+                System.out.println(prefix + "  --   time: " + c.failedTime);
+                System.out.println(prefix + "  --skipped: " + c.failedConnects); 
+            }
+            
+            System.out.println(prefix + "");
+            System.out.println(prefix + "Details:");  
+            System.out.println(prefix + "");  
+             
+            for (ConnectModule c : modules) { 
+                c.printStatistics(prefix);
+                System.out.println(prefix + "");
+            }
+            
+            if (serviceLink != null) {
+                serviceLink.printStatistics(prefix);
+                System.out.println(prefix + "");
+            } else { 
+                System.out.println(prefix + "No servicelink available");
+            }    
+            
+            System.out.println(prefix + "===================================");
+            
+        } else if (statslogger.isInfoEnabled()) { 
             statslogger.info("======= VirtualSocketFactory ======");
             statslogger.info("");
             statslogger.info("Modules: " + modules.size());
@@ -736,12 +824,12 @@ public class VirtualSocketFactory {
             statslogger.info("");  
              
             for (ConnectModule c : modules) { 
-                c.printStatistics();
+                c.printStatistics("");
                 statslogger.info("");
             }
             
             if (serviceLink != null) {
-                serviceLink.printStatistics();
+                serviceLink.printStatistics("");
                 statslogger.info("");
             } else { 
                 statslogger.info("No servicelink available");

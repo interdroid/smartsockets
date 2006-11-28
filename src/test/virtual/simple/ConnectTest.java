@@ -146,6 +146,6 @@ public class ConnectTest {
             accept();
         }
         
-        sf.printStatistics();
+        sf.printStatistics("");
     }
 }
