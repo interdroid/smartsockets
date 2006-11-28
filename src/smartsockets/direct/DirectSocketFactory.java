@@ -373,11 +373,11 @@ public class DirectSocketFactory {
  
         } catch (Throwable e) {
 
-          //  if (logger.isInfoEnabled()) {
-                logger.warn("Failed to directly connect to "
+            if (logger.isInfoEnabled()) {
+                logger.info("Failed to directly connect to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort(), e);
-          ///  }
+            }
 
             close(s, out, in);
             return null;
