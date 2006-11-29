@@ -84,7 +84,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 System.arraycopy(coded, index, tmp4, 0, 4);
                 index += 4;
                 
-                port = (coded[index] & 0xFF) | (coded[index++] & 0xFF) << 8;
+                port = (coded[index++] & 0xFF) | (coded[index++] & 0xFF) << 8;
                 tmp[i] = InetAddress.getByAddress(tmp4);
             } else { 
                 // IPv6
