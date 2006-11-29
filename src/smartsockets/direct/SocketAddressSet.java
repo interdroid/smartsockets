@@ -639,7 +639,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         byte [] a = getAddress();
         
         out.writeInt(a.length);
-        out.write(getAddress()); 
+        out.write(getAddress());
+        
+        System.out.println("Writing SocketAddressSet: " + sas + " " + address);
+        
     }
     
     public void readObject(ObjectInputStream in) throws IOException {
@@ -649,6 +652,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         in.readFully(tmp);       
         readFromBytes(tmp);
+        
+        System.out.println("Read SocketAddressSet: " + sas + " " + address);
+        
     }
     
 }
