@@ -634,7 +634,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return equals(target);
     }
     
-    public void writeObject(ObjectOutputStream out) throws IOException {
+    private void writeObject(ObjectOutputStream out) throws IOException {
         
         byte [] a = getAddress();
         
@@ -645,7 +645,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
     }
     
-    public void readObject(ObjectInputStream in) throws IOException {
+    private void readObject(ObjectInputStream in) throws IOException {
         
         int len = in.readInt();
         byte [] tmp = new byte[len];
