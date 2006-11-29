@@ -500,11 +500,11 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);
-                    if (conlogger.isInfoEnabled()) {
-                        conlogger.info("Sucess: " + m.module 
+                  //  if (conlogger.isInfoEnabled()) {
+                        conlogger.warn("Sucess: " + m.module 
                                 + " connected to " + target + " (time = " + 
                                 (end-start) + " ms.)");
-                    }
+                  //  }
                     
                     m.success(end-start);
                     return vs;
