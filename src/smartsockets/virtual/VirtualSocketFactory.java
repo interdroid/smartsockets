@@ -500,11 +500,11 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);
-                    if (conlogger.isInfoEnabled()) {
-                        conlogger.warn("Sucess: " + m.module 
+               //     if (conlogger.isInfoEnabled()) {
+                        conlogger.warn(getVirtualAddressAsString() + ": Sucess " + m.module 
                                 + " connected to " + target + " (time = " + 
                                 (end-start) + " ms.)");
-                    }
+               //     }
                     
                     m.success(end-start);
                     return vs;
@@ -517,10 +517,13 @@ public class VirtualSocketFactory {
                 long end = System.currentTimeMillis();
                                     
                 // Just print and try the next module...
-                if (conlogger.isInfoEnabled()) {
-                    conlogger.info("Failed: not suitable (time = " + (end-start) 
+              //  if (conlogger.isInfoEnabled()) {
+                
+                
+                    conlogger.warn(getVirtualAddressAsString() + ": Failed " 
+                            + m.module + " not suitable (time = " + (end-start) 
                             + " ms.)", e);
-                }
+              //  }
                 
                 m.failed(end-start);
             }            

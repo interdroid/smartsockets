@@ -119,7 +119,7 @@ public class HubRouted extends ConnectModule
             } catch (ConnectException e) {
                 
                 //if (logger.isInfoEnabled()) {
-                    logger.warn("Failed to create virtual connection to " 
+                    logger.warn(parent.getVirtualAddressAsString() + ": Failed to create virtual connection to " 
                             + target + " (connection refused -> giving up)");
                 //}
         
@@ -129,7 +129,7 @@ public class HubRouted extends ConnectModule
             } catch (IOException e) {
               
                 //if (logger.isInfoEnabled()) {
-                    logger.warn("Failed to create virtual connection to " 
+                    logger.warn(parent.getVirtualAddressAsString() + ": Failed to create virtual connection to " 
                             + target + " (giving up)");
                 //}
             

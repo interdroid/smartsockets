@@ -227,6 +227,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             // Connection doesn't exist. It may already be closed by the other 
             // side due to a timeout. Send a close back to inform the sender 
             // that the connection does no longer exist...
+            vclogger.warn("Lost message! " + index + "[" + data.length 
+                    + "] target VC not found!");
+            
             forwardVirtualClose(index);
             return; 
         }
@@ -238,8 +241,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         if (this == vc.mfc1) { 
         
             if (vclogger.isInfoEnabled()) {                                    
-                vclogger.info("forward message " + index + " for 2: "
-                        + vc.index2 + "(" + vc.index1 + ")");
+                vclogger.info("forward message " + index + " "
+                        + vc.index2 + " (" + vc.index1 + ")");
             }
             
             vc.mfc2.forwardVirtualMessage(vc.index2, data);
@@ -247,7 +250,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         } else if (this == vc.mfc2) { 
             
             if (vclogger.isInfoEnabled()) {                                    
-                vclogger.info("forward message " + index + " for 1: " 
+                vclogger.info("forward message " + index + " " 
                         + vc.index1 + " (" + vc.index2 + ")");
             }
             
@@ -255,8 +258,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         } else { 
             // This should never happen!        
-            vclogger.error("Virtual connection error: forwarder not found!", 
-                    new Exception());
+            vclogger.error("Virtual connection error: forwarder not found, " +
+                    "message lost!!!", new Exception());
         }              
     }
     

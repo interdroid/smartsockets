@@ -33,7 +33,7 @@ public class HubRoutedInputStream extends InputStream {
             return (single[0] & 0xff);
         } else {
             //System.err.println("InputStream returning single result: " + result);            
-            return result;
+            return -1;
         }
     }
 

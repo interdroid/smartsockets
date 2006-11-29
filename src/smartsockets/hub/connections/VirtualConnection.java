@@ -57,6 +57,9 @@ public class VirtualConnection {
         
     }
     
+    public String toString() { 
+        return "VC(" + key1 + ", " + index1 + " <-> " + key2 + ", " + index2 + ")";
+    }
     
     /*
     public synchronized boolean close() {
