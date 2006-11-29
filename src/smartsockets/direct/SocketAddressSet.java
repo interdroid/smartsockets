@@ -1,6 +1,9 @@
 package smartsockets.direct;
 
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -29,8 +32,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private static final char IP_PORT_SEPERATOR = '-';
     private static final char ADDRESS_SEPERATOR = '/';
     
-    private final IPAddressSet address;      
-    private final InetSocketAddress [] sas;
+    private transient IPAddressSet address;      
+    private transient InetSocketAddress [] sas;
     
     private transient byte [] codedForm = null;
     private transient String toStringCache = null;
@@ -47,7 +50,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @throws UnknownHostException 
      */    
     public SocketAddressSet(byte [] coded) throws UnknownHostException {
+        readFromBytes(coded);
+    } 
     
+    private void readFromBytes(byte [] coded) throws UnknownHostException {
         byte [] tmp4 = null;
         byte [] tmp16 = null;
         
@@ -623,4 +629,22 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public boolean isCompatible(SocketAddressSet target) {
         return equals(target);
     }
+    
+    public void writeObject(ObjectOutputStream out) throws IOException {
+        
+        byte [] a = getAddress();
+        
+        out.writeInt(a.length);
+        out.write(getAddress()); 
+    }
+    
+    public void readObject(ObjectInputStream in) throws IOException {
+        
+        int len = in.readInt();
+        byte [] tmp = new byte[len];
+        
+        in.readFully(tmp);       
+        readFromBytes(tmp);
+    }
+    
 }
