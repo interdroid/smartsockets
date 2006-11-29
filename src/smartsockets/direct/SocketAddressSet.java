@@ -67,6 +67,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         InetAddress [] tmp = new InetAddress[len];
         
+        System.out.println("Got address with " + len + " entries");
+        
         for (int i=0;i<len;i++) { 
             
             int adlen = coded[index++] & 0xFF;
@@ -665,8 +667,6 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
         
         in.readFully(tmp);       
-        readFromBytes(tmp);
-        
+        readFromBytes(tmp);   
     }
-    
 }
