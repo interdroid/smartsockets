@@ -641,7 +641,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         out.writeInt(a.length);
         out.write(getAddress());
         
-        System.out.println("Writing SocketAddressSet: " + sas + " " + address);
+        System.out.println("Writing SocketAddressSet (" + a.length + "): " + sas + " " + address);
         
     }
     
@@ -650,10 +650,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         int len = in.readInt();
         byte [] tmp = new byte[len];
         
+        System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
+        
         in.readFully(tmp);       
         readFromBytes(tmp);
-        
-        System.out.println("Read SocketAddressSet: " + sas + " " + address);
         
     }
     
