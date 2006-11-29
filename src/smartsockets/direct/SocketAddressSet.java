@@ -351,7 +351,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             
             int index = 0;
             
-            codedForm[index++] = (byte) (len & 0xFF);
+            codedForm[index++] = (byte) (sas.length & 0xFF);
             
             for (InetSocketAddress s : sas) { 
                 byte [] tmp = s.getAddress().getAddress();
