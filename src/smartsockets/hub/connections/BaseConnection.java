@@ -49,4 +49,6 @@ public abstract class BaseConnection implements Runnable {
     
     protected abstract boolean runConnection();    
     protected abstract String getName();           
+    public abstract void printStatistics(); 
+    
 }

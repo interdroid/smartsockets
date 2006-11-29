@@ -30,12 +30,39 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected final VirtualConnections virtualConnections;
     protected final VirtualConnectionIndex index;
     
+    private long connectionsTotal;
+    private long connectionsFailed;
+    
+    private long connectionsReplies;
+    private long connectionsACKs;
+    private long connectionsNACKs;
+    private long connectionsRepliesLost;
+    private long connectionsRepliesError;
+        
+    private long closeTotal;
+    private long closeError;
+    private long closeLost;
+    
+    private long messages;
+    private long messagesError;
+    private long messagesLost; 
+    private long messagesBytes;
+   
+    private long messageACK;
+    private long messageACK_Error;
+    private long messageACKLost; 
+    
+    private final String name; 
+    
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, 
             Map<SocketAddressSet, BaseConnection> connections, 
-            HubList proxies, VirtualConnections vcs, boolean master) {
+            HubList proxies, VirtualConnections vcs, boolean master, 
+            String name) {
        
         super(s, in, out, connections, proxies);
+        
+        this.name = name;
         
         this.virtualConnections = vcs;
         index = new VirtualConnectionIndex(master);
@@ -219,6 +246,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected void processMessage(long index, byte [] data) { 
         
+        messages++;
+        messagesBytes += data.length;
+        
         String key = getUniqueID(index);
         
         VirtualConnection vc = virtualConnections.find(key);
@@ -229,6 +259,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             // that the connection does no longer exist...
             vclogger.warn("Lost message! " + index + "[" + data.length 
                     + "] target VC not found!");
+        
+            messagesLost++;
             
             forwardVirtualClose(index);
             return; 
@@ -256,7 +288,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             
             vc.mfc1.forwardVirtualMessage(vc.index1, data);
         
-        } else { 
+        } else {
+            messagesError++;
+            
             // This should never happen!        
             vclogger.error("Virtual connection error: forwarder not found, " +
                     "message lost!!!", new Exception());
@@ -265,11 +299,16 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected void processMessageACK(long index) { 
         
+        messageACK++;
+        
         String key = getUniqueID(index);
         
         VirtualConnection vc = virtualConnections.find(key);
         
         if (vc == null) { 
+            
+            messageACKLost++;
+            
             // Connection doesn't exist. It may already be closed by the other 
             // side due to a timeout. Send a close back to inform the sender 
             // that the connection does no longer exist...
@@ -298,6 +337,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             vc.mfc1.forwardVirtualMessageAck(vc.index1);
         
         } else { 
+            
+            messageACK_Error++;
+            
             // This should never happen!        
             vclogger.error("Virtual connection error: forwarder not found!", 
                     new Exception());
@@ -306,6 +348,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected void closeVirtualConnection(long index) { 
 
+        closeTotal++;
+        
         String id = getUniqueID(index);
         
         VirtualConnection vc = virtualConnections.remove(id);
@@ -313,6 +357,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         if (vc == null) {
             // Connection doesn't exist. It may already be closed (this can 
             // happen if the other side beat us to closing it).    
+           
+            closeLost++;
+            
             if (vclogger.isInfoEnabled()) {
                 vclogger.info("Virtual connection " + index + " not found!");
             } 
@@ -343,6 +390,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         } else { 
             // This should never happen!        
+            closeError++;
+            
             vclogger.error("Virtual connection error: forwarder not found!", 
                     new Exception());
         }              
@@ -360,6 +409,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected void processVirtualConnect(long index, SocketAddressSet source, 
             SocketAddressSet target, SocketAddressSet targetHub, String info, 
             int timeout) {
+        
+        connectionsTotal++;
         
      //   if (vclogger.isInfoEnabled()) {                            
             vclogger.warn("ANY connection request for: " + index + " to " + 
@@ -381,6 +432,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 forwardVirtualConnectAck(index, "DENIED", 
                         "Connection to hub not allowed");
                 
+                connectionsFailed++;
+                
                 return;
             }
             
@@ -389,6 +442,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 // although it should work ?
                 forwardVirtualConnectAck(index, "DENIED", 
                         "Connection to self not allowed");
+                
+                connectionsFailed++;
                 
                 return;
             }
@@ -454,6 +509,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (mf == null) {
             // Connection setup failed!
+            connectionsFailed++;
+            
             forwardVirtualConnectAck(index, "DENIED", "Unknown host");
             return;
         }             
@@ -480,6 +537,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected void processVirtualConnectACK(long index, String result, 
             String info) { 
         
+        connectionsReplies++;
+        
         if (vclogger.isDebugEnabled()) {
             vclogger.debug("Got create connect ACK: " + index + " " + result 
                     + " " + info);
@@ -493,10 +552,12 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         if (result.equals("OK")) {
             // It's an ACK, so we just retrieve the connection...
             vc = virtualConnections.find(key);
+            connectionsACKs++;
         } else {
             // It's a NACK so we remove the connection, since it's no 
             // longer used after we forwarded the reply
             vc = virtualConnections.remove(key);
+            connectionsNACKs++;
         }
         
        // vclogger.warn("Got vc: " + vc);
@@ -510,6 +571,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 // sender that the connection does no longer exist...
                 forwardVirtualClose(index);
             } 
+            
+            connectionsRepliesLost++;
             
             // else it's a NACK and we're done!   
             return; 
@@ -536,6 +599,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             vc.mfc1.forwardVirtualConnectAck(vc.index1, result, info);
         
         } else { 
+            
+            connectionsRepliesError++;
+            
             // This should never happen!        
             vclogger.error("Virtual connection error: forwarder not found!", 
                     new Exception());
@@ -560,19 +626,54 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 
                 vc.mfc2.forwardVirtualClose(vc.index2);
                 
+                closeTotal++;
+                
             } else if (this == vc.mfc2) { 
                 
                 if (vclogger.isInfoEnabled()) {                                    
                     vclogger.info("forward close for 1: " + vc.index1);
                 }
                 
+                closeTotal++;
+                
                 vc.mfc1.forwardVirtualClose(vc.index1);
             
             } else { 
+                closeError++;;
+                
                 // This should never happen!        
                 vclogger.warn("Virtual connection error: forwarder not found!", 
                         new Exception());
             }              
         }
     }    
+    
+    public void printStatistics() {
+     
+        if (true) { 
+
+            System.out.println(name + "----- Connection statistics -----");
+            System.out.println(name + "");
+            System.out.println(name + "Connections: " + connectionsTotal);
+            System.out.println(name + "   - failed: " + connectionsFailed);
+            System.out.println(name + "   - lost  : " + connectionsRepliesLost);
+            System.out.println(name + "   - error : " + connectionsRepliesError);
+            System.out.println(name + "");            
+            System.out.println(name + "Connection Replies: " + connectionsReplies);
+            System.out.println(name + "        - ACK     : " + connectionsACKs);
+            System.out.println(name + "        - rejected: " + connectionsNACKs);
+            System.out.println(name + "        - lost    : " + connectionsRepliesLost);
+            System.out.println(name + "        - error   : " + connectionsRepliesError);            
+            System.out.println(name + "");
+            System.out.println(name + "Messages: " + messages);
+            System.out.println(name + " - bytes: " + messagesBytes);
+            System.out.println(name + " - lost : " + messagesLost);
+            System.out.println(name + " - error: " + messagesError);            
+            System.out.println(name + "");
+            System.out.println(name + "Messages ACKS: " + messageACK);
+            System.out.println(name + "      - lost : " + messageACKLost);
+            System.out.println(name + "      - error: " + messageACK_Error);   
+        }
+    }
+    
 }

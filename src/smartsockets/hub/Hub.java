@@ -36,6 +36,8 @@ public class Hub extends Thread {
 
     private static final Logger goslogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.gossip");
+
+    private static final long STAT_FREQ = 60000;
     
     private final HubList hubs;    
     private final Map<SocketAddressSet, BaseConnection> connections;
@@ -48,6 +50,8 @@ public class Hub extends Thread {
     private final Discovery discovery;
         
     private final VirtualConnections virtualConnections;
+    
+    private long nextStats;
     
     public Hub(SocketAddressSet [] hubAddresses, TypedProperties p) 
         throws IOException { 
@@ -155,6 +159,8 @@ public class Hub extends Thread {
             goslogger.info("Start Gossiping!");
         }
         
+        nextStats = System.currentTimeMillis() + STAT_FREQ;
+        
         start();
     }
 
@@ -199,6 +205,29 @@ public class Hub extends Thread {
     public SocketAddressSet getHubAddress() { 
         return acceptor.getLocal();
     }
+    
+    private void statistics() { 
+        
+        long now = System.currentTimeMillis();
+        
+        if (now < nextStats) {
+            return;
+        }
+        
+        SocketAddressSet [] cons = connections.keySet().toArray(new SocketAddressSet[0]);
+        
+        for (SocketAddressSet s : cons) { 
+            
+            BaseConnection b = connections.get(s);
+            
+            if (b != null) { 
+               b.printStatistics();
+            }
+        }
+        
+        
+        nextStats = now + STAT_FREQ; 
+    }
         
     public void run() { 
         
@@ -213,6 +242,8 @@ public class Hub extends Thread {
             }
             
             gossip();
+            
+            statistics();
         }        
     }     
 }

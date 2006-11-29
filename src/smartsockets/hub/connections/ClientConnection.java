@@ -42,7 +42,7 @@ public class ClientConnection extends MessageForwardingConnection {
             Map<SocketAddressSet, BaseConnection> connections,
             HubList hubs, VirtualConnections vcs) {
      
-        super(s, in, out, connections, hubs, vcs, false);        
+        super(s, in, out, connections, hubs, vcs, false, "Client(" + clientAddress.toString() + ")");        
      
         this.clientAddress = clientAddress;
         this.clientAddressAsString = clientAddress.toString();

@@ -46,7 +46,7 @@ public class HubConnection extends MessageForwardingConnection {
             HubList proxies, StateCounter state, VirtualConnections vcs, 
             boolean master) {
         
-        super(s, in, out, connections, proxies, vcs, master);
+        super(s, in, out, connections, proxies, vcs, master, "Hub(" + peer.hubAddressAsString + ")");
         
         this.peer = peer;        
         this.state = state;

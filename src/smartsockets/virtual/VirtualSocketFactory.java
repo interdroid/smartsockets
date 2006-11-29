@@ -500,11 +500,11 @@ public class VirtualSocketFactory {
                 // TODO: move to ibis ?                    
                 if (vs != null) {                     
                     vs.setTcpNoDelay(true);
-               //     if (conlogger.isInfoEnabled()) {
-                        conlogger.warn(getVirtualAddressAsString() + ": Sucess " + m.module 
+                    if (conlogger.isInfoEnabled()) {
+                         conlogger.info(getVirtualAddressAsString() + ": Sucess " + m.module 
                                 + " connected to " + target + " (time = " + 
                                 (end-start) + " ms.)");
-               //     }
+                    }
                     
                     m.success(end-start);
                     return vs;
@@ -517,13 +517,11 @@ public class VirtualSocketFactory {
                 long end = System.currentTimeMillis();
                                     
                 // Just print and try the next module...
-              //  if (conlogger.isInfoEnabled()) {
-                
-                
-                    conlogger.warn(getVirtualAddressAsString() + ": Failed " 
+                if (conlogger.isInfoEnabled()) {
+                    conlogger.info(getVirtualAddressAsString() + ": Failed " 
                             + m.module + " not suitable (time = " + (end-start) 
                             + " ms.)");
-              //  }
+                }
                 
                 m.failed(end-start);
             }            
@@ -747,7 +745,7 @@ public class VirtualSocketFactory {
 
         if (printerInterval == -1 && printer == null) { 
             
-            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 60);
+            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 5*60);
             
             if (printerInterval > 0) {
                 printer = new StatisticsPrinter(printerInterval);

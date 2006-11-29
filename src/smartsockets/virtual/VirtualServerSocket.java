@@ -6,6 +6,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Map;
 
 import smartsockets.direct.IPAddressSet;
@@ -51,6 +52,25 @@ public class VirtualServerSocket {
             return true;
         }
 
+        // Try so remove all closed sockets from the queue ...
+        ListIterator<VirtualSocket> itt = incoming.listIterator();
+        
+        while (itt.hasNext()) { 
+            VirtualSocket v = itt.next();
+            
+            if (v.isClosed()) { 
+                itt.remove();
+            }
+        }
+ 
+        // See if there is room now... 
+        if (incoming.size() < backlog) {
+            incoming.addLast(s);
+            notifyAll();
+            return true;
+        }
+
+        // If not, print an error.....
         System.out.println("Incoming connection on port " 
                 + port + " refused: QUEUE FULL (" + incoming.size() + ")");
         

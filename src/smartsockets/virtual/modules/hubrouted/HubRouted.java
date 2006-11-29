@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import smartsockets.direct.SocketAddressSet;
@@ -21,6 +22,8 @@ public class HubRouted extends ConnectModule
     
     private final HashMap<Long, HubRoutedVirtualSocket> sockets = 
         new HashMap<Long, HubRoutedVirtualSocket>();
+    
+    private final HashSet<Long> closedSockets = new HashSet<Long>();
     
     public HubRouted() {
         super("ConnectModule(HubRouted)", true);
@@ -197,15 +200,15 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just closed the socket...
-        //    if (logger.isInfoEnabled()) {             
-                logger.warn("Got disconnect for an unknown socket!: " + vc);
-        //   / }
+        
+            if (!closedSockets.contains(vc)) { 
+                logger.warn("BAD!! Got disconnect for an unknown socket!: " + vc);
+            }
+            
             return;
         } 
         
-       // if (logger.isDebugEnabled()) { 
-        //    logger.warn("Got disconnect for: " + vc);
-      //  }
+        closedSockets.add(vc);
         
         try { 
             s.close();
@@ -220,10 +223,13 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
-           // if (logger.isInfoEnabled()) {             
-                logger.warn("Got message for an unknown socket!: " + vc 
+            if (!closedSockets.contains(vc)) { 
+                logger.warn("BAD!! Got message for an unknown socket!: " + vc 
                         + " size = " + data.length);
-           // }
+            } else { 
+                logger.warn("BAD!! Got message for already closed socket!: " + vc 
+                        + " size = " + data.length);
+            }
             return;
         } 
 
@@ -238,16 +244,12 @@ public class HubRouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
-        //    if (logger.isInfoEnabled()) {             
-                logger.warn("Got close from an unknown socket!: " + vc);
-         //   }
+            if (!closedSockets.contains(vc)) { 
+                logger.warn("BAD!! Got close from an unknown socket!: " + vc);
+            }
             return;
         } 
         
         s.close();
-        
-       // if (logger.isDebugEnabled()) { 
-        //    logger.warn("Got close for: " + vc);
-        //}
     }
 }
