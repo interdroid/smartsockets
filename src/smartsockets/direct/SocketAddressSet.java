@@ -98,6 +98,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         } 
         
         address = IPAddressSet.getFromAddress(tmp);
+  
+        this.codedForm = coded;
+        
+        System.out.println("SocketAddressSet.fromBytes -> " + sas + " " + address);
     }
     
     /**
