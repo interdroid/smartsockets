@@ -554,15 +554,27 @@ public class VirtualSocketFactory {
         }
         
         ConnectModule [] order = clusters.getOrder(target);
-              
-        if (timeout == 0 && order.length > 1) { 
-            timeout = DEFAULT_TIMEOUT;
+    
+        int timeLeft = timeout;
+        int partialTimeout;
+        
+        if (timeout > 0) { 
+            partialTimeout = (timeout / order.length);
+        } else if (order.length > 0)  { 
+            partialTimeout = DEFAULT_TIMEOUT;
+        } else { 
+            partialTimeout = 0;
         }
-                
+        
         // Now try the remaining modules (or all of them if we weren't 
         // using the cache in the first place...)
+        int index = 0;
+        
         for (ConnectModule m : order) { 
-            VirtualSocket vs = createClientSocket(m, target, timeout, prop);
+            
+            long start = System.currentTimeMillis(); 
+            
+            VirtualSocket vs = createClientSocket(m, target, partialTimeout, prop);
             
             if (vs != null) {               
                 if (notSuitableCount > 0) {                    
@@ -571,6 +583,18 @@ public class VirtualSocketFactory {
                     clusters.succes(target, m);
                 }
                 return vs;
+            }
+        
+            if (timeout > 0) {
+                index++;
+                timeLeft -= System.currentTimeMillis() - start;
+               
+                if (timeLeft <= 0) {
+                    // TODO can this happen ?
+                    partialTimeout = 1000;
+                } else {
+                    partialTimeout = (timeLeft / (order.length - index));
+                }
             }
             
             notSuitableCount++;

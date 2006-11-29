@@ -623,7 +623,7 @@ public class DirectSocketFactory {
         }
 
         InetSocketAddress[] sas = target.getSocketAddresses();
-
+        
         if (sas.length == 1) {
             
             long time = System.currentTimeMillis();
