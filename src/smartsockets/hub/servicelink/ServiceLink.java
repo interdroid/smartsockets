@@ -138,7 +138,7 @@ public class ServiceLink implements Runnable {
         return connected;
     }
     
-    private synchronized void waitConnected(int time) throws IOException {
+    public synchronized void waitConnected(int time) throws IOException {
         
         while (!connected) { 
             try { 
@@ -177,6 +177,8 @@ public class ServiceLink implements Runnable {
             // Create a connection to the hub
             hub = factory.createSocket(address, TIMEOUT, null);
             
+            hub.setTcpNoDelay(true);
+            
             out = new DataOutputStream(hub.getOutputStream());
             in = new DataInputStream(hub.getInputStream());
                            
@@ -205,7 +207,7 @@ public class ServiceLink implements Runnable {
             hub.setSoTimeout(0);
             
             setConnected(true);
-        } catch (IOException e) {            
+        } catch (IOException e) {      
             logger.warn("Connection setup to hub at " + address 
                     + " failed: ", e);            
             closeConnectionToHub();
@@ -873,9 +875,8 @@ public class ServiceLink implements Runnable {
         synchronized (connectionACKs) { 
             if (connectionACKs.containsKey(index)) { 
        
-             //   logger.warn("Delivering ACK: " + index);
-                
-                
+            //   logger.warn("Delivering ACK: " + index);
+                                
                 connectionACKs.put(index, result);
                 connectionACKs.notifyAll();
                 return;
@@ -1317,7 +1318,9 @@ public class ServiceLink implements Runnable {
     public void run() {
         
         // Connect to the hub and processes the messages it gets. When the 
-        // connection is lost, it will try to reconnect.         
+        // connection is lost, it will try to reconnect.
+        int sleep = 1000;
+        
         while (true) { 
             do {            
                 try { 
@@ -1328,13 +1331,18 @@ public class ServiceLink implements Runnable {
                     }
                 } catch (IOException e) {
                     try { 
-                        Thread.sleep(1000);
+                        Thread.sleep(sleep);
                     } catch (InterruptedException ie) {
                         // ignore
                     }
                 }
+                
+                if (sleep < 16000) { 
+                    sleep *= 2;
+                }
             } while (!connected);
-            
+     
+            sleep = 1000;
             receiveMessages();
         }
         

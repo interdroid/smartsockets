@@ -32,8 +32,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private final IPAddressSet address;      
     private final InetSocketAddress [] sas;
     
-    private byte [] codedForm = null;
-    private String toStringCache = null;
+    private transient byte [] codedForm = null;
+    private transient String toStringCache = null;
             
     private SocketAddressSet(IPAddressSet as, InetSocketAddress [] sas) {
         this.address = as;
@@ -424,15 +424,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             }
 
             if (!found) { 
-                
-           //    System.err.println("SAS: " + this + " != SAS: " + tmp);
-                
                 return false;
             }
         }
-
-      //  System.err.println("SAS: " + this + " == SAS: " + tmp);
-        
         
         return true;
     }

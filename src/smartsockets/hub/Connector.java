@@ -140,6 +140,8 @@ class Connector extends CommunicationThread {
             s = factory.createSocket(d.hubAddress, 
                     DEFAULT_TIMEOUT, null);
             
+            s.setTcpNoDelay(true);
+            
             out = new DataOutputStream(
                     new BufferedOutputStream(s.getOutputStream()));
             

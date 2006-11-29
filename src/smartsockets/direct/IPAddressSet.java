@@ -367,33 +367,36 @@ public class IPAddressSet implements Serializable {
         if (localHost == null) {         
             // Get all the local addresses, including IPv6 ones, but excluding 
             // loopback addresses, and sort them.
+// TODO: removed ipv6 for now!!
             InetAddress [] addresses = 
-                NetworkUtils.getAllHostAddresses(true, false);    
+                NetworkUtils.getAllHostAddresses(true, true);    
 
+            
             if (addresses == null || addresses.length == 0) {
-		// Oh dear, we don't have a network... Let's see if there is 
+                // Oh dear, we don't have a network... Let's see if there is 
                 // a loopback available...
-		addresses = NetworkUtils.getAllHostAddresses(false, false);    
-	    } 
-                
+// TODO: removed ipv6 for now!!
+                addresses = NetworkUtils.getAllHostAddresses(false, true);    
+            } 
+
             addresses = sort(addresses);
-	                                
+
             DirectSocketFactory.logger.info("Result after sorting: ");
             DirectSocketFactory.logger.info(" " 
                     + NetworkUtils.ipToString(addresses));
-        
+
             if (!NetworkUtils.containsGlobalAddress(addresses)) {
                 DirectSocketFactory.logger.info(" Result does NOT contain " +
-                        "global address!");
+                "global address!");
                 // TODO: Try to find the external address here ?
             } else { 
                 DirectSocketFactory.logger.info(" Result contains global " +
-                        "address!");
+                "address!");
             }
-                
+
             localHost = new IPAddressSet(addresses);
         }
-        
+
         return localHost;            
     }
           

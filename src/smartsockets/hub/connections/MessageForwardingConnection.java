@@ -358,10 +358,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             SocketAddressSet target, SocketAddressSet targetHub, String info, 
             int timeout) {
         
-        if (vclogger.isInfoEnabled()) {                            
-            vclogger.info("ANY connection request for: " + index + " to " + 
+     //   if (vclogger.isInfoEnabled()) {                            
+            vclogger.warn("ANY connection request for: " + index + " to " + 
                     target);
-        }
+      //  }
         
         MessageForwardingConnection mf = null;
         
@@ -392,9 +392,11 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
             mf = (MessageForwardingConnection) tmp;
            
-        } else if (targetHub != null) { 
+        } 
+        
+        if (mf == null && targetHub != null) { 
             
-         //   vclogger.warn("trying to connect via hub: " + targetHub);
+            //   vclogger.warn("trying to connect via hub: " + targetHub);
             
             mf = (MessageForwardingConnection) connections.get(targetHub);        
             

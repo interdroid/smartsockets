@@ -199,6 +199,7 @@ public class VirtualSocketFactory {
         if (address == null) { 
             // properties not set, so no central hub is available
           //  if (logger.isInfoEnabled()) {
+                System.out.println("ServiceLink not created: no hub address available!");
                 logger.warn("ServiceLink not created: no hub address available!");
           //  }
             return;
@@ -206,7 +207,11 @@ public class VirtualSocketFactory {
         
         try { 
             serviceLink = ServiceLink.getServiceLink(address, myAddresses);            
-            hubAddress = serviceLink.getAddress();            
+            hubAddress = serviceLink.getAddress();      
+            
+            if (true) { 
+                serviceLink.waitConnected(10000);
+            }
         } catch (Exception e) {
             logger.warn("Failed to connect service link to hub!", e);
             return;

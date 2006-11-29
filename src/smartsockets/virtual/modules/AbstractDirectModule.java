@@ -4,6 +4,7 @@ package smartsockets.virtual.modules;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.Map;
 
 import smartsockets.direct.DirectSocket;
@@ -47,12 +48,14 @@ public abstract class AbstractDirectModule extends ConnectModule {
         DataOutputStream out = null;
         
         incomingConnections++;
-        
+         
         if (logger.isDebugEnabled()) { 
             logger.debug(module + ": Got incoming connection on " + ds);
         }
            
-        try {         
+        try {
+            ds.setTcpNoDelay(true);
+            
             in = new DataInputStream(ds.getInputStream());
             out = new DataOutputStream(ds.getOutputStream());
            
@@ -101,9 +104,9 @@ public abstract class AbstractDirectModule extends ConnectModule {
                 out.flush();                
                 DirectSocketFactory.close(ds, out, in);
                 
-                if (logger.isDebugEnabled()) { 
-                    logger.debug(module + ": Connection failed, REJECTED!");
-                }
+                //if (logger.isDebugEnabled()) { 
+                    logger.warn(module + ": Connection failed, QUEUE FULL!");
+               // }
                 
                 return;
             }

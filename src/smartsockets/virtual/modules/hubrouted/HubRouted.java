@@ -100,6 +100,7 @@ public class HubRouted extends ConnectModule
                 }
                     
                 try { 
+                    // TODO: fix deadline
                     Thread.sleep(1000);
                 } catch (Exception x) {
                     // ignored
@@ -119,7 +120,7 @@ public class HubRouted extends ConnectModule
                 
                 //if (logger.isInfoEnabled()) {
                     logger.warn("Failed to create virtual connection to " 
-                            + target + " (connection refused -> giving up)", e);
+                            + target + " (connection refused -> giving up)");
                 //}
         
                 // The target refused the connection (this is user error)
@@ -129,7 +130,7 @@ public class HubRouted extends ConnectModule
               
                 //if (logger.isInfoEnabled()) {
                     logger.warn("Failed to create virtual connection to " 
-                            + target + " (giving up)", e);
+                            + target + " (giving up)");
                 //}
             
                 throw new ModuleNotSuitableException("Failed to create virtual " +

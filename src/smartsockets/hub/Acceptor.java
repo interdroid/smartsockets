@@ -138,9 +138,13 @@ public class Acceptor extends CommunicationThread {
                 return false;
             }
 
-            if (cconlogger.isDebugEnabled()) { 
-                cconlogger.debug("Incoming connection from " + src + " accepted"); 
-            } 
+         //   if (cconlogger.isDebugEnabled()) { 
+            //System.out.println("Incoming connection from " + src 
+             //       + " accepted (" + connections.size() + ")");
+            
+                cconlogger.warn("Incoming connection from " + src 
+                        + " accepted (" + connections.size() + ")"); 
+         //   } 
 
             out.write(HubProtocol.SERVICELINK_ACCEPTED);
             out.writeUTF(server.getAddressSet().toString());            
@@ -308,7 +312,9 @@ public class Acceptor extends CommunicationThread {
         hublogger.debug("Waiting for connection...");
         
         try {
-            s = server.accept();                
+            s = server.accept();     
+            s.setTcpNoDelay(true);
+            
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 

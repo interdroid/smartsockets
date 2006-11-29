@@ -172,10 +172,6 @@ public class HubConnection extends MessageForwardingConnection {
         }        
     }
     
-    
-    
-    
-    
     public synchronized void setLastSendState() {
         lastSendState = state.get();
     }

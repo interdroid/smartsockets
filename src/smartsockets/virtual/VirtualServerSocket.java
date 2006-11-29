@@ -51,6 +51,9 @@ public class VirtualServerSocket {
             return true;
         }
 
+        System.out.println("Incoming connection on port " 
+                + port + " refused: QUEUE FULL (" + incoming.size() + ")");
+        
         return false;
     }
     

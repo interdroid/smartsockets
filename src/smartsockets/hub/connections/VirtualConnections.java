@@ -3,6 +3,7 @@ package smartsockets.hub.connections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.apache.log4j.Logger;
 
@@ -65,14 +66,18 @@ public class VirtualConnections {
 
     public synchronized LinkedList<VirtualConnection> removeAll(String prefix) {
         
+        LinkedList<String> remove = new LinkedList<String>();
         LinkedList<VirtualConnection> result = new LinkedList<VirtualConnection>();
         
         for (String key : vcs.keySet()) { 
             
             if (key.startsWith(prefix)) { 
-                result.add(vcs.remove(key));                
+                remove.add(key);                
             }
-            
+        }
+        
+        for (String key : remove) { 
+            result.add(vcs.remove(key));                
         }
         
         return result;
