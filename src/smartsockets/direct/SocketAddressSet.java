@@ -73,6 +73,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             
             int port = 0;
             
+            System.out.println("Got address " + i + " of length " + adlen);
+            
             if (adlen == 4) { 
                 // IPv4
                 if (tmp4 == null) { 
@@ -346,15 +348,14 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             
             int index = 0;
             
-            codedForm[index++] = (byte) len;
+            codedForm[index++] = (byte) (len & 0xFF);
             
             for (InetSocketAddress s : sas) { 
                 byte [] tmp = s.getAddress().getAddress();
-                codedForm[index++] = (byte) tmp.length;
+                codedForm[index++] = (byte) (tmp.length & 0xFF);
                 System.arraycopy(tmp, 0, codedForm, index, tmp.length);                
                 index += tmp.length;
 
-                
                 int port = s.getPort();
                 codedForm[index++] = (byte) (port & 0xFF);
                 codedForm[index++] = (byte) ((port >> 8) & 0xFF);
