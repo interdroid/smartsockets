@@ -651,7 +651,6 @@ public class DirectSocketFactory {
         
         // else, we must try them all, so the connection attempt must return at 
         // some point, even if timeout == 0
-        int partialTimeout = timeout / sas.length;
         
         while (true) {
             for (int i = 0; i < sas.length; i++) {
@@ -659,13 +658,20 @@ public class DirectSocketFactory {
                 long time = System.currentTimeMillis();
                                
                 InetSocketAddress sa = sas[i];
+        
+                int partialTimeout;
+                
+                if (sa.getAddress().isLinkLocalAddress() && timeout > 2000) { 
+                    partialTimeout = 2000;
+                } else { 
+                    partialTimeout = timeout / (sas.length-i);
+                }
+                
                 DirectSocket result = attemptConnection(target, sa, 
                         partialTimeout, localPort, false);
 
                 time = System.currentTimeMillis() -time;
-                
-         
-                                
+                                       
                 if (result != null) {
                     if (logger.isInfoEnabled()) {      
                         logger.info("Direct connection setup took: "  + time + " ms.");

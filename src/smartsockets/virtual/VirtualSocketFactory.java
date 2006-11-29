@@ -522,7 +522,7 @@ public class VirtualSocketFactory {
                 
                     conlogger.warn(getVirtualAddressAsString() + ": Failed " 
                             + m.module + " not suitable (time = " + (end-start) 
-                            + " ms.)", e);
+                            + " ms.)");
               //  }
                 
                 m.failed(end-start);
@@ -723,7 +723,7 @@ public class VirtualSocketFactory {
 
         if (printerInterval == -1 && printer == null) { 
             
-            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 0);
+            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 60);
             
             if (printerInterval > 0) {
                 printer = new StatisticsPrinter(printerInterval);
