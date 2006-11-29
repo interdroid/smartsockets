@@ -55,8 +55,6 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     
     private void readFromBytes(byte [] coded) throws UnknownHostException {
         
-        try { 
-            
         byte [] tmp4 = null;
         byte [] tmp16 = null;
         
@@ -67,15 +65,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         InetAddress [] tmp = new InetAddress[len];
         
-        System.out.println("Got address with " + len + " entries");
-        
         for (int i=0;i<len;i++) { 
             
             int adlen = coded[index++] & 0xFF;
             
             int port = 0;
-            
-            System.out.println("Got address " + i + " of length " + adlen);
             
             if (adlen == 4) { 
                 // IPv4
@@ -106,17 +100,6 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         } 
         
         address = IPAddressSet.getFromAddress(tmp);
-  
-        this.codedForm = coded;
-        
-        System.out.println("SocketAddressSet.fromBytes -> " + sas + " " + address);
-        
-        } catch (Throwable e) { 
-            System.out.println("fromBytes failed!!!");
-            e.printStackTrace();
-            System.exit(1);
-        }
-        
     }
     
     /**
@@ -655,7 +638,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         out.writeInt(a.length);
         out.write(getAddress());
         
-        System.out.println("Writing SocketAddressSet (" + a.length + "): " + sas + " " + address);
+       // System.out.println("Writing SocketAddressSet (" + a.length + "): " + sas + " " + address);
         
     }
     
@@ -664,7 +647,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         int len = in.readInt();
         byte [] tmp = new byte[len];
         
-        System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
+     //   System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
         
         in.readFully(tmp);       
         readFromBytes(tmp);   
