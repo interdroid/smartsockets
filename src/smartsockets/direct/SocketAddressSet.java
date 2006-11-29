@@ -54,6 +54,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     } 
     
     private void readFromBytes(byte [] coded) throws UnknownHostException {
+        
+        try { 
+            
         byte [] tmp4 = null;
         byte [] tmp16 = null;
         
@@ -102,6 +105,13 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         this.codedForm = coded;
         
         System.out.println("SocketAddressSet.fromBytes -> " + sas + " " + address);
+        
+        } catch (Throwable e) { 
+            System.out.println("fromBytes failed!!!");
+            e.printStackTrace();
+            System.exit(1);
+        }
+        
     }
     
     /**
