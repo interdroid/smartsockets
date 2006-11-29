@@ -1,6 +1,8 @@
 package smartsockets.virtual;
 
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 
@@ -170,7 +172,5 @@ public class VirtualSocketAddress implements Serializable {
             int port) throws UnknownHostException {     
         return partialAddress(hostname, port, port);
     }    
-    
-    
     
 }
