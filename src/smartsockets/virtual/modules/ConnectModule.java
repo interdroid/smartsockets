@@ -15,7 +15,10 @@ import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.VirtualSocketFactory;
 
 public abstract class ConnectModule implements CallBack {
-            
+    
+    protected static final Logger statslogger = 
+        ibis.util.GetLogger.getLogger("smartsockets.statistics");
+    
     public final String module;
     
     public final boolean requiresServiceLink;
@@ -27,12 +30,20 @@ public abstract class ConnectModule implements CallBack {
     
     protected String name;
     
-    public long succesfullConnects;
-    public long failedConnects;
-    public long notAllowed;
+    protected long incomingConnections; 
+    protected long acceptedIncomingConnections; 
+    protected long rejectedIncomingConnections; 
+    protected long failedIncomingConnections; 
     
-    public long connectTime;
-    public long failedTime;
+    protected long outgoingConnectionAttempts;
+    protected long acceptedOutgoingConnections; 
+    protected long failedOutgoingConnections; 
+    
+    protected long connectTime;    
+    protected long failedTime;
+    protected long notAllowed;
+    
+    
     
     protected ConnectModule(String name, boolean requiresServiceLink) { 
         this(name, requiresServiceLink, null);
@@ -236,12 +247,10 @@ public abstract class ConnectModule implements CallBack {
     }
     
     public void success(long time) { 
-        succesfullConnects++;
         connectTime += time;
     }
     
     public void failed(long time) { 
-        failedConnects++;
         failedTime += time;
     }
     
@@ -261,6 +270,18 @@ public abstract class ConnectModule implements CallBack {
             Map properties) throws ModuleNotSuitableException, IOException;
 
     public void printStatistics(String prefix) {
-        // default is empty....
-    }        
+        
+        if (statslogger.isInfoEnabled()) {
+              statslogger.info(prefix + " -> " + name +" out: ["
+                      + outgoingConnectionAttempts + " / "  
+                      + acceptedOutgoingConnections + " (" + connectTime + " ms.) / "
+                      + failedOutgoingConnections + " (" + failedTime + " ms.) / " 
+                      + notAllowed + "] in: [" 
+                      + incomingConnections + "/" 
+                      + acceptedIncomingConnections + "/" 
+                      + rejectedIncomingConnections + "/"
+                      + failedIncomingConnections + "]");
+          }        
+    }
+        
 }

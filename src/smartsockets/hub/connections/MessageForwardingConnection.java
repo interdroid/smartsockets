@@ -652,27 +652,27 @@ public abstract class MessageForwardingConnection extends BaseConnection {
      
         if (true) { 
 
-            System.out.println(name + "----- Connection statistics -----");
-            System.out.println(name + "");
-            System.out.println(name + "Connections: " + connectionsTotal);
-            System.out.println(name + "   - failed: " + connectionsFailed);
-            System.out.println(name + "   - lost  : " + connectionsRepliesLost);
-            System.out.println(name + "   - error : " + connectionsRepliesError);
-            System.out.println(name + "");            
-            System.out.println(name + "Connection Replies: " + connectionsReplies);
-            System.out.println(name + "        - ACK     : " + connectionsACKs);
-            System.out.println(name + "        - rejected: " + connectionsNACKs);
-            System.out.println(name + "        - lost    : " + connectionsRepliesLost);
-            System.out.println(name + "        - error   : " + connectionsRepliesError);            
-            System.out.println(name + "");
-            System.out.println(name + "Messages: " + messages);
-            System.out.println(name + " - bytes: " + messagesBytes);
-            System.out.println(name + " - lost : " + messagesLost);
-            System.out.println(name + " - error: " + messagesError);            
-            System.out.println(name + "");
-            System.out.println(name + "Messages ACKS: " + messageACK);
-            System.out.println(name + "      - lost : " + messageACKLost);
-            System.out.println(name + "      - error: " + messageACK_Error);   
+            System.out.println(name + " ----- Connection statistics -----");
+            System.out.println(name + " ");
+            System.out.println(name + " Connections: " + connectionsTotal);
+            System.out.println(name + "    - failed: " + connectionsFailed);
+            System.out.println(name + "    - lost  : " + connectionsRepliesLost);
+            System.out.println(name + "    - error : " + connectionsRepliesError);
+            System.out.println(name + " ");            
+            System.out.println(name + " Replies    : " + connectionsReplies);
+            System.out.println(name + "  - ACK     : " + connectionsACKs);
+            System.out.println(name + "  - rejected: " + connectionsNACKs);
+            System.out.println(name + "  - lost    : " + connectionsRepliesLost);
+            System.out.println(name + "  - error   : " + connectionsRepliesError);            
+            System.out.println(name + " ");
+            System.out.println(name + " Messages   : " + messages);
+            System.out.println(name + "  - bytes   : " + messagesBytes);
+            System.out.println(name + "  - lost    : " + messagesLost);
+            System.out.println(name + "  - error   : " + messagesError);            
+            System.out.println(name + " ");
+            System.out.println(name + " Mess. ACKS : " + messageACK);
+            System.out.println(name + "     - lost : " + messageACKLost);
+            System.out.println(name + "     - error: " + messageACK_Error);   
         }
     }
     

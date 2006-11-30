@@ -1,15 +1,10 @@
 package smartsockets.virtual.modules.direct;
 
-
-
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.log4j.Logger;
 
 import smartsockets.Properties;
 import smartsockets.direct.DirectServerSocket;
@@ -24,9 +19,7 @@ import smartsockets.virtual.modules.AbstractDirectModule;
 
 public class Direct extends AbstractDirectModule {
     
-    private static final Logger statslogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.statistics");
-    
+
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
     protected static final byte CONNECTION_REJECTED = 4;   
@@ -34,8 +27,6 @@ public class Direct extends AbstractDirectModule {
     private DirectSocketFactory direct;   
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
-    
-    private long outgoingConnectionAttempts;
     
     private class AcceptThread extends Thread { 
         
@@ -206,7 +197,6 @@ public class Direct extends AbstractDirectModule {
     void handleAccept() {    
         try { 
             handleAccept(server.accept());    
-            incomingConnections++;
         } catch (IOException e) {
             logger.warn(module + ": Got exception while waiting " +
                     "for connection!", e);
@@ -273,27 +263,4 @@ public class Direct extends AbstractDirectModule {
             DirectSocket s, DataOutputStream out, DataInputStream in) {        
         return new DirectVirtualSocket(a, s, out, in, null); 
     }   
-    
-    public void printStatistics(String prefix) {
-        
-        if (true) { 
-            System.out.println(prefix + "Module: Direct");
-            System.out.println(prefix + " -- attempts: " + outgoingConnectionAttempts);
-            System.out.println(prefix + "    - succes: " + acceptedOutgoingConnections);
-            System.out.println(prefix + "    - failed: " + failedOutgoingConnections);
-            System.out.println(prefix + " -- incoming: " + incomingConnections); 
-            System.out.println(prefix + "    - accept: " + acceptedIncomingConnections);
-            System.out.println(prefix + "    - reject: " + rejectedIncomingConnections);
-            System.out.println(prefix + "    - failed: " + failedIncomingConnections);        
-        } else if (statslogger.isInfoEnabled()) {
-            statslogger.info("Module: Direct");
-            statslogger.info(" -- attempts: " + outgoingConnectionAttempts);
-            statslogger.info("    - succes: " + acceptedOutgoingConnections);
-            statslogger.info("    - failed: " + failedOutgoingConnections);
-            statslogger.info(" -- incoming: " + incomingConnections); 
-            statslogger.info("    - accept: " + acceptedIncomingConnections);
-            statslogger.info("    - reject: " + rejectedIncomingConnections);
-            statslogger.info("    - failed: " + failedIncomingConnections);
-        }        
-    }
 }

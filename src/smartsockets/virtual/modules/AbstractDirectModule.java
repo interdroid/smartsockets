@@ -4,8 +4,9 @@ package smartsockets.virtual.modules;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.SocketException;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
@@ -16,17 +17,10 @@ import smartsockets.virtual.VirtualSocketAddress;
 
 public abstract class AbstractDirectModule extends ConnectModule {
     
+   
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
     protected static final byte CONNECTION_REJECTED = 4;   
-    
-    protected long incomingConnections; 
-    protected long acceptedIncomingConnections; 
-    protected long rejectedIncomingConnections; 
-    protected long failedIncomingConnections; 
-    
-    protected long acceptedOutgoingConnections; 
-    protected long failedOutgoingConnections; 
    
     protected DirectSocketFactory direct;  
     
@@ -158,4 +152,6 @@ public abstract class AbstractDirectModule extends ConnectModule {
         s.setSoTimeout(0);
         return tmp;        
     }
+    
+   
 }

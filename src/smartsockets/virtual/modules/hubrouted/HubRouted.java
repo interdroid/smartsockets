@@ -18,7 +18,7 @@ import smartsockets.virtual.modules.ConnectModule;
 public class HubRouted extends ConnectModule 
     implements VirtualConnectionCallBack {
 
-    private static final int DEFAULT_TIMEOUT = 4000;   
+    private static final int DEFAULT_TIMEOUT = 5000;   
     
     private final HashMap<Long, HubRoutedVirtualSocket> sockets = 
         new HashMap<Long, HubRoutedVirtualSocket>();

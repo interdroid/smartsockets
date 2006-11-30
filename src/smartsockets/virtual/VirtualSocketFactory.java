@@ -155,7 +155,7 @@ public class VirtualSocketFactory {
         }
         
         boolean useDiscovery = 
-            properties.booleanProperty(Properties.DISCOVERY_ALLOWED, true);
+            properties.booleanProperty(Properties.DISCOVERY_ALLOWED, false);
         
         boolean discoveryPreferred = 
             properties.booleanProperty(Properties.DISCOVERY_PREFERRED, false);
@@ -530,10 +530,11 @@ public class VirtualSocketFactory {
             if (conlogger.isInfoEnabled()) {
                 conlogger.warn("Failed: module " + m.module + " may not be used to set " +
                         "up connection to " + target);
-            }            
+            }     
+            
+            m.notAllowed();
         }
         
-        m.notAllowed();
         return null;
     }
     
@@ -556,7 +557,7 @@ public class VirtualSocketFactory {
         int timeLeft = timeout;
         int partialTimeout;
         
-        if (timeout > 0) { 
+        if (timeout > 0 && order.length > 1) { 
             partialTimeout = (timeout / order.length);
         } else if (order.length > 0)  { 
             partialTimeout = DEFAULT_TIMEOUT;
@@ -582,17 +583,18 @@ public class VirtualSocketFactory {
                 }
                 return vs;
             }
-        
+            
             if (timeout > 0) {
-                index++;
                 timeLeft -= System.currentTimeMillis() - start;
                
                 if (timeLeft <= 0) {
                     // TODO can this happen ?
                     partialTimeout = 1000;
                 } else {
-                    partialTimeout = (timeLeft / (order.length - index));
+                    partialTimeout = (timeLeft /  (order.length - index));
                 }
+                
+                index++;
             }
             
             notSuitableCount++;
@@ -745,7 +747,7 @@ public class VirtualSocketFactory {
 
         if (printerInterval == -1 && printer == null) { 
             
-            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 5*60);
+            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 5);
             
             if (printerInterval > 0) {
                 printer = new StatisticsPrinter(printerInterval);
@@ -797,76 +799,19 @@ public class VirtualSocketFactory {
     
     public void printStatistics(String prefix) { 
      
-        if (true) { 
-           
-            if (prefix == null) { 
-                Random r = new Random();
-                prefix = "*" + r.nextInt(2500) + "*" + r.nextInt(2500) + "* ";
-            }
+       if (statslogger.isInfoEnabled()) { 
+            statslogger.info(prefix + " === VirtualSocketFactory (" 
+                    + modules.size() + " / " 
+                    + (serviceLink == null ? "No SL" : "SL") + ") ===");
             
-            System.out.println(prefix + "======= VirtualSocketFactory ======");
-            System.out.println(prefix + "");
-            System.out.println(prefix + "Modules: " + modules.size());
-            
-            for (ConnectModule c : modules) { 
-                System.out.println(prefix + "  -- module: " + c.module);
-                System.out.println(prefix + "  -- succes: " + c.succesfullConnects);
-                System.out.println(prefix + "  --   time: " + c.connectTime);
-                System.out.println(prefix + "  -- failed: " + c.failedConnects);
-                System.out.println(prefix + "  --   time: " + c.failedTime);
-                System.out.println(prefix + "  --skipped: " + c.failedConnects); 
-            }
-            
-            System.out.println(prefix + "");
-            System.out.println(prefix + "Details:");  
-            System.out.println(prefix + "");  
-             
             for (ConnectModule c : modules) { 
                 c.printStatistics(prefix);
-                System.out.println(prefix + "");
             }
             
             if (serviceLink != null) {
                 serviceLink.printStatistics(prefix);
-                System.out.println(prefix + "");
-            } else { 
-                System.out.println(prefix + "No servicelink available");
-            }    
-            
-            System.out.println(prefix + "===================================");
-            
-        } else if (statslogger.isInfoEnabled()) { 
-            statslogger.info("======= VirtualSocketFactory ======");
-            statslogger.info("");
-            statslogger.info("Modules: " + modules.size());
-            
-            for (ConnectModule c : modules) { 
-                statslogger.info("  -- module: " + c.module);
-                statslogger.info("  -- succes: " + c.succesfullConnects);
-                statslogger.info("  --   time: " + c.connectTime);
-                statslogger.info("  -- failed: " + c.failedConnects);
-                statslogger.info("  --   time: " + c.failedTime);
-                statslogger.info("  --skipped: " + c.failedConnects); 
-            }
-            
-            statslogger.info("");
-            statslogger.info("Details:");  
-            statslogger.info("");  
-             
-            for (ConnectModule c : modules) { 
-                c.printStatistics("");
-                statslogger.info("");
-            }
-            
-            if (serviceLink != null) {
-                serviceLink.printStatistics("");
-                statslogger.info("");
-            } else { 
-                statslogger.info("No servicelink available");
-            }    
-            
-            statslogger.info("===================================");
-        }
+            }   
+       }
         
     }
 }

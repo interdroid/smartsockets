@@ -1260,59 +1260,25 @@ public class ServiceLink implements Runnable {
     
     public void printStatistics(String prefix) { 
         
-        if (true) { 
+        if (statslogger.isInfoEnabled()) { 
 
-            System.out.println(prefix + "----- ServiceLink statistics -----");
-            System.out.println(prefix + "");
-            System.out.println(prefix + "Incoming connections: " + incomingConnections);
-            System.out.println(prefix + "          - accepted: " + acceptedIncomingConnections);
-            System.out.println(prefix + "          - rejected: " + rejectedIncomingConnections);
-            System.out.println(prefix + "          - failed  : " + failedIncomingConnections);
-            System.out.println(prefix + "");            
-            System.out.println(prefix + "Outgoing connections: " + outgoingConnections);
-            System.out.println(prefix + "          - accepted: " + acceptedOutgoingConnections);
-            System.out.println(prefix + "          - rejected: " + rejectedOutgoingConnections);
-            System.out.println(prefix + "          - failed  : " + failedOutgoingConnections);
-            System.out.println(prefix + "");
-            System.out.println(prefix + "Incoming messages: ");
-            System.out.println(prefix + "          - data : " + incomingDataMessages);
-            System.out.println(prefix + "          - bytes: " + incomingBytes);
-            System.out.println(prefix + "          - meta : " + incomingMetaMessages);
-            System.out.println(prefix + "");
-            System.out.println(prefix + "Outgoing messages: ");
-            System.out.println(prefix + "          - data : " + outgoingDataMessages);
-            System.out.println(prefix + "          - bytes: " + outgoingBytes);
-            System.out.println(prefix + "          - meta : " + outgoingMetaMessages);            
-            System.out.println(prefix + "");
-            System.out.println(prefix + "----------------------------------");
-        
-        } else if (statslogger.isInfoEnabled()) { 
-            
-            statslogger.info("----- ServiceLink statistics -----");
-            statslogger.info("");
-            statslogger.info("Incoming connections: " + incomingConnections);
-            statslogger.info("          - accepted: " + acceptedIncomingConnections);
-            statslogger.info("          - rejected: " + rejectedIncomingConnections);
-            statslogger.info("          - failed  : " + failedIncomingConnections);
-            statslogger.info("");            
-            statslogger.info("Outgoing connections: " + outgoingConnections);
-            statslogger.info("          - accepted: " + acceptedOutgoingConnections);
-            statslogger.info("          - rejected: " + rejectedOutgoingConnections);
-            statslogger.info("          - failed  : " + failedOutgoingConnections);
-            statslogger.info("");
-            statslogger.info("Incoming messages: ");
-            statslogger.info("          - data : " + incomingDataMessages);
-            statslogger.info("          - bytes: " + incomingBytes);
-            statslogger.info("          - meta : " + incomingMetaMessages);
-            statslogger.info("");
-            statslogger.info("Outgoing messages: ");
-            statslogger.info("          - data : " + outgoingDataMessages);
-            statslogger.info("          - bytes: " + outgoingBytes);
-            statslogger.info("          - meta : " + outgoingMetaMessages);            
-            statslogger.info("");
-            statslogger.info("----------------------------------");
+            statslogger.info("SL In : " + incomingConnections + "/" 
+                    + acceptedIncomingConnections + "/"
+                    + rejectedIncomingConnections + "/"
+                    + failedIncomingConnections + " Msg: "  
+                    + incomingDataMessages  + "/"
+                    + incomingBytes + "/"
+                    + incomingMetaMessages);
+           
+            statslogger.info("SL Out: " + outgoingConnections + "/" 
+                    + acceptedOutgoingConnections + "/"
+                    + rejectedOutgoingConnections + "/"
+                    + failedOutgoingConnections + " Msg: "
+                    + outgoingDataMessages + "/" 
+                    + outgoingBytes + "/"
+                    + outgoingMetaMessages);            
         }
-        
+
     }
     
     public void run() {
