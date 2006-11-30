@@ -747,7 +747,7 @@ public class VirtualSocketFactory {
 
         if (printerInterval == -1 && printer == null) { 
             
-            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 5);
+            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 0);
             
             if (printerInterval > 0) {
                 printer = new StatisticsPrinter(printerInterval);
