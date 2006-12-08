@@ -104,6 +104,8 @@ public class DirectServerSocket {
             InputStream in = null;
             OutputStream out = null;
             
+            System.out.println("Incoming connection");
+             
             try { 
                 s.setSoTimeout(10000);
                 s.setTcpNoDelay(true);
@@ -113,6 +115,9 @@ public class DirectServerSocket {
                 out = s.getOutputStream();
                 out.write(handShake);
                 out.flush();
+            
+                System.out.println("Written handshake");
+                
                 
                 // Next, read the address of the client (no port numbers, just 
                 // addresses. We use this to check if the machine is allowed to 
@@ -133,6 +138,8 @@ public class DirectServerSocket {
                 
                 // Translate into an address
                 IPAddressSet ads = IPAddressSet.getByAddress(tmp);
+                
+                System.out.println("Got address!");
                 
                 // Check if the connection is acceptable and write the 
                 // appropriate opcode into the stream.
