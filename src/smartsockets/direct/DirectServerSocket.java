@@ -45,6 +45,7 @@ public class DirectServerSocket {
         /*super(null);*/
         this.local = local;
         this.serverSocket = ss;
+        this.preference = preference;
         
         byte [] tmp = local.getAddress();
         
