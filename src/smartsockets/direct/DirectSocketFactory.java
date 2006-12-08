@@ -367,6 +367,8 @@ public class DirectSocketFactory {
              
              // Now send our own address to the server side (who may decide to 
              // -NOT- accept us based on this)
+             out = s.getOutputStream();
+      
              out.write(completeAddressInBytes);
              out.flush();
              
@@ -377,7 +379,6 @@ public class DirectSocketFactory {
              // machine...
              SocketAddressSet server = new SocketAddressSet(tmp);
              
-             out = s.getOutputStream();
                           
              if (!server.isCompatible(sas)) { 
                  out.write(DirectServerSocket.WRONG_MACHINE);
