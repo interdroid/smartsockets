@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 //import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
@@ -19,20 +20,20 @@ public class NetworkPreference {
     private static final Logger logger = ibis.util.GetLogger
             .getLogger("smartsockets.network.preference");
 
-  //  private TypedProperties properties;
-    
     private Preference defaultPreference;
-
-    private String networkName;
-
     private Preference networksPreference;
-
-    //private byte[] networkSubnet;
-    //private byte[] networkMask;
-
-    private Network [] include;
-    private Network [] exclude;
     
+    private NetworkSet localNetworks;
+    
+    // The firewall rules for the local network. 
+    private NetworkSet [] firewallAccept;
+    private NetworkSet [] firewallDeny;
+    private boolean firewallDefaultAccept = true;
+    
+    // This an optimization, so that we don't have to perform complicated tests 
+    // if there are no rules in the fist place.
+    private boolean firewallAcceptAll = true;
+  
     /**
      * This constructor retrieves the 'ibis.connect.connect_preference'
      * property, which contains the preferred order in which network addresses
@@ -80,7 +81,7 @@ public class NetworkPreference {
         
         if (logger.isInfoEnabled()) { 
             logger.info("My network is: "
-                    + (networkName != null ? networkName : "N/A"));
+                    + (localNetworks != null ? localNetworks.name : "N/A"));
 
             if (networksPreference == null) {
                 logger.info("No network definitions found.");
@@ -252,9 +253,39 @@ public class NetworkPreference {
         handlePreference(target, property);
     }
 
+    private NetworkSet [] getNetworks(String [] names, LinkedList<NetworkSet> nws) { 
+    
+        ArrayList<NetworkSet> tmp = new ArrayList<NetworkSet>(); 
+        
+        for (String name: names) { 
+            
+            boolean found = false;
+            
+            for (NetworkSet s : nws) {
+                if (name.equals(s.name)) { 
+                    found = true;
+                    tmp.add(s);
+                    break;
+                }
+            }
+            
+            if (!found) { 
+                logger.warn("Network " + name + " removed from firewall "
+                        + "rule, since it is not defined!");
+            }
+        }
+        
+        if (tmp.size() > 0) { 
+            return tmp.toArray(new NetworkSet[0]);
+        } else { 
+            return null;
+        }    
+    }
+    
     // This will overwrite any previous preferences.
     private void handleProperties(IPAddressSet myAddress, TypedProperties p) {
 
+        // Start by getting the default network setting
         String [] def = p.getStringList(Properties.NETWORKS_DEFAULT);
 
         if (def == null || def.length == 0) {
@@ -270,129 +301,149 @@ public class NetworkPreference {
         if (logger.isInfoEnabled()) { 
             logger.info(defaultPreference.toString());
         }
-                
+        
+        // Get a list of all the networks defined in the properties.
         String [] networks = p.getStringList(Properties.NETWORKS_DEFINE, ",");
 
         if (networks == null || networks.length == 0) {
             return;
         }
 
+        // Now go through all of the network definitions. If we find our 
+        // own network here we remember the detailed rules. For the other 
+        // network definitions  we just rememeber the names/ranges in the 
+        // 'other' list, since we may need them afterwards when we are handeling
+        // the firewall rules for out local network.
+        LinkedList<NetworkSet> other = new LinkedList<NetworkSet>();
+        String[][] firewall = new String[3][];
+        
         for (int i=0;i<networks.length;i++) { 
-            handleNetworkDefinition(myAddress, networks[i], p);
+            handleNetworkDefinition(myAddress, networks[i], p, other, firewall);
+        }
+        
+        // If no local network is defined, there cannot be any detailed firewall
+        // rules either...
+        if (localNetworks == null) { 
+            return;
+        }
+        
+        // Now handle any firewall rules specified for our network. We can only
+        // do this after parsing all network definitions, since these rules use 
+        // the 'human-readable' names of the networks.
+    
+        // Check if there is a default rule
+        if (firewall[2] != null && firewall[2].length > 0) { 
+            if (firewall[2][0].equalsIgnoreCase("accept")) { 
+                // nothing to do
+            } else if (firewall[2][0].equalsIgnoreCase("deny")) { 
+                firewallDefaultAccept = false;
+                firewallAcceptAll = false;
+            } else { 
+                logger.warn("Property \"smartsockets.networks.firewall." 
+                        + localNetworks.name + ".default\" has illegal value: " 
+                        + firewall[2][0] + " (must be \"accept\" or \"deny\")");
+            }
+            
+            if (firewall[2].length > 1) { 
+                logger.warn("Property \"smartsockets.networks.firewall." 
+                        + localNetworks.name + ".default\" may only have a " 
+                        + "single value!");
+            }
+        }
+       
+        // Check if there are accept rules, but only if the default is 'deny'
+        if (!firewallDefaultAccept && firewall[0] != null && firewall[0].length > 0) { 
+            firewallAccept = getNetworks(firewall[0], other);
+        }
+        
+        // Check if there are deny rules, but only if the default is "accept"
+        if (firewallDefaultAccept && firewall[1] != null && firewall[1].length > 0) { 
+            firewallDeny = getNetworks(firewall[1], other);
+            firewallAcceptAll = false;
         }
     }
 
     private void handleNetworkDefinition(IPAddressSet myAddress, String name,
-            TypedProperties p) {
+            TypedProperties p, LinkedList<NetworkSet> other, 
+            String[][] firewall) {
 
         boolean myNetwork = false;
 
         String prefix = Properties.NETWORKS_PREFIX + name + ".";
         String [] range = p.getStringList(prefix + Properties.NW_RANGE); 
-        String [] network = p.getStringList(prefix + Properties.NW_PREFERENCE_INSIDE);
+        
+        myNetwork = parseNetworkRange(myAddress, name, range, other);
+        
+        if (logger.isInfoEnabled()) { 
+            logger.info("Network name: " + name + 
+                    (myNetwork ? " (MY NETWORK)": ""));
+            logger.info("  range: " + Arrays.deepToString(range));       
+        }
+        
+        if (!myNetwork) {
+            // We are not interested in other networks' options.
+            return;
+        }
+
+        // We are handling our local network here!
+        
+        // Check for any rules that specify how we should connect inside
+        // our own network.
+        String [] inside = p.getStringList(prefix + Properties.NW_PREFERENCE_INSIDE);
+
+        if (inside.length > 0) {
+
+            if (logger.isInfoEnabled()) { 
+                logger.info("  in network use: " + Arrays.deepToString(inside));
+            }
+
+            networksPreference = new Preference("lan", true);
+            handlePreference(networksPreference, inside);
+        }
+
+        // Check for any rules that specify how to connect to other networks
         String [] def = p.getStringList(prefix + Properties.NW_PREFERENCE_DEFAULT);
 
-        if (parseNetworkRange(myAddress, range)) {
+        if (def.length > 0) {
+
             if (logger.isInfoEnabled()) { 
-                logger.info("Network name: " + name + " (MY NETWORK)");
+                logger.info("  default use: " + Arrays.deepToString(def));
             }
-            networkName = name;
-            myNetwork = true;
-        } else if (logger.isInfoEnabled()) { 
-            logger.info("Network name: " + name);
-        }
 
-        if (logger.isInfoEnabled()) {        
-            logger.info("  range: " + Arrays.deepToString(range));
-        
-            logger.info("  in network use: " + 
-                    (network != null ? Arrays.deepToString(network) : ""));
-        
-            logger.info("  to outside use: " + 
-                    (def != null ? Arrays.deepToString(def) : ""));
-        }
-        
-        if (network != null && myNetwork) {
-            networksPreference = new Preference("lan", true);
-            handlePreference(networksPreference, network);
-        }
-
-        if (def != null && myNetwork) {
             defaultPreference = new Preference("default", false);
             handlePreference(defaultPreference, def);
         }
-    }
+        
+        // Check for any 'firewall' rule that specifies who we should accept.
+        firewall[0] = p.getStringList(prefix + Properties.NW_FIREWALL_ACCEPT);
 
-    /*
-    private boolean inNetwork(InetSocketAddress[] ads, byte[] sub, byte[] mask) {
-
-        for (int i = 0; i < ads.length; i++) {
-            if (NetworkUtils.matchAddress(ads[i].getAddress(), sub, mask)) {
-                return true;
+        if (firewall[0].length > 0) { 
+            if (logger.isInfoEnabled()) { 
+                logger.info("  firewall accept : " + Arrays.deepToString(firewall[0]));
             }
         }
+        
+        // Check for any 'firewall' rule that specifies who we should deny.
+        firewall[1] = p.getStringList(prefix + Properties.NW_FIREWALL_DENY);
 
-        return false;
-    }
-
-    private boolean inNetwork(InetAddress[] ads, byte[] sub, byte[] mask) {
-
-        for (int i = 0; i < ads.length; i++) {
-            if (NetworkUtils.matchAddress(ads[i], sub, mask)) {
-                return true;
+        if (firewall[1].length > 0) { 
+            if (logger.isInfoEnabled()) { 
+                logger.info("  firewall deny   : " + Arrays.deepToString(firewall[1]));
             }
         }
+        
+        // Check for any 'firewall' rule that specifies the 'default'.
+        firewall[2] = p.getStringList(prefix + Properties.NW_FIREWALL_DEFAULT);
 
-        return false;
-    }
-
-    private boolean inNetwork(Network [] nw, InetAddress ad) {
-        
-        for (int i=0;i<nw.length;i++) { 
-            if (nw[i].match(ad)) { 
-                return true;
-            }            
+        if (firewall[2].length > 0) { 
+            if (logger.isInfoEnabled()) { 
+                logger.info("  firewall default: " + Arrays.deepToString(firewall[2]));
+            }
         }
-        
-        return false;
-    }
-*/
-    
-    private boolean inNetwork(Network [] nw, InetAddress [] ads) {
-        
-        for (int i=0;i<nw.length;i++) { 
-            if (nw[i].match(ads)) { 
-                return true;
-            }            
-        }
-        
-        return false;
     }
     
-    private boolean inNetwork(Network [] nw, InetSocketAddress [] ads) {
-        
-        for (int i=0;i<nw.length;i++) { 
-            if (nw[i].match(ads)) { 
-                return true;
-            }            
-        }
-        
-        return false;
-    }
-    
-    //private boolean inNetwork(InetAddress ad) {
-    //    return (inNetwork(include, ad) && !inNetwork(exclude, ad)); 
-   // }
-
-    private boolean inNetwork(InetAddress[] ads) {
-        return (inNetwork(include, ads) && !inNetwork(exclude, ads)); 
-    }
-
-    private boolean inNetwork(InetSocketAddress[] ads) {
-        return (inNetwork(include, ads) && !inNetwork(exclude, ads)); 
-    }
-
-    private boolean parseNetworkRange(IPAddressSet myAddress, String [] range) {
+    private boolean parseNetworkRange(IPAddressSet myAddress, String name, 
+            String [] range, LinkedList <NetworkSet> other) {
 
         ArrayList<Network> inc = new ArrayList<Network>();
         ArrayList<Network> ex = new ArrayList<Network>();
@@ -405,19 +456,18 @@ public class NetworkPreference {
             }            
         }
             
-        Network [] include = inc.toArray(new Network[inc.size()]); 
-        Network [] exclude = ex.toArray(new Network[ex.size()]); 
+        NetworkSet nws = new NetworkSet(name, 
+                inc.toArray(new Network[inc.size()]),  
+                ex.toArray(new Network[ex.size()])); 
         
         InetAddress [] ads = myAddress.getAddresses();
         
-        if ((include.length == 0 || inNetwork(include, ads)) && 
-                (exclude.length == 0 || !inNetwork(exclude, ads))) { 
-            // this seems to be my network!
-            this.include = include;
-            this.exclude = exclude;
+        if (nws.inNetwork(ads)) { 
+            localNetworks = nws;
             return true;
         }
         
+        other.addLast(nws);
         return false;
     }
         
@@ -465,7 +515,10 @@ public class NetworkPreference {
         } else {
             // IPMASK format
             // TODO: implement
-            sub = mask = null;
+            sub = mask = null;   
+        
+        return (inNetwork(include, ads) && !inNetwork(exclude, ads)); 
+
         }
 
         if (inNetwork(myAddress.getAddresses(), sub, mask)) {
@@ -491,7 +544,7 @@ public class NetworkPreference {
     public InetSocketAddress[] sort(InetSocketAddress[] ads, boolean inPlace) {
 
         // Check if the target belongs to our network.
-        if (networksPreference != null && inNetwork(ads)) { 
+        if (networksPreference != null && localNetworks.inNetwork(ads)) { 
             return networksPreference.sort(ads, inPlace);
         }
 
@@ -501,15 +554,73 @@ public class NetworkPreference {
     public InetAddress[] sort(InetAddress[] ads, boolean inPlace) {
 
         // Check if the target belongs to our network.
-        if (networksPreference != null && inNetwork(ads)) { 
+        if (networksPreference != null && localNetworks.inNetwork(ads)) { 
             return networksPreference.sort(ads, inPlace);
         }
 
         return defaultPreference.sort(ads, inPlace);
     }
 
+    public boolean accept(InetAddress[] ads) { 
+        
+        // Accept if there are no rules or if the source is local
+        if (firewallAcceptAll || localNetworks.inNetwork(ads)) { 
+            return true;
+        }
+    
+        if (firewallDefaultAccept) {     
+            // If the default is accept, we only have to check the 'deny' list
+            for (NetworkSet nws : firewallDeny) { 
+                if (nws.inNetwork(ads)) { 
+                    return false;
+                }
+            }
+            
+            return true;
+        } else { 
+            // If the default is deny, we only have to check the 'accept' list
+            for (NetworkSet nws : firewallAccept) { 
+                if (nws.inNetwork(ads)) { 
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+    }
+    
+    public boolean accept(InetSocketAddress[] ads) { 
+        // Check if we are allowed to accept an incoming connection from this 
+        // machine. 
+        // Accept if there are no rules or if the source is local
+        if (firewallAcceptAll || localNetworks.inNetwork(ads)) { 
+            return true;
+        }
+    
+        if (firewallDefaultAccept) {     
+            // If the default is accept, we only have to check the 'deny' list
+            for (NetworkSet nws : firewallDeny) { 
+                if (nws.inNetwork(ads)) { 
+                    return false;
+                }
+            }
+            
+            return true;
+        } else { 
+            // If the default is deny, we only have to check the 'accept' list
+            for (NetworkSet nws : firewallAccept) { 
+                if (nws.inNetwork(ads)) { 
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+    }
+  
+    
     public String getNetworkName() {
-        return networkName;
+        return (localNetworks == null ? null : localNetworks.name);
     }
 
     public String toString() {

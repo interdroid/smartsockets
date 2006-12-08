@@ -217,11 +217,14 @@ public class VirtualClusters {
                 
         // Get the cluster of the target machine
         String c = target.cluster();
-        
-        
+               
         if (c == null || c.length() == 0) {
             // Handle 'orphan' nodes seperately...
-            return getSingleNodeOrder(target);
+            ConnectModule[] result = getSingleNodeOrder(target);
+        
+            if (result == null) { 
+                return defaultOrder.order;
+            }
         }
         
         if (logger.isInfoEnabled()) {

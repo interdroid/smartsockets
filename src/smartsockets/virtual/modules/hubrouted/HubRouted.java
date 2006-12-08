@@ -47,7 +47,7 @@ public class HubRouted extends ConnectModule
 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
             Map properties) throws ModuleNotSuitableException, IOException {
-
+        
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module...
         SocketAddressSet tm = target.machine(); 
@@ -84,10 +84,17 @@ public class HubRouted extends ConnectModule
             }
             
             try { 
+                outgoingConnectionAttempts++;
+                
                 serviceLink.createVirtualConnection(index, tm, hub, 
                         Integer.toString(target.port()), timeout);
             
+                acceptedOutgoingConnections++;
+                
             } catch (UnknownHostException e) {
+                
+                failedOutgoingConnections++;
+                
                 synchronized (this) {
                     sockets.remove(index);
                 }
@@ -121,6 +128,8 @@ public class HubRouted extends ConnectModule
                 
             } catch (ConnectException e) {
                 
+                failedIncomingConnections++;
+                
                 //if (logger.isInfoEnabled()) {
                     logger.warn(parent.getVirtualAddressAsString() + ": Failed to create virtual connection to " 
                             + target + " (connection refused -> giving up)");
@@ -131,6 +140,8 @@ public class HubRouted extends ConnectModule
                 
             } catch (IOException e) {
               
+                failedOutgoingConnections++;
+                
                 //if (logger.isInfoEnabled()) {
                     logger.warn(parent.getVirtualAddressAsString() + ": Failed to create virtual connection to " 
                             + target + " (giving up)");
@@ -154,10 +165,13 @@ public class HubRouted extends ConnectModule
         // Incoming connect, find the port...        
         int port = -1;
         
+        incomingConnections++;
+        
         try {         
             port = Integer.parseInt(info);
         } catch (Exception e) {
             logger.info("Failed to parse port of incoming connection!");
+            failedIncomingConnections++;
             return false;
         }
         
@@ -166,6 +180,7 @@ public class HubRouted extends ConnectModule
         
         if (ss == null) { 
             logger.info("Failed find VirtualServerSocket(" + port + ")");
+            rejectedIncomingConnections++;
             return false;
         }
         
@@ -179,7 +194,7 @@ public class HubRouted extends ConnectModule
                 serviceLink, index, null);
         
         if (!ss.incomingConnection(s)) { 
-            
+            rejectedIncomingConnections++;
            // logger.warn("Connection " + index + " was refused by ss!");
             // not accepted 
             return false;            
@@ -190,6 +205,8 @@ public class HubRouted extends ConnectModule
         synchronized (this) {
             sockets.put(index, s);
         }
+        
+        acceptedIncomingConnections++;
         
         return true;
     }

@@ -38,7 +38,11 @@ public class Properties {
     public static final String NW_PREFERENCE_PREFIX  = "preference.";    
     public static final String NW_PREFERENCE_INSIDE  = NW_PREFERENCE_PREFIX + "internal";
     public static final String NW_PREFERENCE_DEFAULT = NW_PREFERENCE_PREFIX + "default";
-        
+    public static final String NW_FIREWALL_PREFIX    = "firewall.";
+    public static final String NW_FIREWALL_ACCEPT    = NW_FIREWALL_PREFIX + "accept";
+    public static final String NW_FIREWALL_DENY      = NW_FIREWALL_PREFIX + "deny";
+    public static final String NW_FIREWALL_DEFAULT   = NW_FIREWALL_PREFIX + "default";
+    
     public static final String EXTERNAL_PREFIX      = NETWORKS_PREFIX + "external.";
     public static final String UPNP                 = EXTERNAL_PREFIX + "upnp";
     public static final String UPNP_PORT_FORWARDING = EXTERNAL_PREFIX + "upnp.forwarding";        

@@ -1262,7 +1262,7 @@ public class ServiceLink implements Runnable {
         
         if (statslogger.isInfoEnabled()) { 
 
-            statslogger.info("SL In : " + incomingConnections + "/" 
+            statslogger.info(prefix + " SL In : " + incomingConnections + "/" 
                     + acceptedIncomingConnections + "/"
                     + rejectedIncomingConnections + "/"
                     + failedIncomingConnections + " Msg: "  
@@ -1270,7 +1270,7 @@ public class ServiceLink implements Runnable {
                     + incomingBytes + "/"
                     + incomingMetaMessages);
            
-            statslogger.info("SL Out: " + outgoingConnections + "/" 
+            statslogger.info(prefix + " SL Out: " + outgoingConnections + "/" 
                     + acceptedOutgoingConnections + "/"
                     + rejectedOutgoingConnections + "/"
                     + failedOutgoingConnections + " Msg: "
