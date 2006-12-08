@@ -371,7 +371,7 @@ public class DirectSocketFactory {
              out.write(completeAddressInBytes);
              out.flush();
              
-             System.out.println("Written address " + completeAddressInBytes.length);
+             System.out.println("Written address " + (completeAddressInBytes.length-2));
              
              
              // Create the address and see if we are to talking to the right 

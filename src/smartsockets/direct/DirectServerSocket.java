@@ -116,7 +116,7 @@ public class DirectServerSocket {
                 out.write(handShake);
                 out.flush();
             
-                System.out.println("Written handshake " + handShake.length);
+                System.out.println("Written handshake " + (handShake.length-2));
                 
                 
                 // Next, read the address of the client (no port numbers, just 
