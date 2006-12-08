@@ -116,7 +116,7 @@ public class DirectServerSocket {
                 out.write(handShake);
                 out.flush();
             
-                System.out.println("Written handshake");
+                System.out.println("Written handshake " + handShake.length);
                 
                 
                 // Next, read the address of the client (no port numbers, just 
@@ -126,6 +126,9 @@ public class DirectServerSocket {
               
                 // Read the size of the machines address blob
                 int size = (in.read() & 0xFF) | ((in.read() & 0xFF) << 8); 
+                
+                System.out.println("Got address size: " + size);
+                
                 
                 // Read the bytes....
                 byte [] tmp = new byte[size];

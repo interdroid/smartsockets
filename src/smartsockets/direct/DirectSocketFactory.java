@@ -343,11 +343,15 @@ public class DirectSocketFactory {
              s.setSoTimeout(5000);
              s.setTcpNoDelay(true);
             
+             System.out.println("Created connection");
+             
              // Check if we are talking to the right machine...
              in = s.getInputStream();
              
              // Read the size of the machines address
              int size = (in.read() & 0xFF) | ((in.read() & 0xFF) << 8); 
+     
+             System.out.println("Got handshake size: " + size);
              
              // Read the address itself....
              byte [] tmp = new byte[size];
@@ -357,11 +361,17 @@ public class DirectSocketFactory {
              while (off < size) { 
                  off += in.read(tmp, off, size-off);
              }
+            
+             System.out.println("Got handshake ");
+             
              
              // Now send our own address to the server side (who may decide to 
              // -NOT- accept us based on this)
              out.write(completeAddressInBytes);
              out.flush();
+             
+             System.out.println("Written address " + completeAddressInBytes.length);
+             
              
              // Create the address and see if we are to talking to the right 
              // machine...
