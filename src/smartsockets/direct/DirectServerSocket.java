@@ -1,6 +1,5 @@
 package smartsockets.direct;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,6 +12,7 @@ public class DirectServerSocket {
 
     protected static final byte ACCEPT = 47;
     protected static final byte WRONG_MACHINE = 48;
+    protected static final byte FIREWALL_REFUSED = 49;
     
     // The real server socket
     private final ServerSocket serverSocket; 
@@ -36,9 +36,12 @@ public class DirectServerSocket {
     // network.     
     private SocketAddressSet external;
     
+    // The network preferences that this server socket should take into account.
+    private NetworkPreference preference;
     
-    
-    protected DirectServerSocket(SocketAddressSet local, ServerSocket ss) {
+    protected DirectServerSocket(SocketAddressSet local, ServerSocket ss, 
+            NetworkPreference preference) {
+        
         /*super(null);*/
         this.local = local;
         this.serverSocket = ss;
@@ -105,22 +108,60 @@ public class DirectServerSocket {
                 s.setSoTimeout(10000);
                 s.setTcpNoDelay(true);
                 
+                // Start by sending our address to the client. It will check for
+                // itself if we are the expected target machine.
                 out = s.getOutputStream();
                 out.write(handShake);
                 out.flush();
-                    
+                
+                // Next, read the address of the client (no port numbers, just 
+                // addresses. We use this to check if the machine is allowed to 
+                // connected to us according to the firewall rules.
                 in = s.getInputStream();
               
-                // Very unfortunate that this is synchronous.....   
-                int opcode = in.read();
+                // Read the size of the machines address blob
+                int size = (in.read() & 0xFF) | ((in.read() & 0xFF) << 8); 
                 
-                if (opcode == ACCEPT) { 
-                    s.setSoTimeout(0);
-                    result = new DirectSocket(s, in, out);
-                } else { 
-                     doClose(s, in, out);
+                // Read the bytes....
+                byte [] tmp = new byte[size];
+                
+                int off = 0; 
+                
+                while (off < size) { 
+                    off += in.read(tmp, off, size-off);
                 }
                 
+                // Translate into an address
+                IPAddressSet ads = IPAddressSet.getByAddress(tmp);
+                
+                // Check if the connection is acceptable and write the 
+                // appropriate opcode into the stream.
+                if (preference.accept(ads.addresses)) { 
+                        
+                    out.write(ACCEPT);
+                    out.flush();       
+    
+                    // Very unfortunate that this is synchronous.....   
+                    int opcode = in.read();
+                    
+                    if (opcode == ACCEPT) { 
+                        s.setSoTimeout(0);
+                        result = new DirectSocket(s, in, out);
+                    } else { 
+                         doClose(s, in, out);
+                    }     
+                    
+                } else { 
+                  
+                    out.write(FIREWALL_REFUSED);
+                    out.flush();
+                    
+                    // TODO: do we really need to wait for incoming byte here ??
+                    in.read();
+                    doClose(s, in, out);
+                }
+                
+                               
             } catch (IOException ie) { 
                 doClose(s, in, out);
             }

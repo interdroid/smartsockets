@@ -58,9 +58,10 @@ public class DirectSocketFactory {
     private final int outputBufferSize;
         
     private IPAddressSet completeAddress;
-
+    private byte [] completeAddressInBytes;
+    
     private IPAddressSet localAddress;
-
+    
     private InetAddress externalNATAddress;
 
     private boolean haveOnlyLocalAddresses = false;
@@ -80,6 +81,7 @@ public class DirectSocketFactory {
         ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
         
         if (!ALLOW_UPNP) { 
+            
             ALLOW_UPNP_PORT_FORWARDING = false;
         } else { 
             ALLOW_UPNP_PORT_FORWARDING = 
@@ -100,14 +102,14 @@ public class DirectSocketFactory {
 
             if (externalNATAddress != null) {
                 completeAddress = IPAddressSet.merge(localAddress,
-                        externalNATAddress);
+                        externalNATAddress);    
             } else {
                 completeAddress = localAddress;
             }
         } else {
             completeAddress = localAddress;
         }
-
+        
         portRange = new PortRange(p);
 
         preference = NetworkPreference.getPreference(completeAddress, p);
@@ -116,8 +118,24 @@ public class DirectSocketFactory {
         if (logger.isDebugEnabled()) {
             logger.info("Local address: " + completeAddress);
         }
+        
+        completeAddressInBytes = toBytes(completeAddress);
     }
 
+    private byte [] toBytes(IPAddressSet address) { 
+        
+        byte [] tmp = address.getAddress();
+        
+        byte [] result = new byte[2+tmp.length];
+        
+        System.arraycopy(tmp, 0, result, 2, tmp.length);
+        
+        result[0] = (byte) (tmp.length & 0xFF);
+        result[1] = (byte) ((tmp.length >> 8) & 0xFF);
+        
+        return result;
+    }
+    
     private void applyMask(byte[] mask, byte[] address) {
         for (int i = 0; i < address.length; i++) {
             address[i] &= mask[i];
@@ -321,6 +339,7 @@ public class DirectSocketFactory {
 
         //    logger.warn("Connect succeeded!");
             
+             // TODO: optimized this ??? Its getting more and more complicated!!
              s.setSoTimeout(5000);
              s.setTcpNoDelay(true);
             
@@ -338,6 +357,11 @@ public class DirectSocketFactory {
              while (off < size) { 
                  off += in.read(tmp, off, size-off);
              }
+             
+             // Now send our own address to the server side (who may decide to 
+             // -NOT- accept us based on this)
+             out.write(completeAddressInBytes);
+             out.flush();
              
              // Create the address and see if we are to talking to the right 
              // machine...
@@ -362,8 +386,25 @@ public class DirectSocketFactory {
                  return null;
              }
              
-             out.write(DirectServerSocket.ACCEPT);
+             out.write(DirectServerSocket.ACCEPT);             
              out.flush();
+             
+             int opcode = in.read();
+             
+             if (opcode != DirectServerSocket.ACCEPT) { 
+                 close(s, out, in);     
+ 
+                 logger.warn("Got connecting to wrong machine: "  
+                         + sas.toString()
+                         + " using network "
+                         + NetworkUtils.ipToString(target.getAddress()) + ":"
+                         + target.getPort() 
+                         + " got me a connection to " 
+                         + server.toString() 
+                         + " will retry!");
+                 
+                 return null;
+             }
              
              s.setSoTimeout(0);
                 
@@ -402,7 +443,7 @@ public class DirectSocketFactory {
         SocketAddressSet local = 
             new SocketAddressSet(completeAddress, ss.getLocalPort());
 
-        DirectServerSocket smss = new DirectServerSocket(local, ss);
+        DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
         
         if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port

@@ -33,6 +33,7 @@ public class Properties {
     
     public static final String NETWORKS_DEFAULT = NETWORKS_PREFIX + "default";
     public static final String NETWORKS_DEFINE  = NETWORKS_PREFIX + "define";
+  //  public static final String NETWORKS_MEMBER  = NETWORKS_PREFIX + "member";
     
     public static final String NW_RANGE              = "range";    
     public static final String NW_PREFERENCE_PREFIX  = "preference.";    
