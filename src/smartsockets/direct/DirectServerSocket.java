@@ -141,7 +141,7 @@ public class DirectServerSocket {
                 
                 // Check if the connection is acceptable and write the 
                 // appropriate opcode into the stream.
-                if (preference.accept(ads.addresses)) { 
+                if (preference.accept(ads.addresses, null)) { 
                     out.write(ACCEPT);
                     out.flush();       
     

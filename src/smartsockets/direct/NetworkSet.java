@@ -10,6 +10,12 @@ public class NetworkSet {
     private final Network [] include;
     private final Network [] exclude;
     
+    public NetworkSet(String name) { 
+        this.name = name;
+        this.include = null;
+        this.exclude = null;
+    }
+        
     public NetworkSet(String name, Network [] include, Network [] exclude) {
         
         this.name = name;
@@ -27,12 +33,34 @@ public class NetworkSet {
         }
     }
      
-    public boolean inNetwork(InetAddress[] ads) {
+    public boolean inNetwork(InetAddress[] ads, String name) {
+        
+        if (name != null) {
+            // If there is a name if should match!
+            return this.name.equals(name);  
+        }
+        
+        if (include == null && exclude == null) {
+            // This network only has a name, so we're not in it!
+            return false;
+        }
+        
         return ((include == null || inNetwork(include, ads)) && 
                 (exclude == null ||!inNetwork(exclude, ads))); 
     }
 
-    public boolean inNetwork(InetSocketAddress[] ads) {
+    public boolean inNetwork(InetSocketAddress[] ads, String name) {
+       
+        if (name != null) {
+            // If there is a name if should match!
+            return this.name.equals(name);  
+        }
+        
+        if (include == null && exclude == null) {
+            // This network only has a name, so we're not in it!
+            return false;
+        }
+        
         return ((include == null || inNetwork(include, ads)) && 
                 (exclude == null ||!inNetwork(exclude, ads))); 
     }

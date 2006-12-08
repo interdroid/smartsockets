@@ -115,8 +115,9 @@ public class DirectSocketFactory {
         preference = NetworkPreference.getPreference(completeAddress, p);
         preference.sort(completeAddress.getAddresses(), true);
 
-        if (logger.isDebugEnabled()) {
+        if (logger.isInfoEnabled()) {
             logger.info("Local address: " + completeAddress);
+            logger.info("Local network: " + preference.getNetworkName());
         }
         
         completeAddressInBytes = toBytes(completeAddress);
