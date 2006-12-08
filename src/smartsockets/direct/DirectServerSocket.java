@@ -151,7 +151,9 @@ public class DirectServerSocket {
                 // Check if the connection is acceptable and write the 
                 // appropriate opcode into the stream.
                 if (preference.accept(ads.addresses)) { 
-                        
+                    
+                    System.out.println("Firewall accepted");
+              
                     out.write(ACCEPT);
                     out.flush();       
     

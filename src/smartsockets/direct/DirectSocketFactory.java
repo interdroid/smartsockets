@@ -405,15 +405,7 @@ public class DirectSocketFactory {
              if (opcode != DirectServerSocket.ACCEPT) { 
                  close(s, out, in);     
  
-                 logger.warn("Got connecting to wrong machine: "  
-                         + sas.toString()
-                         + " using network "
-                         + NetworkUtils.ipToString(target.getAddress()) + ":"
-                         + target.getPort() 
-                         + " got me a connection to " 
-                         + server.toString() 
-                         + " will retry!");
-                 
+                 logger.warn("Target refused out connection!");
                  return null;
              }
              
