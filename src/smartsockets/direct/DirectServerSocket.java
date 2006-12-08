@@ -152,6 +152,8 @@ public class DirectServerSocket {
                     }     
                     
                 } else { 
+                    
+                    System.out.println("Firewall refused connection from: " + ads);
                   
                     out.write(FIREWALL_REFUSED);
                     out.flush();
