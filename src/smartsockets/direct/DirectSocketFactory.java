@@ -127,11 +127,10 @@ public class DirectSocketFactory {
         byte [] tmp = address.getAddress();
         
         byte [] result = new byte[2+tmp.length];
-        
-        System.arraycopy(tmp, 0, result, 2, tmp.length);
-        
+            
         result[0] = (byte) (tmp.length & 0xFF);
         result[1] = (byte) ((tmp.length >> 8) & 0xFF);
+        System.arraycopy(tmp, 0, result, 2, tmp.length);
         
         return result;
     }

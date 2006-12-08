@@ -49,8 +49,11 @@ public class DirectServerSocket {
         byte [] tmp = local.getAddress();
         
         handShake = new byte[2 + tmp.length];
+       
         handShake[0] = (byte) (tmp.length & 0xFF);
         handShake[1] = (byte) ((tmp.length >> 8) & 0xFF);
+        System.arraycopy(tmp, 0, handShake, 2, tmp.length);
+         
     }
                
     /**
