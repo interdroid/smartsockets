@@ -125,7 +125,8 @@ public class DirectServerSocket {
                 in = s.getInputStream();
               
                 // Read the size of the machines address blob
-                int size = (in.read() & 0xFF) | ((in.read() & 0xFF) << 8); 
+                int size = (in.read() & 0xFF);
+                size |= ((in.read() & 0xFF) << 8); 
                 
                 System.out.println("Got address size: " + size);
                 

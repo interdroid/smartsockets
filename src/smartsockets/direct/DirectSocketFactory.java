@@ -349,7 +349,8 @@ public class DirectSocketFactory {
              in = s.getInputStream();
              
              // Read the size of the machines address
-             int size = (in.read() & 0xFF) | ((in.read() & 0xFF) << 8); 
+             int size = (in.read() & 0xFF);
+             size |= ((in.read() & 0xFF) << 8); 
      
              System.out.println("Got handshake size: " + size);
              
