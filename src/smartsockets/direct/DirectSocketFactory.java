@@ -342,7 +342,6 @@ public class DirectSocketFactory {
              s.setSoTimeout(5000);
              s.setTcpNoDelay(true);
             
-             System.out.println("Created connection");
              
              // Check if we are talking to the right machine...
              in = s.getInputStream();
@@ -350,8 +349,6 @@ public class DirectSocketFactory {
              // Read the size of the machines address
              int size = (in.read() & 0xFF);
              size |= ((in.read() & 0xFF) << 8); 
-     
-             System.out.println("Got handshake size: " + size);
              
              // Read the address itself....
              byte [] tmp = new byte[size];
@@ -361,9 +358,6 @@ public class DirectSocketFactory {
              while (off < size) { 
                  off += in.read(tmp, off, size-off);
              }
-            
-             System.out.println("Got handshake ");
-             
              
              // Now send our own address to the server side (who may decide to 
              // -NOT- accept us based on this)
@@ -371,28 +365,26 @@ public class DirectSocketFactory {
       
              out.write(completeAddressInBytes);
              out.flush();
-             
-             System.out.println("Written address " + (completeAddressInBytes.length-2));
-             
-             
+                     
              // Create the address and see if we are to talking to the right 
              // machine...
              SocketAddressSet server = new SocketAddressSet(tmp);
-             
                           
              if (!server.isCompatible(sas)) { 
                  out.write(DirectServerSocket.WRONG_MACHINE);
                  out.flush();
                  close(s, out, in);     
- 
-                 logger.warn("Got connecting to wrong machine: "  
-                         + sas.toString()
-                         + " using network "
-                         + NetworkUtils.ipToString(target.getAddress()) + ":"
-                         + target.getPort() 
-                         + " got me a connection to " 
-                         + server.toString() 
-                         + " will retry!");
+
+                 if (logger.isInfoEnabled()) { 
+                     logger.info("Got connecting to wrong machine: "  
+                             + sas.toString()
+                             + " using network "
+                             + NetworkUtils.ipToString(target.getAddress()) + ":"
+                             + target.getPort() 
+                             + " got me a connection to " 
+                             + server.toString() 
+                             + " will retry!");
+                 }
                  
                  return null;
              }
@@ -405,7 +397,12 @@ public class DirectSocketFactory {
              if (opcode != DirectServerSocket.ACCEPT) { 
                  close(s, out, in);     
  
-                 logger.warn("Target refused out connection!");
+                 if (logger.isInfoEnabled()) { 
+                     logger.info("Target " 
+                             + NetworkUtils.ipToString(target.getAddress()) + ":"
+                             + target.getPort() + " refused our connection!");
+                 }
+                 
                  return null;
              }
              

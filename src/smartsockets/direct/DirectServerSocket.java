@@ -107,8 +107,6 @@ public class DirectServerSocket {
             
             InputStream in = null;
             OutputStream out = null;
-            
-            System.out.println("Incoming connection");
              
             try { 
                 s.setSoTimeout(10000);
@@ -119,9 +117,6 @@ public class DirectServerSocket {
                 out = s.getOutputStream();
                 out.write(handShake);
                 out.flush();
-            
-                System.out.println("Written handshake " + (handShake.length-2));
-                
                 
                 // Next, read the address of the client (no port numbers, just 
                 // addresses. We use this to check if the machine is allowed to 
@@ -131,10 +126,7 @@ public class DirectServerSocket {
                 // Read the size of the machines address blob
                 int size = (in.read() & 0xFF);
                 size |= ((in.read() & 0xFF) << 8); 
-                
-                System.out.println("Got address size: " + size);
-                
-                
+                     
                 // Read the bytes....
                 byte [] tmp = new byte[size];
                 
@@ -147,14 +139,9 @@ public class DirectServerSocket {
                 // Translate into an address
                 IPAddressSet ads = IPAddressSet.getByAddress(tmp);
                 
-                System.out.println("Got address!");
-                
                 // Check if the connection is acceptable and write the 
                 // appropriate opcode into the stream.
                 if (preference.accept(ads.addresses)) { 
-                    
-                    System.out.println("Firewall accepted");
-              
                     out.write(ACCEPT);
                     out.flush();       
     
@@ -169,9 +156,6 @@ public class DirectServerSocket {
                     }     
                     
                 } else { 
-                    
-                    System.out.println("Firewall refused connection from: " + ads);
-                  
                     out.write(FIREWALL_REFUSED);
                     out.flush();
                     
@@ -179,8 +163,7 @@ public class DirectServerSocket {
                     in.read();
                     doClose(s, in, out);
                 }
-                
-                               
+                           
             } catch (IOException ie) { 
                 doClose(s, in, out);
             }
