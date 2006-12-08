@@ -10,4 +10,23 @@ do
     CP=$CP:$i
 done
 
-java -cp $CP smartsockets.viz.SmartsocketsViz $@
+NORMAL=
+SPECIAL=
+
+while [ $# -gt 0 ]
+do
+
+        HEADER=`echo $1 | head --bytes=2`
+
+        case "$HEADER" in
+        -D)
+                SPECIAL="$SPECIAL $1"
+                ;;
+        *)
+                NORMAL="$NORMAL $1"
+                ;;
+        esac
+        shift
+done
+
+java -cp $CP $SPECIAL smartsockets.viz.SmartsocketsViz $NORMAL

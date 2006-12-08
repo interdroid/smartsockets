@@ -135,13 +135,31 @@ public class DirectServerSocket {
                 while (off < size) { 
                     off += in.read(tmp, off, size-off);
                 }
+
+                // If available, read the network name of the client
+                size = (in.read() & 0xFF);
+                size |= ((in.read() & 0xFF) << 8); 
+               
+                String name = null;
+                
+                if (size > 0) { 
+                    byte [] tmp2 = new byte[size];
+                    
+                    int off2 = 0; 
+                    
+                    while (off2 < size) { 
+                        off2 += in.read(tmp2, off2, size-off2);
+                    }     
+                    
+                    name = new String(tmp2);
+                }
                 
                 // Translate into an address
                 IPAddressSet ads = IPAddressSet.getByAddress(tmp);
                 
                 // Check if the connection is acceptable and write the 
                 // appropriate opcode into the stream.
-                if (preference.accept(ads.addresses, null)) { 
+                if (preference.accept(ads.addresses, name)) { 
                     out.write(ACCEPT);
                     out.flush();       
     

@@ -58,7 +58,9 @@ public class DirectSocketFactory {
     private final int outputBufferSize;
         
     private IPAddressSet completeAddress;
+    
     private byte [] completeAddressInBytes;
+    private byte [] networkNameInBytes;
     
     private IPAddressSet localAddress;
     
@@ -117,10 +119,13 @@ public class DirectSocketFactory {
 
         if (logger.isInfoEnabled()) {
             logger.info("Local address: " + completeAddress);
-            logger.info("Local network: " + preference.getNetworkName());
+            logger.info("Local network: " + 
+                 (preference == null ? "<none>" : preference.getNetworkName()));
         }
         
         completeAddressInBytes = toBytes(completeAddress);
+        networkNameInBytes = toBytes(
+                preference == null ? null : preference.getNetworkName());
     }
 
     private byte [] toBytes(IPAddressSet address) { 
@@ -135,6 +140,19 @@ public class DirectSocketFactory {
         
         return result;
     }
+
+    private byte [] toBytes(String s) { 
+        
+        byte [] tmp = (s == null ? new byte[0] : s.getBytes());
+        byte [] result = new byte[2+tmp.length];
+            
+        result[0] = (byte) (tmp.length & 0xFF);
+        result[1] = (byte) ((tmp.length >> 8) & 0xFF);
+        System.arraycopy(tmp, 0, result, 2, tmp.length);
+        
+        return result;
+    }
+
     
     private void applyMask(byte[] mask, byte[] address) {
         for (int i = 0; i < address.length; i++) {
@@ -365,6 +383,7 @@ public class DirectSocketFactory {
              out = s.getOutputStream();
       
              out.write(completeAddressInBytes);
+             out.write(networkNameInBytes);
              out.flush();
                      
              // Create the address and see if we are to talking to the right 
