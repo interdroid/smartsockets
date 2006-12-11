@@ -39,7 +39,7 @@
 
     </target>
     
-    <target name="build" depends="prepare,compile,jar">
+    <target name="build" depends="clean,prepare,compile,jar">
     </target>
 	
     <!-- remove all generated code -->
