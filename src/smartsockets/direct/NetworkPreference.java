@@ -609,6 +609,10 @@ public class NetworkPreference {
     
         if (firewallDefaultAccept) {     
             // If the default is accept, we only have to check the 'deny' list
+            if (firewallDeny == null) { 
+                return true;
+            }
+            
             for (NetworkSet nws : firewallDeny) { 
                 if (nws.inNetwork(ads, name)) { 
                     return false;
@@ -618,6 +622,10 @@ public class NetworkPreference {
             return true;
         } else { 
             // If the default is deny, we only have to check the 'accept' list
+            if (firewallAccept == null) { 
+                return false;
+            }
+            
             for (NetworkSet nws : firewallAccept) { 
                 if (nws.inNetwork(ads, name)) { 
                     return true;
