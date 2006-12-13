@@ -642,7 +642,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         for (int i=0;i<other.addresses.length;i++) { 
          
-            if (i < otherPorts.length && otherPorts[i] <= 0 || otherPorts[i] > 65535) { 
+            if (i < otherPorts.length && (otherPorts[i] <= 0 || otherPorts[i] > 65535)) { 
                 throw new IllegalArgumentException("Port["+i+"] out of range");
             }
          
