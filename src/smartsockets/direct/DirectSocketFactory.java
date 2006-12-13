@@ -398,10 +398,10 @@ public class DirectSocketFactory {
              out.flush();
                      
              // Create the address and see if we are to talking to the right 
-             // machine...
+             // process....
              SocketAddressSet server = SocketAddressSet.getByAddress(tmp);
                           
-             if (!server.isCompatible(sas)) { 
+             if (!server.sameProcess(sas)) { 
                  out.write(DirectServerSocket.WRONG_MACHINE);
                  out.flush();
                  close(s, out, in);     

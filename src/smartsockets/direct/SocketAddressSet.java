@@ -457,14 +457,30 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     }
 
     private static boolean compatible(InetSocketAddress [] a, 
-            InetSocketAddress [] b) { 
+            InetSocketAddress [] b, boolean comparePorts) { 
+        
+        // If either (or both) is null we give up!
+        if (a == null || a.length == 0) { 
+            return false;
+        }
+        
+        if (b == null || b.length == 0) { 
+            return false;
+        }
         
         // If there is at least on shared address, we assume that they are the 
         // same. 
         for (InetSocketAddress a1 : a) { 
             for (InetSocketAddress a2 : b) { 
-                if (a1.equals(a2)) { 
-                    return true;
+                
+                if (comparePorts) { 
+                    if (a1.getAddress().equals(a2.getAddress())) { 
+                        return true;
+                    }
+                } else { 
+                    if (a1.equals(a2)) { 
+                        return true;
+                    }
                 }
             }
         }
@@ -494,8 +510,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param target
      * @return
      */
-    
-    public boolean isCompatible(SocketAddressSet other) {
+    private boolean isCompatible(SocketAddressSet other, boolean comparePorts) {
         
         // Check pointers
         if (this == other) { 
@@ -507,19 +522,18 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             // This machine has global addresses....
             if (other.global != null && other.global.length > 0) {
                 // ... so does the other machine. So 'global' -MUST- overlap. 
-                return compatible(global, other.global);
+                return compatible(global, other.global, comparePorts);
             } else { 
                 // ... but the other only has local addresses. 
                 // So 'local' -MUST- overlap  
-                return compatible(local, other.local);     
+                return compatible(local, other.local, comparePorts);     
             }
 
         } else if (other.global != null && other.global.length > 0) {
            
             // The other machine has global addresses, but this one only has 
             // local, so local -MUST- overlap.
-            return compatible(local, other.local);
-        
+            return compatible(local, other.local, comparePorts);
         }
         
         // Neither machine has global addresses, so lets check the external 
@@ -527,13 +541,13 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         if (external != null && external.length > 0 && other.external != null 
                 && other.external.length > 0) {
             
-            if (!compatible(external, other.external)) { 
+            if (!compatible(external, other.external, comparePorts)) { 
                 return false;
             }
         }
             
         // ... 'local' -MUST- alway overlap regardless of the external ones.
-        return compatible(local, other.local);     
+        return compatible(local, other.local, comparePorts);     
     }
     
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -1033,7 +1047,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @return if both SocketAddressSets represent the same machine
      */
     public boolean sameMachine(SocketAddressSet other) { 
-        return getAddressSet().equals(other.getAddressSet());
+        return isCompatible(other, false);
     }
 
     /**
@@ -1044,7 +1058,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @return if both SocketAddressSets represent the same process
      */
     public boolean sameProcess(SocketAddressSet other) {
-        return equals(other);
+        return isCompatible(other, true);
     }
     
     /**
@@ -1052,7 +1066,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * 
      */
     public static boolean sameMachine(SocketAddressSet a, SocketAddressSet b) { 
-        return a.sameMachine(b);
+        return a.sameProcess(b);
     }
 
     /**
