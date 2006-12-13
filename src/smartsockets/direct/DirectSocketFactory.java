@@ -364,8 +364,13 @@ public class DirectSocketFactory {
 
          //   logger.warn("Attempting connect   ....");
             
+               System.out.println("Connect to: " + target);
+                
              s.connect(target, timeout);
 
+               System.out.println("Got connection!");
+             
+             
         //    logger.warn("Connect succeeded!");
             
              // TODO: optimized this ??? Its getting more and more complicated!!

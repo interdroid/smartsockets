@@ -13,8 +13,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
-import com.sun.org.apache.bcel.internal.generic.ALOAD;
-
 import smartsockets.util.NetworkUtils;
 
 /**
@@ -53,9 +51,13 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         this.external = (external == null ? new InetSocketAddress[0] : external);
         this.global = (global == null ? new InetSocketAddress[0] : global);
         this.local = (local == null ? new InetSocketAddress[0] : local);
-        
+        /*
         System.err.println("Created SocketAddressSet: " + toString());
         
+        System.err.println("  external: " + Arrays.deepToString(this.external));
+        System.err.println("  global  : " + Arrays.deepToString(this.global));
+        System.err.println("  local   : " + Arrays.deepToString(this.local));
+        */
         
     }
     
@@ -772,6 +774,43 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public static SocketAddressSet getByAddress(String addressPort) 
         throws UnknownHostException { 
 
+        SocketAddressSet result = parseOldStyleAddress(addressPort);
+        
+        if (result != null) { 
+            return result;
+        }
+        
+        return parseNewStyleAddress(addressPort);
+    }
+    
+    private static SocketAddressSet parseOldStyleAddress(String addressPort) {
+    
+        int lastIndex = addressPort.lastIndexOf(':');
+        
+        if (lastIndex == -1) { 
+            return null;
+        }
+        
+        int port = -1;
+        
+        try { 
+            port = Integer.parseInt(addressPort.substring(lastIndex+1));
+        } catch (Exception e) {
+            // It's not a valid 'old' style address....
+            return null;
+        }
+        
+        try { 
+            return SocketAddressSet.getByAddress(new InetSocketAddress(
+                    addressPort.substring(0, lastIndex), port));
+        } catch (Exception e) {
+            // It's not a valid 'old' style address....
+            return null;
+        }
+    }
+    
+    private static SocketAddressSet parseNewStyleAddress(String addressPort) {
+        
         StringTokenizer st = new StringTokenizer(addressPort, "{}/-", true);
         
         boolean readingExternal = false;
