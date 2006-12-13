@@ -234,8 +234,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         if (allAddressesCache == null) {
             
             int len = (global == null ? 0 : global.length);
-            len = (external == null ? 0 : external.length);
-            len = (local == null ? 0 : local.length);
+            len += (external == null ? 0 : external.length);
+            len += (local == null ? 0 : local.length);
                 
             allAddressesCache = new InetSocketAddress[len];
             
