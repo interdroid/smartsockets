@@ -43,7 +43,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private transient byte [] codedForm = null;
     private transient String toStringCache = null;
     private transient IPAddressSet addressCache;      
-       
+    private transient InetSocketAddress [] allAddressesCache;
+        
     private SocketAddressSet(InetSocketAddress [] external, 
             InetSocketAddress [] global, InetSocketAddress [] local) {
         
@@ -183,7 +184,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         if (codedForm == null) {
             
             // First calculate the size of the address n bytes....
-            int len = 0;
+            int len = 3;
           
             len += codedSize(external);
             len += codedSize(global);
@@ -226,8 +227,37 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @return the addresses.
      */
     public InetSocketAddress [] getSocketAddresses() { 
-        //return sas;
-        return null;
+        
+        // TODO: this is a VERY BAD IDEA!!! ONLY USED IN CONNECTION SETUP!! 
+        // MUST REPLACE WITH SOMETHING SMARTER ASAP!!
+        
+        if (allAddressesCache == null) {
+            
+            int len = (global == null ? 0 : global.length);
+            len = (external == null ? 0 : external.length);
+            len = (local == null ? 0 : local.length);
+                
+            allAddressesCache = new InetSocketAddress[len];
+            
+            int index = 0;
+            
+            if (global != null && global.length > 0) { 
+                System.arraycopy(global, 0, allAddressesCache, index, global.length);
+                index += global.length;
+            }
+            
+            if (external != null && external.length > 0) { 
+                System.arraycopy(external, 0, allAddressesCache, index, external.length);
+                index += external.length;
+            }
+           
+            if (local != null && local.length > 0) { 
+                System.arraycopy(local, 0, allAddressesCache, index, local.length);
+                index += local.length;
+            }   
+        }
+        
+        return allAddressesCache;
     } 
         
     /* (non-Javadoc)
