@@ -283,7 +283,7 @@ public class HubConnection extends MessageForwardingConnection {
         
     private void readProxy() throws IOException {
                 
-        SocketAddressSet address = new SocketAddressSet(in.readUTF());        
+        SocketAddressSet address = SocketAddressSet.getByAddress(in.readUTF());        
         String name = in.readUTF();
         
         HubDescription tmp = knownHubs.add(address);
@@ -405,14 +405,14 @@ public class HubConnection extends MessageForwardingConnection {
         
         if (targetHub.length() > 0) { 
             try { 
-                hub = new SocketAddressSet(targetHub);
+                hub = SocketAddressSet.getByAddress(targetHub);
             } catch (Exception e) {
                 // ignore -- not critical
             }
         }
         
-        processVirtualConnect(index, new SocketAddressSet(source), 
-                new SocketAddressSet(target), hub, info, timeout);
+        processVirtualConnect(index, SocketAddressSet.getByAddress(source), 
+                SocketAddressSet.getByAddress(target), hub, info, timeout);
     }
          
     private void handleCloseVirtual() throws IOException { 

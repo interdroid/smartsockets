@@ -19,7 +19,7 @@ public class MultiplexTest1 {
         
         if (args.length > 0) {             
             for  (int i=0;i<args.length;i++) { 
-                SocketAddressSet target = new SocketAddressSet(args[i]);
+                SocketAddressSet target = SocketAddressSet.getByAddress(args[i]);
                 DirectSocket s = sf.createSocket(target, 0, null);
                 
                 System.out.println("Created connection to " + target);

@@ -72,7 +72,7 @@ public class Acceptor extends CommunicationThread {
             DataInputStream in, DataOutputStream out) throws IOException { 
 
         String otherAsString = in.readUTF();        
-        SocketAddressSet addr = new SocketAddressSet(otherAsString); 
+        SocketAddressSet addr = SocketAddressSet.getByAddress(otherAsString); 
 
         if (hconlogger.isDebugEnabled()) { 
             hconlogger.debug("Got connection from " + addr);
@@ -124,7 +124,7 @@ public class Acceptor extends CommunicationThread {
         try { 
             String src = in.readUTF();
             
-            SocketAddressSet srcAddr = new SocketAddressSet(src);
+            SocketAddressSet srcAddr = SocketAddressSet.getByAddress(src);
                         
             if (connections.get(srcAddr) != null) { 
                 if (cconlogger.isDebugEnabled()) { 

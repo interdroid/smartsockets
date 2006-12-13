@@ -197,7 +197,7 @@ public class ServiceLink implements Runnable {
         
             // If the connection is accepted, the hub will give us its full 
             // address (since the user supplied one may be a partial).  
-            hubAddress = new SocketAddressSet(in.readUTF());
+            hubAddress = SocketAddressSet.getByAddress(in.readUTF());
             
             if (logger.isInfoEnabled()) { 
                 logger.info("Hub at " + address + " accepted connection, " +
@@ -232,11 +232,11 @@ public class ServiceLink implements Runnable {
         if (target == null) { 
             logger.warn("ServiceLink: Callback " + targetModule + " not found");                                       
         } else { 
-            SocketAddressSet src = new SocketAddressSet(source);
+            SocketAddressSet src = SocketAddressSet.getByAddress(source);
             SocketAddressSet srcHub = null;
             
             if (sourceHub != null && sourceHub.length() > 0) { 
-                srcHub = new SocketAddressSet(sourceHub);
+                srcHub = SocketAddressSet.getByAddress(sourceHub);
             }
             
             target.gotMessage(src, srcHub, opcode, message);
@@ -328,7 +328,7 @@ public class ServiceLink implements Runnable {
 
         credits.put(index, new Credits(DEFAULT_CREDITS));
         
-        if (!cb.connect(new SocketAddressSet(source), info, timeout, index)) {            
+        if (!cb.connect(SocketAddressSet.getByAddress(source), info, timeout, index)) {            
             // Connection refused....            
             try {
                 credits.remove(index);

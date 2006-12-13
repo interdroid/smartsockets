@@ -148,7 +148,7 @@ public class VirtualSocketFactory {
         
         if (tmp != null) {
             try { 
-                address = new SocketAddressSet(tmp);
+                address = SocketAddressSet.getByAddress(tmp);
             } catch (Exception e) { 
                 logger.warn("Failed to understand proxy address: " + tmp, e);                                
             }           
@@ -179,7 +179,7 @@ public class VirtualSocketFactory {
             
             if (result != null) { 
                 try { 
-                    address = new SocketAddressSet(result);
+                    address = SocketAddressSet.getByAddress(result);
                     if (logger.isInfoEnabled()) {
                         logger.info("Hub found at: " + address.toString());
                     }

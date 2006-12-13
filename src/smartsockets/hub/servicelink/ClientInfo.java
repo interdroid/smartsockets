@@ -40,7 +40,7 @@ public class ClientInfo {
             }
 
             clientAddress = 
-                new SocketAddressSet(clientAsString.substring(0, index));
+                SocketAddressSet.getByAddress(clientAsString.substring(0, index));
         
             clientAsString = clientAsString.substring(index+2);
                         

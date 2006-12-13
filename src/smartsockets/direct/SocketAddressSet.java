@@ -10,9 +10,10 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.StringTokenizer;
 
 import smartsockets.util.NetworkUtils;
-
 
 /**
  * This class implements a multi-SocketAddress (any number of IP addresses 
@@ -31,16 +32,24 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     
     private static final char IP_PORT_SEPERATOR = '-';
     private static final char ADDRESS_SEPERATOR = '/';
+    private static final char EXTERNAL_START = '{';
+    private static final char EXTERNAL_END = '}';
     
-    private transient IPAddressSet address;      
-    private transient InetSocketAddress [] sas;
+    private transient InetSocketAddress [] external;
+    private transient InetSocketAddress [] global;
+    private transient InetSocketAddress [] local;
     
+    private transient int hashCode = 0;
     private transient byte [] codedForm = null;
     private transient String toStringCache = null;
-            
-    private SocketAddressSet(IPAddressSet as, InetSocketAddress [] sas) {
-        this.address = as;
-        this.sas = sas;        
+    private transient IPAddressSet addressCache;      
+       
+    private SocketAddressSet(InetSocketAddress [] external, 
+            InetSocketAddress [] global, InetSocketAddress [] local) {
+        
+        this.external = (external == null ? new InetSocketAddress[0] : external);
+        this.global = (global == null ? new InetSocketAddress[0] : global);
+        this.local = (local == null ? new InetSocketAddress[0] : local);
     }
     
     /**
@@ -49,25 +58,31 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param address The InetSocketAddress.
      * @throws UnknownHostException 
      */    
-    public SocketAddressSet(byte [] coded) throws UnknownHostException {
-        readFromBytes(coded);
+    private SocketAddressSet(byte [] coded) throws UnknownHostException {
+        decode(coded);
     } 
+
+    private void decode(byte [] coded) throws UnknownHostException { 
+        int index = 0;
+
+        external = new InetSocketAddress[coded[index++] & 0xFF];
+        global = new InetSocketAddress[coded[index++] & 0xFF];
+        local = new InetSocketAddress[coded[index++] & 0xFF];
+
+        index = decode(external, coded, index);
+        index = decode(global, coded, index);
+        index = decode(local, coded, index);
+    }    
     
-    private void readFromBytes(byte [] coded) throws UnknownHostException {
+    private static int decode(InetSocketAddress[] target, byte [] src, int index) 
+        throws UnknownHostException { 
         
         byte [] tmp4 = null;
         byte [] tmp16 = null;
         
-        int index = 0;
-        int len = coded[index++] & 0xFF;
-        
-        sas = new InetSocketAddress[len];
-        
-        InetAddress [] tmp = new InetAddress[len];
-        
-        for (int i=0;i<len;i++) { 
+        for (int i=0;i<target.length;i++) { 
             
-            int adlen = coded[index++] & 0xFF;
+            int adlen = src[index++] & 0xFF;
             
             int port = 0;
             
@@ -77,92 +92,472 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     tmp4 = new byte[4];
                 }
                 
-                System.arraycopy(coded, index, tmp4, 0, 4);
+                System.arraycopy(src, index, tmp4, 0, 4);
                 index += 4;
                 
-                port = (coded[index++] & 0xFF);
-                port |= (coded[index++] & 0xFF) << 8;
-                tmp[i] = InetAddress.getByAddress(tmp4);
+                port = (src[index++] & 0xFF);
+                port |= (src[index++] & 0xFF) << 8;
+                
+                target[i] = new InetSocketAddress(
+                        InetAddress.getByAddress(tmp4), port);
             } else { 
                 // IPv6
                 if (tmp16 == null) { 
                     tmp16 = new byte[16];
                 }
                 
-                System.arraycopy(coded, index, tmp16, 0, 16);
+                System.arraycopy(src, index, tmp16, 0, 16);
                 index += 16;
                 
-                port = (coded[index++] &0xFF) | (coded[index++] & 0xFF) << 8;
-                tmp[i] = InetAddress.getByAddress(tmp16);
+                port = (src[index++] & 0xFF);
+                port |= (src[index++] & 0xFF) << 8;
+                
+                target[i] = new InetSocketAddress(
+                        InetAddress.getByAddress(tmp16), port);
             }
             
-            sas[i] = new InetSocketAddress(tmp[i], port);
+            //address = IPAddressSet.getFromAddress(tmp);
+       
         } 
+    
+        return index;
+    }
+    
         
-        address = IPAddressSet.getFromAddress(tmp);
+    private static int codedSize(InetSocketAddress [] a) { 
+        if (a == null || a.length == 0) { 
+            return 0;
+        }
+        
+        int len = 0;
+        
+        for (InetSocketAddress sa : a) { 
+            if (sa.getAddress() instanceof Inet4Address) {
+                len += 1 + 4 + 2;                    
+            } else { 
+                len += 1 + 16 + 2;
+            }
+        }
+        
+        return len;
+    }
+    
+    private static int encode(InetSocketAddress [] a, byte [] dest, int index) { 
+
+        if (a == null || a.length == 0) { 
+            return index;
+        }
+        
+        for (InetSocketAddress sa : a) { 
+            byte [] tmp = sa.getAddress().getAddress();
+            dest[index++] = (byte) (tmp.length & 0xFF);
+            System.arraycopy(tmp, 0, dest, index, tmp.length);                
+            index += tmp.length;
+
+            int port = sa.getPort();
+            dest[index++] = (byte) (port & 0xFF);
+            dest[index++] = (byte) ((port >> 8) & 0xFF);
+        }
+       
+        return index;
+    }
+    
+    
+    /**
+     * This method returns the byte coded form of the SocketAddressSet.
+     * 
+     * This representation is either contains the 6 or 18 bytes of a single 
+     * InetAddress + port number, or it has the form (EGL (SAP)*) where:
+     *  
+     *   E is the number of external addresses that follow (1 byte)
+     *   G is the number of global addresses that follow (1 byte)
+     *   L is the number of local addresses that follow (1 byte)
+     *   S is the length of the next address (1 byte)
+     *   A is an InetAddress (4 or 16 bytes)
+     *   P is the port number (2 bytes)
+     * 
+     * @return the bytes
+     */    
+    public byte [] getAddress() { 
+        
+        if (codedForm == null) {
+            
+            // First calculate the size of the address n bytes....
+            int len = 0;
+          
+            len += codedSize(external);
+            len += codedSize(global);
+            len += codedSize(local);
+                
+            // Now encode it...
+            codedForm = new byte[len];
+            
+            int index = 0;
+            
+            codedForm[index++] = (byte) ((external == null ? 0 : external.length) & 0xFF);
+            codedForm[index++] = (byte) ((global == null ? 0 : global.length) & 0xFF);
+            codedForm[index++] = (byte) ((local == null ? 0 : local.length) & 0xFF);
+            
+            index = encode(external, codedForm, index);
+            index = encode(global, codedForm, index);
+            index = encode(local, codedForm, index);
+        }
+        
+        return codedForm;
     }
     
     /**
-     * Construct a new IbisSocketAddress, using InetAddress and a port number.
+     * Gets the InetAddressSet.
      * 
-     * a valid port value is between 0 and 65535. A port number of zero will 
-     * let the system pick up an ephemeral port in a bind operation.
-     *
-     * A null address will assign the wildcard address. 
-     * 
-     * @param address The InetAddress.
-     * @param port The port number.
-     */    
-    public SocketAddressSet(InetAddress address, int port) {
-        this(IPAddressSet.getFromAddress(new InetAddress[] {address}), port);        
-    }        
-    
-    /**
-     * Construct a new IbisSocketAddress, using InetSocketAddress
-     * 
-     * @param address The InetSocketAddress.
-     */    
-    public SocketAddressSet(InetSocketAddress address) {
-        this(address.getAddress(), address.getPort());
-    }        
-    
-    
-    /**
-     * Construct a new IbisSocketAddress, using an IbisInetAddress and a port 
-     * number.
-     * 
-     * a valid port value is between 0 and 65535. A port number of zero will 
-     * let the system pick up an ephemeral port in a bind operation.
-     *
-     * A null address will assign the wildcard address. 
-     * 
-     * @param address The IbisInetAddress.
-     * @param port The port number.
+     * @return the InetAddressSet.
      */
-    public SocketAddressSet(IPAddressSet address, int port) {
+    public IPAddressSet getAddressSet() {
         
-        if (port < 0 || port > 65535) { 
-            throw new IllegalArgumentException("Port out of range");
+        if (addressCache == null) { 
+            // TODO: Fix 
+        }
+        
+        return addressCache;        
+    }
+    
+    /**
+     * Gets the SocketAddresses.
+     * 
+     * @return the addresses.
+     */
+    public InetSocketAddress [] getSocketAddresses() { 
+        //return sas;
+        return null;
+    } 
+        
+    /* (non-Javadoc)
+     * @see java.lang.Object#hashCode()
+     */
+    public int hashCode() {
+        
+        if (hashCode == 0) { 
+            
+            if (external != null && external.length > 0) { 
+                hashCode ^= Arrays.hashCode(external);
+            }
+            
+            if (global != null && global.length > 0) { 
+                hashCode ^= Arrays.hashCode(global);
+            }
+            
+            if (local != null && local.length > 0) { 
+                hashCode ^= Arrays.hashCode(local);
+            }
+            
+            // Small chance, but let's fix this case anyway...
+            if (hashCode == 0) { 
+                hashCode = 1;
+            }
+        }
+        
+        return hashCode;
+    }
+                   
+    /* (non-Javadoc)
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    public boolean equals(Object other) { 
+
+        // Check pointers
+        if (this == other) { 
+            return true;
+        }
+        
+        // Check type 
+        if (!(other instanceof SocketAddressSet)) {
+            return false;
         }
                 
-        if (address == null) { 
-            this.address = IPAddressSet.getLocalHost();
-        } else {             
-            this.address = address;
+        SocketAddressSet tmp = (SocketAddressSet) other;
+      
+        // Finally, compare ports and addresses
+        
+        // NOTE: this is only correct if the addresses are exactly the same.
+        // For partial addresses please use 'isCompatible'.       
+        if (!compare(external, tmp.external)) { 
+            return false;
         }
+        
+        if (!compare(global, tmp.global)) { 
+            return false;
+        }
+        
+        if (!compare(local, tmp.local)) { 
+            return false;
+        }
+         
+        return true;
+    }
     
-        int len = address.addresses.length;
-        sas = new InetSocketAddress[len];
+    private boolean compare(InetSocketAddress [] a, InetSocketAddress [] b) { 
+      
+        if (a == null && b == null) { 
+            return true;
+        } 
+        
+        if ((a != null && b == null) || (a == null && b != null)) { 
+            return false;
+        }
+        
+        if (a.length != b.length) { 
+            return false;
+        }
+       
+        for (int i=0;i<a.length;i++) {
+            
+            InetSocketAddress ad1 = a[i];
+            
+            boolean gotIt = false;
+            
+            for (int j=0;j<b.length;j++) { 
+                
+                // Use an offset here, since this is more efficient when the 
+                // two addresses are exactly the same. 
+                InetSocketAddress ad2 = b[(j+i)%b.length];
+                     
+                if (ad1.equals(ad2)) {
+                    gotIt = true;
+                    break;
+                }
+            }
+
+            if (!gotIt) { 
+                return false;
+            }
+        }
+            
+        return true;    
+    }
+    
+    private void partialToString(StringBuffer b, InetSocketAddress [] a) { 
+
+        final int len = a.length;
         
         for (int i=0;i<len;i++) { 
-            sas[i] = new InetSocketAddress(address.addresses[i], port);
+
+            b.append(NetworkUtils.ipToString(a[i].getAddress()));
+
+            if (i < len-1) {                
+                if (a[i].getPort() != a[i+1].getPort()) { 
+                    b.append(IP_PORT_SEPERATOR);
+                    b.append(a[i].getPort());
+                } 
+
+                b.append(ADDRESS_SEPERATOR);
+            } else { 
+                b.append(IP_PORT_SEPERATOR);
+                b.append(a[i].getPort());
+            }
+        }
+    }
+            
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
+    public String toString() {
+        
+        if (toStringCache == null) { 
+            StringBuffer b = new StringBuffer();
+
+            boolean needSlash = false;
+            
+            if (external != null && external.length > 0) { 
+                b.append(EXTERNAL_START);
+                partialToString(b, external);
+                b.append(EXTERNAL_END);
+                
+                needSlash = true;
+            }
+            
+            if (global != null && global.length > 0) {
+                
+                if (needSlash) { 
+                    b.append(ADDRESS_SEPERATOR);
+                }
+                
+                partialToString(b, global);
+                needSlash = true;
+            }
+        
+            if (local != null && local.length > 0) {
+                
+                if (needSlash) { 
+                    b.append(ADDRESS_SEPERATOR);
+                }
+                
+                partialToString(b, local);
+                needSlash = true;
+            }
+        
+            toStringCache = b.toString();
+        } 
+        
+        return toStringCache;
+    }
+    
+    public int compareTo(Object other) {
+
+        if (this == other) { 
+            return 0;
         }
         
-        toString();
-    }
+        // Check type 
+        if (!(other instanceof SocketAddressSet)) {
+            return 0;
+        }
+                
+        SocketAddressSet tmp = (SocketAddressSet) other;
         
+        if (hashCode() < tmp.hashCode()) { 
+            return -1;
+        } else { 
+            return 1;
+        }
+    }
+
+    private static boolean compatible(InetSocketAddress [] a, 
+            InetSocketAddress [] b) { 
+        
+        // If there is at least on shared address, we assume that they are the 
+        // same. 
+        for (InetSocketAddress a1 : a) { 
+            for (InetSocketAddress a2 : b) { 
+                if (a1.equals(a2)) { 
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
     /**
-     * Construct a new IbisSocketAddress, using an IbisInetAddress and an array 
+     * Check if this SocketAddressSet refers to the same machine as the 'other'
+     * address. The following tests are performed:
+     * 
+     * If both have global addresses, and they (partly) overlap it is the same 
+     *   machine. If they are disjuct they are difference machines.
+     *
+     * If one of the two has global+local addresses, and the other only has 
+     *   local addresses, and the local addresses (partly) overlap it is the 
+     *   same machine.
+     * 
+     * If neither has a global address, but both have external and local 
+     *   addresses and both overlap, then it is the same machine.
+     *  
+     * If both only have local addresses and then overlap then it is the same 
+     *   machine.
+     *   
+     * In all other cases they represent different machines.   
+     * 
+     * @param target
+     * @return
+     */
+    
+    public boolean isCompatible(SocketAddressSet other) {
+        
+        // Check pointers
+        if (this == other) { 
+            return true;
+        }
+        
+        if (global != null && global.length > 0) { 
+
+            // This machine has global addresses....
+            if (other.global != null && other.global.length > 0) {
+                // ... so does the other machine. So 'global' -MUST- overlap. 
+                return compatible(global, other.global);
+            } else { 
+                // ... but the other only has local addresses. 
+                // So 'local' -MUST- overlap  
+                return compatible(local, other.local);     
+            }
+
+        } else if (other.global != null && other.global.length > 0) {
+           
+            // The other machine has global addresses, but this one only has 
+            // local, so local -MUST- overlap.
+            return compatible(local, other.local);
+        
+        }
+        
+        // Neither machine has global addresses, so lets check the external 
+        // ones. If both ave them, they -MUST- overlap.
+        if (external != null && external.length > 0 && other.external != null 
+                && other.external.length > 0) {
+            
+            if (!compatible(external, other.external)) { 
+                return false;
+            }
+        }
+            
+        // ... 'local' -MUST- alway overlap regardless of the external ones.
+        return compatible(local, other.local);     
+    }
+    
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        
+        byte [] a = getAddress();
+        
+        out.writeInt(a.length);
+        out.write(getAddress());
+        
+       // System.out.println("Writing SocketAddressSet (" + a.length + "): " + sas + " " + address);
+        
+    }
+    
+    private void readObject(ObjectInputStream in) throws IOException {
+        
+        int len = in.readInt();
+        byte [] tmp = new byte[len];
+        
+     //   System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
+        
+        in.readFully(tmp);       
+        decode(tmp);   
+    }
+    
+    public static SocketAddressSet getByAddress(byte [] coded) 
+        throws UnknownHostException {
+        
+        return new SocketAddressSet(coded);
+    }
+    
+    public static SocketAddressSet getByAddress(InetSocketAddress a) 
+        throws UnknownHostException {
+        
+        if (NetworkUtils.isLocalAddress(a.getAddress())) { 
+            return new SocketAddressSet(null, null, new InetSocketAddress [] { a });
+        } else { 
+            return new SocketAddressSet(null, new InetSocketAddress [] { a }, null);
+        }
+    }
+    
+    /**
+     * Construct a new SocketAddressSet, using IPAddressSet and a port number.
+     * 
+     * A valid port value is between 0 and 65535. A port number of zero will 
+     * let the system pick up an ephemeral port in a bind operation.
+     *
+     * A null address will assign the wildcard address. 
+     * 
+     * @param address The IPAddressSet.
+     * @param port The port number.
+     */
+    public static SocketAddressSet getByAddress(IPAddressSet a, int port) 
+        throws UnknownHostException {
+        
+        return getByAddress(null, null, a, new int [] { port });
+    }
+
+   
+    /**
+     * Construct a new SocketAddressSet, using an IPAddressSet and an array 
      * of ports.
      * 
      * A valid port value is between 1 and 65535. A port number of zero is not 
@@ -170,55 +565,128 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      *
      * A null address will assign the wildcard address. 
      * 
-     * @param address The IbisInetAddress.
-     * @param port The port number.
+     * @param external The IPAddressSet containg the external addresses of the 
+     *                 NAT box that this machine is behind.
+     * @param externalPorts The ports of each of the external addresses. This  
+     *                 should have size 1 or the same length as external has  
+     *                 addresses.
+     * @param other The IPAddressSet containg the addresses found on the machine 
+     * @param otherPorts The ports of each of the other addresses. This  
+     *                 should have size 1 or the same length as other has  
+     *                 addresses.
      */
-    public SocketAddressSet(IPAddressSet address, int [] port) {
-                               
-        if (address == null) { 
-            this.address = IPAddressSet.getLocalHost();
-        } else {             
-            this.address = address;
-        }
+    public static SocketAddressSet getByAddress(IPAddressSet external, 
+            int [] externalPorts, IPAddressSet other, int [] otherPorts) {
     
-        if (port.length != address.addresses.length) { 
+        if (other == null) { 
+            other = IPAddressSet.getLocalHost();
+        } 
+    
+        if (otherPorts.length != 1 && otherPorts.length != other.addresses.length) { 
             throw new IllegalArgumentException("Number of ports does not match" 
                     + "number of addresses");
         }        
+    
+        int numGlobal = 0;
+        int numLocal = 0;
         
-        int len = address.addresses.length;
-        sas = new InetSocketAddress[len];
+        for (InetAddress a : other.addresses) {     
+            if (NetworkUtils.isExternalAddress(a)) { 
+                numGlobal++;
+            } else { 
+                numLocal++;
+            }
+        }
+
+        InetSocketAddress [] global = new InetSocketAddress[numGlobal];
+        InetSocketAddress [] local = new InetSocketAddress[numLocal];
         
-        for (int i=0;i<len;i++) { 
-            if (port[i] <= 0 || port[i] > 65535) { 
+        int globalIndex = 0;
+        int localIndex = 0;
+        
+        for (int i=0;i<other.addresses.length;i++) { 
+         
+            if (otherPorts[i] <= 0 || otherPorts[i] > 65535) { 
                 throw new IllegalArgumentException("Port["+i+"] out of range");
             }
+         
+            int port = 0;
             
-            sas[i] = new InetSocketAddress(address.addresses[i], port[i]);
+            if (otherPorts.length == 1) { 
+                port = otherPorts[0];
+            } else { 
+                port = otherPorts[i];
+            }
+            
+            if (NetworkUtils.isExternalAddress(other.addresses[i])) { 
+                global[globalIndex++] = 
+                    new InetSocketAddress(other.addresses[i], port);
+            } else { 
+                local[localIndex++] = 
+                    new InetSocketAddress(other.addresses[i], port);
+            }
+        }
+        InetSocketAddress [] extern = null;
+        
+        if (external == null || external.addresses.length == 0) { 
+            extern = new InetSocketAddress[0];
+        } else {
+            
+            if (externalPorts.length != 1 && externalPorts.length != external.addresses.length) { 
+                throw new IllegalArgumentException("Number of external ports " +
+                        "does not match number of external addresses");
+            }        
+        
+            extern = new InetSocketAddress[external.addresses.length];
+            
+            for (int i=0;i<external.addresses.length;i++) { 
+                
+                int port = 0;
+                
+                if (externalPorts.length == 1) { 
+                    port = externalPorts[0];
+                } else { 
+                    port = externalPorts[i];
+                }
+
+                extern[i] = new InetSocketAddress(external.addresses[i], port);
+            }
         }
         
-        toString();
+        return new SocketAddressSet(extern, global, local);
     }
     
-    /**
-     * Construct a new IbisSocketAddress from a String representation of an 
-     * IPAddressSet and a port number.
-     * 
-     * A valid port value is between 0 and 65535. A port number of zero will let
-     * the system pick up an ephemeral port in a bind operation. 
-     * 
-     * @param address The String representation of an IbisInetAddress.
-     * @param port The port number.
-     * @throws UnknownHostException
-     */
-    public SocketAddressSet(String address, int port) 
-        throws UnknownHostException {        
-        this(IPAddressSet.getFromString(address), port);        
+    private static InetSocketAddress[] resize(InetSocketAddress [] orig, int add) { 
+        
+        InetSocketAddress [] result;
+        
+        if (orig == null) { 
+            result = new InetSocketAddress[add];
+        } else {
+            result = new InetSocketAddress[orig.length + add];        
+            System.arraycopy(orig, 0, result, 0, orig.length);
+        } 
+    
+        return result;
     }
-
+    
+    private static InetSocketAddress [] addToArray(InetSocketAddress [] array, 
+            LinkedList<InetAddress> ads, int port) { 
+        
+        int index = (array == null ? 0 : array.length);
+        
+        array = resize(array, ads.size());
+        
+        for (InetAddress a : ads) { 
+            array[index++] = new InetSocketAddress(a, port);
+        }
+        
+        return array;
+    } 
+    
     /**
-     * Construct a new IbisSocketAddress from a String representation of a 
-     * IbisSocketAddress. 
+     * Construct a new SocketAddresssET from a String representation of a 
+     * SocketAddressSet. 
      * 
      * This representation contains any number of InetAddresses seperated by
      * ADDRESS_SEPARATOR characters (usually defined as '/'), followed by a 
@@ -241,234 +709,143 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * 
      *    fe80:0:0:0:2e0:18ff:fe2c:a31%2/169.254.207.84-1234 
      * 
+     * External addresses (for machines behind a NAT box) are marked using curly 
+     * brackets '{ }' since they are special. For example, the following address
+     * identifies a NAT-ed machine with external address '82.161.4.24-5678' and 
+     * internal address '192.168.1.35-1234'  
+     * 
+     *    {82.161.4.24-5678}/192.168.1.35-1234
+     * 
      * @param addressPort The String representation of a IbisSocketAddress.
      * @throws UnknownHostException
      */
-    public SocketAddressSet(String addressPort) throws UnknownHostException { 
+    public static SocketAddressSet getByAddress(String addressPort) 
+        throws UnknownHostException { 
 
-        int start = 0;        
-        boolean done = false;
+        StringTokenizer st = new StringTokenizer(addressPort, "{}/-", true);
         
-        IPAddressSet addr = null;
-        int [] ports = new int[0];
-                
-        while (!done) {
-            // We start by selecting a single address and port number from the 
-            // string, starting where we ended the last time.             
-            int colon = addressPort.indexOf(IP_PORT_SEPERATOR, start);                
-            int slash = addressPort.indexOf(ADDRESS_SEPERATOR, colon+1);
+        boolean readingExternal = false;
+        boolean readingOther = false;
+        boolean readingPort = false;
+        boolean requireSlash = false; 
         
-            // We now seperate the 'address' and 'port' parts. If there is a '/'            
-            // behind the port there is an other address following it. If not, 
-            // this is the last time we go through the loop.
-            String a = addressPort.substring(start, colon);
-            String p;             
+        InetSocketAddress [] external = null; 
+        InetSocketAddress [] global = null; 
+        InetSocketAddress [] local = null; 
+        
+        LinkedList<InetAddress> currentGlobal = new LinkedList<InetAddress>();
+        LinkedList<InetAddress> currentLocal = new LinkedList<InetAddress>();
+        
+        while (st.hasMoreTokens()) { 
             
-            if (slash == -1) {
-                p = addressPort.substring(colon+1);
-                done = true;
+            String s = st.nextToken();
+            
+            if (s.length() == 1) {
+                
+                // it's a delimiter
+                if (s.equals(EXTERNAL_START)) { 
+        
+                    if (requireSlash || readingExternal || readingOther) { 
+                        throw new IllegalArgumentException("Unexpected " 
+                                + EXTERNAL_START + " in address(" 
+                                + addressPort + ")");
+                    }
+                
+                    readingExternal = true;
+                    
+                } else if (s.equals(EXTERNAL_END)) { 
+                
+                    if (!readingExternal || requireSlash || readingOther) {
+                        throw new IllegalArgumentException("Unexpected " 
+                                + EXTERNAL_END + " in address(" 
+                                + addressPort + ")");
+                    }
+                
+                    readingExternal = false;
+                    requireSlash = true;
+                    
+                } else if (s.equals(ADDRESS_SEPERATOR)) { 
+                    
+                    if (!requireSlash || !readingExternal || !readingOther) {
+                        throw new IllegalArgumentException("Unexpected " 
+                                + ADDRESS_SEPERATOR + " in address(" 
+                                + addressPort + ")");
+                    }
+                    
+                    requireSlash = false;
+                    
+                } else if (s.equals(IP_PORT_SEPERATOR)) { 
+                    
+                    if (requireSlash || !readingExternal || !readingOther) { 
+                        throw new IllegalArgumentException("Unexpected " 
+                                + IP_PORT_SEPERATOR + " in address(" 
+                                + addressPort + ")");
+                    }
+                    
+                    readingExternal = readingOther = false;
+                    readingPort = true;
+                }
+                
+            } else if (readingPort) { 
+                
+                // This should complete a group of addresses. More may folow
+                int port = Integer.parseInt(s);
+                
+                
+                
+                // ... do a sanity check on the port value ...
+                if (port <= 0 || port > 65535) { 
+                    throw new IllegalArgumentException("Port out of range: " + port);
+                }
+                    
+                if (readingExternal) { 
+                    external = addToArray(external, currentGlobal, port);
+                } else { 
+                    global = addToArray(global, currentGlobal, port);
+                    local = addToArray(local, currentLocal, port);
+                }
+                
+                readingPort = false;
+                requireSlash = true;
             } else { 
-                p = addressPort.substring(colon+1, slash);
-                start = slash+1;
-            }
-        
-            // Now convert the address and port strings to real values ...
-            IPAddressSet tA = IPAddressSet.getFromString(a);
-            int tP = Integer.parseInt(p);
-     
-            // ... do a sanity check on the port value ...
-            if (tP <= 0 || tP > 65535) { 
-                throw new IllegalArgumentException("Port out of range: " + tP);
-            }
-            
-            // ... and merge the result into what was already there. 
-            addr = IPAddressSet.merge(addr, tA);
-            ports = add(ports, tP, tA.addresses.length);
-        }
-        
-        // Finally, store the result in the object fields. 
-        address = addr;
-        
-        int len = addr.addresses.length;
-        sas = new InetSocketAddress[len];
-        
-        for (int i=0;i<len;i++) { 
-            sas[i] = new InetSocketAddress(addr.addresses[i], ports[i]);
-        }
-        
-        toString();
-    }
-   
-    /**
-     * This method returns the byte coded form of the SocketAddressSet.
-     * 
-     * This representation is either contains the 6 or 18 bytes of a single 
-     * InetAddress + port number, or it has the form (N (SAP)*) where:
-     *  
-     *   N is the number of addresses that follow (1 byte) 
-     *   S is the length of the next address (1 byte)
-     *   A is an InetAddress (4 or 16 bytes)
-     *   P is the port number (2 bytes)
-     * 
-     * @return the bytes
-     */
-    
-    public byte [] getAddress() { 
-        
-        if (codedForm == null) {
-            
-            // First calculate the size of the address n bytes....
-            int len = 1;
-            
-            for (InetSocketAddress s : sas) { 
+                // reading address
+                InetAddress tmp = InetAddress.getByName(s);
                 
-                if (s.getAddress() instanceof Inet4Address) {
-                    len += 1 + 4 + 2;                    
+                if (NetworkUtils.isLocalAddress(tmp)) { 
+                    currentLocal.add(tmp);
                 } else { 
-                    len += 1 + 16 + 2;
+                    currentGlobal.add(tmp);
                 }
-            }
-            
-            // Now encode it...
-            codedForm = new byte[len];
-            
-            int index = 0;
-            
-            codedForm[index++] = (byte) (sas.length & 0xFF);
-            
-            for (InetSocketAddress s : sas) { 
-                byte [] tmp = s.getAddress().getAddress();
-                codedForm[index++] = (byte) (tmp.length & 0xFF);
-                System.arraycopy(tmp, 0, codedForm, index, tmp.length);                
-                index += tmp.length;
-
-                int port = s.getPort();
-                codedForm[index++] = (byte) (port & 0xFF);
-                codedForm[index++] = (byte) ((port >> 8) & 0xFF);
-            }  
-        }
-        
-        return codedForm;
-    }
-    
-    /**
-     * This method appends a value a specified number of times to an existing 
-     * int array. A new array is returned.
-     * 
-     * @param orig the original array
-     * @param value the value to append
-     * @param repeat the number of times the value should be appended.
-     * @return a new array 
-     */
-    private int [] add(int [] orig, int value, int repeat) { 
-        int [] result = new int[orig.length+repeat];
-        System.arraycopy(orig, 0, result, 0, orig.length);
-        Arrays.fill(result, orig.length, result.length, value);        
-        return result;
-    }    
-    
-    /**
-     * Gets the InetAddressSet.
-     * 
-     * @return the InetAddressSet.
-     */
-    public IPAddressSet getAddressSet() { 
-        return address;        
-    }
-    
-    /**
-     * Gets the SocketAddresses.
-     * 
-     * @return the ports.
-     */
-    public InetSocketAddress [] getSocketAddresses() { 
-        return sas; 
-    } 
-        
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
-    public int hashCode() {
-        // TODO: improve 
-        return address.hashCode(); 
-    }
-                   
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    public boolean equals(Object other) { 
-
-        // Check pointers
-        if (this == other) { 
-            return true;
-        }
-        
-        // Check type 
-        if (!(other instanceof SocketAddressSet)) {
-            return false;
-        }
                 
-        SocketAddressSet tmp = (SocketAddressSet) other;
-      
-        // System.out.println("SocketAdressSet.equals: ");
-        // System.out.println("arrays : " + Arrays.equals(sas, tmp.sas));
-        // System.out.println("address: " + address.equals(tmp.address));
-        
-        // Finally, compare ports and addresses
-        
-        // TODO: this is only correct if the addresses are exactly the same.
-        // So how do we handle partial addresses ?         
-        for (int i=0;i<sas.length;i++) { 
-            InetSocketAddress a = sas[i];
-
-            boolean found = false;
-
-            for (int j=0;j<tmp.sas.length;j++) {               
-                if (a.equals(tmp.sas[j])) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) { 
-                return false;
+                requireSlash = true;
             }
         }
         
-        return true;
+        return new SocketAddressSet(external, global, local);
     }
     
-    /* (non-Javadoc)
-     * @see java.lang.Object#toString()
-     */
-    public String toString() {
+    public static SocketAddressSet getByAddress(String host, int port) throws UnknownHostException { 
+        return getByAddress(IPAddressSet.getFromString(host), port);
+    }
+    
+    
+    private static InetSocketAddress [] merge(InetSocketAddress [] a, 
+            InetSocketAddress [] b) { 
         
-        if (toStringCache == null) { 
-            StringBuffer b = new StringBuffer();
-
-            final int len = address.addresses.length; 
-
-            for (int i=0;i<len;i++) { 
-
-                b.append(NetworkUtils.ipToString(address.addresses[i]));
-
-                if (i < len-1) {                
-                    if (sas[i].getPort() != sas[i+1].getPort()) { 
-                        b.append(IP_PORT_SEPERATOR);
-                        b.append(sas[i].getPort());
-                    } 
-
-                    b.append(ADDRESS_SEPERATOR);
-                } else { 
-                    b.append(IP_PORT_SEPERATOR);
-                    b.append(sas[i].getPort());
-                }
-            }
-
-            toStringCache = b.toString();
+        int alen = (a == null ? 0 : a.length);
+        int blen = (b == null ? 0 : b.length);
+        
+        InetSocketAddress [] res = new InetSocketAddress[alen + blen];
+        
+        if (alen > 0) { 
+            System.arraycopy(a, 0, res, 0, alen);
         } 
         
-        return toStringCache;
+        if (blen > 0) { 
+            System.arraycopy(b, 0, res, alen, blen);
+        } 
+        
+        return res;
     }
     
     /**
@@ -481,17 +858,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public static SocketAddressSet merge(SocketAddressSet s1, 
             SocketAddressSet s2) {
         
-        IPAddressSet as = IPAddressSet.merge(s1.address, s2.address);
-                       
-        InetSocketAddress [] sa = 
-            new InetSocketAddress[s1.sas.length + s2.sas.length];
-        
-        System.arraycopy(s1.sas, 0, sa, 0, s1.sas.length);
-        System.arraycopy(s2.sas, 0, sa, s1.sas.length, s2.sas.length);
-        
-        Arrays.sort(sa, IPAddressSet.SORTER);
-        
-        return new SocketAddressSet(as, sa);
+        return new SocketAddressSet(
+                merge(s1.external, s2.external), 
+                merge(s1.global, s2.global), 
+                merge(s1.local, s2.local));
     } 
     
     /**
@@ -543,12 +913,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             if (s[i] != null) { 
                 if (ignoreProblems) {                 
                     try {                   
-                        result[i] = new SocketAddressSet(s[i]);
+                        result[i] = SocketAddressSet.getByAddress(s[i]);
                     } catch (UnknownHostException e) {
                         // ignore
                     }
                 } else { 
-                    result[i] = new SocketAddressSet(s[i]);
+                    result[i] = SocketAddressSet.getByAddress(s[i]);
                 } 
             }
         }
@@ -577,7 +947,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @return if both SocketAddressSets represent the same machine
      */
     public boolean sameMachine(SocketAddressSet other) { 
-        return address.equals(other.address);
+        return getAddressSet().equals(other.getAddressSet());
     }
 
     /**
@@ -607,49 +977,5 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return a.sameProcess(b);
     }
 
-    public int compareTo(Object other) {
-
-        if (this == other) { 
-            return 0;
-        }
-        
-        // Check type 
-        if (!(other instanceof SocketAddressSet)) {
-            return 0;
-        }
-                
-        SocketAddressSet tmp = (SocketAddressSet) other;
-        
-        if (hashCode() < tmp.hashCode()) { 
-            return -1;
-        } else { 
-            return 1;
-        }
-    }
-
-    public boolean isCompatible(SocketAddressSet target) {
-        return equals(target);
-    }
-    
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        
-        byte [] a = getAddress();
-        
-        out.writeInt(a.length);
-        out.write(getAddress());
-        
-       // System.out.println("Writing SocketAddressSet (" + a.length + "): " + sas + " " + address);
-        
-    }
-    
-    private void readObject(ObjectInputStream in) throws IOException {
-        
-        int len = in.readInt();
-        byte [] tmp = new byte[len];
-        
-     //   System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
-        
-        in.readFully(tmp);       
-        readFromBytes(tmp);   
-    }
+  
 }

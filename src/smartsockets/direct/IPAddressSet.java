@@ -354,6 +354,16 @@ public class IPAddressSet implements Serializable {
     }
     
     /**
+     * Create a new InetAddressSet from a single InetAddress object.   
+     * 
+     * @param addresses the InetAddresses
+     * @return new InetAddressSet  
+     */               
+    public static IPAddressSet getFromAddress(InetAddress address) {
+        return new IPAddressSet(new InetAddress[] { address });
+    }
+    
+    /**
      * Create a new InetAddressSet that represents this host.    
      * 
      * All addresses that can be found locally will be included in the 

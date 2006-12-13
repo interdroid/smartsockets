@@ -244,7 +244,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         SocketAddressSet hub = null;
 
         try {
-            hub = new SocketAddressSet(args[0]);
+            hub = SocketAddressSet.getByAddress(args[0]);
         } catch (Exception e1) {
             System.err.println("Coudn't parse hub address: " + args[0]);
             System.exit(1);

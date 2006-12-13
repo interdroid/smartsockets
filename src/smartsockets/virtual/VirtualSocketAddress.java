@@ -56,7 +56,7 @@ public class VirtualSocketAddress implements Serializable {
 
         if (index2 < index1) {
             // The hub is after the cluster (or cluster does not exist).
-            hub = new SocketAddressSet(address.substring(index1+1));
+            hub = SocketAddressSet.getByAddress(address.substring(index1+1));
             
             if (index2 != -1) { 
                 cluster = address.substring(index2+1, index1);
@@ -71,7 +71,7 @@ public class VirtualSocketAddress implements Serializable {
             cluster = address.substring(index2+1);
             
             if (index1 != -1) {            
-                hub = new SocketAddressSet(address.substring(index1+1, index2));
+                hub = SocketAddressSet.getByAddress(address.substring(index1+1, index2));
                 address = address.substring(0, index1);
             } else { 
                 address = address.substring(0, index2);
@@ -90,20 +90,21 @@ public class VirtualSocketAddress implements Serializable {
                     + "VirtualSocketAddress!");
         }
                 
-        machine = new SocketAddressSet(address.substring(0, index));
+        machine = SocketAddressSet.getByAddress(address.substring(0, index));
         port = Integer.parseInt(address.substring(index+1));                        
     }
 
     public VirtualSocketAddress(String machine, int port) 
         throws UnknownHostException {
         
-        this(new SocketAddressSet(machine), port, null, null);
+        this(SocketAddressSet.getByAddress(machine), port, null, null);
     }
 
     public VirtualSocketAddress(String hub, String machine, int port) 
         throws UnknownHostException {    
         
-        this(new SocketAddressSet(machine), port, new SocketAddressSet(hub), null);
+        this(SocketAddressSet.getByAddress(machine), port, 
+                SocketAddressSet.getByAddress(hub), null);
     }
     
     public SocketAddressSet hub() { 
@@ -165,7 +166,7 @@ public class VirtualSocketAddress implements Serializable {
             int realport, int virtualport) throws UnknownHostException {
      
         return new VirtualSocketAddress(
-                new SocketAddressSet(hostname, realport), virtualport);
+                SocketAddressSet.getByAddress(hostname, realport), virtualport);
     }
     
     public static VirtualSocketAddress partialAddress(String hostname, 

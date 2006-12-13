@@ -162,7 +162,7 @@ public class Splice extends AbstractDirectModule {
 
         try { 
             for (int i=0;i<result.length;i++) {
-                result[i] = new SocketAddressSet(addr, port+i);
+                result[i] = SocketAddressSet.getByAddress(addr, port+i);
             }
             
             return local;
@@ -278,7 +278,7 @@ public class Splice extends AbstractDirectModule {
         int port = 0;
         
         try { 
-            shared = new SocketAddressSet(t.nextToken());
+            shared = SocketAddressSet.getByAddress(t.nextToken());
             connectID = t.nextToken();        
             timeout = Integer.parseInt(t.nextToken());
             port = Integer.parseInt(t.nextToken());

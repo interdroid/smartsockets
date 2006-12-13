@@ -279,7 +279,7 @@ public class ClientConnection extends MessageForwardingConnection {
         LinkedList<String> result = new LinkedList<String>();
         
         try { 
-            HubDescription d = knownHubs.get(new SocketAddressSet(hub));            
+            HubDescription d = knownHubs.get(SocketAddressSet.getByAddress(hub));            
             d.getClientsAsString(result, tag);            
         } catch (UnknownHostException e) {
             reqlogger.warn("Connection " + clientAddress + " got illegal hub " 
@@ -341,7 +341,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
         
         DirectionsAsStringSelector ds = 
-            new DirectionsAsStringSelector(new SocketAddressSet(client));
+            new DirectionsAsStringSelector(SocketAddressSet.getByAddress(client));
         
         knownHubs.select(ds);
         
@@ -469,14 +469,14 @@ public class ClientConnection extends MessageForwardingConnection {
         
         if (targetHub.length() > 0) { 
             try { 
-                hub = new SocketAddressSet(targetHub);
+                hub = SocketAddressSet.getByAddress(targetHub);
             } catch (Exception e) {
                 // ignore -- not critical
             }
         }
       
         processVirtualConnect(index, clientAddress, 
-                new SocketAddressSet(target), hub, info, timeout);
+                SocketAddressSet.getByAddress(target), hub, info, timeout);
     
     } 
     

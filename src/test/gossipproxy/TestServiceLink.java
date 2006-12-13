@@ -46,7 +46,7 @@ public class TestServiceLink implements CallBack {
         }
         
         if (serviceLink == null) { 
-            System.err.println("Failed to connect ot any proxy!");
+            System.err.println("Failed to connect ot any proxy!UnknownHostException");
             System.exit(1);
         }
         
@@ -91,11 +91,11 @@ public class TestServiceLink implements CallBack {
         }
                 
         try { 
-            SocketAddressSet t = new SocketAddressSet(target);
+            SocketAddressSet t = SocketAddressSet.getByAddress(target);
             SocketAddressSet p = null; 
             
             if (proxy != null) { 
-                p = new SocketAddressSet(proxy);
+                p = SocketAddressSet.getByAddress(proxy);
             }
 
             serviceLink.send(t, p, "TEST", message++, txt);
@@ -228,7 +228,7 @@ public class TestServiceLink implements CallBack {
                 interactive = true;
             } else if (args[i].equals("-proxy")) {
                 try { 
-                    proxies.add(new SocketAddressSet(args[++i]));
+                    proxies.add(SocketAddressSet.getByAddress(args[++i]));
                 } catch (Exception e) {
                     System.err.println("Failed to parse proxy: " 
                             + args[i] + " (ignoring)");

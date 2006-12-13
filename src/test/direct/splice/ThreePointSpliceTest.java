@@ -42,7 +42,7 @@ public class ThreePointSpliceTest {
         SocketAddressSet [] target = new SocketAddressSet[5];
         
         for (int i=0;i<target.length;i++) {
-            target[i] = new SocketAddressSet(addr, port+i);
+            target[i] = SocketAddressSet.getByAddress(addr, port+i);
         }
         
         for (int i=0;i<30;i++) {
@@ -152,7 +152,7 @@ public class ThreePointSpliceTest {
     public static void main(String [] args) throws IOException { 
                 
         if (args.length == 2) {
-            client(args[0], new SocketAddressSet(args[1]));
+            client(args[0], SocketAddressSet.getByAddress(args[1]));
         } else { 
             server();
         } 

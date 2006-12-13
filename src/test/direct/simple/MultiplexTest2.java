@@ -69,7 +69,7 @@ public class MultiplexTest2 {
 
             System.out.println("I am client");
                         
-            SocketAddressSet target = new SocketAddressSet(args[0]);
+            SocketAddressSet target = SocketAddressSet.getByAddress(args[0]);
             int senders = Integer.parseInt(args[1]);
             
             DirectSocket s = sf.createSocket(target, 0, null);

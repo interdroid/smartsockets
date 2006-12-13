@@ -85,8 +85,8 @@ public class RouterClientNode extends ClientNode {
         if (c == null) {
             
             try {
-                c = new ConnectionInfo(new SocketAddressSet(from), 
-                        new SocketAddressSet(to), id, 
+                c = new ConnectionInfo(SocketAddressSet.getByAddress(from), 
+                        SocketAddressSet.getByAddress(to), id, 
                         Long.parseLong(tp));
             } catch (Exception e) {
                 System.out.println("Failed to create ConnectionInfo " + e);

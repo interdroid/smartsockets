@@ -23,12 +23,12 @@ public class ClientMessage {
         this.source = source;
         this.sourceHub = sourceHub;
         
-        target = new SocketAddressSet(in.readUTF());
+        target = SocketAddressSet.getByAddress(in.readUTF());
         
         String tmp = in.readUTF();
         
         if (tmp.length() > 0) {         
-            targetHub = new SocketAddressSet(tmp);               
+            targetHub = SocketAddressSet.getByAddress(tmp);               
         }
         
         module = in.readUTF();
@@ -37,15 +37,15 @@ public class ClientMessage {
     }
     
     ClientMessage(DataInputStream in) throws IOException {                
-        source = new SocketAddressSet(in.readUTF());
-        sourceHub = new SocketAddressSet(in.readUTF());        
+        source = SocketAddressSet.getByAddress(in.readUTF());
+        sourceHub = SocketAddressSet.getByAddress(in.readUTF());        
         
-        target = new SocketAddressSet(in.readUTF());
+        target = SocketAddressSet.getByAddress(in.readUTF());
         
         String tmp = in.readUTF();
         
         if (tmp.length() > 0) {         
-            targetHub = new SocketAddressSet(tmp);               
+            targetHub = SocketAddressSet.getByAddress(tmp);               
         }
         
         module = in.readUTF();

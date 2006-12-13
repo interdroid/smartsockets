@@ -72,7 +72,7 @@ public class HubStarter {
             } else {                
                 // Assume it's an address...
                 try { 
-                    hubs[i] = new SocketAddressSet(args[i]);
+                    hubs[i] = SocketAddressSet.getByAddress(args[i]);
                     numHubs++;
                     
                     System.out.println("Got hub address: " + hubs[i].toString());

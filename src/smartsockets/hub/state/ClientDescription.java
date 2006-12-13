@@ -161,7 +161,7 @@ public class ClientDescription {
     
     public static ClientDescription read(DataInputStream in) throws IOException { 
         
-        SocketAddressSet adress = new SocketAddressSet(in.readUTF());
+        SocketAddressSet adress = SocketAddressSet.getByAddress(in.readUTF());
         long version = in.readLong();                      
         int services = in.readInt();
         

@@ -22,7 +22,7 @@ public class SimpleSpliceTest {
                 
         if (args.length > 0) {
             
-            SocketAddressSet target = new SocketAddressSet(args[0]); 
+            SocketAddressSet target = SocketAddressSet.getByAddress(args[0]); 
            
             DirectSocket s = null;
             DataInputStream in = null;
@@ -80,7 +80,7 @@ public class SimpleSpliceTest {
             // Now try if we can connect to the client using an outgoing 
             // connection
 
-            SocketAddressSet target = new SocketAddressSet(address);
+            SocketAddressSet target = SocketAddressSet.getByAddress(address);
             
             for (int i=0;i<100;i++) {
 

@@ -57,12 +57,12 @@ public class DirectSocketFactory {
     private final int inputBufferSize;
     private final int outputBufferSize;
         
+    private IPAddressSet localAddress;
+    private IPAddressSet externalAddress;  
     private IPAddressSet completeAddress;
     
     private byte [] completeAddressInBytes;
     private byte [] networkNameInBytes;
-    
-    private IPAddressSet localAddress;
     
     private InetAddress externalNATAddress;
 
@@ -235,6 +235,7 @@ public class DirectSocketFactory {
         }
 
         if (externalNATAddress != null) {
+            externalAddress = IPAddressSet.getFromAddress(externalNATAddress);
             return;
         }
 
@@ -251,6 +252,11 @@ public class DirectSocketFactory {
             if (logger.isDebugEnabled()) {
                 logger.debug("STUN lookup result: " + externalNATAddress);
             }
+        
+            if (externalNATAddress != null) {
+                externalAddress = IPAddressSet.getFromAddress(externalNATAddress);
+                return;
+            }
         } 
         
         if (ALLOW_UPNP) {
@@ -263,6 +269,11 @@ public class DirectSocketFactory {
 
             if (logger.isDebugEnabled()) {
                 logger.debug("UPNP lookup result: " + externalNATAddress);
+            }
+            
+            if (externalNATAddress != null) {
+                externalAddress = IPAddressSet.getFromAddress(externalNATAddress);
+                return;
             }
         }
     }
@@ -388,7 +399,7 @@ public class DirectSocketFactory {
                      
              // Create the address and see if we are to talking to the right 
              // machine...
-             SocketAddressSet server = new SocketAddressSet(tmp);
+             SocketAddressSet server = SocketAddressSet.getByAddress(tmp);
                           
              if (!server.isCompatible(sas)) { 
                  out.write(DirectServerSocket.WRONG_MACHINE);
@@ -459,16 +470,15 @@ public class DirectSocketFactory {
 
         ServerSocket ss = createUnboundServerSocket();
         ss.bind(new InetSocketAddress(port), backlog);
-
-        SocketAddressSet local = 
-            new SocketAddressSet(completeAddress, ss.getLocalPort());
-
-        DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
         
         if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port
             // forwarding, so just return the server socket
+            SocketAddressSet local = 
+                SocketAddressSet.getByAddress(localAddress, ss.getLocalPort());
 
+            DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
+            
             if (logger.isDebugEnabled()) {
                 logger.debug("Created server socket on: " + smss);
             }
@@ -478,25 +488,28 @@ public class DirectSocketFactory {
 
         // We only have a local address, and the user wants to try port 
         // forwarding. Check if we are allowed to do so in the first place...
-        
-        
         if (!ALLOW_UPNP_PORT_FORWARDING) { 
             // We are not allowed to do port forwarding. Check if this is OK by
             // the user.
             
             if (forwardingMayFail) {
                 // It's OK, so return the socket.
+                SocketAddressSet local = 
+                    SocketAddressSet.getByAddress(localAddress, ss.getLocalPort());
+
+                DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
+                
                 if (logger.isDebugEnabled()) {
                     logger.debug("Port forwarding not allowed for: " + smss);
                 }
-                
+
                 return smss;
             }
 
             // The user does not want the serversocket if it's not forwarded, so 
             // close it and throw an exception.
-
-            logger.warn("Port not allowed for: " + smss);
+            logger.warn("Failed to create DirectServerSocket: " +
+                    "port forwarding not allowed!");
             
             try {                
                 ss.close();
@@ -512,15 +525,18 @@ public class DirectSocketFactory {
             port = ss.getLocalPort();
         }
 
+        SocketAddressSet local = null;
+        
         try {
             int ePort = sameExternalPort ? port : 0;
             ePort = UPNP.addPortMapping(port, ePort, myNATAddress, 0, "TCP");
-            smss.addExternalAddress(
-                    new SocketAddressSet(externalNATAddress, ePort));
-
+            
+            local = SocketAddressSet.getByAddress(externalAddress, 
+                    new int [] { ePort }, localAddress, new int [] { ss.getLocalPort() });
+          
         } catch (Exception e) {
 
-            logger.warn("Port forwarding failed for: " + local + " " + e);
+            logger.warn("Port forwarding failed! ", e);
 
             if (!forwardingMayFail) {
                 // User doesn't want the port forwarding to fail, so close the
@@ -533,8 +549,12 @@ public class DirectSocketFactory {
 
                 throw new IOException("Port forwarding failed: " + e);
             }
+            
+            local = SocketAddressSet.getByAddress(localAddress, ss.getLocalPort());
         }
 
+        DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
+        
         if (logger.isDebugEnabled()) {
             logger.debug("Created server socket on: " + smss);
         }
