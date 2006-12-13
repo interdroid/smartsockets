@@ -705,6 +705,12 @@ public class DirectSocketFactory {
 
         InetSocketAddress[] sas = target.getSocketAddresses();
         
+        if (sas.length == 0) { 
+            System.err.println("EEK: sas.length == 0!!!");
+            return null;
+        }
+        
+        
         if (sas.length == 1) {
             
             long time = System.currentTimeMillis();

@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
+import com.sun.org.apache.bcel.internal.generic.ALOAD;
+
 import smartsockets.util.NetworkUtils;
 
 /**
@@ -51,6 +53,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         this.external = (external == null ? new InetSocketAddress[0] : external);
         this.global = (global == null ? new InetSocketAddress[0] : global);
         this.local = (local == null ? new InetSocketAddress[0] : local);
+        
+        System.err.println("Created SocketAddressSet: " + toString());
+        
+        
     }
     
     /**
@@ -755,9 +761,14 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         StringTokenizer st = new StringTokenizer(addressPort, "{}/-", true);
         
         boolean readingExternal = false;
-        boolean readingOther = false;
         boolean readingPort = false;
-        boolean requireSlash = false; 
+        
+        boolean allowExternalStart = true;
+        boolean allowExternalEnd = false;
+        boolean allowAddress = true;
+        boolean allowSlash = false; 
+        boolean allowDash = false; 
+        boolean allowDone = false;
         
         InetSocketAddress [] external = null; 
         InetSocketAddress [] global = null; 
@@ -772,56 +783,76 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             
             if (s.length() == 1) {
                 
-                // it's a delimiter
-                if (s.equals(EXTERNAL_START)) { 
+                char delim = s.charAt(0);
+                
+                switch (delim) { 
+                case EXTERNAL_START: 
         
-                    if (requireSlash || readingExternal || readingOther) { 
+                    if (!allowExternalStart) { 
                         throw new IllegalArgumentException("Unexpected " 
                                 + EXTERNAL_START + " in address(" 
                                 + addressPort + ")");
                     }
                 
+                    allowExternalStart = false;
+                    allowAddress = true;
+                    allowDone = false;
                     readingExternal = true;
-                    
-                } else if (s.equals(EXTERNAL_END)) { 
+                    break;
                 
-                    if (!readingExternal || requireSlash || readingOther) {
+                case EXTERNAL_END:
+                    
+                    if (!allowExternalEnd) {
                         throw new IllegalArgumentException("Unexpected " 
                                 + EXTERNAL_END + " in address(" 
                                 + addressPort + ")");
                     }
                 
+                    allowExternalEnd = false; 
+                    allowExternalStart = true;
+                    allowAddress = true;
                     readingExternal = false;
-                    requireSlash = true;
                     
-                } else if (s.equals(ADDRESS_SEPERATOR)) { 
+                    if (local != null && local.length > 0) { 
+                        allowDone = true;
+                    }
                     
-                    if (!requireSlash || !readingExternal || !readingOther) {
+                    break;
+                    
+                case ADDRESS_SEPERATOR: 
+                    
+                    if (!allowSlash) {
                         throw new IllegalArgumentException("Unexpected " 
                                 + ADDRESS_SEPERATOR + " in address(" 
                                 + addressPort + ")");
                     }
                     
-                    requireSlash = false;
+                    allowSlash = false;
+                    allowAddress = true;
+                    break;
                     
-                } else if (s.equals(IP_PORT_SEPERATOR)) { 
+                case IP_PORT_SEPERATOR: 
                     
-                    if (requireSlash || !readingExternal || !readingOther) { 
+                    if (!allowDash) { 
                         throw new IllegalArgumentException("Unexpected " 
                                 + IP_PORT_SEPERATOR + " in address(" 
                                 + addressPort + ")");
                     }
                     
-                    readingExternal = readingOther = false;
+                    allowDash = false;
                     readingPort = true;
+                    break;
+                    
+                default:
+                    // should never happen ? 
+                    throw new IllegalArgumentException("Unexpected delimiter: " 
+                            + delim + " in address(" + addressPort + ")");
                 }
                 
             } else if (readingPort) { 
                 
                 // This should complete a group of addresses. More may folow
                 int port = Integer.parseInt(s);
-                
-                
                 
                 // ... do a sanity check on the port value ...
                 if (port <= 0 || port > 65535) { 
@@ -836,10 +867,24 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 }
                 
                 readingPort = false;
-                requireSlash = true;
-            } else { 
+                allowSlash = true;
+                
+                if (readingExternal) { 
+                    allowExternalEnd = true;
+                } else { 
+                    allowDone = true;
+                }
+            } else if (allowAddress) { 
+                
                 // reading address
-                InetAddress tmp = InetAddress.getByName(s);
+                InetAddress tmp = null;
+                
+                try { 
+                    tmp = InetAddress.getByName(s);
+                } catch (UnknownHostException e) { 
+                    throw new IllegalArgumentException("Broken inet address " 
+                            + s + " in address(" + addressPort + ")");
+                }
                 
                 if (NetworkUtils.isLocalAddress(tmp)) { 
                     currentLocal.add(tmp);
@@ -847,8 +892,19 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     currentGlobal.add(tmp);
                 }
                 
-                requireSlash = true;
+                allowSlash = true;
+                allowDash = true;
+                allowAddress = false;
+                allowDone = false;
+            } else { 
+                throw new IllegalArgumentException("Unexpected data " 
+                        + s + " in address(" + addressPort + ")");
             }
+        }
+        
+        if (!allowDone) { 
+            throw new IllegalArgumentException("Address " + addressPort 
+                    + " is incomplete!");
         }
         
         return new SocketAddressSet(external, global, local);
