@@ -462,7 +462,9 @@ public class HubConnection extends MessageForwardingConnection {
     private void disconnect() {
                 
         // Update the administration
-        connections.remove(peer.hubAddress);        
+        connections.remove(peer.hubAddress);
+        
+        local.removeConnection();
         local.removeConnectedTo(peer.hubAddressAsString);
         
         DirectSocketFactory.close(s, out, in);            

@@ -415,6 +415,10 @@ public class HubDescription {
         return (connection != null);        
     }
     
+    public synchronized void removeConnection() { 
+        connection = null;        
+    }
+    
     private String reachableToString(byte r) { 
         switch (r) { 
         case REACHABLE:
