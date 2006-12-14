@@ -1116,5 +1116,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return a.sameProcess(b);
     }
 
+    public int numberOfAddresses() {
+        return external.length + global.length + local.length;
+    }
+
   
 }

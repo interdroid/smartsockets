@@ -707,7 +707,82 @@ public class DirectSocketFactory {
         if (timeout < 0) {
             timeout = DEFAULT_TIMEOUT;
         }
+/*
+        AddressIterator itt = preference.determineOrder(target);
+     
+        // TODO: count options here (after applying the preference!)
+        int options = itt.size();
+        
+        if (options == 1) { 
+            long time = System.currentTimeMillis();
+            
+            // only one option, so allow sleeping for ever...
+            DirectSocket result = attemptConnection(target, itt.next(), timeout,
+                    localPort, true);
 
+            time = System.currentTimeMillis() -time;
+            
+            if (logger.isInfoEnabled()) {              
+                logger.info("Connection setup took: "  + time + " ms.");                
+            }
+            
+            if (result != null) {
+                return result;
+            }
+
+            throw new ConnectException("Connection setup failed");
+        }
+        
+        int current = 0;
+        
+        while (true) { 
+        
+            while (itt.hasNext()) { 
+
+                long time = System.currentTimeMillis();
+
+                InetSocketAddress sa = itt.next();
+
+                int partialTimeout;
+
+                if (sa.getAddress().isLinkLocalAddress() && timeout > 2000) { 
+                    partialTimeout = 2000;
+                } else { 
+                    partialTimeout = timeout / (options-current);
+                }
+
+                DirectSocket result = attemptConnection(target, sa, partialTimeout,
+                        localPort, false);
+
+                time = System.currentTimeMillis() - time;
+
+                if (result != null) {
+                    if (logger.isInfoEnabled()) {      
+                        logger.info("Direct connection setup took: "  + time + " ms.");
+                    }
+                    return result;
+                }
+
+                if (logger.isInfoEnabled()) {      
+                    logger.info("Direct connection failed: "  + time + " ms.");
+                }
+            }
+
+            if (timeout > 0) {
+                // Enough tries so, throw exception
+                throw new SocketTimeoutException("Connection setup timed out!");
+            } // else, the user wants us to keep trying!
+            
+            itt.reset();
+        }
+  */      
+        
+        
+        /*
+         * OLD IMPLEMENTATION BELOW!!!!
+         */
+        
+        
         InetSocketAddress[] sas = target.getSocketAddresses();
         
         if (sas.length == 0) { 

@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 //import java.util.StringTokenizer;
 
@@ -180,7 +181,7 @@ public class NetworkPreference {
         }
     }
     
-    private void handlePreference(Preference target, IPAddressSet myAddress) {  
+    private void handleAutoPreference(Preference target, IPAddressSet myAddress) {  
         
         InetAddress [] ads = myAddress.getAddresses();
 
@@ -241,7 +242,7 @@ public class NetworkPreference {
                 if (logger.isInfoEnabled()) { 
                     logger.info("Using automatic network setup.");
                 }
-                handlePreference(target, myAddress);
+                handleAutoPreference(target, myAddress);
                 return;
             }            
         }
@@ -672,6 +673,11 @@ public class NetworkPreference {
 
     public String toString() {
         return defaultPreference.toString();
+    }
+
+    public AddressIterator determineOrder(SocketAddressSet target) {
+        // TODO Auto-generated method stub
+        return null;
     }
     
     public static NetworkPreference getPreference(IPAddressSet myAddress, 

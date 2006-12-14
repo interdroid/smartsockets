@@ -196,6 +196,11 @@ class Preference {
 
     InetSocketAddress[] sort(InetSocketAddress[] ads, boolean inPlace) {
 
+        // TODO: New implementation here ?
+        // The global/local/link differences should now be trivial, so many 
+        // of the simpler rules can be implemented more efficiently....
+        
+        
         // Nothing to if there are no rules, or only 1 address....
         if (preferences.size() == 0 || ads.length == 1) {
             if (logger.isDebugEnabled()) {
