@@ -733,6 +733,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             array[index++] = new InetSocketAddress(a, port);
         }
         
+        ads.clear();
+        
         return array;
     } 
     
@@ -774,6 +776,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public static SocketAddressSet getByAddress(String addressPort) 
         throws UnknownHostException { 
 
+        System.err.println("Parsing address: " + addressPort);
+        
         SocketAddressSet result = parseOldStyleAddress(addressPort);
         
         if (result != null) { 
