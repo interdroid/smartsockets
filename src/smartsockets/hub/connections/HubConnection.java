@@ -228,13 +228,15 @@ public class HubConnection extends MessageForwardingConnection {
                 out.flush();
             }
             
+            lastSendState = newSendState;
+            
+            peer.setContactTimeStamp(false);
+            
         } catch (Exception e) {
-            goslogger.warn("Unhandled exception in HubConnection!!", e);            
+            goslogger.warn("Unhandled exception in HubConnection!!", e); 
+            disconnect();
         }
-        
-        lastSendState = newSendState;
-        
-        peer.setContactTimeStamp(false);        
+                  
     }
     
     private void writePing() throws IOException {      
@@ -464,9 +466,10 @@ public class HubConnection extends MessageForwardingConnection {
         // Update the administration
         connections.remove(peer.hubAddress);
         
-        local.removeConnection();
         local.removeConnectedTo(peer.hubAddressAsString);
         
+        peer.removeConnection();
+       
         DirectSocketFactory.close(s, out, in);            
     
         closeAllVirtualConnections(uniquePrefix);
