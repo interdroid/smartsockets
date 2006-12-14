@@ -58,10 +58,13 @@ public class Hub extends Thread {
 
         super("Hub");
         
+        boolean allowDiscovery = 
+            p.booleanProperty(Properties.DISCOVERY_ALLOWED, true);
+        
         String [] clusters = 
             p.getStringList(Properties.HUB_CLUSTERS, ",", null);
         
-        if (clusters == null || clusters.length == 0) { 
+        if (clusters == null || clusters.length == 0) {
             clusters = new String[] { "*" };
         }
         
@@ -133,28 +136,39 @@ public class Hub extends Thread {
             misclogger.info("Listning for broadcast on LAN");
         }
                       
-        String [] suffixes = new String[clusters.length];
+        if (allowDiscovery) { 
+            String [] suffixes = new String[clusters.length];
         
-        // Check if there is a * in the list of clusters. If so, there is no 
-        // point is passing any other values. Note that there may also be a '+'
-        // which means 'any machine -NOT- belonging to a cluster. 
-        for (int i=0;i<clusters.length;i++) {             
-            if (clusters[i].equals("*") && clusters.length > 0) {
-                suffixes = new String[] { "*" };
-                break;
-            } else if (clusters[i].equals("+")) { 
-                suffixes[i] = "+";
-            } else { 
-                suffixes[i] = " " + clusters[i];
+            // TODO: what does the + do exactly ???
+            
+            // Check if there is a * in the list of clusters. If so, there is no 
+            // point is passing any other values. Note that there may also be a 
+            // '+' which means 'any machine -NOT- belonging to a cluster. 
+            for (int i=0;i<clusters.length;i++) {             
+                if (clusters[i].equals("*") && clusters.length > 0) {
+                    suffixes = new String[] { "*" };
+                    break;
+                } else if (clusters[i].equals("+")) { 
+                    suffixes[i] = "+";
+                } else { 
+                    suffixes[i] = " " + clusters[i];
+                }
             }
-        }
-                
-        int dp = p.getIntProperty(Properties.DISCOVERY_PORT, 
-                DEFAULT_DISCOVERY_PORT); 
-                
-        discovery = new Discovery(dp, 0, 0);         
-        discovery.answeringMachine("Any Proxies?", suffixes, local.toString());
-               
+
+            int dp = p.getIntProperty(Properties.DISCOVERY_PORT, 
+                    DEFAULT_DISCOVERY_PORT); 
+
+            discovery = new Discovery(dp, 0, 0);         
+            discovery.answeringMachine("Any Proxies?", suffixes, local.toString());
+   
+            misclogger.info("Hub will reply to discovery requests from: " + 
+                    Arrays.deepToString(suffixes));
+            
+        } else {  
+            discovery = null;
+            misclogger.info("Hub will not reply to discovery requests!");
+        } 
+        
         if (goslogger.isInfoEnabled()) {
             goslogger.info("Start Gossiping!");
         }
