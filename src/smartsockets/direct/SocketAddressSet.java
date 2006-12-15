@@ -504,6 +504,17 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             }
         }
         
+        // If either one has only a single address that equals a loopback, 
+        // it always matches. TODO: can a machine have more that one loopback ? 
+        if (a.length == 1 && a[0].getAddress().isLoopbackAddress()) { 
+            return true;
+        }
+        
+        if (b.length == 1 && b[0].getAddress().isLoopbackAddress()) { 
+            return true;
+        }
+        
+        // Otherwise, wo do not match...
         return false;
     }
     
@@ -556,7 +567,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
         
         // Neither machine has global addresses, so lets check the external 
-        // ones. If both ave them, they -MUST- overlap.
+        // ones. If both have them, they -MUST- overlap.
         if (external != null && external.length > 0 && other.external != null 
                 && other.external.length > 0) {
             
@@ -564,7 +575,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 return false;
             }
         }
-            
+          
         // ... 'local' -MUST- alway overlap regardless of the external ones.
         return compatible(local, other.local, comparePorts);     
     }
