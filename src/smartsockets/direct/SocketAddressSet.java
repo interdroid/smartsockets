@@ -9,6 +9,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -222,8 +223,24 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      */
     public IPAddressSet getAddressSet() {
         
-        if (addressCache == null) { 
-            // TODO: Fix 
+        if (addressCache == null) {
+            
+            ArrayList<InetAddress> tmp = new ArrayList<InetAddress>();
+            
+            for (InetSocketAddress a : global) { 
+                tmp.add(a.getAddress());
+            }
+            
+            for (InetSocketAddress a : external) { 
+                tmp.add(a.getAddress());
+            }
+        
+            for (InetSocketAddress a : local) { 
+                tmp.add(a.getAddress());
+            }
+        
+            addressCache = IPAddressSet.getFromAddress(
+                    tmp.toArray(new InetAddress[0]));
         }
         
         return addressCache;        

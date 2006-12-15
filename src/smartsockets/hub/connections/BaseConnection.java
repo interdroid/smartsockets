@@ -44,7 +44,6 @@ public abstract class BaseConnection implements Runnable {
         } 
         
         // NOTE: Do NOT close the socket here, since it may still be in use!
-        // DirectSocketFactory.close(s, out, in);        
     }
     
     protected abstract boolean runConnection();    

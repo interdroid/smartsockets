@@ -46,7 +46,8 @@ public class HubConnection extends MessageForwardingConnection {
             HubList proxies, StateCounter state, VirtualConnections vcs, 
             boolean master) {
         
-        super(s, in, out, connections, proxies, vcs, master, "Hub(" + peer.hubAddressAsString + ")");
+        super(s, in, out, connections, proxies, vcs, master, "Hub(" 
+                + peer.hubAddressAsString + ")");
         
         this.peer = peer;        
         this.state = state;
@@ -467,7 +468,6 @@ public class HubConnection extends MessageForwardingConnection {
         connections.remove(peer.hubAddress);
         
         local.removeConnectedTo(peer.hubAddressAsString);
-        
         peer.removeConnection();
        
         DirectSocketFactory.close(s, out, in);            
