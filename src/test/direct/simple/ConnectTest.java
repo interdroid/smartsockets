@@ -71,8 +71,8 @@ public class ConnectTest {
                     time = System.currentTimeMillis() - time;
 
                     System.out.println("Created connection to " + t + 
-                            " on local address " + s.getLocalSocketAddress() 
-                            + " remote address " + s.getRemoteSocketAddress() 
+                            " on local address " + s.getLocalAddress() 
+                            + " remote address " + s.getRemoteAddress() 
                             + " in " + time + " ms.");
 
                     DataInputStream in = new DataInputStream(s.getInputStream());
@@ -99,7 +99,7 @@ public class ConnectTest {
                 DirectSocket s = ss.accept();
                                 
                 System.out.println("Incoming connection from " 
-                        + s.getRemoteSocketAddress() + " " + s.getPort());
+                        + s.getRemoteAddress() + " " + s.getLocalPort());
               
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());

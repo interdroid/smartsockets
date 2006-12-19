@@ -5,8 +5,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import smartsockets.direct.DirectServerSocket;
+import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
@@ -21,7 +24,11 @@ public class ThreePointSpliceTest {
     private static void client(String key, SocketAddressSet server) 
         throws IOException {
     
-        DirectSocket s = sf.createSocket(server, 0, LOCAL_PORT, null);
+        Map properties = new HashMap();
+        properties.put("allowSSH", "false");
+        
+        DirectSimpleSocket s = (DirectSimpleSocket) sf.createSocket(server, 0, 
+                LOCAL_PORT, properties);
         
         System.out.println("Created connection to " + server + 
                 " on local address " + s.getLocalSocketAddress() 
@@ -49,7 +56,8 @@ public class ThreePointSpliceTest {
             
             for (int t=0;t<target.length;t++) {             
                 try { 
-                    s = sf.createSocket(target[i], 0, LOCAL_PORT, null);
+                    s = (DirectSimpleSocket) sf.createSocket(target[i], 0, 
+                            LOCAL_PORT, properties);
             
                     System.out.println("Created connection to " + target + 
                             " on local address " + s.getLocalSocketAddress() 
@@ -79,8 +87,8 @@ public class ThreePointSpliceTest {
 
         System.out.println("Creating server socket");
         
-        DirectSocket s1 = null;
-        DirectSocket s2 = null;
+        DirectSimpleSocket s1 = null;
+        DirectSimpleSocket s2 = null;
         
         DataInputStream in1 = null;
         DataInputStream in2 = null;
@@ -95,7 +103,7 @@ public class ThreePointSpliceTest {
             System.out.println("Created server on " + ss.getAddressSet());
 
             // Get two connections            
-            s1 = ss.accept();          
+            s1 = (DirectSimpleSocket) ss.accept();          
 
             InetSocketAddress address1 = 
                 (InetSocketAddress) s1.getRemoteSocketAddress();
@@ -110,7 +118,7 @@ public class ThreePointSpliceTest {
             System.out.println("Connection for key: " + key1);
 
             // Get two connections            
-            s2 = ss.accept();          
+            s2 = (DirectSimpleSocket) ss.accept();          
 
             InetSocketAddress address2 = 
                 (InetSocketAddress) s2.getRemoteSocketAddress();

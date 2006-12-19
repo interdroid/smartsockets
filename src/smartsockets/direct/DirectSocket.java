@@ -3,187 +3,79 @@ package smartsockets.direct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
-public class DirectSocket {
+public abstract class DirectSocket {
 
-    private Socket socket;
-    private InputStream in;
-    private OutputStream out;
+    protected final InputStream in;
+    protected final OutputStream out;
     
-    DirectSocket(Socket socket, InputStream in, OutputStream out) { 
-        this.socket = socket;
+    protected final SocketAddressSet local;
+    protected final SocketAddressSet remote;
+        
+    DirectSocket(SocketAddressSet local, SocketAddressSet remote, 
+            InputStream in, OutputStream out) {
+        
+        this.local = local;
+        this.remote = remote;
+        
         this.in = in; 
         this.out = out;
     }
-   
-    
-    public void close() throws IOException {
-        socket.close();
-    }
-
-    public SocketChannel getChannel() {
-        return socket.getChannel();
-    }
     
     public InputStream getInputStream() throws IOException {
-        
-        if (in != null) { 
-            in = socket.getInputStream();
-        } 
-        
         return in;
     }
 
-    public boolean getKeepAlive() throws SocketException {
-        return socket.getKeepAlive();
-    }
-    
-    /*
-    public InetAddress getInetAddress() {
-        // TODO: NOT SURE
-        return socket.getInetAddress();
-    }
-    */
-    public InetAddress getLocalAddress() {
-        // TODO: NOT SURE
-        return socket.getLocalAddress();     
-    }
-
-    public int getLocalPort() {
-        // TODO: NOT SURE
-        return socket.getLocalPort();
-    }
-
-    public SocketAddress getLocalSocketAddress() {
-        // TODO: NOT SURE
-        return socket.getLocalSocketAddress();
-    }
-
-    public int getPort() {
-        // TODO: NOT SURE
-        return socket.getPort();        
-    }
-    
-    public SocketAddress getRemoteSocketAddress() {
-        // TODO: NOT SURE
-        return socket.getRemoteSocketAddress();
-    }
-    
-    public boolean getOOBInline() throws SocketException {
-        return socket.getOOBInline();       
-    }
-
     public OutputStream getOutputStream() throws IOException {
-        
-        if (out != null) { 
-            out = socket.getOutputStream();
-        } 
-        
         return out;
     }
+        
+    public SocketAddressSet getLocalAddress() {
+        return local;     
+    }
+      
+    public SocketAddressSet getRemoteAddress() {
+        return remote;
+    }
     
-    public int getReceiveBufferSize() throws SocketException {
-        return socket.getReceiveBufferSize();
-    }
-
-    public boolean getReuseAddress() throws SocketException {
-        return socket.getReuseAddress();
-    }
-
-    public int getSendBufferSize() throws SocketException {
-        return socket.getSendBufferSize();
-    }
-
-    public int getSoLinger() throws SocketException {
-        return socket.getSoLinger();
-    }
-
-    public int getSoTimeout() throws SocketException {
-        return socket.getSoTimeout();        
-    }
-
-    public boolean getTcpNoDelay() throws SocketException {
-        return socket.getTcpNoDelay();
-    }
-
-    public int getTrafficClass() throws SocketException {
-        return socket.getTrafficClass();
-    }
-
     public boolean isBound() {
-        return socket.isBound();
-    }
-
-    public boolean isClosed() {
-        return socket.isClosed();
+        return true;
     }
 
     public boolean isConnected() {
-        return socket.isConnected();
+        return !isClosed();
     }
+    
+    public abstract int getLocalPort() throws IOException;
+    
+    public abstract void close() throws IOException;
+    public abstract boolean isClosed();
 
-    public boolean isInputShutdown() {
-        return socket.isInputShutdown();
-    }
+    public abstract void setReceiveBufferSize(int sz) throws SocketException;
+    public abstract int getReceiveBufferSize() throws SocketException;
+    
+    public abstract void setSendBufferSize(int sz) throws SocketException;
+    public abstract int getSendBufferSize() throws SocketException;    
+    
+    public abstract void setSoTimeout(int t) throws SocketException;
+    public abstract int getSoTimeout() throws SocketException;
+    
+    public abstract void setTcpNoDelay(boolean on) throws SocketException;
+    public abstract boolean getTcpNoDelay() throws SocketException;
 
-    public boolean isOutputShutdown() {
-        return socket.isOutputShutdown();
-    }
+    public abstract SocketChannel getChannel();
+    
+    public abstract void setSoLinger(boolean on, int linger) throws SocketException;
+    public abstract int getSoLinger() throws SocketException;
+    
+    public abstract void setReuseAddress(boolean on) throws SocketException;
+    public abstract boolean getReuseAddress() throws SocketException;
 
-    public void sendUrgentData(int data) throws IOException {
-        socket.sendUrgentData(data);
-    }
-
-    public void setKeepAlive(boolean on) throws SocketException {
-        socket.setKeepAlive(on);
-    }
-
-    public void setOOBInline(boolean on) throws SocketException {
-        socket.setOOBInline(on);
-    }
-
-    public void setReceiveBufferSize(int sz) throws SocketException {
-        socket.setReceiveBufferSize(sz);
-    }
-
-    public void setReuseAddress(boolean on) throws SocketException {
-        socket.setReuseAddress(on);
-    }
-
-    public void setSendBufferSize(int sz) throws SocketException {
-        socket.setSendBufferSize(sz);
-    }
-
-    public void setSoLinger(boolean on, int linger) throws SocketException {
-        socket.setSoLinger(on, linger);
-    }
-
-    public void setSoTimeout(int t) throws SocketException {
-        socket.setSoTimeout(t);
-    }
-
-    public void setTcpNoDelay(boolean on) throws SocketException {
-        socket.setTcpNoDelay(on);
-    }
-
-    public void setTrafficClass(int tc) throws SocketException {
-        socket.setTrafficClass(tc);
-    }
-
-    public void shutdownInput() throws IOException {
-        socket.shutdownInput();
-    }
-
-    public void shutdownOutput() throws IOException {
-        socket.shutdownOutput();
-    }
-
-    public String toString() {
-        return "PlainSocket(" + socket.toString() + ")";
-    }    
+    public abstract void shutdownInput() throws IOException;
+    public abstract boolean isInputShutdown();
+    
+    public abstract void shutdownOutput() throws IOException;
+    public abstract boolean isOutputShutdown();
 }

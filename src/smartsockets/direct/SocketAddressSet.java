@@ -33,12 +33,17 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     
     private static final char IP_PORT_SEPERATOR = '-';
     private static final char ADDRESS_SEPERATOR = '/';
+    private static final char USER_SEPERATOR = '~';
+    
     private static final char EXTERNAL_START = '{';
     private static final char EXTERNAL_END = '}';
     
     private transient InetSocketAddress [] external;
     private transient InetSocketAddress [] global;
     private transient InetSocketAddress [] local;
+    
+    // Unfortunately, this is the least that is required for SSH-tunneling...
+    private transient String user;
     
     private transient int hashCode = 0;
     private transient byte [] codedForm = null;
@@ -47,11 +52,14 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private transient InetSocketAddress [] allAddressesCache;
         
     private SocketAddressSet(InetSocketAddress [] external, 
-            InetSocketAddress [] global, InetSocketAddress [] local) {
+            InetSocketAddress [] global, InetSocketAddress [] local, 
+            String user) {
         
         this.external = (external == null ? new InetSocketAddress[0] : external);
         this.global = (global == null ? new InetSocketAddress[0] : global);
-        this.local = (local == null ? new InetSocketAddress[0] : local);
+        this.local = (local == null ? new InetSocketAddress[0] : local);        
+        this.user = user;
+        
         /*
         System.err.println("Created SocketAddressSet: " + toString());
         
@@ -79,9 +87,15 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         global = new InetSocketAddress[coded[index++] & 0xFF];
         local = new InetSocketAddress[coded[index++] & 0xFF];
 
+        int userLen = coded[index++] & 0xFF;
+        
         index = decode(external, coded, index);
         index = decode(global, coded, index);
         index = decode(local, coded, index);
+        
+        if (userLen > 0) { 
+            user = new String(coded, index, userLen);
+        }        
     }    
     
     private static int decode(InetSocketAddress[] target, byte [] src, int index) 
@@ -192,25 +206,38 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         if (codedForm == null) {
             
+            byte [] codedUser = null;
+            
             // First calculate the size of the address n bytes....
-            int len = 3;
+            int len = 4;
           
             len += codedSize(external);
             len += codedSize(global);
             len += codedSize(local);
-                
+            
+            if (user != null && user.length() > 0) {
+                codedUser = user.getBytes();
+                len += codedUser.length;
+            }
+            
             // Now encode it...
             codedForm = new byte[len];
             
             int index = 0;
             
-            codedForm[index++] = (byte) ((external == null ? 0 : external.length) & 0xFF);
-            codedForm[index++] = (byte) ((global == null ? 0 : global.length) & 0xFF);
-            codedForm[index++] = (byte) ((local == null ? 0 : local.length) & 0xFF);
+            codedForm[index++] = (byte) (external.length & 0xFF);
+            codedForm[index++] = (byte) (global.length & 0xFF);
+            codedForm[index++] = (byte) (local.length & 0xFF);
+            codedForm[index++] = 
+                (byte) ((codedUser == null ? 0 : codedUser.length) & 0xFF);
             
             index = encode(external, codedForm, index);
             index = encode(global, codedForm, index);
             index = encode(local, codedForm, index);
+            
+            if (user != null && user.length() > 0) { 
+                System.arraycopy(codedUser, 0, codedForm, index, codedUser.length);
+            }
         }
         
         return codedForm;
@@ -258,32 +285,34 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         if (allAddressesCache == null) {
             
-            int len = (global == null ? 0 : global.length);
-            len += (external == null ? 0 : external.length);
-            len += (local == null ? 0 : local.length);
+            int len = global.length + external.length + local.length;
                 
             allAddressesCache = new InetSocketAddress[len];
             
             int index = 0;
             
-            if (global != null && global.length > 0) { 
-                System.arraycopy(global, 0, allAddressesCache, index, global.length);
-                index += global.length;
-            }
+            System.arraycopy(global, 0, allAddressesCache, index, global.length);
+            index += global.length;
             
-            if (external != null && external.length > 0) { 
-                System.arraycopy(external, 0, allAddressesCache, index, external.length);
-                index += external.length;
-            }
-           
-            if (local != null && local.length > 0) { 
-                System.arraycopy(local, 0, allAddressesCache, index, local.length);
-                index += local.length;
-            }   
+            System.arraycopy(external, 0, allAddressesCache, index, external.length);
+            index += external.length;
+            
+            System.arraycopy(local, 0, allAddressesCache, index, local.length);
+            index += local.length;   
         }
         
         return allAddressesCache;
     } 
+    
+
+    /**
+     * Gets the SSH-username
+     * 
+     * @return the username.
+     */    
+    public String getUser() { 
+        return user;
+    }
         
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
@@ -292,17 +321,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         if (hashCode == 0) { 
             
-            if (external != null && external.length > 0) { 
-                hashCode ^= Arrays.hashCode(external);
-            }
-            
-            if (global != null && global.length > 0) { 
-                hashCode ^= Arrays.hashCode(global);
-            }
-            
-            if (local != null && local.length > 0) { 
-                hashCode ^= Arrays.hashCode(local);
-            }
+            hashCode = (Arrays.hashCode(external) ^ Arrays.hashCode(global)
+                ^ Arrays.hashCode(local));
             
             // Small chance, but let's fix this case anyway...
             if (hashCode == 0) { 
@@ -350,15 +370,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     }
     
     private boolean compare(InetSocketAddress [] a, InetSocketAddress [] b) { 
-      
-        if (a == null && b == null) { 
-            return true;
-        } 
-        
-        if ((a != null && b == null) || (a == null && b != null)) { 
-            return false;
-        }
-        
+     
         if (a.length != b.length) { 
             return false;
         }
@@ -389,7 +401,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return true;    
     }
     
-    private void partialToString(StringBuffer b, InetSocketAddress [] a) { 
+    private void partialToString(StringBuilder b, InetSocketAddress [] a) { 
 
         final int len = a.length;
         
@@ -417,11 +429,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public String toString() {
         
         if (toStringCache == null) { 
-            StringBuffer b = new StringBuffer();
+            StringBuilder b = new StringBuilder();
 
             boolean needSlash = false;
             
-            if (external != null && external.length > 0) { 
+            if (external.length > 0) { 
                 b.append(EXTERNAL_START);
                 partialToString(b, external);
                 b.append(EXTERNAL_END);
@@ -429,7 +441,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 needSlash = true;
             }
             
-            if (global != null && global.length > 0) {
+            if (global.length > 0) {
                 
                 if (needSlash) { 
                     b.append(ADDRESS_SEPERATOR);
@@ -439,7 +451,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 needSlash = true;
             }
         
-            if (local != null && local.length > 0) {
+            if (local.length > 0) {
                 
                 if (needSlash) { 
                     b.append(ADDRESS_SEPERATOR);
@@ -449,6 +461,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 needSlash = true;
             }
         
+            if (user != null && user.length() > 0) { 
+                b.append(USER_SEPERATOR);
+                b.append(user);
+            }
+            
             toStringCache = b.toString();
         } 
         
@@ -478,12 +495,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private static boolean compatible(InetSocketAddress [] a, 
             InetSocketAddress [] b, boolean comparePorts) { 
         
-        // If either (or both) is null we give up!
-        if (a == null || a.length == 0) { 
-            return false;
-        }
-        
-        if (b == null || b.length == 0) { 
+        // If either (or both) is empty we give up!
+        if (a.length == 0 || b.length == 0) { 
             return false;
         }
         
@@ -503,39 +516,38 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 }
             }
         }
-        
-        // If either one has only a single address that equals a loopback, 
-        // it always matches. TODO: can a machine have more that one loopback ? 
-        if (a.length == 1 && a[0].getAddress().isLoopbackAddress()) { 
-            return true;
-        }
-        
-        if (b.length == 1 && b[0].getAddress().isLoopbackAddress()) { 
-            return true;
-        }
-        
+           
         // Otherwise, wo do not match...
         return false;
+    }
+    
+    private boolean isLoopBack(InetSocketAddress [] ads) { 
+        if (ads == null || ads.length == 0) { 
+            return false;
+        }
+        
+        for (InetSocketAddress a : ads) { 
+            if (!a.getAddress().isLoopbackAddress()) { 
+                return false;
+            }
+        }
+        
+        return true;
     }
     
     /**
      * Check if this SocketAddressSet refers to the same machine as the 'other'
      * address. The following tests are performed:
      * 
-     * If both have global addresses, and they (partly) overlap it is the same 
-     *   machine. If they are disjuct they are difference machines.
-     *
-     * If one of the two has global+local addresses, and the other only has 
-     *   local addresses, and the local addresses (partly) overlap it is the 
-     *   same machine.
+     * if either is loopback -> return true
      * 
-     * If neither has a global address, but both have external and local 
-     *   addresses and both overlap, then it is the same machine.
-     *  
-     * If both only have local addresses and then overlap then it is the same 
-     *   machine.
-     *   
-     * In all other cases they represent different machines.   
+     * if both have global -> return (global overlap ?)
+     * 
+     * if both have external && !(external overlap) return false
+     * 
+     * if both have local -> return (local overlap)
+     * 
+     * else they are different machines -> return false
      * 
      * @param target
      * @return
@@ -546,38 +558,26 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         if (this == other) { 
             return true;
         }
-        
-        if (global != null && global.length > 0) { 
 
-            // This machine has global addresses....
-            if (other.global != null && other.global.length > 0) {
-                // ... so does the other machine. So 'global' -MUST- overlap. 
-                return compatible(global, other.global, comparePorts);
-            } else { 
-                // ... but the other only has local addresses. 
-                // So 'local' -MUST- overlap  
-                return compatible(local, other.local, comparePorts);     
-            }
-
-        } else if (other.global != null && other.global.length > 0) {
-           
-            // The other machine has global addresses, but this one only has 
-            // local, so local -MUST- overlap.
-            return compatible(local, other.local, comparePorts);
+        // If either is loopback, we always match
+        if (isLoopBack(local) || isLoopBack(other.local)) {
+            return true;
         }
         
-        // Neither machine has global addresses, so lets check the external 
-        // ones. If both have them, they -MUST- overlap.
-        if (external != null && external.length > 0 && other.external != null 
-                && other.external.length > 0) {
-            
-            if (!compatible(external, other.external, comparePorts)) { 
-                return false;
-            }
+        // If both have 'global' addresses -MUST- overlap. 
+        if (global.length > 0 && other.global.length > 0) {
+            return compatible(global, other.global, comparePorts);
+        } 
+                
+        // If both have external (NAT) addresses, they -MUST- overlap, and the 
+        // local addresses -MUST- overlap also!
+        if (external.length > 0 && other.external.length > 0) {
+            return (compatible(external, other.external, comparePorts) && 
+                compatible(local, other.local, comparePorts));   
         }
-          
-        // ... 'local' -MUST- alway overlap regardless of the external ones.
-        return compatible(local, other.local, comparePorts);     
+        
+        // Else, just check the local addresses.
+        return compatible(local, other.local, comparePorts);
     }
     
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -612,9 +612,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         throws UnknownHostException {
         
         if (NetworkUtils.isLocalAddress(a.getAddress())) { 
-            return new SocketAddressSet(null, null, new InetSocketAddress [] { a });
+            return new SocketAddressSet(null, null, 
+                    new InetSocketAddress [] { a }, null);
         } else { 
-            return new SocketAddressSet(null, new InetSocketAddress [] { a }, null);
+            return new SocketAddressSet(null, new InetSocketAddress [] { a }, 
+                    null, null);
         }
     }
     
@@ -629,10 +631,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param address The IPAddressSet.
      * @param port The port number.
      */
-    public static SocketAddressSet getByAddress(IPAddressSet a, int port) 
+    public static SocketAddressSet getByAddress(IPAddressSet a, int port, String user) 
         throws UnknownHostException {
         
-        return getByAddress(null, null, a, new int [] { port });
+        return getByAddress(null, null, a, new int [] { port }, user);
     }
 
    
@@ -656,7 +658,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      *                 addresses.
      */
     public static SocketAddressSet getByAddress(IPAddressSet external, 
-            int [] externalPorts, IPAddressSet other, int [] otherPorts) {
+            int [] externalPorts, IPAddressSet other, int [] otherPorts, 
+            String user) {
     
         if (other == null) { 
             other = IPAddressSet.getLocalHost();
@@ -733,7 +736,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             }
         }
         
-        return new SocketAddressSet(extern, global, local);
+        return new SocketAddressSet(extern, global, local, user);
     }
     
     private static InetSocketAddress[] resize(InetSocketAddress [] orig, int add) { 
@@ -841,21 +844,25 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     
     private static SocketAddressSet parseNewStyleAddress(String addressPort) {
         
-        StringTokenizer st = new StringTokenizer(addressPort, "{}/-", true);
+        StringTokenizer st = new StringTokenizer(addressPort, "{}/-~", true);
         
         boolean readingExternal = false;
         boolean readingPort = false;
-        
+        boolean readingUser = false;
+                
         boolean allowExternalStart = true;
         boolean allowExternalEnd = false;
         boolean allowAddress = true;
         boolean allowSlash = false; 
         boolean allowDash = false; 
         boolean allowDone = false;
-        
+        boolean allowUser = false; 
+                
         InetSocketAddress [] external = null; 
         InetSocketAddress [] global = null; 
         InetSocketAddress [] local = null; 
+        
+        String user = null;
         
         LinkedList<InetAddress> currentGlobal = new LinkedList<InetAddress>();
         LinkedList<InetAddress> currentLocal = new LinkedList<InetAddress>();
@@ -863,6 +870,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         while (st.hasMoreTokens()) { 
             
             String s = st.nextToken();
+            
+            System.out.println("Read: " + s);
             
             if (s.length() == 1) {
                 
@@ -925,12 +934,32 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     allowDash = false;
                     readingPort = true;
                     break;
+        
+                case USER_SEPERATOR: 
+                    
+                    if (!allowUser) { 
+                        throw new IllegalArgumentException("Unexpected " 
+                                + USER_SEPERATOR + " in address(" 
+                                + addressPort + ")");
+                    }
+
+                    allowDone = false;
+                    allowUser = false;
+                    readingUser = true;
+                    break;
                     
                 default:
                     // should never happen ? 
                     throw new IllegalArgumentException("Unexpected delimiter: " 
                             + delim + " in address(" + addressPort + ")");
                 }
+                
+            } else if (readingUser) { 
+                
+                user = s;
+                readingUser = false;
+                allowSlash = false;
+                allowDone = true;
                 
             } else if (readingPort) { 
                 
@@ -956,7 +985,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     allowExternalEnd = true;
                 } else { 
                     allowDone = true;
+                    allowUser = true;
                 }
+                 
             } else if (allowAddress) { 
                 
                 // reading address
@@ -990,11 +1021,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     + " is incomplete!");
         }
         
-        return new SocketAddressSet(external, global, local);
+        return new SocketAddressSet(external, global, local, user);
     }
     
     public static SocketAddressSet getByAddress(String host, int port) throws UnknownHostException { 
-        return getByAddress(IPAddressSet.getFromString(host), port);
+        return getByAddress(IPAddressSet.getFromString(host), port, null);
     }
     
     
@@ -1027,10 +1058,27 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public static SocketAddressSet merge(SocketAddressSet s1, 
             SocketAddressSet s2) {
         
+        String user = s1.user;
+        
+        if (s1.user == null || user.length() == 0) {
+            user = s2.user;           
+        } else if (s2.user != null && s2.user.length() > 0) {
+               
+            if (!s1.user.equals(s2.user)) { 
+                throw new IllegalArgumentException("Cannot merge two " +
+                "addresses with different user names!");
+            } 
+                
+            // They are equal...
+            user = s2.user;  
+        } else { 
+            user = s2.user;
+        }
+        
         return new SocketAddressSet(
                 merge(s1.external, s2.external), 
                 merge(s1.global, s2.global), 
-                merge(s1.local, s2.local));
+                merge(s1.local, s2.local), user);
     } 
     
     /**

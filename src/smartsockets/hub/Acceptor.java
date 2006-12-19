@@ -14,6 +14,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectServerSocket;
+import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
@@ -47,7 +48,7 @@ public class Acceptor extends CommunicationThread {
         String connectID;
         long bestBefore; 
         
-        DirectSocket s;
+        DirectSimpleSocket s;
         DataInputStream in;
         DataOutputStream out;
 
@@ -55,7 +56,7 @@ public class Acceptor extends CommunicationThread {
     
     private long nextInvalidation = -1;
    
-    private HashMap spliceInfo = new HashMap();
+    private HashMap<String, SpliceInfo> spliceInfo = new HashMap<String, SpliceInfo>();
         
     Acceptor(int port, StateCounter state, 
             Map<SocketAddressSet, BaseConnection> connections, 
@@ -185,13 +186,29 @@ public class Acceptor extends CommunicationThread {
     private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
 
-        boolean result = false;
         
+        boolean result = false;
         String connectID = in.readUTF();
         int time = in.readInt();
         
         if (reqlogger.isInfoEnabled()) { 
             reqlogger.info("Got request for splice info: " + connectID + " " + time);
+        }
+
+        DirectSimpleSocket dss = null;
+        
+        try { 
+            dss = (DirectSimpleSocket) s;
+        } catch (ClassCastException e) {
+            // Apperently this is not a direct connection, so we give up!
+
+            if (reqlogger.isInfoEnabled()) { 
+                reqlogger.info("Cannot handle request for splice info: " 
+                        + connectID + ": connection is not direct!");
+            }
+
+            DirectSocketFactory.close(s, out, in);
+            return false;
         }
         
         SpliceInfo info = (SpliceInfo) spliceInfo.remove(connectID);
@@ -206,7 +223,7 @@ public class Acceptor extends CommunicationThread {
             info = new SpliceInfo();
             
             info.connectID = connectID;
-            info.s = s;
+            info.s = dss;
             info.out = out;
             info.in = in;             
             info.bestBefore = System.currentTimeMillis() + time;
@@ -232,7 +249,7 @@ public class Acceptor extends CommunicationThread {
             
             try {                               
                 InetSocketAddress tmp = 
-                    (InetSocketAddress) s.getRemoteSocketAddress();
+                    (InetSocketAddress) dss.getRemoteSocketAddress();
 
                 info.out.writeUTF(tmp.getAddress().toString());
                 info.out.writeInt(tmp.getPort());

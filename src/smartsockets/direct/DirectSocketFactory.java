@@ -1,5 +1,6 @@
 package smartsockets.direct;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,6 +17,9 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
+import ch.ethz.ssh2.Connection;
+import ch.ethz.ssh2.LocalStreamForwarder;
 
 import smartsockets.Properties;
 import smartsockets.util.NetworkUtils;
@@ -52,11 +56,15 @@ public class DirectSocketFactory {
     private final boolean USE_NIO;
     
     private final boolean ALLOW_UPNP;
-    private final boolean ALLOW_UPNP_PORT_FORWARDING;    
-    
+    private final boolean ALLOW_UPNP_PORT_FORWARDING;        
+    private final boolean ALLOW_SSH_OUT;    
+        
     private final int inputBufferSize;
     private final int outputBufferSize;
         
+    // User for SSH tunneling
+    private final String user;
+    
     private IPAddressSet localAddress;
     private IPAddressSet externalAddress;  
     private IPAddressSet completeAddress;
@@ -81,9 +89,17 @@ public class DirectSocketFactory {
         DEFAULT_BACKLOG = p.getIntProperty(Properties.DIRECT_BACKLOG, 100);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
         ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
+        ALLOW_SSH_OUT = p.booleanProperty(Properties.SSH_OUT, true);
         
-        if (!ALLOW_UPNP) { 
-            
+        boolean allowSSHIn = p.booleanProperty(Properties.SSH_IN, true);
+
+        if (allowSSHIn) { 
+            user = System.getProperty("user.name");
+        } else { 
+            user = null;
+        }
+                
+        if (!ALLOW_UPNP) {             
             ALLOW_UPNP_PORT_FORWARDING = false;
         } else { 
             ALLOW_UPNP_PORT_FORWARDING = 
@@ -327,6 +343,59 @@ public class DirectSocketFactory {
         }
     }
 
+    private DirectSocket attemptSSHConnection(SocketAddressSet sas,
+            InetSocketAddress target, int timeout, int localPort, 
+            boolean mayBlock, String user) {
+        
+        try {
+            String host = target.getAddress().toString();
+            
+            if (host.startsWith("/")) { 
+                host = host.substring(1);
+            }
+            
+            System.err.println("Host is \"" + host + "\" user is " + user);
+            
+            Connection conn = new Connection(host);            
+            conn.connect();
+            
+            // TODO: quick hack.... fix this!!
+            File keyfile = new File("/home/jason/.ssh/id_rsa"); // or "~/.ssh/id_dsa"
+            String keyfilePass = "joespass"; // will be ignored if not needed
+
+            boolean isAuthenticated = conn.authenticateWithPublicKey(user, 
+                    keyfile, keyfilePass);
+
+            if (isAuthenticated == false)
+                throw new IOException("Authentication failed.");
+
+            LocalStreamForwarder lsf = 
+                conn.createLocalStreamForwarder(host, target.getPort());
+            
+            InputStream in = lsf.getInputStream();
+            OutputStream out = lsf.getOutputStream();
+            
+            SocketAddressSet realAddress = handShake(sas, target, in, out); 
+            
+            if (realAddress == null) { 
+                lsf.close();     
+                return null;
+            }
+            
+            return new DirectSSHSocket(
+                    SocketAddressSet.getByAddress(completeAddress, 1, null), 
+                    realAddress, in, out, lsf);
+            
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        
+        
+        return null;
+    }
+        
     private DirectSocket attemptConnection(SocketAddressSet sas,
             InetSocketAddress target, int timeout, int localPort, 
             boolean mayBlock) {
@@ -376,80 +445,31 @@ public class DirectSocketFactory {
              // TODO: optimized this ??? Its getting more and more complicated!!
              s.setSoTimeout(5000);
              s.setTcpNoDelay(true);
-            
-             
+
              // Check if we are talking to the right machine...
              in = s.getInputStream();
-             
-             // Read the size of the machines address
-             int size = (in.read() & 0xFF);
-             size |= ((in.read() & 0xFF) << 8); 
-             
-             // Read the address itself....
-             byte [] tmp = new byte[size];
-             
-             int off = 0; 
-             
-             while (off < size) { 
-                 off += in.read(tmp, off, size-off);
-             }
-             
-             // Now send our own address to the server side (who may decide to 
-             // -NOT- accept us based on this)
              out = s.getOutputStream();
-      
-             out.write(completeAddressInBytes);
-             out.write(networkNameInBytes);
-             out.flush();
-                     
-             // Create the address and see if we are to talking to the right 
-             // process....
-             SocketAddressSet server = SocketAddressSet.getByAddress(tmp);
-                          
-             if (!server.sameProcess(sas)) { 
-                 out.write(DirectServerSocket.WRONG_MACHINE);
-                 out.flush();
+             
+             SocketAddressSet realAddress = handShake(sas, target, in, out);
+             
+             if (realAddress == null) { 
                  close(s, out, in);     
-
-                 if (logger.isInfoEnabled()) { 
-                     logger.info("Got connecting to wrong machine: "  
-                             + sas.toString()
-                             + " using network "
-                             + NetworkUtils.ipToString(target.getAddress()) + ":"
-                             + target.getPort() 
-                             + " got me a connection to " 
-                             + server.toString() 
-                             + " will retry!");
-                 }
-                 
-                 return null;
-             }
-             
-             out.write(DirectServerSocket.ACCEPT);             
-             out.flush();
-             
-             int opcode = in.read();
-             
-             if (opcode != DirectServerSocket.ACCEPT) { 
-                 close(s, out, in);     
- 
-                 if (logger.isInfoEnabled()) { 
-                     logger.info("Target " 
-                             + NetworkUtils.ipToString(target.getAddress()) + ":"
-                             + target.getPort() + " refused our connection!");
-                 }
-                 
                  return null;
              }
              
              s.setSoTimeout(0);
-                
-             DirectSocket r = new DirectSocket(s, in, out);
+             
+             // TODO: get real port here ? 
+             DirectSocket r = new DirectSimpleSocket(
+                     SocketAddressSet.getByAddress(completeAddress, 0, null), 
+                     realAddress, in, out, s);
+             
              tuneSocket(r);
-             return r;
- 
+             return r; 
+        
         } catch (Throwable e) {
-
+            // TODO: Throwable ?? Bit drastic!
+            
             if (logger.isInfoEnabled()) {
                 logger.info("Failed to directly connect to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
@@ -460,7 +480,83 @@ public class DirectSocketFactory {
             return null;
         }
     }
-   
+             
+    private SocketAddressSet handShake(SocketAddressSet sas, InetSocketAddress target, 
+            InputStream in, OutputStream out) { 
+        
+        SocketAddressSet server = null;
+        
+        try {     
+            // Read the size of the machines address
+            int size = (in.read() & 0xFF);
+            size |= ((in.read() & 0xFF) << 8); 
+
+            // Read the address itself....
+            byte [] tmp = new byte[size];
+
+            int off = 0; 
+
+            while (off < size) { 
+                off += in.read(tmp, off, size-off);
+            }
+
+            // Now send our own address to the server side (who may decide to 
+            // -NOT- accept us based on this)
+            out.write(completeAddressInBytes);
+            out.write(networkNameInBytes);
+            out.flush();
+
+            // Create the address and see if we are to talking to the right 
+            // process....
+            server = SocketAddressSet.getByAddress(tmp);
+
+            if (!server.sameProcess(sas)) { 
+                out.write(DirectServerSocket.WRONG_MACHINE);
+                out.flush();
+
+                if (logger.isInfoEnabled()) { 
+                    logger.info("Got connecting to wrong machine: "  
+                            + sas.toString()
+                            + " using network "
+                            + NetworkUtils.ipToString(target.getAddress()) + ":"
+                            + target.getPort() 
+                            + " got me a connection to " 
+                            + server.toString() 
+                            + " will retry!");
+                }
+
+                return null;
+            }
+
+            out.write(DirectServerSocket.ACCEPT);             
+            out.flush();
+
+            int opcode = in.read();
+
+            if (opcode != DirectServerSocket.ACCEPT) { 
+                if (logger.isInfoEnabled()) { 
+                    logger.info("Target " 
+                            + NetworkUtils.ipToString(target.getAddress()) + ":"
+                            + target.getPort() + " refused our connection!");
+                }
+
+                return null;
+            }
+
+        } catch (Exception e) {
+
+            if (logger.isInfoEnabled()) { 
+                logger.info("Handshake with target " 
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort() + " failed!", e);
+            }
+
+            return null;
+        }
+
+        return server;
+    }
+
     private DirectServerSocket createServerSocket(int port, int backlog,
             boolean portForwarding, boolean forwardingMayFail,
             boolean sameExternalPort) throws IOException {
@@ -480,9 +576,11 @@ public class DirectSocketFactory {
             // We are not behind a NAT box or the user doesn't want port
             // forwarding, so just return the server socket
             SocketAddressSet local = 
-                SocketAddressSet.getByAddress(localAddress, ss.getLocalPort());
+                SocketAddressSet.getByAddress(localAddress, ss.getLocalPort(), 
+                        user);
 
-            DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
+            DirectServerSocket smss = new DirectServerSocket(local, ss, 
+                    preference);
             
             if (logger.isDebugEnabled()) {
                 logger.debug("Created server socket on: " + smss);
@@ -500,7 +598,8 @@ public class DirectSocketFactory {
             if (forwardingMayFail) {
                 // It's OK, so return the socket.
                 SocketAddressSet local = 
-                    SocketAddressSet.getByAddress(localAddress, ss.getLocalPort());
+                    SocketAddressSet.getByAddress(localAddress, 
+                            ss.getLocalPort(), user);
 
                 DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
                 
@@ -537,7 +636,8 @@ public class DirectSocketFactory {
             ePort = UPNP.addPortMapping(port, ePort, myNATAddress, 0, "TCP");
             
             local = SocketAddressSet.getByAddress(externalAddress, 
-                    new int [] { ePort }, localAddress, new int [] { ss.getLocalPort() });
+                    new int [] { ePort }, localAddress, 
+                    new int [] { ss.getLocalPort() }, user);
           
         } catch (Exception e) {
 
@@ -555,7 +655,8 @@ public class DirectSocketFactory {
                 throw new IOException("Port forwarding failed: " + e);
             }
             
-            local = SocketAddressSet.getByAddress(localAddress, ss.getLocalPort());
+            local = SocketAddressSet.getByAddress(localAddress, 
+                    ss.getLocalPort(), user);
         }
 
         DirectServerSocket smss = new DirectServerSocket(local, ss, preference);
@@ -694,6 +795,33 @@ public class DirectSocketFactory {
         return createSocket(target, timeout, 0, properties);
     }
 
+    private boolean mayUseSSH(SocketAddressSet target, Map properties) { 
+        
+        if (ALLOW_SSH_OUT && target.getUser() != null) { 
+
+            if (properties != null && properties.containsKey("allowSSH")) {
+                String result = (String) properties.get("allowSSH");
+
+                if (result != null && result.equalsIgnoreCase("true")) {
+                    System.err.println("Can use SSH for connection setup!");
+                    return true;
+                } else {
+                    System.err.println("Can NOT use SSH for connection setup!");
+                    return false;
+                }
+            } else {
+                System.err.println("Can use SSH for connection setup!");
+                return true;
+            }
+
+        } 
+
+        System.err.println("Can NOT use SSH for connection setup!" 
+                + ALLOW_SSH_OUT + " " + target.getUser());
+        
+        return false;        
+    }
+    
     
     /*
      * (non-Javadoc)
@@ -781,8 +909,12 @@ public class DirectSocketFactory {
         /*
          * OLD IMPLEMENTATION BELOW!!!!
          */
+
+        // First check if the number of connect options is doubled by the fact 
+        // that we can also use SSH tunnels to connect to the machine...
+        boolean mayUseSSH = mayUseSSH(target, properties);
         
-        
+        // Next, get the addresses of the target machine.         
         InetSocketAddress[] sas = target.getSocketAddresses();
         
         if (sas.length == 0) { 
@@ -790,21 +922,20 @@ public class DirectSocketFactory {
             return null;
         }
         
-        
-        if (sas.length == 1) {
-            
+        // If there is only one address, and no SSH we can do a blocking call...        
+        if (sas.length == 1 && !mayUseSSH) {
+
             long time = System.currentTimeMillis();
-            
-            // only one socket left, so allow sleeping for ever...
+
             DirectSocket result = attemptConnection(target, sas[0], timeout,
                     localPort, true);
 
             time = System.currentTimeMillis() -time;
-            
+
             if (logger.isInfoEnabled()) {              
                 logger.info("Connection setup took: "  + time + " ms.");                
             }
-            
+
             if (result != null) {
                 return result;
             }
@@ -814,50 +945,115 @@ public class DirectSocketFactory {
 
         // Select the addresses we want from the target set. Some may be removed
         // thanks to the cluster configuration.
+        
+        // TODO: shouldn't this be done first ?  
         sas = preference.sort(sas, false);
+        
+        if (sas.length == 0) { 
+            return null;
+        }        
         
         // else, we must try them all, so the connection attempt must return at 
         // some point, even if timeout == 0
         
-        while (true) {
-            for (int i = 0; i < sas.length; i++) {
-                
-                long time = System.currentTimeMillis();
-                               
-                InetSocketAddress sa = sas[i];
+        int timeLeft = timeout;
         
-                int partialTimeout;
-                
-                if (sa.getAddress().isLinkLocalAddress() && timeout > 2000) { 
-                    partialTimeout = 2000;
-                } else { 
-                    partialTimeout = timeout / (sas.length-i);
-                }
-                
-                DirectSocket result = attemptConnection(target, sa, 
-                        partialTimeout, localPort, false);
-
-                time = System.currentTimeMillis() -time;
-                                       
-                if (result != null) {
-                    if (logger.isInfoEnabled()) {      
-                        logger.info("Direct connection setup took: "  + time + " ms.");
-                    }
-                    return result;
-                }
-               
-                if (logger.isInfoEnabled()) {      
-                    logger.info("Direct connection failed: "  + time + " ms.");
-                }
+        DirectSocket result = null;
+        
+        while (true) {
+            
+            int partialTime = timeLeft;
+            
+            if (mayUseSSH) { 
+                partialTime = timeLeft / 2;
             }
-
-            if (timeout > 0) {
+            
+            long starttime = System.currentTimeMillis();
+            
+           // result = loopOverOptions(target, sas, localPort, partialTime, null);
+            
+            int time = (int) (System.currentTimeMillis() - starttime);
+            
+            // If we don't have a connection yet we try to use SSH
+            if (result == null && mayUseSSH) { 
+                
+                partialTime = timeLeft - time;
+            
+                result = loopOverOptions(target, sas, localPort, 
+                        partialTime, target.getUser());
+            
+                time = (int) (System.currentTimeMillis() - starttime);
+            }
+            
+            if (result != null) { 
+                return result;
+            }
+            
+            timeLeft -= time;
+            
+            return null;
+            /*
+            if (timeLeft <= 0 && timeout > 0) {
                 // Enough tries so, throw exception
                 throw new SocketTimeoutException("Connection setup timed out!");
             } // else, the user wants us to keep trying!
+            */  
         }
     }
 
+    private DirectSocket loopOverOptions(SocketAddressSet target, 
+            InetSocketAddress [] sas, int localPort, int timeout, 
+            String user) {
+        
+        System.err.println("Attempting connection setup " + 
+                (user != null ? "using SSH" : ""));
+        
+        DirectSocket result = null;
+        
+        int timeLeft = timeout;
+        
+        for (int i = 0; i < sas.length; i++) {
+            
+            long time = System.currentTimeMillis();
+            
+            InetSocketAddress sa = sas[i];
+    
+            int partialTime;
+            
+            if (NetworkUtils.isLocalAddress(sa.getAddress()) && timeout > 1000) { 
+                partialTime = 1000;
+            } else { 
+                partialTime = timeLeft / (sas.length-i);
+            }
+
+            if (user != null) { 
+                result = attemptSSHConnection(target, sa, partialTime, 
+                        localPort, false, user);                
+            } else { 
+                result = attemptConnection(target, sa, partialTime, localPort, 
+                        false);
+            }
+            
+            timeLeft -= System.currentTimeMillis() - time;
+            
+            if (result != null) {
+                break;
+            }
+        }
+        
+        if (logger.isInfoEnabled()) {      
+            if (result != null) { 
+                logger.info((user != null ? "SSH" : "Direct") + " connection "
+                        + "setup took: "  + (timeout-timeLeft) + " ms.");
+            } else { 
+                logger.info((user != null ? "SSH" : "Direct") + " connection " 
+                        + "failed: "  + (timeout-timeLeft) + " ms.");
+            }
+        }
+        
+        return result;        
+    }
+    
     /*
      * (non-Javadoc)
      * 

@@ -134,7 +134,7 @@ public class MultiplexTest2 {
                 DirectSocket s = ss.accept();
                 
                 System.out.println("Incoming connection from " 
-                        + s.getRemoteSocketAddress());
+                        + s.getRemoteAddress());
                 
                 MultiplexStreamFactory f = 
                     new MultiplexStreamFactory(s.getInputStream(), 

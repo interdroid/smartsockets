@@ -263,15 +263,22 @@ public class NetworkPreference {
             boolean found = false;
             
             for (NetworkSet s : nws) {
+                
+                logger.warn("Got Network \"" + name + "\" looking for: \"" + s.name + "\"");
+                
                 if (name.equals(s.name)) { 
                     found = true;
                     tmp.add(s);
+                    
+                    logger.warn("Got IT!");
+                    
+                    
                     break;
                 }
             }
             
             if (!found) { 
-                logger.warn("Network " + name + " removed from firewall "
+                logger.warn("Network \"" + name + "\" removed from firewall "
                         + "rule, since it is not defined!");
             }
         }

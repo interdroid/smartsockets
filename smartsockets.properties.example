@@ -85,7 +85,7 @@
 # and global addresses.
 #
 # The default setting is 'auto'.
-#
+#130.37.199.2
 # smartsockets.networks.default=auto
 
 ###
@@ -107,7 +107,7 @@
 # smartsockets.networks.fs0.range=130.37.199.0/255.255.255.0
 # smartsockets.networks.fs0.preference.internal=192.168.0.0/255.255.255.0
 # smartsockets.networks.fs0.preference.default=global
-
+130.37.199.2
 # The network of the fs1 (Leiden) cluster
 #
 # smartsockets.networks.fs1.range=132.229.24.0/255.255.255.0

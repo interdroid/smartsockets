@@ -5,8 +5,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 import smartsockets.direct.DirectServerSocket;
+import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
@@ -33,8 +36,8 @@ public class SimpleSpliceTest {
                     s = sf.createSocket(target, 0, LOCAL_PORT, null);
                 
                     System.out.println("Created connection to " + target + 
-                            " on local address " + s.getLocalSocketAddress() 
-                            + " remote address " + s.getRemoteSocketAddress());
+                            " on local address " + s.getLocalAddress() 
+                            + " remote address " + s.getRemoteAddress());
 
                     in = new DataInputStream(s.getInputStream());
                     out = new DataOutputStream(s.getOutputStream());
@@ -60,7 +63,7 @@ public class SimpleSpliceTest {
             System.out.println("Created server on " + ss.getAddressSet());
 
             // Get a normal connection first...            
-            DirectSocket s = ss.accept();          
+            DirectSimpleSocket s = (DirectSimpleSocket) ss.accept();          
             ss.close();
             
             InetSocketAddress address = 
@@ -82,10 +85,14 @@ public class SimpleSpliceTest {
 
             SocketAddressSet target = SocketAddressSet.getByAddress(address);
             
+            Map properties = new HashMap();
+            properties.put("allowSSH", "false");            
+            
             for (int i=0;i<100;i++) {
 
                 try { 
-                    s = sf.createSocket(target, 0, LOCAL_PORT, null);
+                    s = (DirectSimpleSocket) sf.createSocket(target, 0, 
+                            LOCAL_PORT, properties);
             
                     System.out.println("Created connection to " + target + 
                             " on local address " + s.getLocalSocketAddress() 

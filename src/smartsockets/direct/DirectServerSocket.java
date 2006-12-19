@@ -168,7 +168,11 @@ public class DirectServerSocket {
                     
                     if (opcode == ACCEPT) { 
                         s.setSoTimeout(0);
-                        result = new DirectSocket(s, in, out);
+                        
+                        // TODO: fix to get 'real' port numbers here... 
+                        result = new DirectSimpleSocket(local, 
+                                SocketAddressSet.getByAddress(ads, 1, null), 
+                                in, out, s);
                     } else { 
                          doClose(s, in, out);
                     }     

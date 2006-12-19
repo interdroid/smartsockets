@@ -1,12 +1,10 @@
 package smartsockets.virtual.modules.direct;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
@@ -104,19 +102,22 @@ public class DirectVirtualSocket extends VirtualSocket {
         return in;
     }
     
+    /*
     public boolean getKeepAlive() throws SocketException {
         return s.getKeepAlive();
     }
+    */
     
     /*
      * public InetAddress getLocalAddress() { return s.getLocalAddress(); }
      */
     
+    /*
     public int getLocalPort() {
         // TODO: is this right ?
         return s.getLocalPort();
     }
-    
+        
     public SocketAddress getLocalSocketAddress() {
         // TODO: is this right ?
         return s.getLocalSocketAddress();
@@ -125,6 +126,7 @@ public class DirectVirtualSocket extends VirtualSocket {
     public boolean getOOBInline() throws SocketException {
         return s.getOOBInline();
     }
+    */
     
     public OutputStream getOutputStream() throws IOException {
         return out;
@@ -154,9 +156,11 @@ public class DirectVirtualSocket extends VirtualSocket {
         return s.getTcpNoDelay();
     }
     
+    /*
     public int getTrafficClass() throws SocketException {
         return s.getTrafficClass();
     }
+    */
     
     public boolean isBound() {
         return true;
@@ -178,6 +182,7 @@ public class DirectVirtualSocket extends VirtualSocket {
         return s.isOutputShutdown();
     }
     
+    /*
     public void sendUrgentData(int data) throws IOException {
         s.sendUrgentData(data);
     }
@@ -188,7 +193,7 @@ public class DirectVirtualSocket extends VirtualSocket {
     
     public void setOOBInline(boolean on) throws SocketException {
         s.setOOBInline(on);
-    }
+    }*/
     
     public void setReceiveBufferSize(int sz) throws SocketException {
         s.setReceiveBufferSize(sz);
@@ -214,9 +219,10 @@ public class DirectVirtualSocket extends VirtualSocket {
         s.setTcpNoDelay(on);
     }
     
+    /*
     public void setTrafficClass(int tc) throws SocketException {
         s.setTrafficClass(tc);
-    }
+    }*/
     
     public void shutdownInput() throws IOException {
         s.shutdownInput();

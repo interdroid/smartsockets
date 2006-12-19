@@ -24,6 +24,10 @@ public class Properties {
     public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
     public static final String TIMEOUT             = PREFIX + "timeout";  
     
+    public static final String SSH_PREFIX          = PREFIX + "ssh.";
+    public static final String SSH_IN              = SSH_PREFIX + "in.allow";
+    public static final String SSH_OUT             = SSH_PREFIX + "out.allow";
+    
     public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
     
     public static final String NIO             = NETWORKS_PREFIX + "nio";
@@ -39,6 +43,7 @@ public class Properties {
     public static final String NW_PREFERENCE_PREFIX  = "preference.";    
     public static final String NW_PREFERENCE_INSIDE  = NW_PREFERENCE_PREFIX + "internal";
     public static final String NW_PREFERENCE_DEFAULT = NW_PREFERENCE_PREFIX + "default";
+
     public static final String NW_FIREWALL_PREFIX    = "firewall.";
     public static final String NW_FIREWALL_ACCEPT    = NW_FIREWALL_PREFIX + "accept";
     public static final String NW_FIREWALL_DENY      = NW_FIREWALL_PREFIX + "deny";
@@ -86,6 +91,9 @@ public class Properties {
             BACKLOG,                "100", 
             TIMEOUT,                "10000", 
             
+            SSH_OUT,                "true", 
+            SSH_IN,                 "true",
+            
             NIO,                    "false", 
             STUN,                   "false",
             UPNP,                   "false",            
@@ -98,8 +106,8 @@ public class Properties {
             
             HUB_PORT,               "17878",
             
-            MODULES_DEFINE,         "direct,reverse,splice,routed", 
-            MODULES_ORDER,          "direct,reverse,splice,routed",
+            MODULES_DEFINE,         "direct,reverse,splice,hubrouted", 
+            MODULES_ORDER,          "direct,reverse,splice,hubrouted",
             
             DISCOVERY_PREFERRED,    "false",
             DISCOVERY_ALLOWED,      "true",
