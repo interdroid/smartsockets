@@ -20,7 +20,7 @@ import smartsockets.virtual.VirtualSocketFactory;
  
 public class Test extends Thread {
     
-    private static int TIMEOUT = 1000;
+    private static int TIMEOUT = 10000;
     
     private static boolean interactive = false;
     

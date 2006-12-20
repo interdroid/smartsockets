@@ -66,7 +66,7 @@ public class ConnectTest {
                     
                     long time = System.currentTimeMillis();
 
-                    DirectSocket s = sf.createSocket(t, 0, 0, null);
+                    DirectSocket s = sf.createSocket(t, 15000, 0, null);
 
                     time = System.currentTimeMillis() - time;
 

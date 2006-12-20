@@ -304,7 +304,45 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return allAddressesCache;
     } 
     
+    public InetSocketAddress [] getExternalAddresses() {
+        return external;
+    }
+    
+    public InetSocketAddress [] getGlobalAddresses() {
+        return global;
+    }
+    
+    public InetSocketAddress [] getLocalAddresses() {
+        return local;
+    }
+    
+    private boolean contains(InetSocketAddress [] adrs, InetSocketAddress a) {
+        
+        if (adrs.length == 0 || a == null) { 
+            return false;
+        }
+        
+        for (InetSocketAddress sa : adrs) {
+            if (a.equals(sa)) { 
+                return true;
+            }
+        }
 
+        return false;        
+    }
+    
+    public boolean isExternalAddresses(InetSocketAddress a) {
+        return contains(external, a);
+    }
+    
+    public boolean isGlobalAddresses(InetSocketAddress a) {
+        return contains(global, a);
+    }    
+    
+    public boolean isLocalAddresses(InetSocketAddress a) {
+        return contains(local, a);
+    }
+    
     /**
      * Gets the SSH-username
      * 
@@ -637,6 +675,13 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return getByAddress(null, null, a, new int [] { port }, user);
     }
 
+    public static SocketAddressSet getByAddress(IPAddressSet external, 
+            int externalPort, IPAddressSet other, int otherPort, String user) {
+        
+        return getByAddress(external, new int [] { externalPort }, other, 
+                new int [] { otherPort }, user);
+    }
+    
    
     /**
      * Construct a new SocketAddressSet, using an IPAddressSet and an array 
@@ -871,7 +916,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             
             String s = st.nextToken();
             
-            System.out.println("Read: " + s);
+          //  System.out.println("Read: " + s);
             
             if (s.length() == 1) {
                 

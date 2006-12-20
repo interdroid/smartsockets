@@ -3,6 +3,8 @@
     default="build"
     basedir=".">
 
+    <property name="version" value="smartsockets-0.7"/>
+
     <property name="srcdir" value="./src"/>
     <property name="builddir" value="./build"/>
     <property name="distdir" value="./jars"/>
@@ -41,6 +43,20 @@
     
     <target name="build" depends="clean,prepare,compile,jar">
     </target>
+
+    <target name="bin.zip" depends="build">
+	<delete failonerror="false" file="${version}.zip"/>
+
+	 <zip destfile="${version}.zip">
+            <zipfileset dir="." prefix="${version}"
+                includes="external/**,jars/**,smartsockets.properties,log4j.properties"
+                />
+            <zipfileset dir="." prefix="${version}" filemode="755"
+                includes="bin/**"
+                />
+        </zip>
+    </target>
+
 	
     <!-- remove all generated code -->
     <target name="clean" description="Removes the ${distdir} directory">
@@ -50,6 +66,7 @@
 
     <target name="distclean" depends="clean">
          <delete failonerror="false" dir="./build-eclipse" />
+ 	 <delete failonerror="false" file="${version}.zip"/>
     </target>
 
 

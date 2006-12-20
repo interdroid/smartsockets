@@ -13,7 +13,7 @@ import smartsockets.hub.state.StateCounter;
 
 abstract class CommunicationThread extends Thread {
 
-    protected static final int DEFAULT_TIMEOUT = 1000;
+    protected static final int DEFAULT_TIMEOUT = 10000;
        
     protected final StateCounter state;         
     
