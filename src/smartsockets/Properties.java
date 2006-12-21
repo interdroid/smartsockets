@@ -72,6 +72,7 @@ public class Properties {
     public static final String HUB_SIMPLE_NAME    = HUB_PREFIX + "simple_name";
     public static final String HUB_CLUSTERS       = HUB_PREFIX + "clusters";       
     public static final String HUB_PORT           = HUB_PREFIX + "port";                 
+    public static final String HUB_SSH_ALLOWED    = HUB_PREFIX + "ssh";                 
     
     public static final String CLUSTER_PREFIX  = PREFIX + "cluster.";
     public static final String CLUSTER_DEFINE  = CLUSTER_PREFIX + "define";
@@ -91,8 +92,8 @@ public class Properties {
             BACKLOG,                "100", 
             TIMEOUT,                "5000", 
             
-            SSH_OUT,                "true", 
-            SSH_IN,                 "true",
+            SSH_OUT,                "false", 
+            SSH_IN,                 "false",
             
             NIO,                    "false", 
             STUN,                   "false",

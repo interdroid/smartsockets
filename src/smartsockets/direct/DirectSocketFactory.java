@@ -93,7 +93,7 @@ public class DirectSocketFactory {
         DEFAULT_BACKLOG = p.getIntProperty(Properties.DIRECT_BACKLOG, 100);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
         
-        boolean allowSSHIn = p.booleanProperty(Properties.SSH_IN, true);
+        boolean allowSSHIn = p.booleanProperty(Properties.SSH_IN, false);
 
         if (allowSSHIn) { 
             user = System.getProperty("user.name");
@@ -101,7 +101,7 @@ public class DirectSocketFactory {
             user = null;
         }
         
-        boolean allowSSHOut = p.booleanProperty(Properties.SSH_OUT, true);
+        boolean allowSSHOut = p.booleanProperty(Properties.SSH_OUT, false);
         
         if (allowSSHOut) {
             privateKey = getPrivateSSHKey();
@@ -161,9 +161,7 @@ public class DirectSocketFactory {
     private char [] getPrivateSSHKey() { 
 
         // Check if we can find the files we need to setup an outgoing ssh 
-        // connection.
-        System.out.println("" + System.getProperties());
-        
+        // connection.      
         String home = System.getProperty("user.home");
         String sep = System.getProperty("file.separator");
         
@@ -1223,7 +1221,7 @@ public class DirectSocketFactory {
                 // the user wants us to keep trying for ever!
                 timeLeft = DEFAULT_TIMEOUT;
             } else if (timeLeft <= 0 && timeout > 0) {
-                // Enough tries so, throw exception
+                // deadline expired so throw exception
                 throw new SocketTimeoutException("Connection setup timed out!");
             } 
         }

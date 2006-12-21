@@ -68,12 +68,20 @@ public class Hub extends Thread {
             clusters = new String[] { "*" };
         }
         
+        boolean allowSSHForHub = p.booleanProperty(
+                Properties.HUB_SSH_ALLOWED, true);
+        
+        if (allowSSHForHub) { 
+            p.setProperty(Properties.SSH_IN, "true");
+            p.setProperty(Properties.SSH_OUT, "true");
+        }
+        
         if (misclogger.isInfoEnabled()) { 
             misclogger.info("Creating Hub for clusters: " 
                     + Arrays.deepToString(clusters));
         }
                 
-        DirectSocketFactory factory = DirectSocketFactory.getSocketFactory();
+        DirectSocketFactory factory = DirectSocketFactory.getSocketFactory(p);
         
         // Create the hub list
         hubs = new HubList(state);
