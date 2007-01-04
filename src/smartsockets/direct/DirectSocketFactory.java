@@ -434,7 +434,7 @@ public class DirectSocketFactory {
 
     private DirectSocket attemptSSHForwarding(SocketAddressSet sas, 
             InetSocketAddress target, InetSocketAddress forwardTo, 
-            Connection conn, long start) {         
+            Connection conn, long start) throws FirewallException {         
        
         LocalStreamForwarder lsf = null;
                
@@ -484,7 +484,12 @@ public class DirectSocketFactory {
             } catch (Exception e2) {
                 // close
             }                        
+        
+        } catch (FirewallException e) {
             
+            // allowed
+            throw e;   
+        
         } catch (IOException e) {
         
             if (logger.isInfoEnabled()) {               
@@ -602,7 +607,7 @@ public class DirectSocketFactory {
         
     private DirectSocket attemptConnection(SocketAddressSet sas,
             InetSocketAddress target, int timeout, int localPort, 
-            boolean mayBlock) {
+            boolean mayBlock) throws FirewallException {
 
         // We never want to block, so ensure that timeout > 0
         if (timeout == 0 && !mayBlock) {
@@ -683,7 +688,17 @@ public class DirectSocketFactory {
              
              return r; 
         
+        } catch (FirewallException e) {
+            
+            // allowed
+            close(s, out, in);
+            
+            throw e;
+            
         } catch (IOException e) {
+            
+            close(s, out, in);
+            
             
             if (logger.isDebugEnabled()) {
                 logger.debug("Failed to directly connect to "
@@ -697,15 +712,16 @@ public class DirectSocketFactory {
                         + (System.currentTimeMillis()-start) + " ms.");
             }
 
-            close(s, out, in);
             return null;
         }
     }
              
     private SocketAddressSet handShake(SocketAddressSet sas, 
-            InetSocketAddress target, InputStream in, OutputStream out) { 
+            InetSocketAddress target, InputStream in, OutputStream out) 
+        throws FirewallException { 
         
         SocketAddressSet server = null;
+        int opcode = -1;
         
         try {     
             // Read the size of the machines address
@@ -752,17 +768,7 @@ public class DirectSocketFactory {
             out.write(DirectServerSocket.ACCEPT);             
             out.flush();
 
-            int opcode = in.read();
-
-            if (opcode != DirectServerSocket.ACCEPT) { 
-                if (logger.isInfoEnabled()) { 
-                    logger.info("Target " 
-                            + NetworkUtils.ipToString(target.getAddress()) + ":"
-                            + target.getPort() + " refused our connection!");
-                }
-
-                return null;
-            }
+            opcode = in.read();
 
         } catch (Exception e) {
 
@@ -773,6 +779,17 @@ public class DirectSocketFactory {
             }
 
             return null;
+        }
+
+        if (opcode != DirectServerSocket.ACCEPT) { 
+            if (logger.isInfoEnabled()) { 
+                logger.info("Target " 
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort() + " refused our connection!");
+            }
+
+            throw new FirewallException("Connection refused by receivers" 
+                    + " firewall!");
         }
 
         return server;
@@ -1012,7 +1029,7 @@ public class DirectSocketFactory {
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             Map properties) throws IOException {
-        return createSocket(target, timeout, 0, properties);
+        return createSocket(target, timeout, 0, properties, false);
     }
 
     private boolean mayUseSSH(SocketAddressSet target, Map properties) { 
@@ -1042,7 +1059,6 @@ public class DirectSocketFactory {
         return false;        
     }
     
-    
     /*
      * (non-Javadoc)
      * 
@@ -1051,6 +1067,17 @@ public class DirectSocketFactory {
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             int localPort, Map properties) throws IOException {
+        return createSocket(target, timeout, localPort, properties);
+    } 
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
+     *      int, java.util.Map)
+     */
+    public DirectSocket createSocket(SocketAddressSet target, int timeout,
+            int localPort, Map properties, boolean fillTimeout) throws IOException {
 
         if (timeout < 0) {
             timeout = DEFAULT_TIMEOUT;
@@ -1176,7 +1203,7 @@ public class DirectSocketFactory {
         
         DirectSocket result = null;
         
-        while (true) {
+        do {
             
             int partialTime = timeLeft;
             
@@ -1224,14 +1251,17 @@ public class DirectSocketFactory {
                 // deadline expired so throw exception
                 throw new SocketTimeoutException("Connection setup timed out!");
             } 
-        }
+        
+        } while (fillTimeout);
+        
+        throw new IOException("Connection setup failed!");
     }
 
     private DirectSocket loopOverOptions(SocketAddressSet target, 
             InetSocketAddress [] sas, int localPort, int timeout, 
-            String user) {
+            String user) throws FirewallException {
         
-        System.out.println("loopOverOptions " + timeout);
+        //System.out.println("loopOverOptions " + timeout);
         
         DirectSocket result = null;
         
