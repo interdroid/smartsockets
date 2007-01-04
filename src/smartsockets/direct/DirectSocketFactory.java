@@ -457,9 +457,24 @@ public class DirectSocketFactory {
             
             SocketAddressSet realAddress = handShake(sas, target, in, out); 
             
-            if (realAddress != null) {
+            if (realAddress == null) {
                 
-                // We have a conenction!
+                if (logger.isInfoEnabled()) {               
+                    logger.info("Handshake failed during SSH connection setup to "
+                            + NetworkUtils.ipToString(target.getAddress()) + ":"
+                            + target.getPort() + " after " 
+                            + (System.currentTimeMillis()-start) + " ms.");
+                }  
+                    
+                try { 
+                    lsf.close();
+                } catch (Exception e2) {
+                    // close
+                }    
+                
+            } else {      
+                
+                // We have a connection!
                 if (logger.isInfoEnabled()) {               
                     logger.info("SSH connection setup to " + sas.toString() 
                             + " completed in " + (System.currentTimeMillis()-start) 
@@ -472,20 +487,13 @@ public class DirectSocketFactory {
                 return new DirectSSHSocket(a, realAddress, in, out, lsf);
             }
                 
-            if (logger.isInfoEnabled()) {               
-                logger.info("Handshake failed during SSH connection setup to "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " after " 
-                        + (System.currentTimeMillis()-start) + " ms.");
-            }  
-                
+        } catch (FirewallException e) {
+       
             try { 
                 lsf.close();
             } catch (Exception e2) {
                 // close
             }                        
-        
-        } catch (FirewallException e) {
             
             // allowed
             throw e;   
@@ -497,7 +505,13 @@ public class DirectSocketFactory {
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort() + " after " 
                         + (System.currentTimeMillis()-start) + " ms.");
-            }  
+            } 
+            
+            try { 
+                lsf.close();
+            } catch (Exception e2) {
+                // close
+            }                        
         }      
         
         return null;    
