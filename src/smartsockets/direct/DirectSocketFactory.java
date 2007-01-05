@@ -1081,7 +1081,7 @@ public class DirectSocketFactory {
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             int localPort, Map properties) throws IOException {
-        return createSocket(target, timeout, localPort, properties);
+        return createSocket(target, timeout, localPort, properties, false);
     } 
     
     /*
