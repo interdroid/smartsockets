@@ -675,6 +675,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return getByAddress(null, null, a, new int [] { port }, user);
     }
 
+    public static SocketAddressSet getByAddress(IPAddressSet a, int port) 
+        throws UnknownHostException {    
+        return getByAddress(null, null, a, new int [] { port }, null);
+    }
+    
     public static SocketAddressSet getByAddress(IPAddressSet external, 
             int externalPort, IPAddressSet other, int otherPort, String user) {
         

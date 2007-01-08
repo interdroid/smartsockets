@@ -141,7 +141,9 @@ class Connector extends CommunicationThread {
                     DEFAULT_TIMEOUT, null);
             
             s.setTcpNoDelay(true);
-            
+            s.setSendBufferSize(1024*1024);
+            s.setReceiveBufferSize(1024*1024);
+                        
             out = new DataOutputStream(
                     new BufferedOutputStream(s.getOutputStream()));
             

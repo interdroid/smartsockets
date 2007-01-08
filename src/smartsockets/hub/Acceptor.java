@@ -331,7 +331,9 @@ public class Acceptor extends CommunicationThread {
         try {
             s = server.accept();     
             s.setTcpNoDelay(true);
-            
+            s.setSendBufferSize(1024*1024);
+            s.setReceiveBufferSize(1024*1024);
+                        
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 

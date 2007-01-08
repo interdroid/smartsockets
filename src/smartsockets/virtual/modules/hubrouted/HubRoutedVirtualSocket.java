@@ -16,7 +16,7 @@ import smartsockets.virtual.VirtualSocketAddress;
 
 public class HubRoutedVirtualSocket extends VirtualSocket {
     
-    private final HubRouted parent;     
+    private final Hubrouted parent;     
     private final ServiceLink serviceLink;
     private final long connectionIndex;
         
@@ -31,7 +31,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     
     private boolean closeInPending = false;
 
-    protected HubRoutedVirtualSocket(HubRouted parent, 
+    protected HubRoutedVirtualSocket(Hubrouted parent, 
             VirtualSocketAddress target, ServiceLink serviceLink, 
             long connectionIndex, Map p) {        
         

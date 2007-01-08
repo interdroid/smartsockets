@@ -1,5 +1,7 @@
 package smartsockets.hub.servicelink;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -178,9 +180,14 @@ public class ServiceLink implements Runnable {
             hub = factory.createSocket(address, TIMEOUT, null);
             
             hub.setTcpNoDelay(true);
+            hub.setSendBufferSize(1024*1024);
+            hub.setReceiveBufferSize(1024*1024);
             
-            out = new DataOutputStream(hub.getOutputStream());
-            in = new DataInputStream(hub.getInputStream());
+            out = new DataOutputStream(
+                    new BufferedOutputStream(hub.getOutputStream()));
+            
+            in = new DataInputStream(
+                    new BufferedInputStream(hub.getInputStream()));
                            
             // Ask if we are allowed to join
             out.write(HubProtocol.SERVICELINK_CONNECT);
