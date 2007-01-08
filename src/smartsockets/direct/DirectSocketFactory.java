@@ -1054,21 +1054,21 @@ public class DirectSocketFactory {
                 String result = (String) properties.get("allowSSH");
 
                 if (result != null && result.equalsIgnoreCase("true")) {
-                    System.err.println("Can use SSH for connection setup!");
+              //      System.err.println("Can use SSH for connection setup!");
                     return true;
                 } else {
-                    System.err.println("Can NOT use SSH for connection setup!");
+                   // System.err.println("Can NOT use SSH for connection setup!");
                     return false;
                 }
             } else {
-                System.err.println("Can use SSH for connection setup!");
+               // System.err.println("Can use SSH for connection setup!");
                 return true;
             }
 
         } 
 
-        System.err.println("Can NOT use SSH for connection setup!" 
-                + ALLOW_SSH_OUT + " " + target.getUser());
+       // System.err.println("Can NOT use SSH for connection setup!" 
+        //        + ALLOW_SSH_OUT + " " + target.getUser());
         
         return false;        
     }
@@ -1179,7 +1179,7 @@ public class DirectSocketFactory {
         InetSocketAddress[] sas = target.getSocketAddresses();
         
         if (sas.length == 0) { 
-            System.err.println("EEK: sas.length == 0!!!");
+  //          System.err.println("EEK: sas.length == 0!!!");
             return null;
         }
         
