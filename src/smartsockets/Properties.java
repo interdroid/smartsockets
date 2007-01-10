@@ -24,6 +24,8 @@ public class Properties {
     public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
     public static final String TIMEOUT             = PREFIX + "timeout";  
     
+    public static final String CREDITS             = PREFIX + "credits";
+    
     public static final String SSH_PREFIX          = PREFIX + "ssh.";
     public static final String SSH_IN              = SSH_PREFIX + "in.allow";
     public static final String SSH_OUT             = SSH_PREFIX + "out.allow";
@@ -86,7 +88,7 @@ public class Properties {
     public static final String CLUSTER_INSIDE      = "preference.inside";
     public static final String CLUSTER_DEFAULT     = "preference.default";
     public static final String CLUSTER_SUB_REORDER = "preference.reorder";
-        
+    
     private static final String [] defaults = new String [] {
             DIRECT_BACKLOG,         "255", 
             BACKLOG,                "100", 
@@ -113,7 +115,9 @@ public class Properties {
             DISCOVERY_PREFERRED,    "false",
             DISCOVERY_ALLOWED,      "true",
             DISCOVERY_PORT,         "24545", 
-            DISCOVERY_TIMEOUT,      "5000",             
+            DISCOVERY_TIMEOUT,      "5000",    
+            
+            CREDITS,                "100"
     };
 
     private static TypedProperties defaultProperties;

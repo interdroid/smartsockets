@@ -331,9 +331,14 @@ public class Acceptor extends CommunicationThread {
         try {
             s = server.accept();     
             s.setTcpNoDelay(true);
-            s.setSendBufferSize(1024*1024);
-            s.setReceiveBufferSize(1024*1024);
-                        
+            s.setSendBufferSize(16*1024*1024);
+            s.setReceiveBufferSize(16*1024*1024);
+            
+            if (hconlogger.isInfoEnabled()) {
+                hconlogger.info("Acceptor send buffer = " + s.getSendBufferSize());
+                hconlogger.info("Acceptor recv buffer = " + s.getReceiveBufferSize());
+            }       
+             
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 

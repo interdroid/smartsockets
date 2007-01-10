@@ -206,7 +206,11 @@ public class VirtualSocketFactory {
         }  
         
         try { 
-            serviceLink = ServiceLink.getServiceLink(address, myAddresses);            
+            int credits = properties.getIntProperty(Properties.CREDITS);
+            
+            System.err.println("*** Credits set to: " + credits);
+            
+            serviceLink = ServiceLink.getServiceLink(address, myAddresses, credits);            
             hubAddress = serviceLink.getAddress();      
             
             if (true) { 

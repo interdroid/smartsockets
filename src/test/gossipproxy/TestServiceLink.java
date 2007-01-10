@@ -38,7 +38,7 @@ public class TestServiceLink implements CallBack {
         while (proxies.size() > 0) {
             serviceLink = ServiceLink.getServiceLink(
                     (SocketAddressSet) proxies.removeFirst(), 
-                    ss.getAddressSet());
+                    ss.getAddressSet(), 0);
             
             if (serviceLink != null) { 
                 break;

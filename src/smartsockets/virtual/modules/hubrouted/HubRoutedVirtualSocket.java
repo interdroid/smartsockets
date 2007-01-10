@@ -41,7 +41,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         this.serviceLink = serviceLink;
         this.connectionIndex = connectionIndex;
     
-        this.out = new HubRoutedOutputStream(this, 16*1024);
+        this.out = new HubRoutedOutputStream(this, 64*1024);
         this.in = new HubRoutedInputStream(this);            
     }
    

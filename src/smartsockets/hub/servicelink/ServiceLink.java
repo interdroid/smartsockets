@@ -55,6 +55,8 @@ public class ServiceLink implements Runnable {
     private final VirtualConnectionIndex vcIndex = 
         new VirtualConnectionIndex(true);
     
+    private final int maxCredits;
+    
     private final Map<Long, Credits> credits = 
         Collections.synchronizedMap(new HashMap<Long, Credits>());
     
@@ -84,10 +86,11 @@ public class ServiceLink implements Runnable {
     private long lastStatsPrint = 0;
         
     private ServiceLink(SocketAddressSet hubAddress, 
-            SocketAddressSet myAddress) throws IOException { 
+            SocketAddressSet myAddress, int credits) throws IOException { 
         
         factory = DirectSocketFactory.getSocketFactory();
         
+        this.maxCredits = credits;
         this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;              
                
@@ -180,8 +183,13 @@ public class ServiceLink implements Runnable {
             hub = factory.createSocket(address, TIMEOUT, null);
             
             hub.setTcpNoDelay(true);
-            hub.setSendBufferSize(1024*1024);
-            hub.setReceiveBufferSize(1024*1024);
+            hub.setSendBufferSize(16*1024*1024);
+            hub.setReceiveBufferSize(16*1024*1024);
+            
+            if (logger.isInfoEnabled()) {
+                logger.info("Service link send buffer = " + hub.getSendBufferSize());
+                logger.info("Service link recv buffer = " + hub.getReceiveBufferSize());
+            }
             
             out = new DataOutputStream(
                     new BufferedOutputStream(hub.getOutputStream()));
@@ -333,7 +341,7 @@ public class ServiceLink implements Runnable {
             return;
         } 
 
-        credits.put(index, new Credits(DEFAULT_CREDITS));
+        credits.put(index, new Credits(maxCredits));
         
         if (!cb.connect(SocketAddressSet.getByAddress(source), info, timeout, index)) {            
             // Connection refused....            
@@ -459,7 +467,7 @@ public class ServiceLink implements Runnable {
                 out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);
                 out.writeLong(index);
                 out.writeUTF("OK");  
-                out.writeUTF("");                    
+                out.writeUTF("" + maxCredits);                    
                 out.flush();
             }
             
@@ -565,7 +573,7 @@ public class ServiceLink implements Runnable {
                 int header = in.read();
                 
                 if (logger.isDebugEnabled()) { 
-                    logger.debug("Servicelink got message: " + header);
+                    logger.debug("Servicelink got message (type: " + header + ")");
                 }
                 
                 switch (header) { 
@@ -969,8 +977,16 @@ public class ServiceLink implements Runnable {
             throw new IOException("Connection + " + index + " failed: " + result[0]);
         } 
         
+        int tmp = DEFAULT_CREDITS; 
+        
+        try { 
+            tmp = Integer.parseInt(result[1]);
+        } catch (Exception e) {
+            logger.warn("Failed to parse number of credits:" + result[1]);
+        }
+        
         // Otherwise, the connection is accepted.
-        credits.put(index, new Credits(DEFAULT_CREDITS));
+        credits.put(index, new Credits(tmp));
         acceptedOutgoingConnections++;
     }
     
@@ -1073,7 +1089,7 @@ public class ServiceLink implements Runnable {
         }
         
         if (logger.isInfoEnabled()) {
-            logger.info("Sending virtual message: " + index);
+            logger.info("Sending virtual message for connection: " + index);
         }
         
         // May block until credits are available....
@@ -1322,7 +1338,7 @@ public class ServiceLink implements Runnable {
     }
 
     public static ServiceLink getServiceLink(SocketAddressSet address, 
-            SocketAddressSet myAddress) { 
+            SocketAddressSet myAddress, int maxCredits) { 
 
         // TODO: cache service linkes here ? Shared a link between multiple 
         // clients that use the same hub ?  
@@ -1335,8 +1351,12 @@ public class ServiceLink implements Runnable {
             throw new NullPointerException("Local address is null!");
         }
         
+        if (maxCredits <= 0) { 
+            maxCredits = DEFAULT_CREDITS;
+        }
+        
         try { 
-            return new ServiceLink(address, myAddress);                 
+            return new ServiceLink(address, myAddress, maxCredits);                 
         } catch (Exception e) {
             logger.warn("ServiceLink: Failed to connect to hub!", e);
             return null;
