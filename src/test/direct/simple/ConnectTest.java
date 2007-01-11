@@ -1,8 +1,9 @@
 package test.direct.simple;
 
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import smartsockets.direct.DirectServerSocket;
@@ -13,7 +14,11 @@ import smartsockets.direct.SocketAddressSet;
  
 public class ConnectTest {
     
+    private static final int SERVERPORT = 42611;
+    
     private static final int REPEAT = 10;
+    private static final int COUNT = 1000;
+    private static final int TIMEOUT = 1000;
     
     public static void main(String [] args) { 
         
@@ -24,6 +29,10 @@ public class ConnectTest {
         Random rand = new Random();
         
         int repeat = REPEAT;
+        int count = COUNT;
+        int timeout = TIMEOUT;
+ 
+        boolean ssh = false;
         boolean sleep = false;
         
         if (args.length > 0) {
@@ -37,8 +46,28 @@ public class ConnectTest {
                     args[i] = null;
                     targetCount -= 2;
                     i++;
+                    
+                } else if (args[i].equals("-count")) { 
+                        count = Integer.parseInt(args[i+1]);
+                        args[i+1] = null;
+                        args[i] = null;
+                        targetCount -= 2;
+                        i++;
+            
+                } else if (args[i].equals("-timeout")) { 
+                    timeout = Integer.parseInt(args[i+1]);
+                    args[i+1] = null;
+                    args[i] = null;
+                    targetCount -= 2;
+                    i++;
+                        
                 } else if (args[i].equals("-sleep")) { 
                     sleep = true;
+                    args[i] = null;
+                    targetCount--;
+        
+                } else if (args[i].equals("-ssh")) { 
+                    ssh = true;
                     args[i] = null;
                     targetCount--;
                 } 
@@ -53,64 +82,72 @@ public class ConnectTest {
                 }
             } 
             
-            for (int r=0;r<repeat;r++) {
-                for (SocketAddressSet t : targets) { 
-                    
-                    if (sleep) { 
-                        try { 
-                            Thread.sleep(1000 + rand.nextInt(15000));
-                        } catch (Exception e) {
-                            // TODO: handle exception
-                        }
+            Map prop = null;
+            
+            if (ssh) { 
+                prop = new HashMap();
+                prop.put("allowSSH", "true");
+            }
+            
+            for (SocketAddressSet t : targets) { 
+
+                if (sleep) { 
+                    try { 
+                        Thread.sleep(1000 + rand.nextInt(15000));
+                    } catch (Exception e) {
+                        // TODO: handle exception
                     }
-                    
+                }
+
+                System.out.println("Creating connection to " + t);
+
+                for (int r=0;r<repeat;r++) {
                     long time = System.currentTimeMillis();
 
-                    DirectSocket s = sf.createSocket(t, 15000, 0, null);
+                    for (int c=0;c<count;c++) {
 
+                        DirectSocket s = sf.createSocket(t, timeout, 0, prop);
+
+                        OutputStream out = s.getOutputStream();
+
+                        out.write(42);
+                        out.flush();
+
+                        InputStream in = s.getInputStream();
+                        in.read();
+
+                        in.close();
+                        out.close();
+                        s.close();
+                    } 
+ 
                     time = System.currentTimeMillis() - time;
 
-                    System.out.println("Created connection to " + t + 
-                            " on local address " + s.getLocalAddress() 
-                            + " remote address " + s.getRemoteAddress() 
-                            + " in " + time + " ms.");
-
-                    DataInputStream in = new DataInputStream(s.getInputStream());
-                    DataOutputStream out = new DataOutputStream(s.getOutputStream());
-
-                    out.write(42);
-                    out.flush();
-
-                    System.out.println("Server says: " + in.read());
-
-                    in.close();
-                    out.close();                               
-                    s.close();
+                    System.out.println(count + " connections in " + time 
+                            + " ms. -> " + (((double) time) / count) 
+                            + "ms/conn");
                 }
             }
         } else {                         
             System.out.println("Creating server socket");
             
-            DirectServerSocket ss = sf.createServerSocket(0, 0, null);
+            DirectServerSocket ss = sf.createServerSocket(SERVERPORT, 0, null);
             
             System.out.println("Created server on " + ss.getAddressSet());
                         
             while (true) {
                 DirectSocket s = ss.accept();
                                 
-                System.out.println("Incoming connection from " 
-                        + s.getRemoteAddress() + " " + s.getLocalPort());
-              
-                DataInputStream in = new DataInputStream(s.getInputStream());
-                DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                InputStream in = s.getInputStream();
+                in.read();
                 
-                System.out.println("Client says: " + in.read());
-               
+                OutputStream out = s.getOutputStream();
+
                 out.write(42);
                 out.flush();
                 
                 in.close();
-                out.close();                               
+                out.close();
                 s.close();
             }
         }

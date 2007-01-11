@@ -29,6 +29,7 @@ public class Properties {
     public static final String SSH_PREFIX          = PREFIX + "ssh.";
     public static final String SSH_IN              = SSH_PREFIX + "in.allow";
     public static final String SSH_OUT             = SSH_PREFIX + "out.allow";
+    public static final String FORCE_SSH_OUT       = SSH_PREFIX + "out.force";
     
     public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
     

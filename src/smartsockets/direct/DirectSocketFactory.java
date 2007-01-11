@@ -59,6 +59,7 @@ public class DirectSocketFactory {
     private final boolean ALLOW_UPNP;
     private final boolean ALLOW_UPNP_PORT_FORWARDING;        
     private final boolean ALLOW_SSH_OUT;    
+    private final boolean FORCE_SSH_OUT;    
         
     private final int inputBufferSize;
     private final int outputBufferSize;
@@ -102,6 +103,7 @@ public class DirectSocketFactory {
         }
         
         boolean allowSSHOut = p.booleanProperty(Properties.SSH_OUT, false);
+        FORCE_SSH_OUT = p.booleanProperty(Properties.FORCE_SSH_OUT, false);
         
         if (allowSSHOut) {
             privateKey = getPrivateSSHKey();
@@ -1048,20 +1050,21 @@ public class DirectSocketFactory {
 
     private boolean mayUseSSH(SocketAddressSet target, Map properties) { 
         
+        if (FORCE_SSH_OUT && target.getUser() != null) { 
+            return true;
+        }
+        
         if (ALLOW_SSH_OUT && target.getUser() != null) { 
 
             if (properties != null && properties.containsKey("allowSSH")) {
                 String result = (String) properties.get("allowSSH");
 
                 if (result != null && result.equalsIgnoreCase("true")) {
-              //      System.err.println("Can use SSH for connection setup!");
                     return true;
                 } else {
-                   // System.err.println("Can NOT use SSH for connection setup!");
                     return false;
                 }
             } else {
-               // System.err.println("Can use SSH for connection setup!");
                 return true;
             }
 
@@ -1175,6 +1178,10 @@ public class DirectSocketFactory {
         // that we can also use SSH tunnels to connect to the machine...
         boolean mayUseSSH = mayUseSSH(target, properties);
         
+        if (logger.isDebugEnabled()) { 
+            logger.debug("Can use SSH for connection setup: " + mayUseSSH);
+        }
+        
         // Next, get the addresses of the target machine.         
         InetSocketAddress[] sas = target.getSocketAddresses();
         
@@ -1184,7 +1191,7 @@ public class DirectSocketFactory {
         }
         
         // If there is only one address, and no SSH we can do a blocking call...        
-        if (sas.length == 1 && !mayUseSSH) {
+        if (sas.length == 1 && !mayUseSSH && !FORCE_SSH_OUT) {
 
             DirectSocket result = attemptConnection(target, sas[0], timeout,
                     localPort, true);
@@ -1221,16 +1228,18 @@ public class DirectSocketFactory {
             
             int partialTime = timeLeft;
             
-            if (mayUseSSH) { 
+            if (mayUseSSH && !FORCE_SSH_OUT) { 
                 partialTime = timeLeft / 2;
             }
             
             long starttime = System.currentTimeMillis();
             
-            result = loopOverOptions(target, sas, localPort, partialTime, null);
-            
+            if (!FORCE_SSH_OUT) { 
+                result = loopOverOptions(target, sas, localPort, partialTime, null);
+            }
+
             int time = (int) (System.currentTimeMillis() - starttime);
-            
+        
             // If we don't have a connection yet we try to use SSH
             if (result == null && mayUseSSH) { 
                 
