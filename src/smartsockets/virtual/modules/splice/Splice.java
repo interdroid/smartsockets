@@ -92,10 +92,20 @@ public class Splice extends AbstractDirectModule {
         // connection attempt. We will not get a reply. 
         serviceLink.send(targetMachine, target.hub(), module, PLEASE_CONNECT, 
                 shared + " " + connectID + " " + timeout + " " + target.port());
+       
+        SocketAddressSet [] a = null;
+        
+        if (target.machine().hasGlobalAddress()) { 
+            // the machine is likely to be behind a firewall, so no port range 
+            // prediction is necessary
+            a = new SocketAddressSet[1];        
+        } else { 
+            // The machine is behind a NAT, so use port range prediction...
+            a = new SocketAddressSet[PORT_RANGE];        
+        }
         
         // Now create the connection to the shared proxy, and get the public
         // IP of the target plus a range of possibly working port....
-        SocketAddressSet [] a = new SocketAddressSet[PORT_RANGE];        
         int localPort = getInfo(shared, connectID, timeout, a);
 
         // Check if proxy returned somethig usefull...
@@ -108,7 +118,7 @@ public class Splice extends AbstractDirectModule {
         }
         
         // Try to connect to the target
-        DirectSocket s = connect(a, localPort, DEFAULT_TIMEOUT);
+        DirectSocket s = connect(a, localPort, DEFAULT_TIMEOUT, target.port());
                 
         if (s == null) { 
             throw new ModuleNotSuitableException(module + ": Failed to connect "
@@ -133,7 +143,9 @@ public class Splice extends AbstractDirectModule {
                 
         try { 
             s = factory.createSocket(shared, timeout, null);
-            s.setReuseAddress(true);            
+            s.setReuseAddress(true); // TODO: is this correct ?           
+            
+            s.setSoTimeout(timeout);
             
             local = s.getLocalPort();
             
@@ -145,22 +157,22 @@ public class Splice extends AbstractDirectModule {
             out.writeUTF(connectID);
             out.writeInt(timeout);
             out.flush();
-
-            addr = in.readUTF();
-            port = in.readInt();
             
         } catch (IOException e) {            
             logger.warn("Got exception during splicing", e);
 
+            DirectSocketFactory.close(s, out, in);
+            
             // Failed to create the exception, to the shared proxy 
             // TODO: try to find other shared proxy ? 
             throw new ModuleNotSuitableException(module + ": Failed to " +
                     "connect to shared proxy " + shared + " " + e);                   
-        } finally { 
-            DirectSocketFactory.close(s, out, in);
         }
-
-        try { 
+        
+        try {
+            addr = in.readUTF();
+            port = in.readInt();
+            
             for (int i=0;i<result.length;i++) {
                 result[i] = SocketAddressSet.getByAddress(addr, port+i);
             }
@@ -170,12 +182,14 @@ public class Splice extends AbstractDirectModule {
             // Failed to create the exception, to the shared proxy 
             // TODO: try to find other shared proxy ? 
             throw new ModuleNotSuitableException(module + ": Failed to " +
-                    "parse reply from shared proxy " + shared + " " + e);                   
-        } 
+                    "get decent reply from shared proxy " + shared + " " + e);                   
+        } finally { 
+            DirectSocketFactory.close(s, out, in);
+        }
     }
     
     private DirectSocket connect(SocketAddressSet [] target, int localPort, 
-            int timeout) throws IOException, ModuleNotSuitableException {
+            int timeout, int userdata) throws IOException, ModuleNotSuitableException {
         
         // TODO: This will give you very long waiting time before the setup 
         // fails! Better to fail fast and retry the entire setup ? Or maybe 
@@ -184,7 +198,7 @@ public class Splice extends AbstractDirectModule {
         for (int i=0;i<MAX_ATTEMPTS;i++) {
             for (int t=0;t<target.length;t++) {             
                 try { 
-                    return factory.createSocket(target[t], timeout, localPort, null);
+                    return factory.createSocket(target[t], timeout, localPort, null, false, userdata);
                 } catch (IOException e) {
                     logger.info(module + ": Connection failed " 
                             + target.toString(), e);
@@ -231,7 +245,7 @@ public class Splice extends AbstractDirectModule {
             SocketAddressSet [] a = new SocketAddressSet[PORT_RANGE];
             int local = getInfo(shared, connectID, timeout, a);
                         
-            DirectSocket s = connect(a, local, timeout);
+            DirectSocket s = connect(a, local, timeout, 0);
             
             if (s == null) {
                 if (logger.isInfoEnabled()) {

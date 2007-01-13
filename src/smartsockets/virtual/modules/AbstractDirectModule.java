@@ -53,9 +53,13 @@ public abstract class AbstractDirectModule extends ConnectModule {
             in = new DataInputStream(ds.getInputStream());
             out = new DataOutputStream(ds.getOutputStream());
            
+            
+            
          //   String remote = in.readUTF();
-            int targetPort = in.readInt();
+            // int targetPort = in.readInt();
     
+            int targetPort = ds.getUserData();
+            
             if (logger.isDebugEnabled()) { 
                 logger.debug(module + ": Target port " + targetPort);
             }
@@ -121,15 +125,9 @@ public abstract class AbstractDirectModule extends ConnectModule {
         DataInputStream in = null;
         DataOutputStream out = null;
         
-        try { 
-            s.setSoTimeout(timeout);
-            
+        try {
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
-                
-        //    out.writeUTF(parent.getVirtualAddressAsString()); 
-            out.writeInt(target.port());
-            out.flush();                
             
             tmp = createVirtualSocket(target, s, out, in); 
             

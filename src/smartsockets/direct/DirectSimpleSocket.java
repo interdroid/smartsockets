@@ -12,7 +12,7 @@ import java.nio.channels.SocketChannel;
 public class DirectSimpleSocket extends DirectSocket {
 
     private final Socket socket; 
-
+    
     DirectSimpleSocket(SocketAddressSet local, SocketAddressSet remote, 
             InputStream in, OutputStream out, Socket socket) {
         
@@ -20,7 +20,7 @@ public class DirectSimpleSocket extends DirectSocket {
         
         this.socket = socket;
     }
-
+    
     public void close() throws IOException {
         socket.close();
     }

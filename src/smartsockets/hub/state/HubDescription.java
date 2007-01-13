@@ -510,6 +510,7 @@ public class HubDescription {
         
         synchronized (connectedTo) {
             connectedTo.add(address);
+            lastLocalUpdate = state.increment();
         }        
     }
     
@@ -522,6 +523,7 @@ public class HubDescription {
         
         synchronized (connectedTo) {
             connectedTo.remove(address);
+            lastLocalUpdate = state.increment();
         }        
     }
 

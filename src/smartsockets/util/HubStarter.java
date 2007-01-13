@@ -82,7 +82,7 @@ public class HubStarter {
                 }
             } 
         }
-
+        
         SocketAddressSet [] tmp = new SocketAddressSet[numHubs];
         
         int index = 0;

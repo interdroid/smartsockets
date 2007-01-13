@@ -13,6 +13,8 @@ public abstract class DirectSocket {
     
     protected final SocketAddressSet local;
     protected final SocketAddressSet remote;
+    
+    private int userData;
         
     DirectSocket(SocketAddressSet local, SocketAddressSet remote, 
             InputStream in, OutputStream out) {
@@ -22,6 +24,14 @@ public abstract class DirectSocket {
         
         this.in = in; 
         this.out = out;
+    }
+    
+    public int getUserData() { 
+        return userData;
+    }
+    
+    public void setUserData(int userData) { 
+        this.userData = userData;
     }
     
     public InputStream getInputStream() throws IOException {
@@ -78,4 +88,5 @@ public abstract class DirectSocket {
     
     public abstract void shutdownOutput() throws IOException;
     public abstract boolean isOutputShutdown();
+   
 }

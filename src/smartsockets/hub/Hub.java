@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -131,7 +130,9 @@ public class Hub extends Thread {
         
         hubs.addLocalDescription(localDesc);
 
-        addHubs(hubAddresses);
+        String [] knownHubs = p.getStringList(Properties.HUB_KNOWN_HUBS);
+        
+        addHubs(hubAddresses, knownHubs);
         
         if (goslogger.isInfoEnabled()) {
             goslogger.info("Starting Gossip connector/acceptor");
@@ -185,18 +186,38 @@ public class Hub extends Thread {
         
         start();
     }
-
-    public void addHubs(SocketAddressSet [] hubAddresses) { 
+    
+    public void addHubs(SocketAddressSet [] hubAddresses, String [] moreHubs) { 
         
-        if (hubAddresses == null || hubAddresses.length == 0) { 
-            return;
+        SocketAddressSet local = hubs.getLocalDescription().hubAddress;
+        
+        if (hubAddresses != null) { 
+                for (SocketAddressSet s : hubAddresses) { 
+                if (s != null && !local.sameProcess(s)) { 
+                    misclogger.info("Adding hub address: " + s);
+                    hubs.add(s);
+                } 
+            }
+        }
+            
+        if (moreHubs != null) { 
+            for (String s : moreHubs) { 
+            
+                if (s != null) { 
+                    try { 
+                        SocketAddressSet tmp = SocketAddressSet.getByAddress(s);
+                    
+                        if (!local.sameProcess(tmp)) {
+                            misclogger.info("Adding hub address: " + s);
+                            hubs.add(tmp);
+                        } 
+                    } catch (Exception e) { 
+                        misclogger.warn("Failed to parse hub address: " + s);
+                    }
+                }
+            }
         }
         
-        for (int i=0;i<hubAddresses.length;i++) { 
-            if (hubAddresses[i] != null) { 
-                hubs.add(hubAddresses[i]);
-            } 
-        }
     }
     
     private void gossip() { 

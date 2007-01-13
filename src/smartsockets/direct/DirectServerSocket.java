@@ -10,6 +10,9 @@ import java.nio.channels.ServerSocketChannel;
 
 public class DirectServerSocket {
 
+    protected static final byte TYPE_SERVER = 7;
+    protected static final byte TYPE_CLIENT = 8;
+    
     protected static final byte ACCEPT = 47;
     protected static final byte WRONG_MACHINE = 48;
     protected static final byte FIREWALL_REFUSED = 49;
@@ -24,6 +27,10 @@ public class DirectServerSocket {
     // This is the initial message which contains the local address in coded 
     // form. The first two bytes contain the size of the address..
     private final byte [] handShake;
+    
+    // This is the initial message which contains the local address in coded 
+    // form. The first two bytes contain the size of the address..
+    private final byte [] altHandShake;
     
     // These are the external addresses, i.e., SocketAddresses which use IP's         
     // which cannot be found on this machine, but which can still be used to 
@@ -54,7 +61,9 @@ public class DirectServerSocket {
         handShake[0] = (byte) (tmp.length & 0xFF);
         handShake[1] = (byte) ((tmp.length >> 8) & 0xFF);
         System.arraycopy(tmp, 0, handShake, 2, tmp.length);
-         
+        
+        altHandShake = DirectSocketFactory.toBytes(1, local.getAddressSet());
+        altHandShake[0] = TYPE_SERVER;
     }
                
     /**
@@ -98,7 +107,7 @@ public class DirectServerSocket {
     
     public DirectSocket accept() throws IOException {    
         
-        DirectSocket result = null;
+        DirectSimpleSocket result = null;
         
         while (result == null) { 
             
@@ -107,6 +116,8 @@ public class DirectServerSocket {
             
             InputStream in = null;
             OutputStream out = null;
+
+/* BELOW IS THE 'MATHIJS/NIELS VERSION                
              
             try { 
                 s.setSoTimeout(10000);
@@ -135,7 +146,7 @@ public class DirectServerSocket {
                 while (off < size) { 
                     off += in.read(tmp, off, size-off);
                 }
-
+                
                 // If available, read the network name of the client
                 size = (in.read() & 0xFF);
                 size |= ((in.read() & 0xFF) << 8); 
@@ -159,6 +170,7 @@ public class DirectServerSocket {
                 
                 // Check if the connection is acceptable and write the 
                 // appropriate opcode into the stream.
+             
                 if (preference.accept(ads.addresses, name)) { 
                     out.write(ACCEPT);
                     out.flush();       
@@ -185,8 +197,76 @@ public class DirectServerSocket {
                     in.read();
                     doClose(s, in, out);
                 }
-                           
-            } catch (IOException ie) { 
+           } catch (IOException ie) { 
+                doClose(s, in, out);
+            }
+        }
+        
+        return result;        
+*/
+                // THIS IS THE HPDC VERSION
+                
+            try { 
+                s.setSoTimeout(10000);
+                s.setTcpNoDelay(true);
+                
+                // Start by sending our type and address to the client. It will 
+                // check for itself if we are the expected target machine.
+                out = s.getOutputStream();
+                out.write(altHandShake);
+                out.flush();
+            
+                in = s.getInputStream();
+                
+                // Read the type of the client (should always be TYPE_CLIENT)
+                int type = in.read();
+                
+                // Read the size of the machines address blob
+                int size = (in.read() & 0xFF);
+                size |= ((in.read() & 0xFF) << 8); 
+                     
+                // Read the bytes....
+                byte [] tmp = new byte[size];
+                
+                int off = 0; 
+                
+                while (off < size) { 
+                    off += in.read(tmp, off, size-off);
+                }
+            
+                // Optimistically create the socket ? 
+                // TODO: fix to get 'real' port numbers here... 
+                result = new DirectSimpleSocket(local, 
+                        SocketAddressSet.getByAddress(
+                                IPAddressSet.getByAddress(tmp), 1, null), 
+                                in, out, s);
+                
+                // Read if the client accept us. 
+                int opcode = in.read();
+                
+                if (opcode == ACCEPT) { 
+                    
+                    off = 0; 
+                    
+                    while (off < 4) { 
+                        off += in.read(tmp, off, 4-off);
+                    }
+                    
+                    int userData = (((tmp[0] & 0xff) << 24) | 
+                            ((tmp[1] & 0xff) << 16) |
+                            ((tmp[2] & 0xff) << 8) | 
+                            (tmp[3] & 0xff));
+                    
+                    result.setUserData(userData);
+                    
+                    s.setSoTimeout(0);
+                } else { 
+                    result = null;
+                    doClose(s, in, out);
+                }
+                
+            } catch (IOException ie) {
+                result = null;
                 doClose(s, in, out);
             }
         }

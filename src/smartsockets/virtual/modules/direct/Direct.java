@@ -211,7 +211,7 @@ public class Direct extends AbstractDirectModule {
         DirectSocket s = null;
 
         try { 
-            s = direct.createSocket(target.machine(), timeout, properties);
+            s = direct.createSocket(target.machine(), timeout, properties, target.port());
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            

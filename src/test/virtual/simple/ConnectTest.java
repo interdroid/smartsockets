@@ -1,13 +1,12 @@
 package test.virtual.simple;
 
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Random;
 
-import smartsockets.direct.SocketAddressSet;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -16,12 +15,21 @@ import smartsockets.virtual.VirtualSocketFactory;
  
 public class ConnectTest {
     
-    private static int REPEAT = 1;
-    private static int TIMEOUT = 5000;
-        
+    private static final int SERVERPORT = 42611;
+    
+    private static final int REPEAT = 10;
+    private static final int COUNT = 1000;
+    private static final int TIMEOUT = 1000;
+    
+    private static final boolean PINGPONG = false;
+    
     private static VirtualSocketFactory sf;
     
     private static HashMap connectProperties;
+    
+    private static boolean pingpong = PINGPONG;
+    private static int count = COUNT;
+    private static int timeout = TIMEOUT;
     
     private static Random rand = new Random();
     
@@ -30,23 +38,34 @@ public class ConnectTest {
         long time = System.currentTimeMillis();
 
         try { 
-            VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
-                    connectProperties);
+            for (int c=0;c<count;c++) {
+
+                InputStream in = null;
+                OutputStream out = null;
+                
+                VirtualSocket s = sf.createClientSocket(target, timeout, 
+                        connectProperties);
+
+                if (pingpong) { 
+                    s.setTcpNoDelay(true);
+                    
+                    out = s.getOutputStream();
+
+                    out.write(42);
+                    out.flush();
+
+                    in = s.getInputStream();
+                    in.read();
+                }
+                    
+                VirtualSocketFactory.close(s, out, in);
+            } 
 
             time = System.currentTimeMillis() - time;
 
-            System.out.println("Created connection to " + target + " in " + 
-                    time + " ms.");
-
-            DataInputStream in = new DataInputStream(s.getInputStream());
-            DataOutputStream out = new DataOutputStream(s.getOutputStream());
-
-            System.out.println("Server says: " + in.readUTF());
-
-            out.writeUTF("Hello server!");
-            out.flush();
-
-            VirtualSocketFactory.close(s, out, in);
+            System.out.println(count + " connections in " + time 
+                    + " ms. -> " + (((double) time) / count) 
+                    + "ms/conn");
         } catch (Exception e) {
             time = System.currentTimeMillis() - time;
 
@@ -63,24 +82,28 @@ public class ConnectTest {
         VirtualServerSocket ss = sf.createServerSocket(0, 0, connectProperties);
         
         System.out.println("Created server on " + ss.getLocalSocketAddress());
-                    
+        
+        System.out.println("Server waiting for connections"); 
+        
         while (true) {
-            System.out.println("Server waiting for connections"); 
+            
+            InputStream in = null;
+            OutputStream out = null;
             
             try { 
                 VirtualSocket s = ss.accept();
-                            
-                System.out.println("Incoming connection from " 
-                        + s.getRemoteSocketAddress());
-            
-                DataInputStream in = new DataInputStream(s.getInputStream());
-                DataOutputStream out = new DataOutputStream(s.getOutputStream());
-            
-                out.writeUTF("Hello client!");
-                out.flush();
-            
-                System.out.println("Client says: " + in.readUTF());
+        
+                if (pingpong) { 
+                    s.setTcpNoDelay(true);
+                    
+                    in = s.getInputStream();
+                    in.read();
 
+                    out = s.getOutputStream();
+                    out.write(42);
+                    out.flush();
+                }
+                
                 VirtualSocketFactory.close(s, out, in);
             } catch (Exception e) {
                 System.out.println("Server got exception " + e); 
@@ -97,26 +120,54 @@ public class ConnectTest {
 
         int targets = args.length;
         int repeat = REPEAT;        
-        boolean sleep = false;
         
+        boolean sleep = false;
+       
         for (int i=0;i<args.length;i++) { 
-            if (args[i].equals("-cache")) {                 
-                connectProperties.put("cache.winner", null);
-                args[i] = null;
-                targets--;
-            } else if (args[i].equals("-repeat")) { 
+            if (args[i].equals("-repeat")) { 
                 repeat = Integer.parseInt(args[i+1]);
                 args[i+1] = null;
                 args[i] = null;
                 targets -= 2;
                 i++;
+                
+            } else if (args[i].equals("-count")) { 
+                count = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
+
+            } else if (args[i].equals("-timeout")) { 
+                timeout = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
+                    
             } else if (args[i].equals("-sleep")) { 
                 sleep = true;
                 args[i] = null;
                 targets--;
-            } 
+    
+            } else if (args[i].equals("-ssh")) {
+                connectProperties.put("allowSSH", "true");
+                args[i] = null;
+                targets--;
+            
+            } else if (args[i].equals("-pingpong")) {
+                pingpong = true;
+                args[i] = null;
+                targets--;
+                
+            } else if (args[i].equals("-cache")) {                 
+                connectProperties.put("cache.winner", null);
+                args[i] = null;
+                targets--;
+            }
+        
         }
-
+        
         VirtualSocketAddress [] targetAds = new VirtualSocketAddress[targets];
         int index = 0;
         
@@ -128,17 +179,23 @@ public class ConnectTest {
         
         if (targets > 0) {             
             
-            for (int r=0;r<repeat;r++) {        
-                for (VirtualSocketAddress a : targetAds) { 
-                    
-                    if (sleep) { 
-                        try { 
-                            Thread.sleep(1000 + rand.nextInt(5000));
-                        } catch (Exception e) {
-                            // TODO: handle exception
-                        }
+            for (VirtualSocketAddress a : targetAds) { 
+
+                if (a == null) { 
+                    continue;
+                }
+                
+                if (sleep) { 
+                    try { 
+                        Thread.sleep(1000 + rand.nextInt(5000));
+                    } catch (Exception e) {
+                        // TODO: handle exception
                     }
-                    
+                }
+
+                System.out.println("Creating connection to " + a);
+                
+                for (int r=0;r<repeat;r++) {        
                     connect(a);
                 }
             }

@@ -3,6 +3,7 @@ package smartsockets.direct;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -100,6 +101,12 @@ public class IPAddressSet implements Serializable {
                     len += 1 + addresses[i].getAddress().length;                    
                 }
                 
+                // When we get a combination which has the length of a
+                // IPV6 address, we add a padding byte... 
+                if (len == LENGTH_IPv6) { 
+                    len += 1;
+                }
+                
                 // We now know the size, so create the array and fill it.                 
                 codedForm = new byte[len];
                         
@@ -150,7 +157,7 @@ public class IPAddressSet implements Serializable {
         
         return code;
     }
-
+    
     /* (non-Javadoc)
      * @see java.net.InetAddress#equals(java.lang.Object)
      */

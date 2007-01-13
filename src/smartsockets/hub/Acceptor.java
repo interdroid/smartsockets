@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -211,7 +212,11 @@ public class Acceptor extends CommunicationThread {
             return false;
         }
         
-        SpliceInfo info = (SpliceInfo) spliceInfo.remove(connectID);
+        SpliceInfo info = null;
+        
+        synchronized (spliceInfo) {
+            info = (SpliceInfo) spliceInfo.remove(connectID);
+        }
         
         if (info == null) {
         
@@ -228,7 +233,9 @@ public class Acceptor extends CommunicationThread {
             info.in = in;             
             info.bestBefore = System.currentTimeMillis() + time;
             
-            spliceInfo.put(connectID, info);
+            synchronized (spliceInfo) {
+                spliceInfo.put(connectID, info);
+            }
             
             if (nextInvalidation == -1 || info.bestBefore < nextInvalidation) { 
                 nextInvalidation = info.bestBefore;
@@ -295,23 +302,30 @@ public class Acceptor extends CommunicationThread {
                 // Traverse the map, removing all entries which are out of date, 
                 // and recording the next time at which we should do a 
                 // traversal.  
-                Iterator itt = spliceInfo.keySet().iterator();
-                
-                while (itt.hasNext()) { 
-                    String key = (String) itt.next();                   
-                    SpliceInfo tmp = (SpliceInfo) spliceInfo.get(key);
+                synchronized (spliceInfo) {
+                    Iterator itt = spliceInfo.keySet().iterator();
+                    LinkedList<String> garbage = new LinkedList<String>();
                     
-                    if (tmp.bestBefore < now) { 
-                        spliceInfo.remove(key);
-                    } else { 
-                        if (tmp.bestBefore < nextInvalidation) { 
-                            nextInvalidation = tmp.bestBefore;
+                    while (itt.hasNext()) { 
+                        String key = (String) itt.next();                   
+                        SpliceInfo tmp = (SpliceInfo) spliceInfo.get(key);
+                    
+                        if (tmp.bestBefore < now) { 
+                            garbage.add(key);
+                        } else { 
+                            if (tmp.bestBefore < nextInvalidation) { 
+                                nextInvalidation = tmp.bestBefore;
+                            } 
                         } 
-                    } 
-                }
-
-                if (spliceInfo.size() == 0) { 
-                    nextInvalidation = -1;
+                    }
+                
+                    for (String g: garbage) { 
+                        spliceInfo.remove(g);
+                    }
+                    
+                    if (spliceInfo.size() == 0) { 
+                        nextInvalidation = -1;
+                    }
                 }
             } 
         } 
@@ -331,8 +345,8 @@ public class Acceptor extends CommunicationThread {
         try {
             s = server.accept();     
             s.setTcpNoDelay(true);
-            s.setSendBufferSize(16*1024*1024);
-            s.setReceiveBufferSize(16*1024*1024);
+            s.setSendBufferSize(256*1024);
+            s.setReceiveBufferSize(256*1024);
             
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Acceptor send buffer = " + s.getSendBufferSize());

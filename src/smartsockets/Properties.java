@@ -23,7 +23,8 @@ public class Properties {
     public static final String BACKLOG             = PREFIX + "backlog";  
     public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
     public static final String TIMEOUT             = PREFIX + "timeout";  
-    
+    public static final String LOCAL_TIMEOUT       = PREFIX + "timeout.local";  
+       
     public static final String CREDITS             = PREFIX + "credits";
     
     public static final String SSH_PREFIX          = PREFIX + "ssh.";
@@ -75,7 +76,8 @@ public class Properties {
     public static final String HUB_SIMPLE_NAME    = HUB_PREFIX + "simple_name";
     public static final String HUB_CLUSTERS       = HUB_PREFIX + "clusters";       
     public static final String HUB_PORT           = HUB_PREFIX + "port";                 
-    public static final String HUB_SSH_ALLOWED    = HUB_PREFIX + "ssh";                 
+    public static final String HUB_SSH_ALLOWED    = HUB_PREFIX + "ssh";     
+    public static final String HUB_KNOWN_HUBS     = HUB_PREFIX + "known";
     
     public static final String CLUSTER_PREFIX  = PREFIX + "cluster.";
     public static final String CLUSTER_DEFINE  = CLUSTER_PREFIX + "define";
@@ -94,6 +96,7 @@ public class Properties {
             DIRECT_BACKLOG,         "255", 
             BACKLOG,                "100", 
             TIMEOUT,                "5000", 
+            LOCAL_TIMEOUT,          "100", 
             
             SSH_OUT,                "false", 
             SSH_IN,                 "false",

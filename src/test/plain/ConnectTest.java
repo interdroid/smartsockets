@@ -13,49 +13,79 @@ public class ConnectTest {
 
     public static void main(String[] args) {
 
+        int targets = args.length;
+        int repeat = REPEAT;        
+        int count = COUNT;
+        
+        boolean pingpong = false;
+        
+        for (int i=0;i<args.length;i++) { 
+            if (args[i].equals("-repeat")) { 
+                repeat = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
+                
+            } else if (args[i].equals("-count")) { 
+                count = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
+        
+            } else if (args[i].equals("-pingpong")) {
+                pingpong = true;
+                args[i] = null;
+                targets--;
+            }
+        }
+        
+        InetSocketAddress [] targetAds = new InetSocketAddress[targets];
+        int index = 0;
+        
+        for (int i=0;i<args.length-1;i++) { 
+            if (args[i] != null && args[i+1] != null) { 
+                targetAds[index++] = new InetSocketAddress(args[i], Integer.parseInt(args[i+1])); 
+            }
+        } 
+        
+        
         try {
+            if (index > 0) {
 
-            if (args.length > 0) {
-
-                int start = 0;
-                int repeat = REPEAT;
-                int count = COUNT;
-                
-                // This parsing is lame!
-                if (args[0].equals("-repeat")) { 
-                    repeat = Integer.parseInt(args[1]);
-                    start += 2;
-                }
-                
-                if (args[start].equals("-count")) { 
-                    count = Integer.parseInt(args[start+1]);
-                    start += 2;
-                }
-                
-                for (int i=start; i < args.length / 2; i++) {
+                for (InetSocketAddress a : targetAds) {
                     
-                    System.out.println("Creating connection to " + args[i] 
-                               + ":" + args[i+1]);
+                    if (a == null) { 
+                        continue;
+                    }
                     
-                    InetSocketAddress a = new InetSocketAddress(args[i], Integer.parseInt(args[i+1]));
-
+                    System.out.println("Creating connection to " + a);
+                    
                     for (int r = 0; r < repeat; r++) {
                     
                         long time = System.currentTimeMillis();
                     
                         for (int c = 0; c < count; c++) {
-                            Socket s = new Socket(a.getAddress(), a.getPort());
-                       
-                            OutputStream out = s.getOutputStream();
+                            Socket s = new Socket();
+                            s.setReuseAddress(true);
+                            s.connect(a);
+                            
+                            if (pingpong) { 
+                                s.setTcpNoDelay(true);
+                                
+                                OutputStream out = s.getOutputStream();
 
-                            out.write(42);
-                            out.flush();
+                                out.write(42);
+                                out.flush();
                             
-                            InputStream in = s.getInputStream();
-                            in.read();
+                                InputStream in = s.getInputStream();
+                                in.read();
                             
-                            in.close();
-                            out.close();
+                                in.close();
+                                out.close();
+                            }
+                            
                             s.close();
                         }
                      
@@ -77,17 +107,22 @@ public class ConnectTest {
 
                 while (true) {
                     Socket s = ss.accept();
-
-                    InputStream in = s.getInputStream();
-                    in.read();
                     
-                    OutputStream out = s.getOutputStream();
-
-                    out.write(42);
-                    out.flush();
+                    if (pingpong) { 
+                        s.setTcpNoDelay(true);
+                        
+                        InputStream in = s.getInputStream();
+                        in.read();
                     
-                    in.close();
-                    out.close();
+                        OutputStream out = s.getOutputStream();
+
+                        out.write(42);
+                        out.flush();
+                    
+                        in.close();
+                        out.close();
+                    }
+                     
                     s.close();
                 }
             }

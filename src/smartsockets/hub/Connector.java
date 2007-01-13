@@ -141,8 +141,8 @@ class Connector extends CommunicationThread {
                     DEFAULT_TIMEOUT, null);
             
             s.setTcpNoDelay(true);
-            s.setSendBufferSize(16*1024*1024);
-            s.setReceiveBufferSize(16*1024*1024);
+            s.setSendBufferSize(256*1024);
+            s.setReceiveBufferSize(256*1024);
             
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Send buffer = " + s.getSendBufferSize());

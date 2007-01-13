@@ -331,6 +331,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return false;        
     }
     
+    public boolean hasGlobalAddress() {
+        return global != null & global.length > 0;
+    }    
+    
+    
     public boolean isExternalAddresses(InetSocketAddress a) {
         return contains(external, a);
     }
@@ -543,7 +548,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         for (InetSocketAddress a1 : a) { 
             for (InetSocketAddress a2 : b) { 
                 
-                if (comparePorts) { 
+                if (!comparePorts) { 
                     if (a1.getAddress().equals(a2.getAddress())) { 
                         return true;
                     }
