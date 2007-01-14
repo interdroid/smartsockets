@@ -207,7 +207,7 @@ public class ServiceLink implements Runnable {
         
             // Throw an exception if the hub refuses our conenction
             if (reply != HubProtocol.SERVICELINK_ACCEPTED) {
-                throw new IOException("Hub denied connection request");                
+                throw new IOException("Hub denied connection request (got: " + reply);                
             }
         
             // If the connection is accepted, the hub will give us its full 

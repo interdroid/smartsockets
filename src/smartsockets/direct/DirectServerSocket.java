@@ -11,7 +11,8 @@ import java.nio.channels.ServerSocketChannel;
 public class DirectServerSocket {
 
     protected static final byte TYPE_SERVER = 7;
-    protected static final byte TYPE_CLIENT = 8;
+    protected static final byte TYPE_CLIENT_CHECK   = 8;
+    protected static final byte TYPE_CLIENT_NOCHECK = 9;
     
     protected static final byte ACCEPT = 47;
     protected static final byte WRONG_MACHINE = 48;
@@ -62,7 +63,7 @@ public class DirectServerSocket {
         handShake[1] = (byte) ((tmp.length >> 8) & 0xFF);
         System.arraycopy(tmp, 0, handShake, 2, tmp.length);
         
-        altHandShake = DirectSocketFactory.toBytes(1, local.getAddressSet());
+        altHandShake = DirectSocketFactory.toBytes(5, local.getAddressSet());
         altHandShake[0] = TYPE_SERVER;
     }
                
@@ -108,6 +109,9 @@ public class DirectServerSocket {
     public DirectSocket accept() throws IOException {    
         
         DirectSimpleSocket result = null;
+    
+        // Move up ?
+        byte [] userIn = new byte[4];
         
         while (result == null) { 
             
@@ -218,8 +222,15 @@ public class DirectServerSocket {
             
                 in = s.getInputStream();
                 
-                // Read the type of the client (should always be TYPE_CLIENT)
+                // Read the type of the client (should always be TYPE_CLIENT_*)
                 int type = in.read();
+                
+                // Read the user data
+                int off = 0; 
+                    
+                while (off < 4) { 
+                    off += in.read(userIn, off, 4-off);
+                }
                 
                 // Read the size of the machines address blob
                 int size = (in.read() & 0xFF);
@@ -228,7 +239,7 @@ public class DirectServerSocket {
                 // Read the bytes....
                 byte [] tmp = new byte[size];
                 
-                int off = 0; 
+                off = 0; 
                 
                 while (off < size) { 
                     off += in.read(tmp, off, size-off);
@@ -241,33 +252,29 @@ public class DirectServerSocket {
                                 IPAddressSet.getByAddress(tmp), 1, null), 
                                 in, out, s);
                 
-                // Read if the client accept us. 
-                int opcode = in.read();
+                int userData = (((userIn[0] & 0xff) << 24) | 
+                        ((userIn[1] & 0xff) << 16) |
+                        ((userIn[2] & 0xff) << 8) | 
+                        (userIn[3] & 0xff));
+                    
+                result.setUserData(userData);
                 
-                if (opcode == ACCEPT) { 
+                if (type == TYPE_CLIENT_CHECK) { 
                     
-                    off = 0; 
-                    
-                    while (off < 4) { 
-                        off += in.read(tmp, off, 4-off);
+                    // Read if the client accept us. 
+                    int opcode = in.read();
+                
+                    if (opcode != ACCEPT) { 
+                        doClose(s, in, out);
+                        result = null;
                     }
-                    
-                    int userData = (((tmp[0] & 0xff) << 24) | 
-                            ((tmp[1] & 0xff) << 16) |
-                            ((tmp[2] & 0xff) << 8) | 
-                            (tmp[3] & 0xff));
-                    
-                    result.setUserData(userData);
-                    
-                    s.setSoTimeout(0);
-                } else { 
-                    result = null;
-                    doClose(s, in, out);
                 }
-                
+
+                s.setSoTimeout(0);
+               
             } catch (IOException ie) {
-                result = null;
                 doClose(s, in, out);
+                result = null;
             }
         }
         

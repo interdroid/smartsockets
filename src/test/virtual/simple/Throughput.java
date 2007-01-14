@@ -149,6 +149,8 @@ public class Throughput {
                 target = new VirtualSocketAddress(args[++i]);
             } else if (args[i].equals("-size")) {                                 
                 size = Integer.parseInt(args[++i]);
+            } else if (args[i].equals("-count")) {                                 
+                count = Integer.parseInt(args[++i]);    
             } else if (args[i].equals("-repeat")) {                                 
                 repeat = Integer.parseInt(args[++i]);            
             } else { 

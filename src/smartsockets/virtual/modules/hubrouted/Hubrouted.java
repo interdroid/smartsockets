@@ -9,6 +9,7 @@ import java.util.Map;
 
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.VirtualConnectionCallBack;
+import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
@@ -29,7 +30,7 @@ public class Hubrouted extends ConnectModule
         super("ConnectModule(HubRouted)", true);
     }
 
-    public void initModule(Map properties) throws Exception {
+    public void initModule(TypedProperties properties) throws Exception {
     }
 
     public void startModule() throws Exception {

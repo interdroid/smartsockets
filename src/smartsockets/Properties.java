@@ -21,10 +21,12 @@ public class Properties {
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
         
     public static final String BACKLOG             = PREFIX + "backlog";  
-    public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
     public static final String TIMEOUT             = PREFIX + "timeout";  
     public static final String LOCAL_TIMEOUT       = PREFIX + "timeout.local";  
-       
+    
+    public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
+    public static final String DIRECT_PORT         = PREFIX + "direct.port";  
+    
     public static final String CREDITS             = PREFIX + "credits";
     
     public static final String SSH_PREFIX          = PREFIX + "ssh.";

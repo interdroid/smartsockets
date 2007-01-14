@@ -46,19 +46,18 @@ public class Direct extends AbstractDirectModule {
         super("ConnectModule(Direct)", false);
     } 
     
-    public void initModule(Map properties) throws Exception {     
+    public void initModule(TypedProperties properties) throws Exception {     
 
         // Retrieve the value of the port property (if set). Default value 
         // is '0' (any available port).
         int port = 0;
         
         if (properties != null) { 
-        
-            String tmp = (String) properties.get("modules.direct.port");
-        
-            if (tmp != null) {
-                port = Integer.parseInt(tmp);
-            }
+            System.err.println("PROPERTIES!!!");
+            port = properties.getIntProperty(Properties.DIRECT_PORT, 0);
+            System.err.println("PORT IS " + port);
+        } else { 
+            System.err.println("NO PROPERTIES!!!");
         }
         
         // Create a direct socket factory.
@@ -211,7 +210,8 @@ public class Direct extends AbstractDirectModule {
         DirectSocket s = null;
 
         try { 
-            s = direct.createSocket(target.machine(), timeout, properties, target.port());
+            s = direct.createSocket(target.machine(), timeout, properties, 
+                    target.port());
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            

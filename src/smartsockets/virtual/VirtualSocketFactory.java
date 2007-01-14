@@ -544,11 +544,23 @@ public class VirtualSocketFactory {
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
             int timeout, Map prop) throws IOException {
 
-        // TODO: should we still have a properties parameter here ? 
-        if (prop == null) {
+        
+        // Note: it's up to the user to ensure that this thing is large enough!
+        // i.e., it should be of size 1+modules.length
+        long [] timing = null;
+        
+        if (prop != null) { 
+            timing = (long []) prop.get("virtual.detailed.timing");
+        
+            if (timing != null) { 
+                timing[0] = System.nanoTime();
+            }
+        } else { 
             prop = properties;
         }
-
+        
+        try { 
+            
         int notSuitableCount = 0;
         
         if (timeout < 0) { 
@@ -572,11 +584,25 @@ public class VirtualSocketFactory {
         // using the cache in the first place...)
         int index = 0;
         
-        for (ConnectModule m : order) { 
+        for (int i = 0; i<order.length;i++) { 
+            
+            ConnectModule m = order[i];
             
             long start = System.currentTimeMillis(); 
             
+            if (timing != null) { 
+                timing[1+i] = System.nanoTime();
+                
+                if (i > 0) { 
+                    prop.put("direct.detailed.timing.ignore", null);
+                }
+            }
+            
             VirtualSocket vs = createClientSocket(m, target, partialTimeout, prop);
+            
+            if (timing != null) { 
+                timing[1+i] = System.nanoTime() - timing[1+i];
+            }
             
             if (vs != null) {               
                 if (notSuitableCount > 0) {                    
@@ -621,7 +647,14 @@ public class VirtualSocketFactory {
             // TODO: is this right ?
             throw new SocketTimeoutException("Timeout during connect to " 
                     + target);
-        }        
+        }     
+        
+        } finally { 
+            if (timing != null) { 
+                timing[0] = System.nanoTime() - timing[0];
+                prop.remove("direct.detailed.timing.ignore");
+            }
+        }
     } 
         
     private int getPort() {

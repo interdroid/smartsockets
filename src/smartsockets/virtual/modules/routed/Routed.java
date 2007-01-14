@@ -114,7 +114,7 @@ public class Routed extends ConnectModule {
         }
     }
 
-    public void initModule(Map properties) throws Exception {
+    public void initModule(TypedProperties properties) throws Exception {
         
         // TODO: This only reads the default ???
         TypedProperties p = Properties.getDefaultProperties();

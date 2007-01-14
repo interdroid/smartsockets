@@ -1,6 +1,8 @@
 package smartsockets.virtual.modules.splice;
 
 
+
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,6 +13,7 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
+import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
@@ -198,7 +201,8 @@ public class Splice extends AbstractDirectModule {
         for (int i=0;i<MAX_ATTEMPTS;i++) {
             for (int t=0;t<target.length;t++) {             
                 try { 
-                    return factory.createSocket(target[t], timeout, localPort, null, false, userdata);
+                    return factory.createSocket(target[t], timeout, localPort, 
+                            null, false, userdata);
                 } catch (IOException e) {
                     logger.info(module + ": Connection failed " 
                             + target.toString(), e);
@@ -216,7 +220,7 @@ public class Splice extends AbstractDirectModule {
         return null;
     }
 
-    public void initModule(Map properties) throws Exception {
+    public void initModule(TypedProperties properties) throws Exception {
         // Create a direct socket factory.
         factory = DirectSocketFactory.getSocketFactory();       
     }

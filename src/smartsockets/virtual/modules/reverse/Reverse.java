@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
@@ -41,7 +42,7 @@ public class Reverse extends ConnectModule {
         super("ConnectModule(Reverse)", true);
     }
 
-    public void initModule(Map properties) throws Exception {
+    public void initModule(TypedProperties properties) throws Exception {
         // nothing do do here.
     }
 

@@ -1,5 +1,7 @@
 package smartsockets.virtual.modules;
 
+
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +11,7 @@ import org.apache.log4j.Logger;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.CallBack;
 import smartsockets.hub.servicelink.ServiceLink;
+import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -72,7 +75,7 @@ public abstract class ConnectModule implements CallBack {
         } 
     }
         
-    public void init(VirtualSocketFactory p, String name, Map properties, 
+    public void init(VirtualSocketFactory p, String name, TypedProperties properties, 
             Logger l) throws Exception {
         
         this.name = name;
@@ -258,7 +261,7 @@ public abstract class ConnectModule implements CallBack {
         notAllowed++;
     }
     
-    public abstract void initModule(Map properties) throws Exception; 
+    public abstract void initModule(TypedProperties prop) throws Exception; 
 
     public abstract void startModule() throws Exception; 
 

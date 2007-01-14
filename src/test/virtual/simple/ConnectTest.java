@@ -4,6 +4,7 @@ package test.virtual.simple;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -36,6 +37,12 @@ public class ConnectTest {
     public static void connect(VirtualSocketAddress target) { 
         
         long time = System.currentTimeMillis();
+        
+        long [] detailedDirect = new long[1+2*target.machine().numberOfAddresses()];
+        long [] detailedVirtual = new long[5];
+
+        connectProperties.put("direct.detailed.timing", detailedDirect);
+        connectProperties.put("virtual.detailed.timing", detailedVirtual);
 
         try { 
             for (int c=0;c<count;c++) {
@@ -66,6 +73,14 @@ public class ConnectTest {
             System.out.println(count + " connections in " + time 
                     + " ms. -> " + (((double) time) / count) 
                     + "ms/conn");
+            
+            System.out.println("Details direct : " + Arrays.toString(detailedDirect));
+            Arrays.fill(detailedDirect, 0);
+            
+            System.out.println("Details virtual: " + Arrays.toString(detailedVirtual));
+            Arrays.fill(detailedVirtual, 0);
+            
+            
         } catch (Exception e) {
             time = System.currentTimeMillis() - time;
 
@@ -79,7 +94,7 @@ public class ConnectTest {
         
         System.out.println("Creating server socket");
         
-        VirtualServerSocket ss = sf.createServerSocket(0, 0, connectProperties);
+        VirtualServerSocket ss = sf.createServerSocket(SERVERPORT, 0, connectProperties);
         
         System.out.println("Created server on " + ss.getLocalSocketAddress());
         

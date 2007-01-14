@@ -290,6 +290,10 @@ public class UPNP {
         } catch (UPNPResponseException e) {                                
             return e.getDetailErrorCode();
         } catch (Exception e) {
+            
+            System.err.println("UPNP port fw exeception: " + e);
+            e.printStackTrace(System.err);
+            
             return 1;
         } 
     } 
@@ -303,6 +307,12 @@ public class UPNP {
             String internalClient, int leaseDuration, String protocol) 
         throws IOException {
 
+        if (internalClient == null || internalClient.length() == 0) { 
+            logger.warn("Internal client not defined: " + internalClient);            
+            throw new IllegalArgumentException("Internal client not defined: " 
+                    + internalClient);
+        }
+        
         if (externalPort != 0 && !checkPortRange(externalPort)) {
             logger.warn("External port out of range: " + externalPort);            
             throw new IllegalArgumentException("External port out of range: " 
