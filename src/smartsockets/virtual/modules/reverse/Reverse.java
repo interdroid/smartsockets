@@ -2,6 +2,7 @@ package smartsockets.virtual.modules.reverse;
 
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import smartsockets.direct.SocketAddressSet;
@@ -20,6 +21,8 @@ public class Reverse extends ConnectModule {
     private static final boolean USE_THREAD = true; 
     
     private static final int PLEASE_CONNECT = 1; 
+    
+    private static final HashMap poperties = new HashMap();
     
     private Direct direct;    
     
@@ -40,6 +43,7 @@ public class Reverse extends ConnectModule {
     
     public Reverse() {
         super("ConnectModule(Reverse)", true);
+        properties.put("direct.forcePublic", "");
     }
 
     public void initModule(TypedProperties properties) throws Exception {
@@ -113,7 +117,8 @@ public class Reverse extends ConnectModule {
     void setupConnection(VirtualServerSocket ss, VirtualSocketAddress target) {       
         try { 
             DirectVirtualSocket s = 
-                (DirectVirtualSocket) direct.connect(target, DEFAULT_TIMEOUT, null);
+                (DirectVirtualSocket) direct.connect(target, DEFAULT_TIMEOUT, 
+                        properties);
             
             if (logger.isInfoEnabled()) {
                 logger.info(module + ": Connection to " + target + " created!");                

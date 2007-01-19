@@ -87,6 +87,8 @@ public class DirectSocketFactory {
 
     private NetworkPreference preference;
 
+    private Preference globalFirst;
+    
     private String keyFilePass = "";
 
     private DirectSocketFactory(TypedProperties p) {
@@ -152,6 +154,11 @@ public class DirectSocketFactory {
         preference = NetworkPreference.getPreference(completeAddress, p);
         preference.sort(completeAddress.getAddresses(), true);
 
+        globalFirst = new Preference("PublicBeforePrivate", false);
+        globalFirst.addGlobal();
+        globalFirst.addSite();
+        globalFirst.addLink();
+        
         if (logger.isInfoEnabled()) {
             logger.info("Local address: " + completeAddress);
             logger.info("Local network: " + 
@@ -1328,6 +1335,7 @@ public class DirectSocketFactory {
         // Note: it's up to the user to ensure that this thing is large enough!
         // i.e., it should be of size 1+2*target.length
         long [] timing = null;
+        boolean forceGlobalFirst = false;
         
         int shift = 0;
         
@@ -1341,6 +1349,11 @@ public class DirectSocketFactory {
                     timing[0] = System.nanoTime();
                 }
             }
+            
+            forceGlobalFirst = properties.containsKey("direct.forcePublic");
+            
+            System.err.println("forceGlobalFirst: " + forceGlobalFirst);
+            
         }
         
         try { 
@@ -1404,7 +1417,11 @@ public class DirectSocketFactory {
         // thanks to the cluster configuration.
         
         // TODO: shouldn't this be done first ?  
-        sas = preference.sort(sas, false);
+        if (forceGlobalFirst) { 
+            sas = globalFirst.sort(sas, false);
+        } else { 
+            sas = preference.sort(sas, false);
+        }
         
         if (sas.length == 0) { 
             return null;

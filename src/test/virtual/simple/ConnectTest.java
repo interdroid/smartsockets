@@ -44,14 +44,17 @@ public class ConnectTest {
         connectProperties.put("direct.detailed.timing", detailedDirect);
         connectProperties.put("virtual.detailed.timing", detailedVirtual);
 
-        try { 
-            for (int c=0;c<count;c++) {
+        int failed = 0;
+        
+        for (int c=0;c<count;c++) {
 
-                InputStream in = null;
-                OutputStream out = null;
-                
-                VirtualSocket s = sf.createClientSocket(target, timeout, 
-                        connectProperties);
+            InputStream in = null;
+            OutputStream out = null;
+            VirtualSocket s = null;
+            
+            try { 
+                            
+                s = sf.createClientSocket(target, timeout, connectProperties);
 
                 if (pingpong) { 
                     s.setTcpNoDelay(true);
@@ -64,30 +67,31 @@ public class ConnectTest {
                     in = s.getInputStream();
                     in.read();
                 }
-                    
+
+            } catch (Exception e) {
+                time = System.currentTimeMillis() - time;
+
+                System.out.println("Failed to create connection to " + target + 
+                        " after " + time + " ms.");
+                e.printStackTrace();
+                
+                failed++;
+            } finally { 
                 VirtualSocketFactory.close(s, out, in);
             } 
-
-            time = System.currentTimeMillis() - time;
-
-            System.out.println(count + " connections in " + time 
-                    + " ms. -> " + (((double) time) / count) 
-                    + "ms/conn");
-            
-            System.out.println("Details direct : " + Arrays.toString(detailedDirect));
-            Arrays.fill(detailedDirect, 0);
-            
-            System.out.println("Details virtual: " + Arrays.toString(detailedVirtual));
-            Arrays.fill(detailedVirtual, 0);
-            
-            
-        } catch (Exception e) {
-            time = System.currentTimeMillis() - time;
-
-            System.out.println("Failed to create connection to " + target + 
-                    " after " + time + " ms.");
-            e.printStackTrace();
         }
+            
+        time = System.currentTimeMillis() - time;
+
+        System.out.println(count + " connections in " + time 
+                + " ms. -> " + (((double) time) / count) 
+                + "ms/conn, Failed: " + failed);
+
+        System.out.println("Details direct : " + Arrays.toString(detailedDirect));
+        Arrays.fill(detailedDirect, 0);
+
+        System.out.println("Details virtual: " + Arrays.toString(detailedVirtual));
+        Arrays.fill(detailedVirtual, 0);
     }
     
     public static void accept() throws IOException {

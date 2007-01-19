@@ -582,8 +582,6 @@ public class VirtualSocketFactory {
         
         // Now try the remaining modules (or all of them if we weren't 
         // using the cache in the first place...)
-        int index = 0;
-        
         for (int i = 0; i<order.length;i++) { 
             
             ConnectModule m = order[i];
@@ -613,17 +611,15 @@ public class VirtualSocketFactory {
                 return vs;
             }
             
-            if (timeout > 0) {
+            if (timeout > 0 && i < order.length-1) {
                 timeLeft -= System.currentTimeMillis() - start;
                
                 if (timeLeft <= 0) {
                     // TODO can this happen ?
                     partialTimeout = 1000;
                 } else {
-                    partialTimeout = (timeLeft /  (order.length - index));
+                    partialTimeout = (timeLeft /  (order.length - (i+1)));
                 }
-                
-                index++;
             }
             
             notSuitableCount++;

@@ -1,8 +1,5 @@
 package smartsockets.virtual.modules.splice;
 
-
-
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -198,20 +195,38 @@ public class Splice extends AbstractDirectModule {
         // fails! Better to fail fast and retry the entire setup ? Or maybe 
         // change the timeout to something small ? 
         
-        for (int i=0;i<MAX_ATTEMPTS;i++) {
-            for (int t=0;t<target.length;t++) {             
-                try { 
-                    return factory.createSocket(target[t], timeout, localPort, 
-                            null, false, userdata);
-                } catch (IOException e) {
-                    logger.info(module + ": Connection failed " 
-                            + target.toString(), e);
-                }           
-            }    
             
-            logger.debug(module + ": Splice failed (" + i + ")");
+        if (target.length == 1) { 
+            logger.debug(module + ": Single splice attempt!");
+            
+            try { 
+                return factory.createSocket(target[0], 5000, localPort, 
+                        null, false, userdata);
+            } catch (IOException e) {
+                logger.info(module + ": Connection failed " 
+                        + target.toString(), e);
+            }   
+            
+        } else { 
+            for (int i=0;i<MAX_ATTEMPTS;i++) {
+                for (int t=0;t<target.length;t++) {             
+    
+                    logger.debug(module + ": Splice attempt (" + i + "/" + t + ")");
+
+                    try { 
+                        return factory.createSocket(target[t], timeout, localPort, 
+                                null, false, userdata);
+                    } catch (IOException e) {
+                        logger.info(module + ": Connection failed " 
+                                + target.toString(), e);
+                    }           
+                }    
+            }
         }
-                        
+        
+        
+        logger.debug(module + ": Splice failed.");
+        
         return null;
     }
     
