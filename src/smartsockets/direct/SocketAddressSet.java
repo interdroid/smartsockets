@@ -34,14 +34,16 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private static final char IP_PORT_SEPERATOR = '-';
     private static final char ADDRESS_SEPERATOR = '/';
     private static final char USER_SEPERATOR = '~';
-    
+    private static final char UUID_SEPERATOR = '#';
+        
     private static final char EXTERNAL_START = '{';
     private static final char EXTERNAL_END = '}';
     
     private transient InetSocketAddress [] external;
     private transient InetSocketAddress [] global;
     private transient InetSocketAddress [] local;
-    
+    private transient byte [] UUID;
+        
     // Unfortunately, this is the least that is required for SSH-tunneling...
     private transient String user;
     
@@ -53,11 +55,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
     private SocketAddressSet(InetSocketAddress [] external, 
             InetSocketAddress [] global, InetSocketAddress [] local, 
-            String user) {
+            byte [] UUID, String user) {
         
         this.external = (external == null ? new InetSocketAddress[0] : external);
         this.global = (global == null ? new InetSocketAddress[0] : global);
-        this.local = (local == null ? new InetSocketAddress[0] : local);        
+        this.local = (local == null ? new InetSocketAddress[0] : local);
+        this.UUID = UUID;
         this.user = user;
         
         /*
@@ -86,12 +89,19 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         external = new InetSocketAddress[coded[index++] & 0xFF];
         global = new InetSocketAddress[coded[index++] & 0xFF];
         local = new InetSocketAddress[coded[index++] & 0xFF];
-
+        
+        int uuidLen = coded[index++];
         int userLen = coded[index++] & 0xFF;
         
         index = decode(external, coded, index);
         index = decode(global, coded, index);
         index = decode(local, coded, index);
+        
+        if (uuidLen > 0) {
+            UUID = new byte[uuidLen];
+            System.arraycopy(coded, index, UUID, 0, uuidLen);
+            index += uuidLen;
+        }        
         
         if (userLen > 0) { 
             user = new String(coded, index, userLen);
@@ -191,14 +201,17 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * This method returns the byte coded form of the SocketAddressSet.
      * 
      * This representation is either contains the 6 or 18 bytes of a single 
-     * InetAddress + port number, or it has the form (EGL (SAP)*) where:
+     * InetAddress + port number, or it has the form (EGLMN (SAP)* (U)*) where:
      *  
      *   E is the number of external addresses that follow (1 byte)
      *   G is the number of global addresses that follow (1 byte)
      *   L is the number of local addresses that follow (1 byte)
+     *   M is the length of the UUID (1 byte, normally 0 or 16)
+     *   N is the length of the username (1 byte, 0 if unused)
      *   S is the length of the next address (1 byte)
      *   A is an InetAddress (4 or 16 bytes)
      *   P is the port number (2 bytes)
+     *   U is a UUID (16 bytes)
      * 
      * @return the bytes
      */    
@@ -209,11 +222,15 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             byte [] codedUser = null;
             
             // First calculate the size of the address n bytes....
-            int len = 4;
+            int len = 5;
           
             len += codedSize(external);
             len += codedSize(global);
             len += codedSize(local);
+            
+            if (UUID != null) { 
+                len += UUID.length;
+            }
             
             if (user != null && user.length() > 0) {
                 codedUser = user.getBytes();
@@ -228,12 +245,18 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             codedForm[index++] = (byte) (external.length & 0xFF);
             codedForm[index++] = (byte) (global.length & 0xFF);
             codedForm[index++] = (byte) (local.length & 0xFF);
+            codedForm[index++] = (byte) ((UUID == null ? 0 : UUID.length) & 0xFF);
             codedForm[index++] = 
                 (byte) ((codedUser == null ? 0 : codedUser.length) & 0xFF);
             
             index = encode(external, codedForm, index);
             index = encode(global, codedForm, index);
             index = encode(local, codedForm, index);
+            
+            if (UUID != null) { 
+                System.arraycopy(UUID, 0, codedForm, index, UUID.length);
+                index += UUID.length; 
+            }
             
             if (user != null && user.length() > 0) { 
                 System.arraycopy(codedUser, 0, codedForm, index, codedUser.length);
@@ -393,8 +416,14 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 
         SocketAddressSet tmp = (SocketAddressSet) other;
       
-        // Finally, compare ports and addresses
-        
+        // First, compare UUIDs (if available) 
+        if (UUID == null && tmp.UUID == null) { 
+            // skip
+        } else if (!Arrays.equals(UUID, tmp.UUID)) { 
+            return false;
+        } 
+                 
+        // Next, compare ports and addresses..        
         // NOTE: this is only correct if the addresses are exactly the same.
         // For partial addresses please use 'isCompatible'.       
         if (!compare(external, tmp.external)) { 
@@ -504,6 +533,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 needSlash = true;
             }
         
+            if (UUID != null) { 
+                b.append(UUID_SEPERATOR);
+                b.append(NetworkUtils.UUIDToString(UUID));
+            }
+            
             if (user != null && user.length() > 0) { 
                 b.append(USER_SEPERATOR);
                 b.append(user);
@@ -656,10 +690,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         if (NetworkUtils.isLocalAddress(a.getAddress())) { 
             return new SocketAddressSet(null, null, 
-                    new InetSocketAddress [] { a }, null);
+                    new InetSocketAddress [] { a }, null, null);
         } else { 
             return new SocketAddressSet(null, new InetSocketAddress [] { a }, 
-                    null, null);
+                    null, null, null);
         }
     }
     
@@ -686,12 +720,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     }
     
     public static SocketAddressSet getByAddress(IPAddressSet external, 
-            int externalPort, IPAddressSet other, int otherPort, String user) {
+            int externalPort, IPAddressSet other, int otherPort,  
+            String user) {
         
         return getByAddress(external, new int [] { externalPort }, other, 
                 new int [] { otherPort }, user);
     }
-    
    
     /**
      * Construct a new SocketAddressSet, using an IPAddressSet and an array 
@@ -791,7 +825,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             }
         }
         
-        return new SocketAddressSet(extern, global, local, user);
+        return new SocketAddressSet(extern, global, local, other.UUID, user);
     }
     
     private static InetSocketAddress[] resize(InetSocketAddress [] orig, int add) { 
@@ -896,13 +930,14 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             return null;
         }
     }
-    
+
     private static SocketAddressSet parseNewStyleAddress(String addressPort) {
         
         StringTokenizer st = new StringTokenizer(addressPort, "{}/-~", true);
         
         boolean readingExternal = false;
         boolean readingPort = false;
+        boolean readingUUID = false;        
         boolean readingUser = false;
                 
         boolean allowExternalStart = true;
@@ -912,10 +947,14 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         boolean allowDash = false; 
         boolean allowDone = false;
         boolean allowUser = false; 
-                
+        boolean allowUUID = false; 
+        
+        
         InetSocketAddress [] external = null; 
         InetSocketAddress [] global = null; 
         InetSocketAddress [] local = null; 
+        
+        byte [] UUID = null;
         
         String user = null;
         
@@ -990,6 +1029,21 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     readingPort = true;
                     break;
         
+                case UUID_SEPERATOR: 
+                    
+                    if (!allowUUID) { 
+                        throw new IllegalArgumentException("Unexpected " 
+                                + UUID_SEPERATOR + " in address(" 
+                                + addressPort + ")");
+                    }
+
+                    allowUUID = false;
+                    allowDone = false;
+                    allowUser = false;
+                    readingUUID = true;
+                    break;
+                    
+                    
                 case USER_SEPERATOR: 
                     
                     if (!allowUser) { 
@@ -1008,7 +1062,18 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     throw new IllegalArgumentException("Unexpected delimiter: " 
                             + delim + " in address(" + addressPort + ")");
                 }
+
                 
+            } else if (readingUUID) { 
+
+                UUID = NetworkUtils.StringToUUID(s);
+
+                readingUUID = false;
+                
+                allowSlash = false;
+                allowDone = true;
+                allowUser = true;
+
             } else if (readingUser) { 
                 
                 user = s;
@@ -1076,7 +1141,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     + " is incomplete!");
         }
         
-        return new SocketAddressSet(external, global, local, user);
+        return new SocketAddressSet(external, global, local, UUID, user);
     }
     
     public static SocketAddressSet getByAddress(String host, int port) throws UnknownHostException { 
@@ -1113,6 +1178,17 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     public static SocketAddressSet merge(SocketAddressSet s1, 
             SocketAddressSet s2) {
         
+        byte [] UUID = s1.UUID;
+        
+        if (s1.UUID == null) {
+            UUID = s2.UUID;            
+        } else if (s2.UUID != null) {               
+            if (!Arrays.equals(s1.UUID, s2.UUID)) { 
+                throw new IllegalArgumentException("Cannot merge two " +
+                    "addresses with different UUIDs!");
+            } 
+        }
+        
         String user = s1.user;
         
         if (s1.user == null || user.length() == 0) {
@@ -1133,7 +1209,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return new SocketAddressSet(
                 merge(s1.external, s2.external), 
                 merge(s1.global, s2.global), 
-                merge(s1.local, s2.local), user);
+                merge(s1.local, s2.local), UUID, user);
     } 
     
     /**

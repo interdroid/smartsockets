@@ -4,12 +4,13 @@ package smartsockets.util;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.StringTokenizer;
+
 import org.apache.log4j.Logger;
 
 import smartsockets.util.net.NativeNetworkConfig;
@@ -20,7 +21,7 @@ import smartsockets.util.net.NativeNetworkConfig;
 public class NetworkUtils {
 
     protected static Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsocket.network.util");
+        ibis.util.GetLogger.getLogger("smartsockets.network.util");
     
     // This matrix contains the possible IPv4 subnet/mask values. Note that the 
     // each entry consists of three parts: the subnet, the mask needed to match 
@@ -334,7 +335,7 @@ public class NetworkUtils {
      */        
     private static String bytesToString(byte [] b, boolean hex, char sep) { 
      
-        StringBuffer tmp = new StringBuffer(); 
+        StringBuilder tmp = new StringBuilder(); 
         
         for (int i=0;i<b.length;i++) {             
             if (hex) {             
@@ -358,6 +359,40 @@ public class NetworkUtils {
     }
     
     /**
+     * Converts a String to an array of bytes. The values are sepated by a 
+     * user-specified seperator. If required, the bytes are  read from a 
+     * hexadecimal form.  
+     *
+     * @param s the String to convert
+     * @param hex specifies if a hexadecimal input is used.     
+     * @param sep the seperator used
+     *  
+     * @return the byte array representation of the address.
+     */        
+    private static byte [] stringToBytes(String s, boolean hex, char sep) { 
+     
+        StringTokenizer st = new StringTokenizer(s, "" + sep);
+        
+        int len = st.countTokens();
+        
+        byte [] result = new byte[len];
+        
+        for (int i=0;i<len;i++) { 
+
+            String tmp = st.nextToken();
+            
+            if (hex) { 
+                result[i] = Byte.parseByte(tmp, 16); 
+            } else { 
+                result[i] = Byte.parseByte(tmp);
+            }
+        }
+        
+        return result;
+    }
+    
+    
+    /**
      * Converts an array of bytes containing a MAC address to a String. 
      * A 6 byte MAC address is expected as input. A colon will be used as a 
      * seperator.    
@@ -368,6 +403,31 @@ public class NetworkUtils {
     public static String MACToString(byte [] mac) {
         return bytesToString(mac, true, ':');
     }
+    
+    /**
+     * Converts an array of bytes containing a UUID to a String. 
+     * A 16 byte UUID is expected as input. A dot will be used as a 
+     * seperator.    
+     * 
+     * @param UUID the UUID to convert
+     * @return the String representation of the UUID.
+     */            
+    public static String UUIDToString(byte [] UUID) { 
+        return bytesToString(UUID, true, '.');        
+    }
+    
+    /**
+     * Converts a String representation of a UUID to an array of bytes. 
+     * A 32 hex character, dot seperated UUID is expected as input.  
+     * 
+     * @param UUID the UUID to convert
+     * @return the byte array representation of the UUID.
+     */            
+    
+    public static byte [] StringToUUID(String UUID) { 
+        return stringToBytes(UUID, true, '.');
+    }
+    
     
     /**
      * Converts an array of bytes containing a IPv4 address, IPv4 broadcast 
@@ -487,6 +547,26 @@ public class NetworkUtils {
         return NativeNetworkConfig.getMACAddress(ip);
     }
 
+    public static byte [] getAnyMACAddress(InetAddress [] ips) {
+        
+        byte [] mac = null;
+        
+        for (InetAddress ip : ips) {
+            try { 
+                mac = NativeNetworkConfig.getMACAddress(ip);
+
+                if (mac != null) { 
+                    return mac;
+                }
+            } catch (IOException e) {
+                // ignore and try the next one....
+            }
+        }
+        
+        return null;
+    }
+
+    
     public static byte [] getNetmask(InetAddress ip) throws IOException { 
         return NativeNetworkConfig.getNetmask(ip);
     }

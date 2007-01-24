@@ -3,12 +3,15 @@ package smartsockets.virtual.modules.hubrouted;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.VirtualConnectionCallBack;
+import smartsockets.util.FixedSizeHashSet;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
@@ -24,7 +27,14 @@ public class Hubrouted extends ConnectModule
     private final HashMap<Long, HubRoutedVirtualSocket> sockets = 
         new HashMap<Long, HubRoutedVirtualSocket>();
     
-    private final HashSet<Long> closedSockets = new HashSet<Long>();
+    private ArrayList<Long> [] debug = new ArrayList[] { 
+            new ArrayList<Long>(), new ArrayList<Long>(), new ArrayList<Long>(), 
+            new ArrayList<Long>(), new ArrayList<Long>(), new ArrayList<Long>()
+    };
+    
+    private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 10000;   
+    private final FixedSizeHashSet<Long> closedSockets = 
+        new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE);
     
     public Hubrouted() {
         super("ConnectModule(HubRouted)", true);
@@ -162,6 +172,8 @@ public class Hubrouted extends ConnectModule
 
     public boolean connect(SocketAddressSet src, String info, int timeout, 
             long index) {
+
+        debug[0].add(index);
         
         // Incoming connect, find the port...        
         int port = -1;
@@ -176,6 +188,8 @@ public class Hubrouted extends ConnectModule
             return false;
         }
         
+        debug[1].add(index);
+                
         // Get the serversocket (if it exists). 
         VirtualServerSocket ss = parent.getServerSocket(port);
         
@@ -184,6 +198,8 @@ public class Hubrouted extends ConnectModule
             rejectedIncomingConnections++;
             return false;
         }
+        
+        debug[2].add(index);
         
         if (logger.isInfoEnabled()) { 
             logger.info("Hubrouted got new connection: " + index);
@@ -194,22 +210,22 @@ public class Hubrouted extends ConnectModule
         HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, sa, 
                 serviceLink, index, null);
         
-        if (!ss.incomingConnection(s)) { 
-            rejectedIncomingConnections++;
-           // logger.warn("Connection " + index + " was refused by ss!");
-            // not accepted 
-            return false;            
-        }
-        
-        //logger.warn("Connection " + index + " was accepted by ss!");
-        
-        synchronized (this) {
+        synchronized (this) {            
+            debug[3].add(index);            
             sockets.put(index, s);
         }
-        
-        acceptedIncomingConnections++;
-        
-        return true;
+                
+        if (!ss.incomingConnection(s)) { 
+            synchronized (this) {            
+                sockets.remove(index);
+            }               
+                
+            rejectedIncomingConnections++;
+            return false;            
+        } else {
+            acceptedIncomingConnections++;          
+            return true;
+        }
     }
 
     public synchronized void disconnect(long vc) {
@@ -219,8 +235,13 @@ public class Hubrouted extends ConnectModule
         if (s == null) { 
             // This can happen if we have just closed the socket...
         
-            if (!closedSockets.contains(vc)) { 
-                logger.warn("BAD!! Got disconnect for an unknown socket!: " + vc);
+            if (!closedSockets.contains(vc)) {
+                logger.warn("BAD!! Got disconnect from an unknown remote " 
+                        + "socket!: " + vc 
+                        + " " + debug[0].contains(vc)
+                        + " " + debug[1].contains(vc)
+                        + " " + debug[2].contains(vc)
+                        + " " + debug[3].contains(vc));                
             }
             
             return;
@@ -229,7 +250,7 @@ public class Hubrouted extends ConnectModule
         closedSockets.add(vc);
         
         try { 
-            s.close();
+            s.close(false);
         } catch (Exception e) {
             logger.warn("Failed to close socket!", e);
         }
@@ -254,20 +275,48 @@ public class Hubrouted extends ConnectModule
         s.message(data);
     }
 
-    public synchronized void close(long vc) {
+    public void close(long vc) {
 
-        HubRoutedVirtualSocket s = sockets.remove(vc);
+        HubRoutedVirtualSocket s = null;
         
-        //logger.warn("Got close for socket!: " + vc);
+        synchronized (this) {
+            
+            s = sockets.remove(vc);
+            
+            // logger.warn("Got close for socket!: " + vc);
         
-        if (s == null) { 
-            // This can happen if we have just been closed by the other side...
-            if (!closedSockets.contains(vc)) { 
-                logger.warn("BAD!! Got close from an unknown socket!: " + vc);
-            }
-            return;
-        } 
+            if (s == null) { 
+                // This can happen if we have just been closed by the other side...
+                if (!closedSockets.contains(vc)) { 
+                    logger.warn("BAD!! Got close for an unknown local socket!: " 
+                            + vc + " (" + closedSockets.size() + ") "
+                            + " " + debug[0].contains(vc)
+                            + " " + debug[1].contains(vc)
+                            + " " + debug[2].contains(vc)
+                            + " " + debug[3].contains(vc)
+                            + " " + debug[4].contains(vc));                
+
+                    System.err.println("remove = " + vc);
+                    System.err.println("debug[3] = " + debug[3]);                    
+                    System.err.println("debug[4] = " + debug[4]);
+                    
+                    new Exception().printStackTrace(System.err);
+                    
+                    System.exit(1);
+                }
+            
+                return;
+            } 
+            
+            debug[4].add(vc);            
+            
+            closedSockets.add(vc);
+        }
         
-        s.close();
+        try {
+            serviceLink.closeVirtualConnection(vc);
+        } catch (Exception e) {
+            logger.warn("Failed to forward close for virtual socket: " + vc, e); 
+        }
     }
 }

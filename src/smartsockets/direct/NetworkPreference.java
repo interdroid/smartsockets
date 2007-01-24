@@ -3,6 +3,7 @@ package smartsockets.direct;
 import smartsockets.Properties;
 import smartsockets.util.TypedProperties;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -197,15 +198,35 @@ public class NetworkPreference {
                 
                 byte [] ab = a.getAddress();
                 byte [] sub = new byte[ab.length];
-                byte [] mask = new byte[ab.length];
+                byte [] mask = null; 
                 
-                if (NetworkUtils.getSubnetMask(ab, sub, mask)) { 
+                try { 
+                    mask = NetworkUtils.getNetmask(a);
+                    
+                    for (int b=0;b<sub.length;b++) {
+                        sub[b] = (byte) (ab[b] & mask[b]);                    
+                    } 
+                    
                     target.addNetwork(new Network(sub, mask));
-                } else { 
+
+                } catch (IOException e) {
                     if (logger.isInfoEnabled()) { 
-                        logger.info("Failed to get subnet/mask for: " 
-                                + NetworkUtils.ipToString(a) + "!");
-                    }
+                        logger.info("Failed to get -real- netmask for: " 
+                                + NetworkUtils.ipToString(a) 
+                                + ", usin predefined value instead!");
+                    }                
+                
+                    mask = new byte[ab.length];
+                
+                    if (NetworkUtils.getSubnetMask(ab, sub, mask)) {
+                        target.addNetwork(new Network(sub, mask));
+                    } else { 
+                        if (logger.isInfoEnabled()) { 
+                            logger.info("Failed to get -predefined- netmask for: " 
+                                    + NetworkUtils.ipToString(a) + "!");
+                            
+                        }                            
+                    } 
                 }
             } 
         }
@@ -312,7 +333,7 @@ public class NetworkPreference {
         
         // Get the name of the local network (if available). This will normally 
         // not be available, and a range will be used instead. However, in some
-        // simulated scenario's this apprach comes in handy
+        // simulated scenario's this approach comes in handy
         String name = p.getProperty(Properties.NETWORKS_MEMBER);
 
         // Get a list of all the networks defined in the properties.

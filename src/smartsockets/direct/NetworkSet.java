@@ -2,6 +2,7 @@ package smartsockets.direct;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 
 public class NetworkSet {
 
@@ -20,13 +21,13 @@ public class NetworkSet {
         
         this.name = name;
         
-        if (include.length > 0) {
+        if (include != null && include.length > 0) {
             this.include = include;
         } else { 
             this.include = null;
         }
         
-        if (exclude.length > 0) { 
+        if (exclude != null && exclude.length > 0) { 
             this.exclude = exclude;
         } else { 
             this.exclude = null;
@@ -65,6 +66,25 @@ public class NetworkSet {
                 (exclude == null ||!inNetwork(exclude, ads))); 
     }
 
+    public String toString() { 
+        StringBuilder s = new StringBuilder("Network(");
+        s.append(name);
+        
+        if (include != null) { 
+            s.append(", include: ");
+            s.append(Arrays.deepToString(include));
+        } 
+        
+        if (exclude != null) { 
+            s.append(", exclude: ");
+            s.append(Arrays.deepToString(exclude));
+        }
+            
+        s.append(")");
+        
+        return s.toString();
+    }
+    
     private static boolean inNetwork(Network [] nw, InetAddress [] ads) {
         
         for (int i=0;i<nw.length;i++) { 

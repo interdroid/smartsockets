@@ -18,6 +18,9 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.safehaus.uuid.EthernetAddress;
+import org.safehaus.uuid.UUID;
+import org.safehaus.uuid.UUIDGenerator;
 
 import smartsockets.Properties;
 import smartsockets.util.NetworkUtils;
@@ -134,11 +137,14 @@ public class DirectSocketFactory {
                         
         localAddress = IPAddressSet.getLocalHost();
 
+            
+                
         if (!localAddress.containsGlobalAddress()) {
             haveOnlyLocalAddresses = true;
 
+            getUUID();       
             getExternalAddress(p);
-
+            
             if (externalNATAddress != null) {
                 completeAddress = IPAddressSet.merge(localAddress,
                         externalNATAddress);    
@@ -174,6 +180,24 @@ public class DirectSocketFactory {
         getNATAddress();
     }
 
+    private void getUUID() { 
+        
+        byte [] mac = NetworkUtils.getAnyMACAddress(localAddress.getAddresses());        
+        
+        UUIDGenerator gen = UUIDGenerator.getInstance();                    
+        UUID uuid = null;
+        
+        if (mac != null) {             
+            uuid = gen.generateTimeBasedUUID(new EthernetAddress(mac));                        
+        } else { 
+            uuid = gen.generateRandomBasedUUID();
+        }
+        
+        byte [] id = uuid.asByteArray();
+        
+        localAddress = IPAddressSet.merge(localAddress, id);                           
+    }
+    
     private char [] getPrivateSSHKey() { 
 
         // Check if we can find the files we need to setup an outgoing ssh 
@@ -499,6 +523,7 @@ public class DirectSocketFactory {
                             + " ms.");
                 }  
                 
+                // TODO: is this correct ? 
                 SocketAddressSet a = SocketAddressSet.getByAddress(
                         externalAddress, 1, localAddress, 1, null);
                 
@@ -712,7 +737,7 @@ public class DirectSocketFactory {
              
              s.setSoTimeout(0);
              
-             // TODO: get real port here ? 
+             // TODO: get real port here ? How about the UUID ? 
              SocketAddressSet a = SocketAddressSet.getByAddress(
                      externalAddress, 1, localAddress, 1, null);
              

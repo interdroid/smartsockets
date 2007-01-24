@@ -82,6 +82,7 @@ public class VirtualServerSocket {
      
         while (incoming.size() == 0 && !closed) { 
             try { 
+                // TODO: this is wrong! USE DEADLINE
                 wait(timeout);                
             } catch (Exception e) {
                 // ignore

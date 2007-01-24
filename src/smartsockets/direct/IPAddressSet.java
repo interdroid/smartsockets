@@ -1,12 +1,9 @@
 package smartsockets.direct;
 
-
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.StringTokenizer;
 
 import smartsockets.util.AddressSorter;
@@ -62,43 +59,60 @@ public class IPAddressSet implements Serializable {
     // The actual InetAddresses
     protected final InetAddress [] addresses;
 
-    private IPAddressSet(InetAddress [] addresses, byte [] codedForm) {        
-        this.addresses = addresses;        
+    // The UUID (only used if the addresses are all private).
+    protected final byte [] UUID;
+        
+    private IPAddressSet(InetAddress [] addresses, byte [] UUID, 
+            byte [] codedForm) {
+        
+        this.addresses = addresses;
+        this.UUID = UUID;
         this.codedForm = codedForm;
     }
             
     private IPAddressSet(InetAddress [] addresses) {
-        this(addresses, null);
+        this(addresses, null, null);
         // Note: codeForm will be created on demand.
     }
+    
+    private IPAddressSet(InetAddress [] addresses, byte [] UUID) {
+        this(addresses, UUID, null);
+    }
+    
     
     /**
      * Returns a byte representation of this InetAddressSet.
      * 
      * This representation is either contains the 4 or 16 bytes of a single 
-     * InetAddress, or it has the form (N (SA)*) where:
+     * InetAddress, or it has the form (NM (SA)* (U)*) where:
      *  
      *   N is the number of addresses that follow (1 byte) 
+     *   M is a flag that indicates if the U field is used (0 or 1)
      *   S is the length of the next address (1 byte)
      *   A is an InetAddress (4 or 16 bytes)
+     *   U is the UUID of the machine (16 bytes)
      * 
      * @return the bytes
      */
     public byte[] getAddress() {
         if (codedForm == null) {
-            if (addresses.length == 1) {
-                // It there is just a single address, we directly return the 
-                // byte representation of this address. 
+            if (addresses.length == 1 && UUID == null) {
+                // It there is just a single address and no UUID, so we directly
+                // return the byte representation of this address. 
                 codedForm = addresses[0].getAddress();
             } else {
-                // There are more addresses, so we first calucate the length of
-                // the coded form. Note that this assumes that an InetAddressSet
-                // always contains less than 256 addresses, and each address is
-                // shorter that 256 bytes.        
-                int len = 1;
+                // There are more addresses and/or a UUID, so we first calucate 
+                // the length of the coded form. Note that this assumes that an 
+                // InetAddressSet always contains less than 256 addresses, and 
+                // each address is shorter that 256 bytes.        
+                int len = 2;
             
                 for (int i=0;i<addresses.length;i++) {
                     len += 1 + addresses[i].getAddress().length;                    
+                }
+                
+                if (UUID != null) { 
+                    len += 16;
                 }
                 
                 // When we get a combination which has the length of a
@@ -113,6 +127,7 @@ public class IPAddressSet implements Serializable {
                 int index = 0;
                 
                 codedForm[index++] = (byte) addresses.length;
+                codedForm[index++] = (byte) (UUID == null ? 0 : 1); 
                 
                 for (int i=0;i<addresses.length;i++) {
                     byte [] tmp = addresses[i].getAddress();
@@ -120,6 +135,10 @@ public class IPAddressSet implements Serializable {
                     System.arraycopy(tmp, 0, codedForm, index, tmp.length);
                     index += tmp.length;
                 }            
+                
+                if (UUID != null) { 
+                    System.arraycopy(UUID, 0, codedForm, index, UUID.length);
+                }                
             }
         }
         
@@ -136,13 +155,22 @@ public class IPAddressSet implements Serializable {
     }
         
     /**
-     * Checks if this InetAddressSet contains at least one global InetAddress. 
+     * Checks if this IPAddressSet contains at least one global InetAddress. 
      * 
-     * @return true if this InetAddressSet contains at least one global address, 
+     * @return true if this IPAddressSet contains at least one global address, 
      * false otherwise.  
      */
     public boolean containsGlobalAddress() {        
         return NetworkUtils.containsGlobalAddress(addresses);        
+    }
+    
+    /**
+     * Checks if this IPAddressSet contains a UUID. 
+     * 
+     * @return true if this IPAddressSet contains a UUID, false otherwise.  
+     */
+    public boolean containsUUID() {
+        return (UUID != null);
     }
     
     /* (non-Javadoc)
@@ -174,28 +202,25 @@ public class IPAddressSet implements Serializable {
         }
         
         IPAddressSet tmp = (IPAddressSet) other;
-        
-        // Compare lengths of addresses array
-        if (addresses.length != tmp.addresses.length) { 
+
+        // Compare addresses. Note that the length/order should be the same.        
+        if (!Arrays.equals(addresses, tmp.addresses)) { 
             return false;
         }
-
-        // Finally compare addresses. Note that the order should 
-        // be the same.        
-        for (int i=0;i<addresses.length;i++) {           
-            if (!addresses[i].equals(tmp.addresses[i])) {
-                return false;
-            }
-        }
         
-        return true;
+        // Finally compare the UUID
+        if (UUID == null && tmp.UUID == null) { 
+            return true;
+        } else { 
+            return Arrays.equals(UUID, tmp.UUID);
+        }
     }
     
     /* (non-Javadoc)
      * @see java.net.InetAddress#toString()
      */
     public String toString() {
-        StringBuffer tmp = new StringBuffer("");
+        StringBuilder tmp = new StringBuilder("");
         
         for (int i=0;i<addresses.length;i++) { 
             tmp.append(NetworkUtils.ipToString(addresses[i]));
@@ -203,6 +228,11 @@ public class IPAddressSet implements Serializable {
             if (i != addresses.length-1) { 
                 tmp.append("/");
             }            
+        }
+        
+        if (UUID != null) {         
+            tmp.append("#");            
+            tmp.append(NetworkUtils.UUIDToString(UUID));
         }
         
         return tmp.toString();
@@ -276,15 +306,28 @@ public class IPAddressSet implements Serializable {
     }   
     
     /**
+     * Create a new IPAddressSet by combing an existing one and a UUID 
+     * 
+     * @param a source IPAddressSet
+     * @param u source UUID
+     * @return new IPAddressSet containing the combination of the two. 
+     */    
+    public static IPAddressSet merge(IPAddressSet a, byte [] uuid) { 
+        return new IPAddressSet(a.addresses, uuid, null);
+    }   
+    
+    /**
      * Create a new InetAddressSet from a byte array. 
      * 
      * The byte array may either contain the byte representation of an 
      * InetAddress (IPv4 or IPv6) or the byte representation of an 
-     * InetAddressSet which has the form (N (SA)*) where:
-     *  
-     *   N is the number of addresses that follow (byte) 
-     *   S is the length of the next address (byte)
-     *   A is an InetAddress
+     * InetAddressSet which has the form (NM (SA)* (U)*) where:
+     * 
+     *   N is the number of addresses that follow (1 byte) 
+     *   M is a flag that indicates if the U field is used (0 or 1)
+     *   S is the length of the next address (1 byte)
+     *   A is an InetAddress (4 or 16 bytes)
+     *   U is the UUID of the machine (16 bytes)
      * 
      * @param bytes input byte array
      * @return new InetAddressSet  
@@ -294,7 +337,8 @@ public class IPAddressSet implements Serializable {
         throws UnknownHostException {  
     
         InetAddress [] addresses = null;
-        
+        byte [] uuid = null;
+                
         if (bytes.length == LENGTH_IPv4 || bytes.length == LENGTH_IPv6) {
             // the byte [] contains a 'normal' InetAddress
             addresses = new InetAddress[1];            
@@ -303,6 +347,8 @@ public class IPAddressSet implements Serializable {
             // the byte [] contains a 'extended' InetAddress       
             int index = 0;        
             int len = bytes[index++];
+         
+            boolean hasUUID = (bytes[index++] != 0);
             
             addresses = new InetAddress[len];
             
@@ -320,16 +366,24 @@ public class IPAddressSet implements Serializable {
                 addresses[i] = InetAddress.getByAddress(tmp);
                 index += size;
             }
+            
+            if (hasUUID) { 
+                uuid = new byte[16];
+                System.arraycopy(bytes, index, uuid, 0, 16);
+            }
         }
         
-        return new IPAddressSet(addresses, bytes);
+        return new IPAddressSet(addresses, uuid, bytes);
     }
 
     /**
      * Create a new InetAddressSet from a String. 
      * 
-     * The String must have the form A ('/'A)* where: A is an String 
-     * representation of a InetAddress. 
+     * The String must have the form 
+     *   
+     *     A ('/'A)* ['#'U] 
+     *     
+     * where: A is a String representation of a InetAddress, and U a UUID  
      * 
      * @param address the InetAddressSet as a String
      * @return new InetAddressSet  
@@ -338,17 +392,29 @@ public class IPAddressSet implements Serializable {
     public static IPAddressSet getFromString(String address) 
         throws UnknownHostException {
     
-        StringTokenizer st = new StringTokenizer(address, "/");
+        StringTokenizer st = new StringTokenizer(address, "/#", true);
         
         int len = st.countTokens();
+        
+        boolean hasUUID = (address.indexOf('#') != -1); 
+        
+        if (hasUUID) { 
+            len--;
+        }
         
         InetAddress [] addresses = new InetAddress[len];
         
         for (int i=0;i<len;i++) { 
             addresses[i] = InetAddress.getByName(st.nextToken());
         }
+
+        byte [] uuid = null;
         
-        return new IPAddressSet(sort(addresses));
+        if (hasUUID) { 
+            uuid = NetworkUtils.StringToUUID(st.nextToken());
+        }
+        
+        return new IPAddressSet(sort(addresses), uuid);
     }
  
     /**

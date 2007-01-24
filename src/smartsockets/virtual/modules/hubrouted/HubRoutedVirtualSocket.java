@@ -91,8 +91,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         } */
         
     }
-    
-    public void close() {
+        
+    protected void close(boolean local) {
         
         synchronized (this) { 
             if (closed) { 
@@ -107,20 +107,20 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             notifyAll();
         }
         
-        
         try {
             out.close();
         } catch (Exception e) { 
             // ignore
         }
-        
-        try {
-            serviceLink.closeVirtualConnection(connectionIndex);
-        } catch (Exception e) {
-            // TODO: handle exception!            
-        }
 
-        parent.close(connectionIndex);        
+        if (local) { 
+            parent.close(connectionIndex);
+        }
+    }
+    
+    
+    public void close() {        
+        close(true);
     }
     
     public SocketChannel getChannel() {

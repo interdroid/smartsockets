@@ -21,6 +21,9 @@ public class VirtualClusters {
         ClusterDefinition(String name, ConnectModule [] order) {
             this.name = name;
             this.order = order;
+            
+            logger.info("Created cluster definition " + name + " " 
+                    + Arrays.deepToString(order));
         }
 
         public void reorder(ConnectModule m) {
@@ -76,16 +79,12 @@ public class VirtualClusters {
         
         localCluster = myc;
         
-        String [] clusters = 
-            properties.getStringList(Properties.CLUSTER_DEFINE, ",", null);
-               
-        if (clusters == null || clusters.length == 0) { 
-            this.defaultOrder = new ClusterDefinition("default", order);           
-            logger.info("My virtual cluster: " + localCluster);
-            logger.info("No other virtual cluster definitions found!");
-            return;
-        }
-
+        String [] clusters = properties.getStringList(
+                Properties.CLUSTER_DEFINE, ",",
+                new String [] { localCluster });
+        
+        logger.info("Clusters defined: " + Arrays.deepToString(clusters));        
+        
         int myCluster = -1;
         
         for (int i=0;i<clusters.length;i++) { 

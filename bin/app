@@ -10,4 +10,4 @@ do
     CP=$CP:$i
 done
 
-java -cp $CP $@
+$JAVA_HOME/bin/java -cp $CP $@
