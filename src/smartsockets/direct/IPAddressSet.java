@@ -392,7 +392,7 @@ public class IPAddressSet implements Serializable {
     public static IPAddressSet getFromString(String address) 
         throws UnknownHostException {
     
-        StringTokenizer st = new StringTokenizer(address, "/#", true);
+        StringTokenizer st = new StringTokenizer(address, "/#", false);
         
         int len = st.countTokens();
         

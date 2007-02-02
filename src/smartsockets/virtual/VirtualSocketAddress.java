@@ -1,8 +1,6 @@
 package smartsockets.virtual;
 
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 
@@ -22,6 +20,9 @@ public class VirtualSocketAddress implements Serializable {
     
     // This field indicates which 'virtual cluster' the machine is part of.
     private final String cluster;
+    
+    // Cache for the coded form of this address
+    private transient byte [] codedForm;
 
     public VirtualSocketAddress(SocketAddressSet machine, int port) {
         this(machine, port, null, null);
@@ -123,6 +124,15 @@ public class VirtualSocketAddress implements Serializable {
         return port;
     }    
     
+    public byte [] toBytes() {
+        
+        if (codedForm == null) { 
+            
+        }
+        
+        return codedForm;
+    }
+        
     public String toString() {         
         return machine.toString() + ":" + port 
             + (hub == null ? "" : ("@" + hub.toString())) 

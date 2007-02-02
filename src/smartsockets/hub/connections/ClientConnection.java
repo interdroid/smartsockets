@@ -1,6 +1,5 @@
 package smartsockets.hub.connections;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -155,12 +154,6 @@ public class ClientConnection extends MessageForwardingConnection {
             handleDisconnect();
         }        
     }
-        
-    
-    
-    
-    
-    
     
     private void handleMessage() throws IOException { 
         // Read the message
@@ -209,7 +202,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
     private void handleListHubs() throws IOException { 
         
-        String id = in.readUTF();
+        int id = in.readInt();
         
         if (reqlogger.isDebugEnabled()) {
             reqlogger.debug("Connection " + clientAddress + " return id: " + id);
@@ -223,7 +216,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
+            out.writeInt(id);            
             out.writeInt(result.size());
         
             for (String s : result) {  
@@ -236,7 +229,7 @@ public class ClientConnection extends MessageForwardingConnection {
 
     private void handleListHubDetails() throws IOException { 
         
-        String id = in.readUTF();
+        int id = in.readInt();
         
         if (reqlogger.isDebugEnabled()) {
             reqlogger.debug("Connection " + clientAddress + " return id: " + id);
@@ -250,7 +243,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
+            out.writeInt(id);            
             out.writeInt(result.size());
             
             if (reqlogger.isDebugEnabled()) {
@@ -268,7 +261,8 @@ public class ClientConnection extends MessageForwardingConnection {
 
     
     private void handleListClientsForHub() throws IOException { 
-        String id = in.readUTF();
+        int id = in.readInt();
+        
         String hub = in.readUTF();
         String tag = in.readUTF();
         
@@ -288,7 +282,7 @@ public class ClientConnection extends MessageForwardingConnection {
       
         synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
+            out.writeInt(id);            
             out.writeInt(result.size());
 
             for (String s : result) { 
@@ -301,7 +295,7 @@ public class ClientConnection extends MessageForwardingConnection {
 
     private void handleListClients() throws IOException { 
         
-        String id = in.readUTF();
+        int id = in.readInt();
         String tag = in.readUTF();
         
         if (reqlogger.isDebugEnabled()) {
@@ -316,7 +310,7 @@ public class ClientConnection extends MessageForwardingConnection {
 
         synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
+            out.writeInt(id);            
             out.writeInt(result.size());
 
             if (reqlogger.isDebugEnabled()) {
@@ -333,7 +327,7 @@ public class ClientConnection extends MessageForwardingConnection {
     } 
 
     private void handleGetDirectionsToClient() throws IOException { 
-        String id = in.readUTF();
+        int id = in.readInt();
         String client = in.readUTF();
          
         if (reqlogger.isDebugEnabled()) {
@@ -349,7 +343,7 @@ public class ClientConnection extends MessageForwardingConnection {
         
         synchronized (out) {
             out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
+            out.writeInt(id);            
             out.writeInt(result.size());
 
             if (reqlogger.isDebugEnabled()) {
@@ -365,9 +359,9 @@ public class ClientConnection extends MessageForwardingConnection {
         }
     } 
     
-    private void registerInfo() throws IOException { 
+    private void registerProperty() throws IOException { 
         
-        String id = in.readUTF();
+        int id = in.readInt();
         String tag = in.readUTF();
         String info = in.readUTF();
 
@@ -379,23 +373,22 @@ public class ClientConnection extends MessageForwardingConnection {
         HubDescription localHub = knownHubs.getLocalDescription();
         
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
-            out.writeInt(1);
-        
+            out.write(ServiceLinkProtocol.PROPERTY_ACK);           
+            out.writeInt(id);            
+            
             if (localHub.addService(clientAddress, tag, info)) { 
-                out.writeUTF("OK");
+                out.writeInt(ServiceLinkProtocol.PROPERTY_ACCEPTED);
             } else { 
-                out.writeUTF("DENIED");
+                out.writeInt(ServiceLinkProtocol.PROPERTY_REJECTED);
             }
             
             out.flush();
         }
     } 
 
-    private void updateInfo() throws IOException { 
+    private void updateProperty() throws IOException { 
         
-        String id = in.readUTF();
+        int id = in.readInt();
         String tag = in.readUTF();
         String info = in.readUTF();
 
@@ -407,14 +400,13 @@ public class ClientConnection extends MessageForwardingConnection {
         HubDescription localHub = knownHubs.getLocalDescription();
         
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
-            out.writeInt(1);
-        
-            if (localHub.updateService(clientAddress, tag, info)) { 
-                out.writeUTF("OK");
+            out.write(ServiceLinkProtocol.PROPERTY_ACK);           
+            out.writeInt(id);            
+            
+            if (localHub.updateService(clientAddress, tag, info)) {
+                out.writeInt(ServiceLinkProtocol.PROPERTY_ACCEPTED);
             } else { 
-                out.writeUTF("DENIED");
+                out.writeInt(ServiceLinkProtocol.PROPERTY_REJECTED);
             }
             
             out.flush();
@@ -423,7 +415,7 @@ public class ClientConnection extends MessageForwardingConnection {
 
     private void handleRemoveProperty() throws IOException { 
         
-        String id = in.readUTF();
+        int id = in.readInt();
         String tag = in.readUTF();
         
         if (reqlogger.isDebugEnabled()) {
@@ -434,15 +426,14 @@ public class ClientConnection extends MessageForwardingConnection {
         HubDescription localHub = knownHubs.getLocalDescription();
         
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
-            out.writeUTF(id);            
-            out.writeInt(1);
-        
-            if (localHub.removeService(clientAddress, tag)) { 
-                out.writeUTF("OK");
+            out.write(ServiceLinkProtocol.PROPERTY_ACK);            
+            out.writeInt(id);
+            
+            if (localHub.removeService(clientAddress, tag)) {
+                out.writeInt(ServiceLinkProtocol.PROPERTY_ACCEPTED);
             } else { 
-                out.writeUTF("DENIED");
-            }
+                out.writeInt(ServiceLinkProtocol.PROPERTY_REJECTED);
+            }                
             
             out.flush();
         }
@@ -593,7 +584,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " requests" 
                             + " info registration");
                 }
-                registerInfo();
+                registerProperty();
                 return true;
             
             case ServiceLinkProtocol.UPDATE_PROPERTY:
@@ -601,7 +592,7 @@ public class ClientConnection extends MessageForwardingConnection {
                     reglogger.debug("Connection " + clientAddress + " requests" 
                             + " info update");
                 }
-                updateInfo();
+                updateProperty();
                 return true;
             
             case ServiceLinkProtocol.REMOVE_PROPERTY:

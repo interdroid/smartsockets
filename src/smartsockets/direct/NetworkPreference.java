@@ -694,7 +694,10 @@ public class NetworkPreference {
         }
     }
   
-    
+    public boolean haveFirewallRules() {
+        return !firewallAcceptAll;
+    }
+        
     public String getNetworkName() {
         return (localNetworks == null ? null : localNetworks.name);
     }

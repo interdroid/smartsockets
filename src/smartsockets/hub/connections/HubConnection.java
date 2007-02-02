@@ -261,21 +261,21 @@ public class HubConnection extends MessageForwardingConnection {
                 out.writeLong(d.getHomeState());
             } 
 
-            ArrayList<ClientDescription> clients = d.getClients(null);        
-
+            ArrayList<ClientDescription> clients = d.getClients(null);
+            
             out.writeInt(clients.size()); 
 
             for (ClientDescription c : clients) {
                 c.write(out);
             }    
-
+            
             String [] connectedTo = d.connectedTo();
 
             if (connectedTo == null || connectedTo.length == 0) {         
                 out.writeInt(0);
                 return;
             }  
-
+          
             out.writeInt(connectedTo.length);
 
             for (String c : connectedTo) { 
@@ -284,7 +284,7 @@ public class HubConnection extends MessageForwardingConnection {
         }
     } 
         
-    private void readProxy() throws IOException {
+    private void readHub() throws IOException {
                 
         SocketAddressSet address = SocketAddressSet.getByAddress(in.readUTF());        
         String name = in.readUTF();
@@ -493,7 +493,7 @@ public class HubConnection extends MessageForwardingConnection {
                 if (goslogger.isInfoEnabled()) {
                     goslogger.info("HubConnection got gossip!");
                 }
-                readProxy();
+                readHub();
                 return true;
     
             case HubProtocol.PING:

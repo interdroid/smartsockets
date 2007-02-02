@@ -36,9 +36,9 @@ public class TestServiceLink implements CallBack {
         ss = factory.createServerSocket(port, 10, null);        
         
         while (proxies.size() > 0) {
-            serviceLink = ServiceLink.getServiceLink(
+            serviceLink = ServiceLink.getServiceLink(null,
                     (SocketAddressSet) proxies.removeFirst(), 
-                    ss.getAddressSet(), 0);
+                    ss.getAddressSet());
             
             if (serviceLink != null) { 
                 break;
@@ -54,14 +54,14 @@ public class TestServiceLink implements CallBack {
     }
     
     public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
-            int opcode, String message) {
+            int opcode, byte [][] message) {
     
         System.out.println("Got message from: " + src + "@" + srcProxy 
                 + "\n   [" + opcode + "] - " + message);            
         
         if (!interactive) {
             // bounce the message back to the sender.
-            serviceLink.send(src, srcProxy, "TEST", opcode, "I got: " + message);
+            serviceLink.send(src, srcProxy, "TEST", opcode, message);
         }
     }    
     
@@ -98,7 +98,8 @@ public class TestServiceLink implements CallBack {
                 p = SocketAddressSet.getByAddress(proxy);
             }
 
-            serviceLink.send(t, p, "TEST", message++, txt);
+            serviceLink.send(t, p, "TEST", message++, 
+                    new byte[][] { txt.getBytes() });
         } catch (Exception e) {
             System.out.println("Failed to parse target address!" + e);
         }           

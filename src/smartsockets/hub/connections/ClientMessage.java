@@ -14,7 +14,7 @@ public class ClientMessage {
     SocketAddressSet targetHub;               
     String module; 
     int code; 
-    String message; 
+    byte [] message;    
     int hopsLeft;
     
     ClientMessage(SocketAddressSet source, SocketAddressSet sourceHub, 
@@ -23,65 +23,60 @@ public class ClientMessage {
         this.source = source;
         this.sourceHub = sourceHub;
         
-        target = SocketAddressSet.getByAddress(in.readUTF());
-        
-        String tmp = in.readUTF();
-        
-        if (tmp.length() > 0) {         
-            targetHub = SocketAddressSet.getByAddress(tmp);               
-        }
-        
+        target = SocketAddressSet.read(in);
+        targetHub = SocketAddressSet.read(in);
+                
         module = in.readUTF();
         code = in.readInt();
-        message = in.readUTF();        
+        
+        int len = in.readInt();
+        
+        if (len > 0) { 
+            message = new byte[len];        
+            in.readFully(message);
+        }
     }
     
-    ClientMessage(DataInputStream in) throws IOException {                
-        source = SocketAddressSet.getByAddress(in.readUTF());
-        sourceHub = SocketAddressSet.getByAddress(in.readUTF());        
-        
-        target = SocketAddressSet.getByAddress(in.readUTF());
-        
-        String tmp = in.readUTF();
-        
-        if (tmp.length() > 0) {         
-            targetHub = SocketAddressSet.getByAddress(tmp);               
-        }
-        
-        module = in.readUTF();
-        code = in.readInt();
-        message = in.readUTF();
-        
-        hopsLeft = in.readInt();
+    ClientMessage(DataInputStream in) throws IOException {
+        this(SocketAddressSet.read(in), SocketAddressSet.read(in), in.readInt(),
+                in);
     }
     
     void write(DataOutputStream out) throws IOException { 
     
-        out.writeUTF(source.toString());
-        out.writeUTF(sourceHub.toString());
-    
-        out.writeUTF(target.toString());
+        SocketAddressSet.write(source, out);
+        SocketAddressSet.write(sourceHub, out);
+
+        out.writeInt(hopsLeft);       
         
-        if (targetHub == null) { 
-            out.writeUTF("");
-        } else { 
-            out.writeUTF(targetHub.toString());
-        } 
+        SocketAddressSet.write(target, out);
+        SocketAddressSet.write(targetHub, out);
         
         out.writeUTF(module);
         out.writeInt(code);
-        out.writeUTF(message);
-        out.writeInt(hopsLeft);       
+        
+        if (message == null || message.length == 0) { 
+            out.writeInt(0);
+        } else { 
+            out.writeInt(message.length);
+            out.write(message);
+        }
     }
     
     void writePartially(DataOutputStream out) throws IOException { 
-        
-        out.writeUTF(source.toString());
-        out.writeUTF(sourceHub.toString());
+
+        SocketAddressSet.write(source, out);
+        SocketAddressSet.write(sourceHub, out);
            
         out.writeUTF(module);
         out.writeInt(code);
-        out.writeUTF(message);
+        
+        if (message == null || message.length == 0) { 
+            out.writeInt(0);
+        } else { 
+            out.writeInt(message.length);
+            out.write(message);
+        }
     }       
 
     String target() {        
@@ -99,7 +94,7 @@ public class ClientMessage {
     public String toString() {         
         return "Message [from " + source + "@" + sourceHub + "] [to " 
             + target + "@" + targetHub + "] [module " + module + " code " 
-            + code + "] message: " + message;        
-    }
-    
+            + code + "] message: [" + (message == null ? 0 : message.length) 
+            + "]";        
+    }    
 }

@@ -94,8 +94,8 @@ public class Hub extends Thread {
         
         // NOTE: These are not started until later. We first need to init the
         // rest of the world!        
-        acceptor = new Acceptor(port, state, connections, hubs, virtualConnections, factory);        
-        connector = new Connector(state, connections, hubs, virtualConnections, factory);
+        acceptor = new Acceptor(p, port, state, connections, hubs, virtualConnections, factory);        
+        connector = new Connector(p, state, connections, hubs, virtualConnections, factory);
         
         SocketAddressSet local = acceptor.getLocal();         
         

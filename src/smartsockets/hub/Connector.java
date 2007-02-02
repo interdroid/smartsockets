@@ -6,10 +6,12 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import smartsockets.Properties;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
@@ -19,6 +21,7 @@ import smartsockets.hub.connections.VirtualConnections;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
+import smartsockets.util.TypedProperties;
 
 class Connector extends CommunicationThread {
     
@@ -27,12 +30,20 @@ class Connector extends CommunicationThread {
     
     private boolean done = false;
     
-    Connector(StateCounter state, 
+  //  private final HashMap<String, Object> map = new HashMap<String, Object>(2);
+    
+    private int sendBuffer = -1;
+    private int receiveBuffer = -1;
+
+    Connector(TypedProperties p, StateCounter state, 
             Map<SocketAddressSet, BaseConnection> connections,
             HubList knownProxies, VirtualConnections vcs, 
             DirectSocketFactory factory) {
         
         super("HubConnector", state, connections, knownProxies, vcs, factory);
+    
+        sendBuffer = p.getIntProperty(Properties.HUB_SEND_BUFFER, -1);
+        receiveBuffer = p.getIntProperty(Properties.HUB_RECEIVE_BUFFER, -1);
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
@@ -135,14 +146,14 @@ class Connector extends CommunicationThread {
         if (hconlogger.isInfoEnabled()) {
             hconlogger.info("Creating connection to " + d.hubAddress);
         }
-                
+        
         try { 
-            s = factory.createSocket(d.hubAddress, 
-                    DEFAULT_TIMEOUT, null);
+            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0, 
+                    sendBuffer, receiveBuffer, null, false, 0);
             
             s.setTcpNoDelay(true);
-            s.setSendBufferSize(256*1024);
-            s.setReceiveBufferSize(256*1024);
+            //s.setSendBufferSize(256*1024);
+            //s.setReceiveBufferSize(256*1024);
             
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Send buffer = " + s.getSendBufferSize());

@@ -14,6 +14,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import smartsockets.Properties;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocket;
@@ -26,6 +27,7 @@ import smartsockets.hub.connections.VirtualConnections;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
 import smartsockets.hub.state.StateCounter;
+import smartsockets.util.TypedProperties;
 
 public class Acceptor extends CommunicationThread {
     
@@ -58,16 +60,24 @@ public class Acceptor extends CommunicationThread {
     private long nextInvalidation = -1;
    
     private HashMap<String, SpliceInfo> spliceInfo = new HashMap<String, SpliceInfo>();
-        
-    Acceptor(int port, StateCounter state, 
+    
+    private int sendBuffer = -1;
+    private int receiveBuffer = -1;
+    
+    Acceptor(TypedProperties p, int port, StateCounter state, 
             Map<SocketAddressSet, BaseConnection> connections, 
             HubList knownProxies, VirtualConnections vcs,
             DirectSocketFactory factory) throws IOException {
 
         super("HubAcceptor", state, connections, knownProxies, vcs, factory);        
 
-        server = factory.createServerSocket(port, 50, null);        
-        setLocal(server.getAddressSet());        
+        sendBuffer = p.getIntProperty(Properties.HUB_SEND_BUFFER, -1);
+        receiveBuffer = p.getIntProperty(Properties.HUB_RECEIVE_BUFFER, -1);
+        
+        // NOTE: the receivebuffer must be passed to the serversocket to have 
+        // any effect on the sockets that are accepted later...
+        server = factory.createServerSocket(port, receiveBuffer, 50, null);        
+        setLocal(server.getAddressSet());              
     }
 
     private boolean handleIncomingHubConnect(DirectSocket s, 
@@ -186,7 +196,6 @@ public class Acceptor extends CommunicationThread {
         
     private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
-
         
         boolean result = false;
         String connectID = in.readUTF();
@@ -345,8 +354,14 @@ public class Acceptor extends CommunicationThread {
         try {
             s = server.accept();     
             s.setTcpNoDelay(true);
-            s.setSendBufferSize(256*1024);
-            s.setReceiveBufferSize(256*1024);
+            
+            if (sendBuffer > 0) { 
+                s.setSendBufferSize(sendBuffer);
+            }
+            
+            if (receiveBuffer > 0) { 
+                s.setReceiveBufferSize(receiveBuffer);
+            }
             
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Acceptor send buffer = " + s.getSendBufferSize());

@@ -205,11 +205,9 @@ public class VirtualSocketFactory {
         }  
         
         try { 
-            int credits = properties.getIntProperty(Properties.CREDITS);
+            serviceLink = ServiceLink.getServiceLink(properties, address, 
+                    myAddresses);
             
-            System.err.println("*** Credits set to: " + credits);
-            
-            serviceLink = ServiceLink.getServiceLink(address, myAddresses, credits);            
             hubAddress = serviceLink.getAddress();      
             
             if (true) { 
@@ -720,6 +718,7 @@ public class VirtualSocketFactory {
         } 
     }
   
+    // TODO: hide this thing ? 
     public ServiceLink getServiceLink() { 
         return serviceLink;        
     }
@@ -817,7 +816,8 @@ public class VirtualSocketFactory {
         return factory;
     }
 
-    public VirtualSocket createBrokeredSocket(InputStream brokered_in, OutputStream brokered_out, boolean b, Map p) {
+    public VirtualSocket createBrokeredSocket(InputStream brokered_in, 
+            OutputStream brokered_out, boolean b, Map p) {
         throw new RuntimeException("createBrokeredSocket not implemented");
     }
 

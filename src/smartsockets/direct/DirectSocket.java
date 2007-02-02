@@ -15,7 +15,7 @@ public abstract class DirectSocket {
     protected final SocketAddressSet remote;
     
     private int userData;
-        
+       
     DirectSocket(SocketAddressSet local, SocketAddressSet remote, 
             InputStream in, OutputStream out) {
         

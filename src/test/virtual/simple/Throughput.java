@@ -29,8 +29,6 @@ public class Throughput {
     
     private static void configure(VirtualSocket s) throws SocketException { 
  
-        s.setSendBufferSize(1024*1024);
-        s.setReceiveBufferSize(1024*1024);
         s.setTcpNoDelay(true);
     
         System.out.println("Configured socket: ");         
@@ -41,6 +39,8 @@ public class Throughput {
     
     public static void client(VirtualSocketAddress target) { 
 
+       
+        
         try { 
             VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
                     connectProperties);
@@ -76,9 +76,15 @@ public class Throughput {
             
                 double tp = (1000.0 * size * count) / (1024.0*1024.0*time);  
                 double mbit = (8000.0 * size * count) / (1024.0*1024.0*time);  
-                        
-                System.out.println("Test took " + time + " ms. Throughput = " 
-                        + tp + " MByte/s (" + mbit + " MBit/s)");
+                   
+                if (mbit > 1000) { 
+                    mbit = mbit / 1024.0;
+                    System.out.printf("Test took %d ms. Througput = %4.1f " +
+                            "MByte/s (%3.1f GBit/s)\n", time, tp, mbit);
+                } else { 
+                    System.out.printf("Test took %d ms. Througput = %4.1f " +
+                            "MByte/s (%3.1f MBit/s)\n", time, tp, mbit);
+                }
             }
             
             VirtualSocketFactory.close(s, out, in);
@@ -137,9 +143,7 @@ public class Throughput {
     }
     
     public static void main(String [] args) throws IOException { 
-        
-        sf = VirtualSocketFactory.createSocketFactory();
-        
+                
         connectProperties = new HashMap();
 
         VirtualSocketAddress target = null;
@@ -152,12 +156,18 @@ public class Throughput {
             } else if (args[i].equals("-count")) {                                 
                 count = Integer.parseInt(args[++i]);    
             } else if (args[i].equals("-repeat")) {                                 
-                repeat = Integer.parseInt(args[++i]);            
+                repeat = Integer.parseInt(args[++i]);
+            } else if (args[i].equals("-buffers")) {                                 
+                int size = Integer.parseInt(args[++i]);                            
+                connectProperties.put("sendbuffer", size);
+                connectProperties.put("receivebuffer", size);
             } else { 
                 System.err.println("Unknown option: " + args[i]);                
             }
         }
 
+        sf = VirtualSocketFactory.createSocketFactory(connectProperties, true);
+        
         if (target == null) { 
             server();
         } else { 

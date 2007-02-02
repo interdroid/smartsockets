@@ -3,7 +3,6 @@ package smartsockets.direct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -20,6 +19,15 @@ public class DirectSimpleSocket extends DirectSocket {
         
         this.socket = socket;
     }
+    
+    /*
+    DirectSimpleSocket(SocketAddressSet local, Socket socket) {
+        
+        super(local);
+        
+        this.socket = socket;
+    }*/
+    
     
     public void close() throws IOException {
         socket.close();

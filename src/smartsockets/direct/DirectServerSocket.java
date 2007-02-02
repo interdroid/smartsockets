@@ -10,9 +10,10 @@ import java.nio.channels.ServerSocketChannel;
 
 public class DirectServerSocket {
 
-    protected static final byte TYPE_SERVER = 7;
-    protected static final byte TYPE_CLIENT_CHECK   = 8;
-    protected static final byte TYPE_CLIENT_NOCHECK = 9;
+    protected static final byte TYPE_SERVER               = 7;
+    protected static final byte TYPE_SERVER_WITH_FIREWALL = 8;
+    protected static final byte TYPE_CLIENT_CHECK         = 9;
+    protected static final byte TYPE_CLIENT_NOCHECK       = 10;
     
     protected static final byte ACCEPT = 47;
     protected static final byte WRONG_MACHINE = 48;
@@ -45,7 +46,8 @@ public class DirectServerSocket {
     private SocketAddressSet external;
     
     // The network preferences that this server socket should take into account.
-    private NetworkPreference preference;
+    private final NetworkPreference preference;
+    private final boolean haveFirewallRules;
     
     protected DirectServerSocket(SocketAddressSet local, ServerSocket ss, 
             NetworkPreference preference) {
@@ -61,10 +63,17 @@ public class DirectServerSocket {
        
         handShake[0] = (byte) (tmp.length & 0xFF);
         handShake[1] = (byte) ((tmp.length >> 8) & 0xFF);
-        System.arraycopy(tmp, 0, handShake, 2, tmp.length);
+        System.arraycopy(tmp, 0, handShake, 2, tmp.length);        
+
+        altHandShake = DirectSocketFactory.toBytes(5, local.getAddressSet(), 2);
         
-        altHandShake = DirectSocketFactory.toBytes(5, local.getAddressSet());
-        altHandShake[0] = TYPE_SERVER;
+        if (preference != null && preference.haveFirewallRules()) { 
+            haveFirewallRules = true;     
+            altHandShake[0] = TYPE_SERVER_WITH_FIREWALL;            
+        } else { 
+            haveFirewallRules = false;            
+            altHandShake[0] = TYPE_SERVER;               
+        }
     }
                
     /**
@@ -218,6 +227,7 @@ public class DirectServerSocket {
                 // check for itself if we are the expected target machine.
                 out = s.getOutputStream();
                 out.write(altHandShake);
+                //out.write(networkNameInBytes);
                 out.flush();
             
                 in = s.getInputStream();
@@ -244,13 +254,26 @@ public class DirectServerSocket {
                 while (off < size) { 
                     off += in.read(tmp, off, size-off);
                 }
+                
+                // Read the size of the network name
+                size = (in.read() & 0xFF);
+                size |= ((in.read() & 0xFF) << 8); 
+
+                // Read the address itself....
+                byte [] name = new byte[size];
+
+                off = 0; 
+
+                while (off < size) { 
+                    off += in.read(name, off, size-off);
+                }                
             
+                IPAddressSet a = IPAddressSet.getByAddress(tmp);
+                SocketAddressSet sa = SocketAddressSet.getByAddress(a, 1, null); 
+                
                 // Optimistically create the socket ? 
                 // TODO: fix to get 'real' port numbers here... 
-                result = new DirectSimpleSocket(local, 
-                        SocketAddressSet.getByAddress(
-                                IPAddressSet.getByAddress(tmp), 1, null), 
-                                in, out, s);
+                result = new DirectSimpleSocket(local, sa, in, out, s);
                 
                 int userData = (((userIn[0] & 0xff) << 24) | 
                         ((userIn[1] & 0xff) << 16) |
@@ -258,6 +281,26 @@ public class DirectServerSocket {
                         (userIn[3] & 0xff));
                     
                 result.setUserData(userData);
+                
+                if (haveFirewallRules) { 
+                    
+                    String network = new String(name);
+                    
+                    // We must check if we are allowed to accept the client
+                    if (preference.accept(a.addresses, network)) { 
+                        out.write(ACCEPT);
+                        out.flush();       
+                    } else { 
+                        out.write(FIREWALL_REFUSED);
+                        out.flush();
+                        
+                        // TODO: do we really need to wait for incoming byte here ??
+                        in.read();
+                        doClose(s, in, out);
+                        result = null;
+                        continue; // TODO: refactor!!!
+                    }                    
+                }
                 
                 if (type == TYPE_CLIENT_CHECK) { 
                     
@@ -319,6 +362,10 @@ public class DirectServerSocket {
           
     public boolean getReuseAddress() throws SocketException {
         return serverSocket.getReuseAddress();
+    }
+
+    public void setReceiveBufferSize(int size) throws SocketException {
+        serverSocket.setReceiveBufferSize(size);
     }
 
     public void setReuseAddress(boolean on) throws SocketException {

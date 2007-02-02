@@ -8,12 +8,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
+import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.VirtualSocketFactory;
 
- 
 public class ConnectTest {
     
     private static final int SERVERPORT = 42611;
@@ -94,13 +94,18 @@ public class ConnectTest {
         Arrays.fill(detailedVirtual, 0);
     }
     
-    public static void accept() throws IOException {
+    public static void accept(String id) throws IOException {
         
         System.out.println("Creating server socket");
         
         VirtualServerSocket ss = sf.createServerSocket(SERVERPORT, 0, connectProperties);
         
         System.out.println("Created server on " + ss.getLocalSocketAddress());
+        
+        if (id != null) { 
+            sf.getServiceLink().registerProperty(id, 
+                    ss.getLocalSocketAddress().toString());
+        }
         
         System.out.println("Server waiting for connections"); 
         
@@ -137,6 +142,8 @@ public class ConnectTest {
         
         connectProperties = new HashMap();
 
+        String id = null;
+        
         int targets = args.length;
         int repeat = REPEAT;        
         
@@ -183,6 +190,12 @@ public class ConnectTest {
                 connectProperties.put("cache.winner", null);
                 args[i] = null;
                 targets--;
+                
+            } else if (args[i].equals("-id")) {
+                id = args[i+1];
+                args[i] = args[i+1] = null;
+                targets -= 2;
+                i++;
             }
         
         }
@@ -196,7 +209,26 @@ public class ConnectTest {
             }
         } 
         
-        if (targets > 0) {             
+        if (targets == 0 && id != null) { 
+            // Check if we are using an ID instead of a target...
+            ClientInfo [] info = sf.getServiceLink().clients(id);
+            
+            if (info != null && info.length > 0) {
+                
+                index = 0;
+                targetAds = new VirtualSocketAddress[info.length];
+                
+                for (ClientInfo c : info) { 
+                    String address = c.getProperty(id);
+                    
+                    if (address != null) { 
+                        targetAds[index++] = new VirtualSocketAddress(address);
+                    }
+                }
+            }
+        }
+        
+        if (targetAds.length > 0) {             
             
             for (VirtualSocketAddress a : targetAds) { 
 
@@ -217,9 +249,9 @@ public class ConnectTest {
                 for (int r=0;r<repeat;r++) {        
                     connect(a);
                 }
-            }
+            }            
         } else {
-            accept();
+            accept(id);
         }
         
         sf.printStatistics("");

@@ -15,7 +15,7 @@ import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 
-public abstract class AbstractDirectModule extends ConnectModule {
+public abstract class AbstractDirectModule extends MessagingModule {
     
    
     protected static final byte ACCEPT              = 1;

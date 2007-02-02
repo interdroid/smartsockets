@@ -46,8 +46,6 @@ public abstract class ConnectModule implements CallBack {
     protected long failedTime;
     protected long notAllowed;
     
-    
-    
     protected ConnectModule(String name, boolean requiresServiceLink) { 
         this(name, requiresServiceLink, null);
     }
@@ -111,7 +109,7 @@ public abstract class ConnectModule implements CallBack {
     }
     
     public void gotMessage(SocketAddressSet src, SocketAddressSet proxy, 
-            int opcode, String message) {
+            int opcode, byte [][] message) {
         // Note: Default implementation. Should be extended by any module 
         // which requires use of service links         
         logger.warn("Module: "+ module + " got unexpected message from " + src 

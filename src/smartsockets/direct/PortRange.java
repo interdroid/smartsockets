@@ -37,7 +37,7 @@ class PortRange {
      */
     PortRange(TypedProperties p) { 
 
-        String range = p.getProperty(Properties.PORT_RANGE);
+        String range = p.getProperty(Properties.DIRECT_PORT_RANGE);
         
         if (range == null || range.length() == 0) { 
             return;

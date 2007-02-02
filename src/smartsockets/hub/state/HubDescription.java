@@ -57,13 +57,11 @@ public class HubDescription {
     private byte canReachMe = UNKNOWN;
 
     // Maintain a list of machines that have registered themselves as clients. 
-    // Note that this is probably a very bad idea from a scalability point of 
-    // view...
-    /*private TreeMap<SocketAddressSet, ClientDescription> clients = 
-        new TreeMap<SocketAddressSet, ClientDescription>(); 
-    */    
-    private HashMap<SocketAddressSet, ClientDescription> clients = 
-        new HashMap<SocketAddressSet, ClientDescription>(); 
+    // Note that this is only used on the local hub. 
+    private HashMap<SocketAddressSet, ClientDescription> clients; 
+    
+    // For remote machines we only maintain a client count.
+   // private int numberOfClients;        
     
     // A reference to the actual connection to the described hub. May be 
     // null if we are not directly connected.    
@@ -96,7 +94,8 @@ public class HubDescription {
         this.reachable = UNKNOWN;
         this.canReachMe = UNKNOWN;
         
-        this.local = local;
+        this.local = local;        
+        this.clients = new HashMap<SocketAddressSet, ClientDescription>();         
     }
     
     public boolean addClient(SocketAddressSet client) {
@@ -118,11 +117,12 @@ public class HubDescription {
     }
     
     public boolean knowsClient(SocketAddressSet client) {
+        
         synchronized (clients) {            
             return clients.containsKey(client);
         }
     }
-
+    
     public boolean removeClient(SocketAddressSet client) {
         
         if (!local) { 
@@ -141,27 +141,27 @@ public class HubDescription {
         } 
     }
     
-    public void update(ClientDescription [] clients, String [] connectedTo, 
-            String name, long remoteState) {
+    public void update(ClientDescription [] clients, String [] connectedTo, String name, 
+            long remoteState) {
         
         if (local) { 
             throw new IllegalStateException("Cannot update the local"
                     + " hub description!");
         }
-                
-        synchronized (this.clients) {            
+        
+        synchronized (this.clients) {
             this.clients.clear();
-
-            for (int i=0;i<clients.length;i++) {
-                this.clients.put(clients[i].clientAddress, clients[i]);                                
-            }   
+            
+            for (ClientDescription c : clients) {
+                this.clients.put(c.clientAddress, c);                                
+            }
         }        
         
         synchronized (this.connectedTo) {            
             this.connectedTo.clear();
 
-            for (int i=0;i<connectedTo.length;i++) {
-                this.connectedTo.add(connectedTo[i]);                                
+            for (String s : connectedTo) {
+                this.connectedTo.add(s);                                
             }               
         }
             
@@ -263,6 +263,11 @@ public class HubDescription {
     
     public void getClientsAsString(LinkedList<String> result, String tag) {
 
+        if (clients == null) {
+            // TODO: send message to client to get this info ?  
+            return;
+        }
+        
         synchronized (clients) {                       
             for (ClientDescription c : clients.values()) { 
                 if (c.containsService(tag)) { 

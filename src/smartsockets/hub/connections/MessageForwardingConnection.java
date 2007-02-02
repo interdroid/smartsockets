@@ -3,12 +3,9 @@ package smartsockets.hub.connections;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-
-import com.sun.java_cup.internal.runtime.Symbol;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.SocketAddressSet;
@@ -178,7 +175,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         HubDescription p = knownHubs.get(cm.targetHub);
            
-        if (p == null || !p.knowsClient(cm.target)) {
+        if (p == null) {
             if (meslogger.isDebugEnabled()) {
                 meslogger.debug("Target hub " + cm.targetHub 
                         + " does not known " + "client " + cm.target);
@@ -186,7 +183,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             return false;
         }
          
-        // The targetHub exists and knows the target, so we're done.
+        // The targetHub exists so forward the message.
         if (setHops) {         
             cm.hopsLeft = p.getHops();
         }
@@ -209,11 +206,14 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             return;
         }
         
-        // Try to forward the message to the right hub.   
+        // Else, try to forward the message to the right hub.   
         if (forwardToHub(m, setHops)) { 
             return;
         }
                 
+        // Else, try to find the right hub and then forward the message...
+        // TODO: reimplement this with a bcast to all hubs instead of relying 
+        //       on client info to be gossiped in advance ?         
         HubsForClientSelector hss = new HubsForClientSelector(m.target, false);
         
         knownHubs.select(hss);
@@ -228,7 +228,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
     }    
     
-    //// Virtual connection parts...
+    // Virtual connection parts...
     protected abstract String getUniqueID(long index);
     
     protected abstract void forwardVirtualConnect(SocketAddressSet source, 

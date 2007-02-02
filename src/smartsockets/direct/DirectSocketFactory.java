@@ -64,8 +64,8 @@ public class DirectSocketFactory {
     private final boolean ALLOW_SSH_OUT;    
     private final boolean FORCE_SSH_OUT;    
         
-    private final int inputBufferSize;
-    private final int outputBufferSize;
+    private final int defaultReceiveBuffer;
+    private final int defaultSendBuffer;
         
     // User for SSH tunneling
     private final String user;
@@ -93,6 +93,8 @@ public class DirectSocketFactory {
     private Preference globalFirst;
     
     private String keyFilePass = "";
+
+    private boolean haveFirewallRules;
 
     private DirectSocketFactory(TypedProperties p) {
         
@@ -130,14 +132,12 @@ public class DirectSocketFactory {
                 p.booleanProperty(Properties.UPNP_PORT_FORWARDING, false);
         }
         
-        USE_NIO = p.booleanProperty(Properties.NIO, false);
+        USE_NIO = p.booleanProperty(Properties.DIRECT_NIO, false);
         
-        inputBufferSize = p.getIntProperty(Properties.IN_BUF_SIZE, 0);
-        outputBufferSize = p.getIntProperty(Properties.OUT_BUF_SIZE, 0);
+        defaultReceiveBuffer = p.getIntProperty(Properties.DIRECT_SEND_BUFFER, 0);
+        defaultSendBuffer = p.getIntProperty(Properties.DIRECT_RECEIVE_BUFFER, 0);
                         
-        localAddress = IPAddressSet.getLocalHost();
-
-            
+        localAddress = IPAddressSet.getLocalHost();            
                 
         if (!localAddress.containsGlobalAddress()) {
             haveOnlyLocalAddresses = true;
@@ -171,8 +171,8 @@ public class DirectSocketFactory {
                  (preference == null ? "<none>" : preference.getNetworkName()));
         }
         
-        completeAddressInBytes = toBytes(0, completeAddress);
-        altCompleteAddressInBytes = toBytes(5, completeAddress);
+        completeAddressInBytes = toBytes(0, completeAddress, 0);
+        altCompleteAddressInBytes = toBytes(5, completeAddress, 0);
         
         networkNameInBytes = toBytes(
                 preference == null ? null : preference.getNetworkName());
@@ -273,11 +273,11 @@ public class DirectSocketFactory {
         }
     }
     
-    protected static byte [] toBytes(int header, IPAddressSet address) { 
+    protected static byte [] toBytes(int header, IPAddressSet address, int trailer) { 
         
         byte [] tmp = address.getAddress();
         
-        byte [] result = new byte[header + 2 + tmp.length];
+        byte [] result = new byte[header + 2 + tmp.length + trailer];
             
         result[header] = (byte) (tmp.length & 0xFF);
         result[header+1] = (byte) ((tmp.length >> 8) & 0xFF);
@@ -667,10 +667,9 @@ public class DirectSocketFactory {
     }
         
     private DirectSocket attemptConnection(SocketAddressSet sas,
-            InetSocketAddress target, int timeout, int localPort, 
-            boolean mayBlock, byte [] userOut, byte [] userIn, boolean check)
-    
-        throws FirewallException {
+            InetSocketAddress target, int timeout, int sndbuf, int rcvbuf, 
+            int localPort, boolean mayBlock, byte [] userOut, byte [] userIn, 
+            boolean check) throws FirewallException {
 
         // We never want to block, so ensure that timeout > 0
         if (timeout == 0 && !mayBlock) {
@@ -702,6 +701,9 @@ public class DirectSocketFactory {
             if (localPort > 0) {
                 s.bind(new InetSocketAddress(localPort));
             }
+
+            // Must be done here to hava any effect!
+            tuneSocket(s, sndbuf, rcvbuf);
             
             s.connect(target, timeout);
 
@@ -710,48 +712,46 @@ public class DirectSocketFactory {
                         + " in " + (System.currentTimeMillis()-start) + " ms.");
             }  
             
-             // TODO: optimized this ??? Its getting more and more complicated!!
-             s.setSoTimeout(5000);
-             s.setTcpNoDelay(true);
+            s.setSoTimeout(5000);
+            
+            // Check if we are talking to the right machine...
+            in = s.getInputStream();
+            out = s.getOutputStream();
 
-             // Check if we are talking to the right machine...
-             in = s.getInputStream();
-             out = s.getOutputStream();
-             
-             SocketAddressSet realAddress = handShake(sas, target, in, out, 
-                     userOut, userIn, check);
-             
-             if (realAddress == null) { 
-                 
-                 if (logger.isInfoEnabled()) {               
-                     logger.info("Handshake failed during connection setup to "
-                             + NetworkUtils.ipToString(target.getAddress()) + ":"
-                             + target.getPort() + " after " 
-                             + (System.currentTimeMillis()-start) + " ms.");
-                 }  
+            SocketAddressSet realAddress = handShake(sas, target, in, out, 
+                    userOut, userIn, check);
 
-                 close(s, out, in);  
-                 
-                 return null;
-             }
-             
-             s.setSoTimeout(0);
-             
-             // TODO: get real port here ? How about the UUID ? 
-             SocketAddressSet a = SocketAddressSet.getByAddress(
-                     externalAddress, 1, localAddress, 1, null);
-             
-             DirectSocket r = new DirectSimpleSocket(a, realAddress, in, out, s);
-             
-             tuneSocket(r);
-             
-             if (logger.isInfoEnabled()) {               
-                 logger.info("Connection setup to " + sas.toString() 
-                         + " completed in " + (System.currentTimeMillis()-start) 
-                         + " ms.");
-             }  
-             
-             return r; 
+            if (realAddress == null) { 
+
+                if (logger.isInfoEnabled()) {               
+                    logger.info("Handshake failed during connection setup to "
+                            + NetworkUtils.ipToString(target.getAddress()) + ":"
+                            + target.getPort() + " after " 
+                            + (System.currentTimeMillis()-start) + " ms.");
+                }  
+
+                close(s, out, in);  
+
+                return null;
+            }
+
+            s.setSoTimeout(0);
+
+            // TODO: get real port here ? How about the UUID ? 
+            SocketAddressSet a = SocketAddressSet.getByAddress(
+                    externalAddress, 1, localAddress, 1, null);
+
+            DirectSocket r = new DirectSimpleSocket(a, realAddress, in, out, s);
+
+//            tuneSocket(r);
+
+            if (logger.isInfoEnabled()) {               
+                logger.info("Connection setup to " + sas.toString() 
+                        + " completed in " + (System.currentTimeMillis()-start) 
+                        + " ms.");
+            }  
+
+            return r; 
         
         } catch (FirewallException e) {
             
@@ -866,23 +866,25 @@ public class DirectSocketFactory {
 
 */ 
 
-        // HPDC Version
+        // HPDC+Mathijs Version
         SocketAddressSet server = null;
         int opcode = -1;
         
         try {     
      
             // Start by sending our socket type and address. NOTE this is 
-            // Dangerous, since it may deadlock if the buffersize is smaller
+            // dangerous, since it may deadlock if the buffersize is smaller
             // than (1+completeAddressInBytes.length). 
             // TODO: Potential deadlock ? Should fix this
             
             synchronized (altCompleteAddressInBytes) {
                 
                 if (checkIdentity) { 
-                    altCompleteAddressInBytes[0] = DirectServerSocket.TYPE_CLIENT_CHECK;
+                    altCompleteAddressInBytes[0] = 
+                        DirectServerSocket.TYPE_CLIENT_CHECK;
                 } else {
-                    altCompleteAddressInBytes[0] = DirectServerSocket.TYPE_CLIENT_NOCHECK;
+                    altCompleteAddressInBytes[0] = 
+                        DirectServerSocket.TYPE_CLIENT_NOCHECK;
                 }
                 
                 for (int i=0;i<4;i++) { 
@@ -890,6 +892,7 @@ public class DirectSocketFactory {
                 }
             
                 out.write(altCompleteAddressInBytes);
+                out.write(networkNameInBytes);
             }
             
             //System.out.println("Writing address: " + Arrays.toString(altCompleteAddressInBytes));
@@ -915,6 +918,19 @@ public class DirectSocketFactory {
 
             while (off < size) { 
                 off += in.read(tmp, off, size-off);
+            }
+            
+            // Read the size of the network name
+            size = (in.read() & 0xFF);
+            size |= ((in.read() & 0xFF) << 8); 
+
+            // Read the address itself....
+            byte [] name = new byte[size];
+
+            off = 0; 
+
+            while (off < size) { 
+                off += in.read(name, off, size-off);
             }
             
            // System.out.println("Read address: " + Arrays.toString(tmp));
@@ -943,25 +959,61 @@ public class DirectSocketFactory {
                                 + server.toString() 
                                 + " will retry!");
                     }
-
+                    
                     return null;
-                } else {                     
-                    out.write(DirectServerSocket.ACCEPT);
-                    out.flush();
+                    
+                } else if (haveFirewallRules && 
+                        type == DirectServerSocket.TYPE_CLIENT_CHECK) { 
+
+                    // If we are splicing, the firewall rules should be 
+                    // checked on the client side!                     
+                    String network = new String(name);
+                        
+                    if (!preference.accept(sas.getSocketAddresses(), network)) { 
+                        out.write(DirectServerSocket.FIREWALL_REFUSED);
+                        out.flush();
+
+                        if (logger.isInfoEnabled()) { 
+                            logger.info("Local firewall refused connection to machine: "  
+                                    + sas.toString()
+                                    + " using network "
+                                    + NetworkUtils.ipToString(target.getAddress()) + ":"
+                                    + target.getPort());
+                        }
+                        
+                        throw new FirewallException("Local firewall refused" +
+                                " connection to machine: ");
+                    }
                 }
+                 
+                out.write(DirectServerSocket.ACCEPT);
+                out.flush();                
             } 
             
             if (type == DirectServerSocket.TYPE_SERVER || 
                     type == DirectServerSocket.TYPE_CLIENT_NOCHECK) { 
-                // If the other side is a server, we are done.
+                // If the other side is an 'open' server, we are done.
                 return server; 
                 
-            } else if (type == DirectServerSocket.TYPE_CLIENT_CHECK) { 
-                // If the other side is also a client, we are splicing and need 
-                // to read if other accepts the connection.
+            } else if (type == DirectServerSocket.TYPE_SERVER_WITH_FIREWALL ||
+                    type == DirectServerSocket.TYPE_CLIENT_CHECK) { 
+                // If the other side is a server with deny rules, or also a 
+                // client, we need to read if other accepts the connection.
                 opcode = in.read();
                 
-                if (opcode != DirectServerSocket.ACCEPT) { 
+                if (opcode == DirectServerSocket.FIREWALL_REFUSED) { 
+                    if (logger.isInfoEnabled()) { 
+                        logger.info("Remote firewall refused connection to machine: "  
+                                + sas.toString()
+                                + " using network "
+                                + NetworkUtils.ipToString(target.getAddress()) + ":"
+                                + target.getPort());
+                    }
+                    
+                    throw new FirewallException("Remote firewall refused" +
+                            " connection to machine: ");
+                
+                } else if (opcode != DirectServerSocket.ACCEPT) { 
                     if (logger.isInfoEnabled()) { 
                         logger.info("Connected to the wrong splice" +
                                 "attempt of the right machine! " 
@@ -992,8 +1044,8 @@ public class DirectSocketFactory {
         return server;
     }
 
-    private DirectServerSocket createServerSocket(int port, int backlog,
-            boolean portForwarding, boolean forwardingMayFail,
+    private DirectServerSocket createServerSocket(int port, int receiveBuffer, 
+            int backlog, boolean portForwarding, boolean forwardingMayFail,
             boolean sameExternalPort) throws IOException {
 
         if (port == 0) {
@@ -1006,6 +1058,11 @@ public class DirectSocketFactory {
 
         ServerSocket ss = createUnboundServerSocket();
         ss.bind(new InetSocketAddress(port), backlog);
+        
+        // Must be set here to have any effect...
+        if (receiveBuffer > 0) { 
+            ss.setReceiveBufferSize(receiveBuffer);
+        }
         
         if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port
@@ -1101,32 +1158,28 @@ public class DirectSocketFactory {
 
         return smss;
     }
-
-    /**
-     * Configures a socket according to user-specified properties. Currently,
-     * the input buffer size and output buffer size can be set using the system
-     * properties "ibis.util.socketfactory.InputBufferSize" and
-     * "ibis.util.socketfactory.OutputBufferSize".
-     * 
-     * @param s
-     *            the socket to be configured
-     * 
-     * @exception IOException
-     *                when the configation has failed for some reason.
-     */
-    protected void tuneSocket(DirectSocket s) throws IOException {
+ 
+    protected void tuneSocket(Socket s, int send, int receive) throws IOException {
         
-        if (inputBufferSize != 0) {
-            s.setReceiveBufferSize(inputBufferSize);
+        if (send <= 0) { 
+            send = defaultSendBuffer;
         }
         
-        if (outputBufferSize != 0) {
-            s.setSendBufferSize(outputBufferSize);
+        if (receive <= 0) { 
+            receive = defaultReceiveBuffer;
+        }
+                
+        if (send > 0) {
+            s.setReceiveBufferSize(send);
+        }
+        
+        if (receive > 0) {
+            s.setSendBufferSize(receive);
         }
         
         s.setTcpNoDelay(true);
     }
-
+    
     /**
      * Retrieves a boolean property from a Map, using a given key.
      *  - If the map is null or the property does not exist, the default value
@@ -1159,7 +1212,7 @@ public class DirectSocketFactory {
         }
         return def;
     }
-
+    
     public IPAddressSet getLocalAddress() {
         return completeAddress;
     }
@@ -1226,12 +1279,14 @@ public class DirectSocketFactory {
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             Map properties) throws IOException {
-        return createSocket(target, timeout, 0, properties, false, 0);
+        return createSocket(target, timeout, 0, -1, -1, properties, false, 0);
     }
 
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             Map properties, int userdata) throws IOException {
-        return createSocket(target, timeout, 0, properties, false, userdata);
+        
+        return createSocket(target, timeout, 0, -1, -1, properties, false, 
+                userdata);
     }
 
     
@@ -1271,8 +1326,26 @@ public class DirectSocketFactory {
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
             int localPort, Map properties) throws IOException {
-        return createSocket(target, timeout, localPort, properties, false, 0);
+        return createSocket(target, timeout, localPort, -1, -1, properties, false, 0);
     } 
+    
+   // public DirectSocket createSocket(int localPort, Map properties) { 
+        // TODO: implement!
+   //     return null;
+   // }
+    
+    public int getAvailablePort() throws IOException {
+        
+        Socket s = new Socket();
+        
+        try { 
+            s.bind(null);        
+            return s.getLocalPort();
+        } finally { 
+            s.close();
+        } 
+    }
+    
     
     /*
      * (non-Javadoc)
@@ -1281,8 +1354,8 @@ public class DirectSocketFactory {
      *      int, java.util.Map)
      */
     public DirectSocket createSocket(SocketAddressSet target, int timeout,
-            int localPort, Map properties, boolean fillTimeout, 
-            int userData) throws IOException {
+            int localPort, int sendBuffer, int receiveBuffer, Map properties, 
+            boolean fillTimeout, int userData) throws IOException {
 
         if (timeout < 0) {
             timeout = DEFAULT_TIMEOUT;
@@ -1362,8 +1435,6 @@ public class DirectSocketFactory {
         long [] timing = null;
         boolean forceGlobalFirst = false;
         
-        int shift = 0;
-        
         if (properties != null) { 
             
             if (!properties.containsKey("direct.detailed.timing.ignore")) { 
@@ -1376,10 +1447,8 @@ public class DirectSocketFactory {
             }
             
             forceGlobalFirst = properties.containsKey("direct.forcePublic");
-            
-            System.err.println("forceGlobalFirst: " + forceGlobalFirst);
-            
         }
+        
         
         try { 
         
@@ -1419,7 +1488,8 @@ public class DirectSocketFactory {
             }
             
             DirectSocket result = attemptConnection(target, sas[0], timeout,
-                    localPort, true, userOut, userIn, false);
+                    sendBuffer, receiveBuffer, localPort, true, userOut, userIn,
+                    false);
             
             if (timing != null) { 
                 timing[1] = System.nanoTime() - timing[1];
@@ -1475,7 +1545,8 @@ public class DirectSocketFactory {
             
             if (!FORCE_SSH_OUT) { 
                 result = loopOverOptions(target, sas, localPort, partialTime, 
-                        null, userOut, userIn, timing);
+                        sendBuffer, receiveBuffer, null, userOut, userIn, 
+                        timing);
             }
 
             int time = (int) (System.currentTimeMillis() - starttime);
@@ -1495,8 +1566,9 @@ public class DirectSocketFactory {
                     }
                 } 
             
-                result = loopOverOptions(target, sas, localPort, 
-                        partialTime, target.getUser(), userOut, userIn, timing);
+                result = loopOverOptions(target, sas, localPort, partialTime, 
+                        sendBuffer, receiveBuffer, target.getUser(), userOut, 
+                        userIn, timing);
             
                 time = (int) (System.currentTimeMillis() - starttime);
             }
@@ -1536,8 +1608,9 @@ public class DirectSocketFactory {
     }
 
     private DirectSocket loopOverOptions(SocketAddressSet target, 
-            InetSocketAddress [] sas, int localPort, int timeout, 
-            String user, byte [] userOut, byte [] userIn, long [] timing) throws FirewallException {
+            InetSocketAddress [] sas, int localPort, int timeout, int sendBuffer, 
+            int receiveBuffer, String user, byte [] userOut, byte [] userIn, 
+            long [] timing) throws FirewallException {
         
         //System.out.println("loopOverOptions " + timeout);
         
@@ -1574,8 +1647,8 @@ public class DirectSocketFactory {
                 result = attemptSSHConnection(target, sa, partialTime, 
                         localPort, false, user, userOut, userIn, local);                
             } else { 
-                result = attemptConnection(target, sa, partialTime, localPort, 
-                        false, userOut, userIn, local);
+                result = attemptConnection(target, sa, partialTime, sendBuffer, 
+                        receiveBuffer, localPort, false, userOut, userIn, local);
             }
             
             timeLeft -= (System.currentTimeMillis() - time);
@@ -1607,14 +1680,13 @@ public class DirectSocketFactory {
         return result;        
     }
     
-    /*
-     * (non-Javadoc)
-     * 
-     * @see smartnet.factories.ClientServerSocketFactory#createServerSocket(int,
-     *      int, java.util.Map)
-     */
-    public DirectServerSocket createServerSocket(int port, int backlog, Map prop)
-            throws IOException {
+    public DirectServerSocket createServerSocket(int port, int backlog, 
+            Map prop) throws IOException {
+        return createServerSocket(port, backlog, -1, prop);
+    }
+    
+    public DirectServerSocket createServerSocket(int port, int backlog, 
+            int receiveBuffer, Map prop) throws IOException {
 
         boolean forwardMayFail = true;
         boolean sameExternalPort = true;
@@ -1624,8 +1696,8 @@ public class DirectSocketFactory {
             forwardMayFail = getProperty(prop, "ForwardingMayFail", true);
             sameExternalPort = getProperty(prop, "SameExternalPort", true);
         }
-
-        return createServerSocket(port, backlog, portForwarding,
+        
+        return createServerSocket(port, receiveBuffer, backlog, portForwarding,
                 forwardMayFail, sameExternalPort);
     }
 

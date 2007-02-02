@@ -1,6 +1,8 @@
 package smartsockets.direct;
 
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -296,6 +298,35 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return addressCache;        
     }
     
+    public int [] getPorts(boolean includeExternal) { 
+        
+        int len = global.length + local.length;
+        
+        if (includeExternal) { 
+            len += external.length;
+        }
+        
+        int [] result = new int[len];
+        
+        int index = 0;
+        
+        for (InetSocketAddress i : global) { 
+            result[index++] = i.getPort();
+        }
+        
+        for (InetSocketAddress i : local) { 
+            result[index++] = i.getPort();
+        }
+        
+        if (includeExternal) { 
+            for (InetSocketAddress i : external) { 
+                result[index++] = i.getPort();
+            }
+        }
+        
+        return result;
+    }
+    
     /**
      * Gets the SocketAddresses.
      * 
@@ -404,6 +435,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      */
     public boolean equals(Object other) { 
 
+        // NOTE: this checks if the addresses are exactly the same.
+        // For partial comparisons please use 'isCompatible'.       
+
         // Check pointers
         if (this == other) { 
             return true;
@@ -416,16 +450,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 
         SocketAddressSet tmp = (SocketAddressSet) other;
       
-        // First, compare UUIDs (if available) 
-        if (UUID == null && tmp.UUID == null) { 
-            // skip
-        } else if (!Arrays.equals(UUID, tmp.UUID)) { 
+        // First, compare UUIDs 
+        if (!Arrays.equals(UUID, tmp.UUID)) { 
             return false;
         } 
                  
         // Next, compare ports and addresses..        
-        // NOTE: this is only correct if the addresses are exactly the same.
-        // For partial addresses please use 'isCompatible'.       
         if (!compare(external, tmp.external)) { 
             return false;
         }
@@ -635,19 +665,45 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         if (this == other) { 
             return true;
         }
-
+        
+        // Check UUIDs. Three cases fail here, either both have a UUID and they
+        // are different, or either has a UUID and the other has one or more
+        // public addresses. All other combination pass on to the next tests... 
+        if (UUID != null) {            
+            if (other.UUID != null) { 
+                if (!Arrays.equals(UUID, other.UUID)) {
+                    return false;
+                } 
+            } else { 
+                if (other.global.length > 0) { 
+                    // I have a UUID so I must only have private addresses, 
+                    // while the other has global addresses as well...  
+                    return false;
+                }
+            }
+        } else { 
+            if (other.UUID != null && global.length > 0) { 
+                // The other has a UUID so it must only have private addresses, 
+                // while I have global addresses as well...  
+                return false;
+            }
+        }
+        
         // If either is loopback, we always match
         if (isLoopBack(local) || isLoopBack(other.local)) {
             return true;
         }
         
-        // If both have 'global' addresses -MUST- overlap. 
+        // If both have 'public' addresses, they -MUST- overlap. 
         if (global.length > 0 && other.global.length > 0) {
             return compatible(global, other.global, comparePorts);
         } 
                 
         // If both have external (NAT) addresses, they -MUST- overlap, and the 
         // local addresses -MUST- overlap also!
+       
+        // TODO: does this work in the multiple NAT case ? We should also have a
+        //   UUID there.... 
         if (external.length > 0 && other.external.length > 0) {
             return (compatible(external, other.external, comparePorts) && 
                 compatible(local, other.local, comparePorts));   
@@ -658,27 +714,44 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     }
     
     private void writeObject(ObjectOutputStream out) throws IOException {
-        
-        byte [] a = getAddress();
-        
-        out.writeInt(a.length);
-        out.write(getAddress());
-        
-       // System.out.println("Writing SocketAddressSet (" + a.length + "): " + sas + " " + address);
-        
+        write(this, out);
     }
     
     private void readObject(ObjectInputStream in) throws IOException {
-        
         int len = in.readInt();
         byte [] tmp = new byte[len];
         
-     //   System.out.println("Read SocketAddressSet (" + len + "): " + sas + " " + address);
-        
         in.readFully(tmp);       
-        decode(tmp);   
+        decode(tmp);
     }
     
+    public static void write(SocketAddressSet s, DataOutput out) throws IOException { 
+        
+        if (s == null) {
+            out.writeInt(0);
+        } else {            
+            byte [] a = s.getAddress();
+        
+            out.writeInt(a.length);
+            out.write(a);
+        }
+    }
+   
+    public static SocketAddressSet read(DataInput in) throws IOException { 
+        
+        int len = in.readInt();
+        
+        if (len == 0) { 
+            return null;
+        }
+        
+        byte [] tmp = new byte[len];
+        
+        in.readFully(tmp);       
+      
+        return new SocketAddressSet(tmp);   
+    }
+   
     public static SocketAddressSet getByAddress(byte [] coded) 
         throws UnknownHostException {
         

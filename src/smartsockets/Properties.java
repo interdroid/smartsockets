@@ -20,27 +20,27 @@ public class Properties {
     public static final String ROUTERS             = PREFIX + "routers";  
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
         
-    public static final String BACKLOG             = PREFIX + "backlog";  
-    public static final String TIMEOUT             = PREFIX + "timeout";  
-    public static final String LOCAL_TIMEOUT       = PREFIX + "timeout.local";  
+    public static final String BACKLOG       = PREFIX + "backlog";  
+    public static final String TIMEOUT       = PREFIX + "timeout";  
+    public static final String LOCAL_TIMEOUT = PREFIX + "timeout.local";  
     
-    public static final String DIRECT_BACKLOG      = PREFIX + "direct.backlog";  
-    public static final String DIRECT_PORT         = PREFIX + "direct.port";  
+    public static final String DIRECT_PREFIX         = PREFIX + "direct.";  
+    public static final String DIRECT_BACKLOG        = DIRECT_PREFIX + "backlog";  
+    public static final String DIRECT_PORT           = DIRECT_PREFIX + "port";  
+    public static final String DIRECT_NIO            = DIRECT_PREFIX + "nio";
+    public static final String DIRECT_PORT_RANGE     = DIRECT_PREFIX + "port_range";    
+    public static final String DIRECT_SEND_BUFFER    = DIRECT_PREFIX + "sendbuffer";
+    public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
     
-    public static final String CREDITS             = PREFIX + "credits";
+    //public static final String IN_BUF_SIZE  = DIRECT_PREFIX + "input_buffer";
+    //public static final String OUT_BUF_SIZE = DIRECT_PREFIX + "output_buffer";
     
-    public static final String SSH_PREFIX          = PREFIX + "ssh.";
-    public static final String SSH_IN              = SSH_PREFIX + "in.allow";
-    public static final String SSH_OUT             = SSH_PREFIX + "out.allow";
-    public static final String FORCE_SSH_OUT       = SSH_PREFIX + "out.force";
+    public static final String SSH_PREFIX    = PREFIX + "ssh.";
+    public static final String SSH_IN        = SSH_PREFIX + "in.allow";
+    public static final String SSH_OUT       = SSH_PREFIX + "out.allow";
+    public static final String FORCE_SSH_OUT = SSH_PREFIX + "out.force";
     
-    public static final String NETWORKS_PREFIX = PREFIX + "networks.";    
-    
-    public static final String NIO             = NETWORKS_PREFIX + "nio";
-    public static final String PORT_RANGE      = NETWORKS_PREFIX + "port_range";    
-    public static final String IN_BUF_SIZE     = NETWORKS_PREFIX + "input_buffer";
-    public static final String OUT_BUF_SIZE    = NETWORKS_PREFIX + "output_buffer";
-    
+    public static final String NETWORKS_PREFIX = PREFIX + "networks.";        
     public static final String NETWORKS_DEFAULT = NETWORKS_PREFIX + "default";
     public static final String NETWORKS_DEFINE  = NETWORKS_PREFIX + "define";
     public static final String NETWORKS_MEMBER  = NETWORKS_PREFIX + "name";
@@ -80,7 +80,14 @@ public class Properties {
     public static final String HUB_PORT           = HUB_PREFIX + "port";                 
     public static final String HUB_SSH_ALLOWED    = HUB_PREFIX + "ssh";     
     public static final String HUB_KNOWN_HUBS     = HUB_PREFIX + "known";
+    public static final String HUB_SEND_BUFFER    = HUB_PREFIX + "sendbuffer";
+    public static final String HUB_RECEIVE_BUFFER = HUB_PREFIX + "receivebuffer";
     
+    public static final String SL_PREFIX         = PREFIX + "servicelink.";        
+    public static final String SL_CREDITS        = SL_PREFIX + "credits";
+    public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
+    public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
+        
     public static final String CLUSTER_PREFIX  = PREFIX + "cluster.";
     public static final String CLUSTER_DEFINE  = CLUSTER_PREFIX + "define";
     public static final String CLUSTER_MEMBER  = CLUSTER_PREFIX + "member";
@@ -103,17 +110,19 @@ public class Properties {
             SSH_OUT,                "false", 
             SSH_IN,                 "false",
             
-            NIO,                    "false", 
+            DIRECT_NIO,             "false",
+            DIRECT_SEND_BUFFER,     "-1",
+            DIRECT_RECEIVE_BUFFER,  "-1",
+            
             STUN,                   "false",
             UPNP,                   "false",            
             UPNP_PORT_FORWARDING,   "false", 
             
-            IN_BUF_SIZE,            "65536", 
-            OUT_BUF_SIZE,           "65536",
-            
             NETWORKS_DEFAULT,       "auto",
             
             HUB_PORT,               "17878",
+            HUB_SEND_BUFFER,        "-1",
+            HUB_RECEIVE_BUFFER,     "-1",
             
             MODULES_DEFINE,         "direct,reverse,splice,hubrouted", 
             MODULES_ORDER,          "direct,reverse,splice,hubrouted",
@@ -123,7 +132,9 @@ public class Properties {
             DISCOVERY_PORT,         "24545", 
             DISCOVERY_TIMEOUT,      "5000",    
             
-            CREDITS,                "100"
+            SL_CREDITS,             "100", 
+            SL_SEND_BUFFER,         "-1", 
+            SL_RECEIVE_BUFFER,      "-1" 
     };
 
     private static TypedProperties defaultProperties;

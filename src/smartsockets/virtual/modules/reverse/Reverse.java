@@ -12,10 +12,11 @@ import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.modules.ConnectModule;
+import smartsockets.virtual.modules.MessagingModule;
 import smartsockets.virtual.modules.direct.Direct;
 import smartsockets.virtual.modules.direct.DirectVirtualSocket;
 
-public class Reverse extends ConnectModule {
+public class Reverse extends MessagingModule {
     
     private static final int DEFAULT_TIMEOUT = 4000;            
     private static final boolean USE_THREAD = true; 
@@ -93,8 +94,18 @@ public class Reverse extends ConnectModule {
         VirtualServerSocket ss = 
             (VirtualServerSocket) parent.createServerSocket(0, 1, null);
                        
+        byte [][] message = new byte[5][];
+        
+        VirtualSocketAddress vs = ss.getLocalSocketAddress();
+        
+        message[0] = fromInt(target.port());
+        message[1] = fromSocketAddressSet(vs.machine());
+        message[2] = fromInt(vs.port());
+        message[3] = fromSocketAddressSet(vs.hub());
+        message[4] = fromString(vs.cluster());
+        
         serviceLink.send(target.machine(), target.hub(), module, PLEASE_CONNECT, 
-                target.port() + ":" + ss.getLocalSocketAddress().toString());
+                message);
         
         DirectVirtualSocket s = null;
         
@@ -142,8 +153,10 @@ public class Reverse extends ConnectModule {
         }
     }        
     
+   
+        
     public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
-            int opcode, String message) {
+            int opcode, byte [][] message) {
 
         if (opcode != PLEASE_CONNECT) { 
             logger.warn(module + ": got unexpected message from " + src + "@" + 
@@ -160,9 +173,13 @@ public class Reverse extends ConnectModule {
         VirtualSocketAddress target = null;
         
         try {
-            int index = message.indexOf(':');
-            localport = Integer.parseInt(message.substring(0, index));
-            target = new VirtualSocketAddress(message.substring(index+1));            
+            localport                = toInt(message[0]);                        
+            SocketAddressSet machine = toSocketAddressSet(message[1]);            
+            int port                 = toInt(message[2]); 
+            SocketAddressSet hub     = toSocketAddressSet(message[3]);                        
+            String cluster           = toString(message[4]);
+            
+            target = new VirtualSocketAddress(machine, port, hub, cluster);            
         } catch (Exception e) {
             logger.warn(module + ": failed to parse target address!", e);
             return;

@@ -54,7 +54,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             DirectSocketFactory df = DirectSocketFactory.getSocketFactory();
             DirectServerSocket ss = df.createServerSocket(0, 1, null);
 
-            sl = ServiceLink.getServiceLink(hub, ss.getAddressSet(), 0);
+            sl = ServiceLink.getServiceLink(null, hub, ss.getAddressSet());
             sl.registerProperty("visualization", "");                        
         } catch (Exception e) {
             System.err.println("Failed to connect to Hub: " + e);

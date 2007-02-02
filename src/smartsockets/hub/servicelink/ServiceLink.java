@@ -14,11 +14,13 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import smartsockets.Properties;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
 import smartsockets.hub.connections.VirtualConnectionIndex;
+import smartsockets.util.TypedProperties;
 
 public class ServiceLink implements Runnable {
     
@@ -34,9 +36,12 @@ public class ServiceLink implements Runnable {
 
     private static final int DEFAULT_CREDITS = 100;
            
-    private final HashMap<String, Object> callbacks= 
+    private final HashMap<String, Object> callbacks = 
         new HashMap<String, Object>();
-           
+ 
+    private final HashMap<Integer, Object> infoRequests = 
+        new HashMap<Integer, Object>();
+    
     private final DirectSocketFactory factory;
     private final SocketAddressSet myAddress; 
     
@@ -63,6 +68,9 @@ public class ServiceLink implements Runnable {
     private final HashMap<Long, String []> connectionACKs = 
         new HashMap<Long, String []>();
    
+    private int sendBuffer = -1;
+    private int receiveBuffer = -1;
+        
     // Some statistics
     private long incomingConnections;
     private long acceptedIncomingConnections;
@@ -86,11 +94,15 @@ public class ServiceLink implements Runnable {
     private long lastStatsPrint = 0;
         
     private ServiceLink(SocketAddressSet hubAddress, 
-            SocketAddressSet myAddress, int credits) throws IOException { 
+            SocketAddressSet myAddress, int credits, int sendBuffer, 
+            int receiveBuffer) throws IOException { 
         
         factory = DirectSocketFactory.getSocketFactory();
         
         this.maxCredits = credits;
+        this.sendBuffer = sendBuffer;
+        this.receiveBuffer = receiveBuffer;
+        
         this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;              
                
@@ -112,10 +124,17 @@ public class ServiceLink implements Runnable {
         
         callbacks.put(identifier, callback);              
     }
-    
-    protected synchronized void register(String identifier, 
-            SimpleCallBack cb) { 
         
+    protected synchronized Object findCallback(String identifier) {         
+        return callbacks.get(identifier);        
+    }
+    
+    protected synchronized void removeCallback(String identifier) {         
+        callbacks.remove(identifier);        
+    }
+    
+    protected synchronized void registerInfoRequest(Integer identifier) {
+            
         if (callbacks.containsKey(identifier)) { 
             logger.warn("ServiceLink: refusing to override simple callback " 
                     + identifier, new Exception());
@@ -123,15 +142,55 @@ public class ServiceLink implements Runnable {
             return;
         }
         
-        callbacks.put(identifier, cb);        
+        infoRequests.put(identifier, null);        
     }
     
-    protected synchronized Object findCallback(String identifier) {         
-        return callbacks.get(identifier);        
+    protected synchronized void removeInfoRequest(Integer identifier) {         
+        infoRequests.remove(identifier);        
     }
     
-    protected synchronized void removeCallback(String identifier) {         
-        callbacks.remove(identifier);        
+    protected synchronized void storeInfoReply(Integer identifier, Object value) {
+        
+        if (infoRequests.containsKey(identifier)) { 
+            infoRequests.put(identifier, value);
+            notifyAll();
+        } else { 
+            if (logger.isInfoEnabled()) { 
+                logger.info("Dropped info reply for: " + identifier 
+                        + " (" + value + ")");
+            }
+        }
+    }
+    
+    
+    protected synchronized Object getInfoReply(Integer identifier) {
+        
+        Object result = infoRequests.get(identifier);
+        
+        while (result == null) { 
+            try { 
+                wait();
+            } catch (InterruptedException e) {
+                // ignore
+            }
+
+            result = infoRequests.get(identifier);
+        }
+        
+        infoRequests.remove(identifier);
+        
+        return result;
+    }
+    
+    protected boolean getInfoReply(Integer identifier, int value) {
+        
+        Object result = getInfoReply(identifier);
+            
+        if (result instanceof Integer) { 
+            return ((Integer) result).intValue() == value;
+        }
+                
+        return false;
     }
     
     private synchronized void setConnected(boolean value) {
@@ -180,11 +239,10 @@ public class ServiceLink implements Runnable {
     private void connectToHub(SocketAddressSet address) throws IOException { 
         try {
             // Create a connection to the hub
-            hub = factory.createSocket(address, TIMEOUT, null);
-            
+            hub = factory.createSocket(address, TIMEOUT, 0, sendBuffer, 
+                    receiveBuffer, null, false, 0);
+
             hub.setTcpNoDelay(true);
-            hub.setSendBufferSize(16*1024*1024);
-            hub.setReceiveBufferSize(16*1024*1024);
             
             if (logger.isInfoEnabled()) {
                 logger.info("Service link send buffer = " + hub.getSendBufferSize());
@@ -232,11 +290,28 @@ public class ServiceLink implements Runnable {
                            
     private void handleMessage() throws IOException { 
         
-        String source = in.readUTF();        
-        String sourceHub = in.readUTF();                
+        SocketAddressSet source = SocketAddressSet.read(in);        
+        SocketAddressSet sourceHub = SocketAddressSet.read(in);                        
         String targetModule = in.readUTF();
-        int opcode = in.readInt();
-        String message = in.readUTF();
+        int opcode = in.readInt();        
+        int bytes = in.readInt();
+        
+        byte [][] message = null;
+        
+        if (bytes > 0) {
+            int len = in.readInt();            
+            message = new byte[len][];
+            
+            for (int i=0;i<len;i++) { 
+                
+                int tmp = in.readInt();
+                message[i] = new byte[tmp];
+                
+                if (tmp > 0) { 
+                    in.readFully(message[i]);
+                }
+            }
+        }
             
         if (logger.isInfoEnabled()) {
             logger.info("ServiceLink: Received message for " + targetModule);
@@ -247,14 +322,7 @@ public class ServiceLink implements Runnable {
         if (target == null) { 
             logger.warn("ServiceLink: Callback " + targetModule + " not found");                                       
         } else { 
-            SocketAddressSet src = SocketAddressSet.getByAddress(source);
-            SocketAddressSet srcHub = null;
-            
-            if (sourceHub != null && sourceHub.length() > 0) { 
-                srcHub = SocketAddressSet.getByAddress(sourceHub);
-            }
-            
-            target.gotMessage(src, srcHub, opcode, message);
+            target.gotMessage(source, sourceHub, opcode, message);
         } 
         
         incomingMetaMessages++;
@@ -262,11 +330,11 @@ public class ServiceLink implements Runnable {
 
     private void handleInfo() throws IOException { 
         
-        String targetID = in.readUTF();        
+        int id = in.readInt();        
         int count = in.readInt();        
         
         if (logger.isInfoEnabled()) {
-            logger.info("ServiceLink: Received info for " + targetID + ". " 
+            logger.info("ServiceLink: Received info for " + id + ". " 
                     + " Receiving " + count + " strings....");
         }
         
@@ -283,15 +351,22 @@ public class ServiceLink implements Runnable {
             logger.info("done receiving info");
         }
         
-        SimpleCallBack target = (SimpleCallBack) findCallback(targetID);
-            
-        if (target == null) { 
-            logger.warn("ServiceLink: Callback " + targetID + " not found");                                       
-        } else {             
-            target.storeReply(info);
-        }
+        storeInfoReply(id, info);
     }
-    
+
+    private void handlePropertyAck() throws IOException { 
+        
+        int id = in.readInt();        
+        int value = in.readInt();        
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("ServiceLink: Received property ack for " + id + " " 
+                    + " (" + value + ")");
+        }
+
+        storeInfoReply(id, value);
+    }
+   
     private void handleIncomingConnection() throws IOException { 
 
         incomingConnections++;
@@ -608,6 +683,11 @@ public class ServiceLink implements Runnable {
                 case ServiceLinkProtocol.INFO:
                     handleInfo();
                     break;
+                
+                case ServiceLinkProtocol.PROPERTY_ACK:
+                    handlePropertyAck();
+                    break;
+                
                     
                 default:                     
                     logger.warn("ServiceLink: Received unknown opcode!: " 
@@ -623,10 +703,10 @@ public class ServiceLink implements Runnable {
             }               
         }               
     }
-        
+    
     public void send(SocketAddressSet target, 
             SocketAddressSet targetHub, String targetModule, int opcode, 
-            String message) { 
+            byte [][] message) {
 
         if (!connected) {
             if (logger.isInfoEnabled()) {
@@ -643,17 +723,41 @@ public class ServiceLink implements Runnable {
         try { 
             synchronized (out) {
                 out.write(ServiceLinkProtocol.MESSAGE);
-                out.writeUTF(target.toString());
-            
-                if (targetHub != null) { 
-                    out.writeUTF(targetHub.toString());                   
-                } else { 
-                    out.writeUTF("");
-                }
+                
+                SocketAddressSet.write(target, out);
+                SocketAddressSet.write(targetHub, out); // may be null
                 
                 out.writeUTF(targetModule);
                 out.writeInt(opcode);
-                out.writeUTF(message);
+                
+                if (message == null) { 
+                    out.writeInt(0);
+                } else { 
+                    
+                    int totalBytes = 4;
+                    
+                    for (byte [] b : message) {                        
+                        
+                        totalBytes += 4;
+                        
+                        if (b != null) { 
+                            totalBytes += b.length;
+                        }
+                    }
+                        
+                    out.writeInt(totalBytes);
+                    out.writeInt(message.length);
+                    
+                    for (byte [] b : message) { 
+                        if (b == null) { 
+                            out.writeInt(0);
+                        } else { 
+                            out.writeInt(b.length);
+                            out.write(b);
+                        }
+                    }                    
+                }
+
                 out.flush();
             }
         } catch (IOException e) {
@@ -663,6 +767,14 @@ public class ServiceLink implements Runnable {
         
         outgoingMetaMessages++;
     }
+    /*
+    public void send(SocketAddressSet target, 
+            SocketAddressSet targetHub, String targetModule, int opcode, 
+            String message) { 
+        
+        send(target, targetHub, targetModule, opcode, 
+                new byte [][] { message.getBytes() });
+    }*/
     
     private synchronized int getNextSimpleCallbackID() { 
         return nextCallbackID++;
@@ -711,27 +823,26 @@ public class ServiceLink implements Runnable {
     
         waitConnected(maxWaitTime); 
         
-        String id = "GetClientsForHub" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
     
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.CLIENTS_FOR_HUB);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.writeUTF(hub.toString());
                 out.writeUTF(tag);                
                 out.flush();            
             }
             
-            return convertToClientInfo((String []) tmp.getReply());        
+            return convertToClientInfo((String []) getInfoReply(id));        
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");            
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
     
@@ -747,26 +858,25 @@ public class ServiceLink implements Runnable {
         
         waitConnected(maxWaitTime);
         
-        String id = "GetAllClients" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
                 
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.ALL_CLIENTS);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.writeUTF(tag);
                 out.flush();            
             }
             
-            return convertToClientInfo((String []) tmp.getReply());        
+            return convertToClientInfo((String []) getInfoReply(id));        
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");            
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
    
@@ -779,27 +889,26 @@ public class ServiceLink implements Runnable {
         
         waitConnected(maxWaitTime);
                 
-        String id = "GetHubs" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
                 
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.HUBS);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.flush();            
             } 
-            
-            String [] reply = (String []) tmp.getReply();        
-            return SocketAddressSet.convertToSocketAddressSet(reply);        
+
+            return SocketAddressSet.convertToSocketAddressSet(
+                    (String []) getInfoReply(id));        
                         
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
 
@@ -811,26 +920,25 @@ public class ServiceLink implements Runnable {
         
         waitConnected(maxWaitTime);        
         
-        String id = "GetHubDetails" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
                 
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.HUB_DETAILS);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.flush();            
             } 
             
-            return convertToHubInfo((String []) tmp.getReply());
+            return convertToHubInfo((String []) getInfoReply(id));
                         
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
 
@@ -843,28 +951,26 @@ public class ServiceLink implements Runnable {
             logger.info("Requesting direction to client " + client + " from hub");
         }
         
-        String id = "GetDirection" + getNextSimpleCallbackID();
-        
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        Integer id = getNextSimpleCallbackID();        
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.DIRECTION);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.writeUTF(client);
                 out.flush();            
             } 
             
-            String [] reply = (String []) tmp.getReply();        
-            return SocketAddressSet.convertToSocketAddressSet(reply);        
+            return SocketAddressSet.convertToSocketAddressSet(
+                    (String []) getInfoReply(id));        
                         
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
 
@@ -1174,28 +1280,26 @@ public class ServiceLink implements Runnable {
        
         waitConnected(maxWaitTime);
         
-        String id = "RegisterInfo" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
         
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.REGISTER_PROPERTY);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.writeUTF(tag);
                 out.writeUTF(value);
                 out.flush();            
             } 
 
-            String [] reply = (String []) tmp.getReply();            
-            return reply != null && reply.length == 1 && reply[0].equals("OK");
+            return getInfoReply(id, ServiceLinkProtocol.PROPERTY_ACCEPTED);
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
 
@@ -1211,28 +1315,26 @@ public class ServiceLink implements Runnable {
        
         waitConnected(maxWaitTime);
         
-        String id = "UpdateInfo" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
         
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.UPDATE_PROPERTY);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.writeUTF(tag);
                 out.writeUTF(value);
                 out.flush();            
             } 
 
-            String [] reply = (String []) tmp.getReply();            
-            return reply != null && reply.length == 1 && reply[0].equals("OK");
+            return getInfoReply(id, ServiceLinkProtocol.PROPERTY_ACCEPTED);
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
 
@@ -1244,27 +1346,25 @@ public class ServiceLink implements Runnable {
         
         waitConnected(maxWaitTime);
         
-        String id = "RemoveInfo" + getNextSimpleCallbackID();
+        Integer id = getNextSimpleCallbackID();
         
-        SimpleCallBack tmp = new SimpleCallBack();        
-        register(id, tmp);
+        registerInfoRequest(id);
         
         try {
             synchronized (out) {         
                 out.write(ServiceLinkProtocol.REMOVE_PROPERTY);
-                out.writeUTF(id);
+                out.writeInt(id);
                 out.writeUTF(tag);
                 out.flush();            
             } 
-
-            String [] reply = (String []) tmp.getReply();            
-            return reply != null && reply.length == 1 && reply[0].equals("OK");
+            
+            return getInfoReply(id, ServiceLinkProtocol.PROPERTY_ACCEPTED);            
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
         } finally { 
-            removeCallback(id);
+            removeInfoRequest(id);
         }
     }
         
@@ -1337,8 +1437,8 @@ public class ServiceLink implements Runnable {
         
     }
 
-    public static ServiceLink getServiceLink(SocketAddressSet address, 
-            SocketAddressSet myAddress, int maxCredits) { 
+    public static ServiceLink getServiceLink(TypedProperties p, 
+            SocketAddressSet address, SocketAddressSet myAddress) { 
 
         // TODO: cache service linkes here ? Shared a link between multiple 
         // clients that use the same hub ?  
@@ -1351,12 +1451,26 @@ public class ServiceLink implements Runnable {
             throw new NullPointerException("Local address is null!");
         }
         
-        if (maxCredits <= 0) { 
-            maxCredits = DEFAULT_CREDITS;
+        int maxCredits = DEFAULT_CREDITS;
+        int sendBuffer = -1; 
+        int receiveBuffer = -1; 
+        
+        if (p != null) { 
+            maxCredits = p.getIntProperty(Properties.SL_CREDITS, 
+                    DEFAULT_CREDITS);
+            
+            if (maxCredits <= 0) { 
+                maxCredits = DEFAULT_CREDITS;
+            }
+        
+            sendBuffer = p.getIntProperty(Properties.SL_SEND_BUFFER, -1);
+            receiveBuffer = p.getIntProperty(Properties.SL_RECEIVE_BUFFER, -1);            
         }
         
         try { 
-            return new ServiceLink(address, myAddress, maxCredits);                 
+            return new ServiceLink(address, myAddress, maxCredits, sendBuffer, 
+                    receiveBuffer);
+            
         } catch (Exception e) {
             logger.warn("ServiceLink: Failed to connect to hub!", e);
             return null;

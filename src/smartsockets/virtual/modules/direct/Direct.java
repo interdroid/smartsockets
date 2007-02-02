@@ -18,7 +18,6 @@ import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.modules.AbstractDirectModule;
 
 public class Direct extends AbstractDirectModule {
-    
 
     protected static final byte ACCEPT              = 1;
     protected static final byte PORT_NOT_FOUND      = 2;
@@ -28,6 +27,9 @@ public class Direct extends AbstractDirectModule {
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
     
+    private int defaultSendBuffer;
+    private int defaultReceiveBuffer;
+        
     private class AcceptThread extends Thread { 
         
         AcceptThread() { 
@@ -67,9 +69,12 @@ public class Direct extends AbstractDirectModule {
         TypedProperties p = Properties.getDefaultProperties();
         
         int backlog = p.getIntProperty(Properties.DIRECT_BACKLOG);
+        
+        defaultReceiveBuffer = p.getIntProperty(Properties.DIRECT_RECEIVE_BUFFER, -1);
+        defaultSendBuffer = p.getIntProperty(Properties.DIRECT_SEND_BUFFER, -1);
                 
         // Create a server socket to accept incoming connections. 
-        HashMap prop = new HashMap();
+        HashMap <String, String> prop = new HashMap<String, String>(3);
         prop.put("PortForwarding", "yes");
         prop.put("ForwardingMayFail", "yes");
         prop.put("SameExternalPort", "no");
@@ -79,7 +84,8 @@ public class Direct extends AbstractDirectModule {
                 logger.debug(module + ": Creating ServerSocket on port " + port);
             }
                         
-            server = direct.createServerSocket(port, backlog, prop);
+            server = direct.createServerSocket(port, backlog, 
+                    defaultReceiveBuffer, prop);
 
             if (logger.isInfoEnabled()) {
                 logger.info(module + ": ServerSocket created: "
@@ -209,9 +215,27 @@ public class Direct extends AbstractDirectModule {
         
         DirectSocket s = null;
 
+        int sendBuffer = defaultSendBuffer;
+        int receiveBuffer = defaultReceiveBuffer;
+                
+        if (properties != null) {
+            
+            Integer tmp = (Integer) properties.get("sendbuffer");
+        
+            if (tmp != null) { 
+                sendBuffer = tmp;
+            } 
+        
+            tmp = (Integer) properties.get("receivebuffer");
+            
+            if (tmp != null) { 
+                receiveBuffer = tmp;
+            } 
+        }        
+        
         try { 
-            s = direct.createSocket(target.machine(), timeout, properties, 
-                    target.port());
+            s = direct.createSocket(target.machine(), timeout, 0, sendBuffer, 
+                    receiveBuffer, properties, false, target.port());
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            
