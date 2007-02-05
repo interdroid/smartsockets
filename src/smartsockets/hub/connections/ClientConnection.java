@@ -32,6 +32,8 @@ public class ClientConnection extends MessageForwardingConnection {
         ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
     
     private final SocketAddressSet clientAddress;
+    private final SocketAddressSet hubAddress;
+    
     private final String clientAddressAsString;
     
     private final String uniquePrefix;
@@ -43,8 +45,10 @@ public class ClientConnection extends MessageForwardingConnection {
      
         super(s, in, out, connections, hubs, vcs, false, "Client(" + clientAddress.toString() + ")");        
      
-        this.clientAddress = clientAddress;
+        this.clientAddress = clientAddress;        
         this.clientAddressAsString = clientAddress.toString();
+        
+        this.hubAddress = knownHubs.getLocalDescription().hubAddress;
         
         this.uniquePrefix = clientAddressAsString + "__";
         
@@ -56,119 +60,8 @@ public class ClientConnection extends MessageForwardingConnection {
     protected String getUniqueID(long index) {
         return uniquePrefix + index;
     }
-        
-    protected void forwardVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet target, SocketAddressSet targetHub, String info, 
-            int timeout, long index) { 
-        
-        // TODO: Should be asynchronous ???
-        
-        // forward the ACK
-        try {
-            synchronized (out) {
-                out.write(ServiceLinkProtocol.CREATE_VIRTUAL);           
-                out.writeUTF(source.toString());
-                out.writeUTF(info);
-                out.writeInt(timeout);
-                out.writeLong(index);     
-                out.flush();
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            handleDisconnect();
-        }       
-    }
-    
-    protected void forwardVirtualConnectAck(long index, String result, 
-            String info) { 
-        
-        // TODO: Should be asynchronous ???
-        
-        // forward the ACK
-        try {
-            synchronized (out) {
-                out.write(ServiceLinkProtocol.CREATE_VIRTUAL_ACK);           
-                out.writeLong(index);     
-                out.writeUTF(result);
-                out.writeUTF(info);
-                out.flush();
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            handleDisconnect();
-        }        
-    }
-     
-    protected void forwardVirtualClose(long index) { 
-
-        // TODO: Should be asynchronous ???
-        
-        if (vclogger.isInfoEnabled()) {                                   
-            vclogger.info("CLIENT Sending closing connection: " + index);
-        }    
-        // forward the close
-        try {
-            synchronized (out) {
-                out.write(ServiceLinkProtocol.CLOSE_VIRTUAL);           
-                out.writeLong(index);            
-                out.flush();
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            handleDisconnect();
-        }
-    }
-    
-    protected void forwardVirtualMessage(long index, byte [] data) {
-        
-        // TODO: Should be asynchronous ???
-        
-        // forward the message
-        try {
-            synchronized (out) {
-                out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL);           
-                out.writeLong(index);
-                out.writeInt(data.length);
-                out.write(data);
-                out.flush();                
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            handleDisconnect();
-        }        
-    }
-    
-    protected void forwardVirtualMessageAck(long index) { 
-
-        // TODO: Should be asynchronous ???
-        
-        // forward the message ack
-        try {
-            synchronized (out) {
-                out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
-                out.writeLong(index);
-                out.flush();                
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            handleDisconnect();
-        }        
-    }
-    
-    private void handleMessage() throws IOException { 
-        // Read the message
-        
-        ClientMessage cm = new ClientMessage(clientAddress, 
-                knownHubs.getLocalDescription().hubAddress, 0, in);
-        
-        if (meslogger.isDebugEnabled()) {
-            meslogger.debug("Incoming message: " + cm);
-        }
-        
-        forward(cm, true);
-    } 
                 
-    private void handleDisconnect() {
+    protected void handleDisconnect(Exception e) {
         
         if (knownHubs.getLocalDescription().removeClient(clientAddress)) {
             if (conlogger.isDebugEnabled()) {
@@ -186,7 +79,7 @@ public class ClientConnection extends MessageForwardingConnection {
         closeAllVirtualConnections(uniquePrefix);
     } 
     
-    protected synchronized boolean sendMessage(ClientMessage m) {  
+/*    protected synchronized boolean sendMessage(ClientMessage m) {  
         
         try { 
             out.write(ServiceLinkProtocol.MESSAGE);            
@@ -199,7 +92,8 @@ public class ClientConnection extends MessageForwardingConnection {
             return false;                
         }
     }
-        
+  */
+    
     private void handleListHubs() throws IOException { 
         
         int id = in.readInt();
@@ -438,105 +332,20 @@ public class ClientConnection extends MessageForwardingConnection {
             out.flush();
         }
     } 
-           
-    private void handleCreateVirtualConnection() throws IOException { 
-        
-        long index = in.readLong();
-        int timeout = in.readInt();
-        
-        String target = in.readUTF();
-        String targetHub = in.readUTF();
-        
-        String info = in.readUTF();        
-        
-        if (vclogger.isInfoEnabled()) {
-            vclogger.info("Connection " + clientAddress 
-                    + " creating virtual connection " + 
-                    index + " to " + target);
-        }
-        
-
-        SocketAddressSet hub = null;
-        
-        if (targetHub.length() > 0) { 
-            try { 
-                hub = SocketAddressSet.getByAddress(targetHub);
-            } catch (Exception e) {
-                // ignore -- not critical
-            }
-        }
-      
-        processVirtualConnect(index, clientAddress, 
-                SocketAddressSet.getByAddress(target), hub, info, timeout);
-    
-    } 
-    
-    private void handleCreateVirtualConnectionACK() throws IOException { 
-        
-        long index = in.readLong();
-        String result = in.readUTF();
-        String info = in.readUTF();
-        
-        if (vclogger.isDebugEnabled()) {
-            vclogger.debug("Got reply to VC: " + index + " " + result + " " + info);
-        }
-    
-        processVirtualConnectACK(index, result, info);
-    } 
-    
-    private void handleCloseVirtualConnection() throws IOException { 
-
-        long vc = in.readLong();
-                       
-        if (vclogger.isInfoEnabled()) {                        
-            vclogger.info("CLIENT got request to close connection: " + vc); 
-        }
-        
-        closeVirtualConnection(vc);
-     
-        if (vclogger.isInfoEnabled()) {                        
-            vclogger.info("CLIENT connection: " + vc + " handler finished"); 
-        }
-    } 
-    
-    private void handleForwardVirtualMessage() throws IOException {
-    
-        long vc = in.readLong();
-        int size = in.readInt();
-        
-        // TODO: optimize!
-        byte [] data = new byte[size];        
-        in.readFully(data);
-                      
-        processMessage(vc, data);
-    }
-    
-    private void handleForwardVirtualMessageAck() throws IOException {
-        processMessageACK(in.readLong());
-    }
         
     protected String getName() {
         return "ClientConnection(" + clientAddress + ")";
     }
 
-    protected boolean runConnection() {           
+    protected boolean handleOpcode(int opcode) {           
                      
         try { 
-            int opcode = in.read();
-
             switch (opcode) { 
-            case ServiceLinkProtocol.MESSAGE:
-                if (meslogger.isDebugEnabled()) {
-                    meslogger.debug("Connection " + clientAddress + " got message");
-                }                     
-                handleMessage();
-                return true;
-                
             case ServiceLinkProtocol.DISCONNECT:
                 if (conlogger.isDebugEnabled()) {
                     conlogger.debug("Connection " + clientAddress + " disconnecting");
                 } 
-                handleDisconnect();
+                handleDisconnect(null);
                 return false;
             
             case ServiceLinkProtocol.HUBS:
@@ -602,59 +411,18 @@ public class ClientConnection extends MessageForwardingConnection {
                 }
                 handleRemoveProperty();
                 return true;
-            
-            case ServiceLinkProtocol.CREATE_VIRTUAL:
-                if (reglogger.isDebugEnabled()) {
-                    reglogger.debug("Connection " + clientAddress + " requests" 
-                            + " setup of virtual connection");
-                }
-                handleCreateVirtualConnection();
-                return true;
-          
-            case ServiceLinkProtocol.CREATE_VIRTUAL_ACK:
-                if (reglogger.isDebugEnabled()) {
-                    reglogger.debug("Connection " + clientAddress + " replied" 
-                            + " to virtual connection setup");
-                }
-                handleCreateVirtualConnectionACK();                
-                return true;                        
-                          
-            case ServiceLinkProtocol.CLOSE_VIRTUAL:
-                if (reglogger.isDebugEnabled()) {
-                    reglogger.debug("Connection " + clientAddress + " requests" 
-                            + " close of virtual connection");
-                }
-                handleCloseVirtualConnection();
-                return true;            
-            
-            case ServiceLinkProtocol.MESSAGE_VIRTUAL:
-                if (reglogger.isDebugEnabled()) {
-                    reglogger.debug("Connection " + clientAddress + " sends" 
-                            + " message over virtual connection");
-                }
-                handleForwardVirtualMessage();
-                return true;                        
-            
-            case ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK:
-                if (reglogger.isDebugEnabled()) {
-                    reglogger.debug("Connection " + clientAddress + " sends" 
-                            + " ack over virtual connection");
-                }               
-                handleForwardVirtualMessageAck();
-                return true;                        
-            
                 
             default:
                 conlogger.warn("Connection " + clientAddress 
                         + " got unknown " + "opcode " + opcode 
                         + " -- disconnecting");
-                handleDisconnect();
+                handleDisconnect(null);
                 return false;                
             } 
             
         } catch (Exception e) { 
             conlogger.warn("Connection to " + clientAddress + " is broken!", e);
-            handleDisconnect();
+            handleDisconnect(e);
         }
         
         return false;

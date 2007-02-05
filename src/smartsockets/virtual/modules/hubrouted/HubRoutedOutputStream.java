@@ -7,12 +7,15 @@ public class HubRoutedOutputStream extends OutputStream {
 
     private final HubRoutedVirtualSocket parent; 
     
-    private final byte [] buffer;    
+    private final byte [] buffer;
+    private final int size;
+        
     private int used = 0;
     private boolean closed = false;
         
-    HubRoutedOutputStream(HubRoutedVirtualSocket parent, int size) { 
+    HubRoutedOutputStream(HubRoutedVirtualSocket parent, int size) {        
         this.parent = parent;
+        this.size = size;
         buffer = new byte[size];
     }
         
@@ -33,29 +36,36 @@ public class HubRoutedOutputStream extends OutputStream {
         
         while (len > 0) { 
         
-            int space = buffer.length-used;
-            
+            int space = size-used;
+        
+            // Data is smaller than space
             if (len <= space) {
-                
-                //System.err.println("OutputStream has enough space: " + len 
-                  //      + "(" + space + ")");
-                
                 System.arraycopy(b, off, buffer, used, len);            
                 used += len;             
                 return;
             } 
-         
-  ///          System.err.println("OutputStream has not enough space: " + len 
-                    //+ "(" + space + ")");
-                        
-            System.arraycopy(b, off, buffer, used, space);        
+                
+            // Data is larger than space, and there is some data in buffer
+            if (used != 0) { 
+                System.arraycopy(b, off, buffer, used, space);        
             
-            used = buffer.length;
+                used = buffer.length;
             
-            len -= space;
-            off += space;
-                    
-            flush();
+                len -= space;
+                off += space;
+                
+                flush();
+            } 
+            
+            // Rest of the data is larger than buffer 
+            while (len > size) {
+                
+                // Directly copy the user data
+                parent.flush(b, off, size);
+                
+                off += size; 
+                len -= size;
+            }
         }
     }
     

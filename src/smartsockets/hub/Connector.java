@@ -53,19 +53,19 @@ class Connector extends CommunicationThread {
             hconlogger.debug("Sending connection request");
         }
                 
-        out.write(HubProtocol.CONNECT);
+        out.write(ConnectionProtocol.HUB_CONNECT);
         out.writeUTF(localAsString);
         out.flush();
 
         int opcode = in.read();
 
         switch (opcode) {
-        case HubProtocol.CONNECTION_ACCEPTED:
+        case ConnectionProtocol.HUB_CONNECTION_ACCEPTED:
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.debug("Connection request accepted");
             }
             return true;
-        case HubProtocol.CONNECTION_REFUSED:
+        case ConnectionProtocol.HUB_CONNECTION_REFUSED:
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.debug("Connection request refused (duplicate)");
             }
@@ -99,7 +99,7 @@ class Connector extends CommunicationThread {
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
-            out.write(HubProtocol.PING);
+            out.write(ConnectionProtocol.PING);
             out.writeUTF(localAsString);
             out.flush();            
             
@@ -198,7 +198,7 @@ class Connector extends CommunicationThread {
                     }
                     
                     // never mind...
-                    out.write(HubProtocol.PING);
+                    out.write(ConnectionProtocol.PING);
                     out.writeUTF(localAsString);
                     out.flush();
                 } else {

@@ -31,7 +31,16 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     
     private boolean closeInPending = false;
 
-    protected HubRoutedVirtualSocket(Hubrouted parent, 
+    private final int localFragmentation; 
+    private final int localBufferSize; 
+    
+    private final int remoteFragmentation; 
+    private final int remoteBufferSize; 
+        
+    private int remoteBufferFree;
+    
+    protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
+            int localBufferSize, int remoteFragmentation, int remoteBufferSize,  
             VirtualSocketAddress target, ServiceLink serviceLink, 
             long connectionIndex, Map p) {        
         
@@ -40,8 +49,14 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         this.parent = parent;
         this.serviceLink = serviceLink;
         this.connectionIndex = connectionIndex;
-    
-        this.out = new HubRoutedOutputStream(this, 64*1024);
+        
+        this.localFragmentation = localFragmentation;        
+        this.localBufferSize = localBufferSize;
+                
+        this.remoteFragmentation = remoteFragmentation;
+        this.remoteBufferSize = remoteBufferSize;
+                
+        this.out = new HubRoutedOutputStream(this, remoteFragmentation);
         this.in = new HubRoutedInputStream(this);            
     }
    
@@ -258,7 +273,10 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
 
     public synchronized void message(byte[] data) {
         incoming.addLast(data);
-        notifyAll();
+        
+        if (incoming.size() == 1) { 
+            notifyAll();
+        }
     }
     
     private synchronized byte [] getBuffer(int timeout) throws IOException { 
@@ -279,7 +297,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
                     timeleft = (int) (endTime - System.currentTimeMillis()); 
                 
                     if (timeleft <= 0) { 
-                        throw new SocketTimeoutException("Failed to receive data in time");
+                        throw new SocketTimeoutException("Failed to receive " +
+                                "data in time");
                     }
                 }
                 

@@ -9,7 +9,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import javax.print.attribute.standard.Severity;
+
+import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.servicelink.VirtualConnectionCallBack;
 import smartsockets.util.FixedSizeHashSet;
 import smartsockets.util.TypedProperties;
@@ -21,26 +25,46 @@ import smartsockets.virtual.modules.ConnectModule;
 
 public class Hubrouted extends ConnectModule 
     implements VirtualConnectionCallBack {
-
+    
     private static final int DEFAULT_TIMEOUT = 5000;   
     
     private final HashMap<Long, HubRoutedVirtualSocket> sockets = 
         new HashMap<Long, HubRoutedVirtualSocket>();
     
-    private ArrayList<Long> [] debug = new ArrayList[] { 
-            new ArrayList<Long>(), new ArrayList<Long>(), new ArrayList<Long>(), 
-            new ArrayList<Long>(), new ArrayList<Long>(), new ArrayList<Long>()
-    };
-    
     private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 10000;   
     private final FixedSizeHashSet<Long> closedSockets = 
         new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE);
+    
+    private int localFragmentation = 64*1024;
+    private int localBufferSize = 1024*1024;
     
     public Hubrouted() {
         super("ConnectModule(HubRouted)", true);
     }
 
     public void initModule(TypedProperties properties) throws Exception {
+        localFragmentation = properties.getIntProperty(Properties.ROUTED_FRAGMENT, 
+                localFragmentation);
+        
+        localBufferSize = properties.getIntProperty(Properties.ROUTED_BUFFER, 
+                localBufferSize);
+        
+        if (localFragmentation > localBufferSize) { 
+            localFragmentation = localBufferSize;            
+            // TODO: print warning!
+        } else if (localFragmentation < localBufferSize) { 
+            
+            // Make sure that the fragmentation fits into the buffer a integral 
+            // number of times!
+            int mod = localBufferSize % localFragmentation;
+            
+            if (mod != 0) { 
+                int div = localBufferSize / localFragmentation;                
+                localBufferSize = (div+1) * localFragmentation;                
+            }
+        }
+        
+        // fragmentation -= 16; // leave some space for the headers...        
     }
 
     public void startModule() throws Exception {
@@ -88,7 +112,8 @@ public class Hubrouted extends ConnectModule
             // As soon as we get an index back we create the socket. Otherwise 
             // there may be a race between the accept being handled and the 
             // receipt of the first message...
-            s = new HubRoutedVirtualSocket(this, target, serviceLink, index, null);
+            s = new HubRoutedVirtualSocket(this, localFragmentation, 
+                    localBufferSize, -1, -1, target, serviceLink, index, null);
             
             synchronized (this) {
                 sockets.put(index, s);
@@ -98,7 +123,8 @@ public class Hubrouted extends ConnectModule
                 outgoingConnectionAttempts++;
                 
                 serviceLink.createVirtualConnection(index, tm, hub, 
-                        Integer.toString(target.port()), timeout);
+                        target.port(), localFragmentation, localBufferSize, 
+                        timeout);
             
                 acceptedOutgoingConnections++;
                 
@@ -170,48 +196,38 @@ public class Hubrouted extends ConnectModule
         return true;
     }
 
-    public boolean connect(SocketAddressSet src, String info, int timeout, 
+    public void connect(SocketAddressSet src, SocketAddressSet srcHub, int port,
+            int remoteFragmentation, int remoteBufferSize, int timeout, 
             long index) {
 
-        debug[0].add(index);
-        
-        // Incoming connect, find the port...        
-        int port = -1;
-        
+        // Incoming connection...        
         incomingConnections++;
         
-        try {         
-            port = Integer.parseInt(info);
-        } catch (Exception e) {
-            logger.info("Failed to parse port of incoming connection!");
-            failedIncomingConnections++;
-            return false;
-        }
-        
-        debug[1].add(index);
-                
         // Get the serversocket (if it exists). 
         VirtualServerSocket ss = parent.getServerSocket(port);
         
+        // Could not find it, so send a 'port not found' error back
         if (ss == null) { 
             logger.info("Failed find VirtualServerSocket(" + port + ")");
             rejectedIncomingConnections++;
-            return false;
+
+            serviceLink.nackVirtualConnection(index, 
+                    ServiceLinkProtocol.ERROR_PORT_NOT_FOUND);            
+            return;
         }
-        
-        debug[2].add(index);
         
         if (logger.isInfoEnabled()) { 
             logger.info("Hubrouted got new connection: " + index);
         }
+
+        // Create a new socket 
+        VirtualSocketAddress sa = new VirtualSocketAddress(src, 0, srcHub, null);
         
-        VirtualSocketAddress sa = new VirtualSocketAddress(src, 0);
-        
-        HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, sa, 
-                serviceLink, index, null);
+        HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, 
+                localFragmentation, localBufferSize, remoteFragmentation, 
+                remoteBufferSize, sa, serviceLink, index, null);
         
         synchronized (this) {            
-            debug[3].add(index);            
             sockets.put(index, s);
         }
                 
@@ -221,10 +237,11 @@ public class Hubrouted extends ConnectModule
             }               
                 
             rejectedIncomingConnections++;
-            return false;            
+            serviceLink.nackVirtualConnection(index, 
+                    ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);
         } else {
-            acceptedIncomingConnections++;          
-            return true;
+            acceptedIncomingConnections++;
+            serviceLink.ackVirtualConnection(index, localFragmentation, localBufferSize); 
         }
     }
 
@@ -237,11 +254,7 @@ public class Hubrouted extends ConnectModule
         
             if (!closedSockets.contains(vc)) {
                 logger.warn("BAD!! Got disconnect from an unknown remote " 
-                        + "socket!: " + vc 
-                        + " " + debug[0].contains(vc)
-                        + " " + debug[1].contains(vc)
-                        + " " + debug[2].contains(vc)
-                        + " " + debug[3].contains(vc));                
+                        + "socket!: " + vc);                                        
             }
             
             return;
@@ -289,27 +302,12 @@ public class Hubrouted extends ConnectModule
                 // This can happen if we have just been closed by the other side...
                 if (!closedSockets.contains(vc)) { 
                     logger.warn("BAD!! Got close for an unknown local socket!: " 
-                            + vc + " (" + closedSockets.size() + ") "
-                            + " " + debug[0].contains(vc)
-                            + " " + debug[1].contains(vc)
-                            + " " + debug[2].contains(vc)
-                            + " " + debug[3].contains(vc)
-                            + " " + debug[4].contains(vc));                
-
-                    System.err.println("remove = " + vc);
-                    System.err.println("debug[3] = " + debug[3]);                    
-                    System.err.println("debug[4] = " + debug[4]);
-                    
-                    new Exception().printStackTrace(System.err);
-                    
-                    System.exit(1);
+                            + vc + " (" + closedSockets.size() + ")");
                 }
             
                 return;
             } 
-            
-            debug[4].add(vc);            
-            
+
             closedSockets.add(vc);
         }
         

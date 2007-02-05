@@ -17,8 +17,9 @@ public abstract class BaseConnection implements Runnable {
     protected final DataOutputStream out; 
     
     protected Map<SocketAddressSet, BaseConnection> connections;
+    
     protected final HubList knownHubs; 
-          
+
     protected BaseConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, 
             Map<SocketAddressSet, BaseConnection> connections, 

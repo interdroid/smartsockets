@@ -747,7 +747,10 @@ public class DirectSocketFactory {
 
             if (logger.isInfoEnabled()) {               
                 logger.info("Connection setup to " + sas.toString() 
-                        + " completed in " + (System.currentTimeMillis()-start) 
+                        + " using address " 
+                        + NetworkUtils.ipToString(target.getAddress()) 
+                        + " completed in " 
+                        + (System.currentTimeMillis()-start) 
                         + " ms.");
             }  
 

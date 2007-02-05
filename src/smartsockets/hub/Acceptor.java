@@ -101,8 +101,8 @@ public class Acceptor extends CommunicationThread {
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Connection from " + addr + " refused (duplicate)");
             }
-
-            out.write(HubProtocol.CONNECTION_REFUSED);
+                      
+            out.write(ConnectionProtocol.HUB_CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                                     
@@ -111,7 +111,7 @@ public class Acceptor extends CommunicationThread {
                 hconlogger.warn("Connection accepted from hub " + addr);
            // }
 
-            out.write(HubProtocol.CONNECTION_ACCEPTED);            
+            out.write(ConnectionProtocol.HUB_CONNECTION_ACCEPTED);            
             out.flush();
 
             // Now activate it. 
@@ -144,7 +144,7 @@ public class Acceptor extends CommunicationThread {
                     " refused, since it already exists!"); 
                 } 
 
-                out.write(HubProtocol.SERVICELINK_REFUSED);
+                out.write(ConnectionProtocol.SERVICELINK_REFUSED);
                 out.flush();
                 DirectSocketFactory.close(s, out, in);
                 return false;
@@ -158,7 +158,7 @@ public class Acceptor extends CommunicationThread {
                         + " accepted (" + connections.size() + ")"); 
          //   } 
 
-            out.write(HubProtocol.SERVICELINK_ACCEPTED);
+            out.write(ConnectionProtocol.SERVICELINK_ACCEPTED);
             out.writeUTF(server.getAddressSet().toString());            
             out.flush();
 
@@ -377,23 +377,19 @@ public class Acceptor extends CommunicationThread {
             int opcode = in.read();
 
             switch (opcode) {
-            case HubProtocol.CONNECT:
+            case ConnectionProtocol.HUB_CONNECT:
                 result = handleIncomingHubConnect(s, in, out);                   
                 break;
 
-            case HubProtocol.PING:                
+            case ConnectionProtocol.PING:                
                 result = handlePing(s, in, out);                   
                 break;
               
-            case HubProtocol.SERVICELINK_CONNECT:
+            case ConnectionProtocol.SERVICELINK_CONNECT:
                 result = handleServiceLinkConnect(s, in, out);
                 break;                
-
-            //case HubProtocol.BOUNCE_IP:
-            //    result = handleBounce(s, in, out);
-            //    break;                
             
-            case HubProtocol.GET_SPLICE_INFO:
+            case ConnectionProtocol.GET_SPLICE_INFO:
                 result = handleSpliceInfo(s, in, out);
                 break;                
                             

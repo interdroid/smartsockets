@@ -2,6 +2,7 @@ package smartsockets.hub.connections;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.DirectionsSelector;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
@@ -72,8 +74,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (c != null && c instanceof HubConnection) {             
             HubConnection tmp = (HubConnection) c;            
-            tmp.writeMessage(cm);
-            return true;
+            return tmp.forwardClientMessage(cm);
         }   
 
         return false;
@@ -153,7 +154,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
            
         // We found the target, so lets forward the message
-        boolean result = ((ClientConnection) c).sendMessage(cm);
+        boolean result = ((ClientConnection) c).forwardClientMessage(cm);
          
         if (meslogger.isDebugEnabled()) {
             meslogger.debug("Directly forwarding message to client " 
@@ -228,23 +229,230 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
     }    
     
+    protected final boolean forwardClientMessage(ClientMessage m) { 
+        
+        try {
+            synchronized (out) {
+                out.writeByte(MessageForwarderProtocol.CLIENT_MESSAGE);            
+                m.write(out);            
+                out.flush();
+            }
+            return true;
+        } catch (IOException e) {
+            handleDisconnect(e);
+            meslogger.warn("Unhandled exception in writeMessage!!", e);            
+            return false;
+        }                
+    }
+    
     // Virtual connection parts...
+    protected final void handleCreateVirtual() throws IOException { 
+        
+        SocketAddressSet source = SocketAddressSet.read(in);
+        SocketAddressSet sourceHub = SocketAddressSet.read(in);
+        
+        SocketAddressSet target = SocketAddressSet.read(in);
+        SocketAddressSet targetHub = SocketAddressSet.read(in);
+
+        long index = in.readLong();
+        
+        int timeout = in.readInt();        
+        int port = in.readInt();
+        int fragment = in.readInt();
+        int buffer = in.readInt();
+        
+        if (vclogger.isInfoEnabled()) {                                    
+            vclogger.info("VC connection request for: " + index);
+        }
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("Creating virtual connection " 
+                    + source + " -->> " + target);
+        }
+        
+        processVirtualConnect(index, source, sourceHub, target, targetHub, port,
+                fragment, buffer, timeout);
+    }
+    
+    protected final void handleCloseVirtual() throws IOException { 
+        
+        long index = in.readLong();     
+        
+        if (vclogger.isInfoEnabled()) {                        
+            vclogger.info("Locally closing VC: " + index);
+        }
+        
+        closeVirtualConnection(index);  
+    } 
+    
+    protected final void handleMessageVirtual() throws IOException { 
+        
+        long vc = in.readLong();
+        int size = in.readInt();
+    
+        // TODO: optimize!
+        byte [] data = new byte[size];        
+        in.readFully(data);
+                      
+        processMessage(vc, data);
+    }
+    
+    protected final void handleMessageVirtualAck() throws IOException {
+        processMessageACK(in.readLong());
+    }
+        
+    protected final void handleACKCreateVirtualConnection() throws IOException { 
+        
+        long index   = in.readLong();        
+        int fragment = in.readInt();        
+        int buffer   = in.readInt();
+        
+        processVirtualConnectACK(index, fragment, buffer);
+    } 
+    
+    protected final void handleNACKCreateVirtualConnection() throws IOException { 
+        
+        long index   = in.readLong();        
+        byte reason  = in.readByte();
+        
+        processVirtualConnectNACK(index, reason);
+    } 
+    
+    protected final void handleClientMessage() throws IOException {        
+        ClientMessage cm = new ClientMessage(in);        
+        
+        if (meslogger.isDebugEnabled()) {
+            meslogger.debug("Got message: " + cm);
+        }
+        
+        forward(cm, false);          
+    }
+    
+    protected abstract void handleDisconnect(Exception e); 
+    
     protected abstract String getUniqueID(long index);
+        
+    private final void forwardVirtualConnect(SocketAddressSet source,
+            SocketAddressSet sourceHub, SocketAddressSet target, 
+            SocketAddressSet targetHub, int port, int fragment, int buffer, 
+            int timeout, long index) { 
+        
+        // TODO: Should be asynchronous ???
+        
+        // Send the connect request to the hub
+        try { 
+            synchronized (out) {
+                out.write(MessageForwarderProtocol.CREATE_VIRTUAL);           
+                
+                SocketAddressSet.write(source, out);
+                SocketAddressSet.write(sourceHub, out);
+                
+                SocketAddressSet.write(target, out);
+                SocketAddressSet.write(targetHub, out);
+        
+                out.writeLong(index);
+                
+                out.writeLong(index);                
+                out.writeInt(port);
+                out.writeInt(fragment);                
+                out.writeInt(buffer);
+                
+                out.flush();
+            }
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }
+    }
     
-    protected abstract void forwardVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet target, SocketAddressSet targetHub, String info, 
-            int timeout, long index);
+    private final void forwardVirtualConnectACK(long index, int fragment, 
+            int buffer) { 
+        
+        // TODO: Should be asynchronous ???
+        
+        // forward the ACK
+        try {
+            synchronized (out) {
+                out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL_ACK);           
+                out.writeLong(index);
+                out.writeInt(fragment);
+                out.writeInt(buffer);                
+                out.flush();
+            }
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }        
+    }
     
-    protected abstract void forwardVirtualConnectAck(long index, String result, 
-            String info);
+    private final void forwardVirtualConnectNACK(long index, byte reason) { 
+        // TODO: Should be asynchronous ???
+        
+        // forward the NACK
+        try {
+            synchronized (out) {
+                out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL_NACK);           
+                out.writeLong(index);
+                out.writeByte(reason);
+                out.flush();
+            }
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }        
+    }
     
-    protected abstract void forwardVirtualClose(long index);
+    private final void forwardVirtualClose(long index) { 
+
+        // TODO: Should be asynchronous ???
+        
+        if (vclogger.isInfoEnabled()) {                                   
+            vclogger.info("Sending closing connection: " + index);
+        }    
+        // forward the close
+        try {
+            synchronized (out) {
+                out.write(MessageForwarderProtocol.CLOSE_VIRTUAL);           
+                out.writeLong(index);            
+                out.flush();
+            }
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }
+    }
     
-    protected abstract void forwardVirtualMessage(long index, byte [] data);
+    private final void forwardVirtualMessage(long index, byte [] data) {
+        
+        // TODO: Should be asynchronous ???
+        
+        // forward the message
+        try {
+            synchronized (out) {
+                out.write(MessageForwarderProtocol.MESSAGE_VIRTUAL);           
+                out.writeLong(index);
+                out.writeInt(data.length);
+                out.write(data);
+                out.flush();                
+            }
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }        
+    }
+
+    private final void forwardVirtualMessageAck(long index) { 
+
+        // TODO: Should be asynchronous ???
+        
+        // forward the message ack
+        try {
+            synchronized (out) {
+                out.write(MessageForwarderProtocol.MESSAGE_VIRTUAL_ACK);           
+                out.writeLong(index);
+                out.flush();                
+            }
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }        
+    }
     
-    protected abstract void forwardVirtualMessageAck(long index);
-    
-    protected void processMessage(long index, byte [] data) { 
+    private final void processMessage(long index, byte [] data) { 
         
         messages++;
         messagesBytes += data.length;
@@ -297,7 +505,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }              
     }
     
-    protected void processMessageACK(long index) { 
+    private void processMessageACK(long index) { 
         
         messageACK++;
         
@@ -346,7 +554,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }              
     }
     
-    protected void closeVirtualConnection(long index) { 
+    private void closeVirtualConnection(long index) { 
 
         closeTotal++;
         
@@ -406,8 +614,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         return new VirtualConnection(mfc1, id1, index1, this, id2, index2);
     }
          
-    protected void processVirtualConnect(long index, SocketAddressSet source, 
-            SocketAddressSet target, SocketAddressSet targetHub, String info, 
+    private void processVirtualConnect(long index, SocketAddressSet source, 
+            SocketAddressSet sourceHub, SocketAddressSet target, 
+            SocketAddressSet targetHub, int port, int fragment, int buffer, 
             int timeout) {
         
         connectionsTotal++;
@@ -429,9 +638,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             if (!(tmp instanceof ClientConnection)) { 
                 // apparently, the user is trying to connect to a hub here, 
                 // which is not allowed! Send a NACK back!
-                forwardVirtualConnectAck(index, "DENIED", 
-                        "Connection to hub not allowed");
-                
+                forwardVirtualConnectNACK(index, 
+                        ServiceLinkProtocol.ERROR_ILLEGAL_TARGET);                
                 connectionsFailed++;
                 
                 return;
@@ -440,11 +648,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             if (tmp == this) {
                 // connecting to oneself over a hub is generally not a good idea 
                 // although it should work ?
-                forwardVirtualConnectAck(index, "DENIED", 
-                        "Connection to self not allowed");
+                forwardVirtualConnectNACK(index, 
+                        ServiceLinkProtocol.ERROR_ILLEGAL_TARGET);
                 
-                connectionsFailed++;
-                
+                connectionsFailed++;                
                 return;
             }
         
@@ -509,9 +716,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         if (mf == null) {
             // Connection setup failed!
+            forwardVirtualConnectNACK(index, 
+                    ServiceLinkProtocol.ERROR_UNKNOWN_HOST);
+
             connectionsFailed++;
-            
-            forwardVirtualConnectAck(index, "DENIED", "Unknown host");
             return;
         }             
         
@@ -531,50 +739,26 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         // Ask the target to forward the connect message to whoever it 
         // represents (a client or a hub). This should be an asynchronous 
         // call to prevent deadlocks!!
-        mf.forwardVirtualConnect(source, target, targetHub, info, timeout, vc.index2);
+        mf.forwardVirtualConnect(source, sourceHub, target, targetHub, 
+                port, fragment, buffer, timeout, vc.index2);
     }
    
-    protected void processVirtualConnectACK(long index, String result, 
-            String info) { 
-        
+    private void processVirtualConnectNACK(long index, byte reason) { 
+
         connectionsReplies++;
+        connectionsNACKs++;
         
         if (vclogger.isDebugEnabled()) {
-            vclogger.debug("Got create connect ACK: " + index + " " + result 
-                    + " " + info);
+            vclogger.debug("Got connect NACK: " + index + " " + reason);  
         }
         
-        String key = getUniqueID(index);
-        
-        VirtualConnection vc = null; 
-       
-        // Check if we got an ACK or a NACK
-        if (result.equals("OK")) {
-            // It's an ACK, so we just retrieve the connection...
-            vc = virtualConnections.find(key);
-            connectionsACKs++;
-        } else {
-            // It's a NACK so we remove the connection, since it's no 
-            // longer used after we forwarded the reply
-            vc = virtualConnections.remove(key);
-            connectionsNACKs++;
-        }
-        
-       // vclogger.warn("Got vc: " + vc);
+        // It's a NACK so we remove the connection, since it's no 
+        // longer used after we forwarded the reply
+        VirtualConnection vc = virtualConnections.remove(getUniqueID(index));
         
         if (vc == null) { 
             // Connection doesn't exist. It may already be closed by the other 
-            // side due to a timeout. 
-            
-            if (result.equals("OK")) { 
-                // if the reply is an ACK, we send a close back to inform the 
-                // sender that the connection does no longer exist...
-                forwardVirtualClose(index);
-            } 
-            
-            connectionsRepliesLost++;
-            
-            // else it's a NACK and we're done!   
+            // side due to a timeout.             
             return; 
         }
         
@@ -588,7 +772,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 vclogger.info("forward connect ACK for 2: " + vc.index2);
             }
             
-            vc.mfc2.forwardVirtualConnectAck(vc.index2, result, info);
+            vc.mfc2.forwardVirtualConnectNACK(vc.index2, reason);
             
         } else if (this == vc.mfc2) { 
             
@@ -596,8 +780,63 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 vclogger.info("forward connect ACK for 1: " + vc.index1);
             }
             
-            vc.mfc1.forwardVirtualConnectAck(vc.index1, result, info);
+            vc.mfc1.forwardVirtualConnectNACK(vc.index1, reason);
         
+        } else { 
+            
+            connectionsRepliesError++;
+            
+            // This should never happen!        
+            vclogger.error("Virtual connection error: forwarder not found!", 
+                    new Exception());
+        }
+    }
+        
+    private void processVirtualConnectACK(long index, int fragment, 
+            int buffer) {  
+            
+        connectionsReplies++;
+        connectionsACKs++;
+        
+        if (vclogger.isDebugEnabled()) {
+            vclogger.debug("Got connect ACK: " + index + " (" + fragment + ", " 
+                    + buffer + ")");
+        }
+        
+        String key = getUniqueID(index);
+        
+        // It's an ACK, so we just retrieve the connection...
+        VirtualConnection vc = virtualConnections.find(key);
+        
+        if (vc == null) { 
+            // Connection doesn't exist. It may already be closed by the other 
+            // side due to a timeout, so we send a close back to inform the 
+            // sender that the connection does no longer exist...
+            forwardVirtualClose(index);
+            connectionsRepliesLost++;
+            return; 
+        }
+        
+        // We found the connection so we have to figure out which of the two 
+        // entries in the VC is ours. The easiest way is to simply compare the 
+        // 'mfX' references to 'this'. Note that we cannot compare the index 
+        // values, since they are not unique!
+        if (this == vc.mfc1) { 
+        
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 2: " + vc.index2);
+            }
+            
+            vc.mfc2.forwardVirtualConnectACK(vc.index2, fragment, buffer);
+            
+        } else if (this == vc.mfc2) { 
+            
+            if (vclogger.isInfoEnabled()) {                                    
+                vclogger.info("forward connect ACK for 1: " + vc.index1);
+            }
+            
+            vc.mfc1.forwardVirtualConnectACK(vc.index2, fragment, buffer);
+                    
         } else { 
             
             connectionsRepliesError++;
@@ -674,6 +913,90 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             System.out.println(name + "     - lost : " + messageACKLost);
             System.out.println(name + "     - error: " + messageACK_Error);   
         }
+    }
+    
+    protected abstract boolean handleOpcode(int opcode); 
+    
+    protected final boolean runConnection() {
+        
+        try { 
+            int opcode = in.read();
+            
+            switch (opcode) { 
+        
+            case -1:
+                if (vclogger.isInfoEnabled()) { 
+                    vclogger.info("Connection got EOF!");
+                }
+                handleDisconnect(null);
+                return false;
+            
+            case MessageForwarderProtocol.CLIENT_MESSAGE:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got message!");
+                }
+                handleClientMessage();
+                return true;
+            
+            case MessageForwarderProtocol.CREATE_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual connect!");
+                }
+                
+                handleCreateVirtual();
+                return true;
+
+            case MessageForwarderProtocol.CREATE_VIRTUAL_ACK:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual connect ACK!");
+                }
+               
+                handleACKCreateVirtualConnection();
+                return true;
+
+            case MessageForwarderProtocol.CREATE_VIRTUAL_NACK:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual connect NACK!");
+                }
+               
+                handleNACKCreateVirtualConnection();
+                return true;
+                
+            case MessageForwarderProtocol.CLOSE_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual reply!");
+                }
+                
+                handleCloseVirtual();
+                return true;
+
+            case MessageForwarderProtocol.MESSAGE_VIRTUAL:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual message!");
+                }
+                
+                handleMessageVirtual();
+                return true;
+            
+            case MessageForwarderProtocol.MESSAGE_VIRTUAL_ACK:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got virtual ack!");
+                }
+                
+                handleMessageVirtualAck();
+                return true;
+            
+                
+            default:
+                // Ask the subclass to handle this opcode!
+                return handleOpcode(opcode);  
+            }
+                        
+        } catch (Exception e) {
+            handleDisconnect(e);
+        }
+        
+        return false;
     }
     
 }

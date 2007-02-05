@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import smartsockets.virtual.VirtualServerSocket;
@@ -38,10 +39,14 @@ public class Throughput {
     }
     
     public static void client(VirtualSocketAddress target) { 
-
-       
         
         try { 
+            long [] detailedDirect = new long[1+2*target.machine().numberOfAddresses()];
+            long [] detailedVirtual = new long[5];
+
+            connectProperties.put("direct.detailed.timing", detailedDirect);
+            connectProperties.put("virtual.detailed.timing", detailedVirtual);
+            
             VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
                     connectProperties);
             
@@ -85,10 +90,18 @@ public class Throughput {
                     System.out.printf("Test took %d ms. Througput = %4.1f " +
                             "MByte/s (%3.1f MBit/s)\n", time, tp, mbit);
                 }
+
+                System.out.println("Details direct : " + Arrays.toString(detailedDirect));
+                Arrays.fill(detailedDirect, 0);
+
+                System.out.println("Details virtual: " + Arrays.toString(detailedVirtual));
+                Arrays.fill(detailedVirtual, 0);
+
             }
             
             VirtualSocketFactory.close(s, out, in);
-        } catch (Exception e) {
+            
+                    } catch (Exception e) {
             System.out.println("Failed to create connection to " + target); 
         }
     }

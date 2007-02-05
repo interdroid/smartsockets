@@ -1,6 +1,5 @@
 package smartsockets.hub.connections;
 
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -60,133 +59,9 @@ public class HubConnection extends MessageForwardingConnection {
     protected String getUniqueID(long index) { 
         return uniquePrefix + index;
     }
-    
-    protected void forwardVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet target, SocketAddressSet targetHub, String info, 
-            int timeout, long index) { 
         
-        // TODO: Should be asynchronous ???
-        
-        // Send the connect request to the hub
-        try { 
-            synchronized (out) {
-                out.write(HubProtocol.CREATE_VIRTUAL);           
-                out.writeLong(index);
-                out.writeUTF(source.toString());
-                out.writeUTF(target.toString());
-                
-                if (targetHub != null) { 
-                    out.writeUTF(targetHub.toString());
-                } else { 
-                    out.writeUTF("");            
-                }
-                
-                out.writeUTF(info);            
-                out.writeInt(timeout);            
-                out.flush();
-            }
-        } catch (Exception e) {
-            vclogger.warn("Connection to " + peer + " is broken!", e);
-            // TODO: close connection ????
-        }
-    }
-    
-    protected void forwardVirtualConnectAck(long index, String result, 
-            String info) { 
-        
-        // TODO: Should be asynchronous ???
-        
-        // Send the connect request to the hub
-        try { 
-            synchronized (out) {
-                out.write(HubProtocol.CREATE_VIRTUAL_ACK);           
-                out.writeLong(index);
-                out.writeUTF(result);
-                out.writeUTF(info);            
-                out.flush();
-            }
-        } catch (Exception e) {
-            vclogger.warn("Connection to " + peer + " is broken!", e);
-            // TODO: close connection ????
-        }
-    } 
-    
-    protected void forwardVirtualClose(long index) { 
-    
-        // TODO: Should be asynchronous ???
-        
-        if (vclogger.isInfoEnabled()) { 
-            vclogger.info("HUB Sending closing connection: " + index);
-        }
-        // forward the close
-        try {
-            synchronized (out) {
-                out.write(HubProtocol.CLOSE_VIRTUAL);           
-                out.writeLong(index);            
-                out.flush();
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + peer.hubAddressAsString 
-                    + " is broken!", e);
-            
-//          TODO: handle exception...
-        }                
-    }
-    
-    protected void forwardVirtualMessage(long index, byte [] data) {
-       
-        // TODO: Should be asynchronous ???
-        
-        // forward the message
-        try {
-            synchronized (out) {
-                out.write(HubProtocol.MESSAGE_VIRTUAL);           
-                out.writeLong(index);
-                out.writeInt(data.length);
-                out.write(data);
-                out.flush();                
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + peer.hubAddressAsString 
-                    + " is broken!", e);
-            
-            // TODO: handle exception...
-        }        
-    }
-    
-    protected void forwardVirtualMessageAck(long index) { 
-
-        // TODO: Should be asynchronous ???
-        
-        // forward the message
-        try {
-            synchronized (out) {
-                out.write(ServiceLinkProtocol.MESSAGE_VIRTUAL_ACK);           
-                out.writeLong(index);
-                out.flush();                
-            }
-        } catch (Exception e) {
-            conlogger.warn("Connection to " + peer.hubAddressAsString 
-                    + " is broken!", e);
-            
-            // TODO: handle exception...
-        }        
-    }
-    
     public synchronized void setLastSendState() {
         lastSendState = state.get();
-    }
-    
-    public synchronized void writeMessage(ClientMessage m) { 
-        
-        try {
-            out.writeByte(HubProtocol.CLIENT_MESSAGE);            
-            m.write(out);            
-            out.flush();
-        } catch (IOException e) {
-            meslogger.warn("Unhandled exception in writeMessage!!", e);            
-            // TODO: handle exception
-        }        
     }
     
     public void gossip() { 
@@ -372,92 +247,7 @@ public class HubConnection extends MessageForwardingConnection {
         
         peer.setContactTimeStamp(false);
     }
-  
-    private void handleClientMessage() throws IOException {        
-        ClientMessage cm = new ClientMessage(in);        
-        
-        if (meslogger.isDebugEnabled()) {
-            meslogger.debug("Got message: " + cm);
-        }
-        
-        forward(cm, false);          
-    }
-    
-    private void handleCreateVirtual() throws IOException { 
-    
-        long index = in.readLong();
-        
-        String source = in.readUTF();
-        String target = in.readUTF();   
-        String targetHub = in.readUTF();  
-        String info = in.readUTF();        
-        
-        int timeout = in.readInt();
-        
-        if (vclogger.isInfoEnabled()) {                                    
-            vclogger.info("HUB connection request for: " + index);
-        }
-        
-        if (vclogger.isDebugEnabled()) {
-            vclogger.debug("Connection " + peer.hubAddressAsString 
-                    + " creating virtual connection " 
-                    + source + " -->> " + target);
-        }
-        
-        SocketAddressSet hub = null;
-        
-        if (targetHub.length() > 0) { 
-            try { 
-                hub = SocketAddressSet.getByAddress(targetHub);
-            } catch (Exception e) {
-                // ignore -- not critical
-            }
-        }
-        
-        processVirtualConnect(index, SocketAddressSet.getByAddress(source), 
-                SocketAddressSet.getByAddress(target), hub, info, timeout);
-    }
-         
-    private void handleCloseVirtual() throws IOException { 
-        
-        long index = in.readLong();     
-        
-        if (vclogger.isInfoEnabled()) {                        
-            vclogger.info("HUB locally closing connection: " + index);
-        }
-        
-        closeVirtualConnection(index);  
-    } 
- 
-    private void handleMessageVirtual() throws IOException { 
-        
-        long vc = in.readLong();
-        int size = in.readInt();
-    
-        // TODO: optimize!
-        byte [] data = new byte[size];        
-        in.readFully(data);
-                      
-        processMessage(vc, data);
-    }
-    
-    private void handleMessageVirtualAck() throws IOException {
-        processMessageACK(in.readLong());
-    }
-        
-    private void handleAckCreateVirtualConnection() throws IOException { 
-        
-        long index = in.readLong();
-        String result = in.readUTF();
-        String info = in.readUTF();
-        
-        if (vclogger.isDebugEnabled()) {
-            vclogger.debug("Got reply to VC: " + index + " " + result + " " + info);
-        }
-    
-        processVirtualConnectACK(index, result, info);
-    } 
-    
+       
     protected String getName() { 
         return "HubConnection(" + peer.hubAddress + ")";
     }
@@ -475,20 +265,11 @@ public class HubConnection extends MessageForwardingConnection {
         closeAllVirtualConnections(uniquePrefix);
     } 
     
-    protected boolean runConnection() {
+    protected boolean handleOpcode(int opcode) {
     
         try { 
-            int opcode = in.read();
-            
             switch (opcode) { 
         
-            case -1:
-                if (conlogger.isInfoEnabled()) { 
-                    conlogger.info("HubConnection got EOF!");
-                }
-                disconnect();
-                return false;
-                
             case HubProtocol.GOSSIP:
                 if (goslogger.isInfoEnabled()) {
                     goslogger.info("HubConnection got gossip!");
@@ -502,54 +283,6 @@ public class HubConnection extends MessageForwardingConnection {
                 }
                 handlePing();
                 return true;
-
-            case HubProtocol.CLIENT_MESSAGE:
-                if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got message!");
-                }
-                handleClientMessage();
-                return true;
-            
-            case HubProtocol.CREATE_VIRTUAL:
-                if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got virtual connect!");
-                }
-                
-                handleCreateVirtual();
-                return true;
-
-            case HubProtocol.CREATE_VIRTUAL_ACK:
-                if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got virtual reply!");
-                }
-               
-                handleAckCreateVirtualConnection();
-                return true;
-
-            case HubProtocol.CLOSE_VIRTUAL:
-                if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got virtual reply!");
-                }
-                
-                handleCloseVirtual();
-                return true;
-
-            case HubProtocol.MESSAGE_VIRTUAL:
-                if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got virtual message!");
-                }
-                
-                handleMessageVirtual();
-                return true;
-            
-            case HubProtocol.MESSAGE_VIRTUAL_ACK:
-                if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got virtual ack!");
-                }
-                
-                handleMessageVirtualAck();
-                return true;
-            
                 
             default:
                 conlogger.warn("HubConnection got junk!");                   
@@ -563,5 +296,9 @@ public class HubConnection extends MessageForwardingConnection {
         }
         
         return false;
+    }
+
+    protected void handleDisconnect(Exception e) {
+        vclogger.warn("handleDisconnect not implemented in HubConnection!", e);
     }
 }
