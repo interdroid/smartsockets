@@ -1060,12 +1060,13 @@ public class DirectSocketFactory {
         }
 
         ServerSocket ss = createUnboundServerSocket();
-        ss.bind(new InetSocketAddress(port), backlog);
         
         // Must be set here to have any effect...
         if (receiveBuffer > 0) { 
             ss.setReceiveBufferSize(receiveBuffer);
         }
+       
+        ss.bind(new InetSocketAddress(port), backlog);
         
         if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port
