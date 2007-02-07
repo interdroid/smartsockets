@@ -76,7 +76,7 @@ public class Acceptor extends CommunicationThread {
         
         // NOTE: the receivebuffer must be passed to the serversocket to have 
         // any effect on the sockets that are accepted later...
-        server = factory.createServerSocket(port, receiveBuffer, 50, null);        
+        server = factory.createServerSocket(port, 50, receiveBuffer, null);        
         setLocal(server.getAddressSet());              
     }
 

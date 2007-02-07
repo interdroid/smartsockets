@@ -67,6 +67,9 @@ public class Hubrouted extends ConnectModule
             }
         }
         
+        System.err.println("#### using local fragment size: " + localFragmentation);
+        System.err.println("#### using local buffer size  : " + localBufferSize);
+    
         // fragmentation -= 16; // leave some space for the headers...        
     }
 
