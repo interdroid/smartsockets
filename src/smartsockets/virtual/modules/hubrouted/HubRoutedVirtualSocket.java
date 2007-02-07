@@ -7,10 +7,10 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
-import java.util.LinkedList;
 import java.util.Map;
 
 import smartsockets.hub.servicelink.ServiceLink;
+import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 
@@ -18,26 +18,31 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     
     private final Hubrouted parent;     
     private final ServiceLink serviceLink;
-    private final long connectionIndex;
+    private long connectionIndex;
         
     private int timeout = 0;
     
     private boolean closed = false;
     
-    private final HubRoutedOutputStream out;
-    private final HubRoutedInputStream in;
+    private HubRoutedOutputStream out;
+    private HubRoutedInputStream in;
     
-    private final LinkedList<byte[]> incoming = new LinkedList<byte[]>();
-    
-    private boolean closeInPending = false;
+ //   private boolean closeInPending = false;
 
     private final int localFragmentation; 
     private final int localBufferSize; 
     
-    private final int remoteFragmentation; 
-    private final int remoteBufferSize; 
+    private int remoteFragmentation; 
+    private int remoteBufferSize; 
         
-    private int remoteBufferFree;
+    // Used in the three way handshake during connection setup
+    private boolean waitingForACK = false;
+    private boolean gotACK = false;
+    private int ackResult = 0;
+    
+    private boolean waitingForACKACK = false;
+    private boolean gotACKACK = false;
+    private boolean ackACKResult = false;
     
     protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
             int localBufferSize, int remoteFragmentation, int remoteBufferSize,  
@@ -56,21 +61,66 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         this.remoteFragmentation = remoteFragmentation;
         this.remoteBufferSize = remoteBufferSize;
                 
-        this.out = new HubRoutedOutputStream(this, remoteFragmentation);
-        this.in = new HubRoutedInputStream(this);            
+        this.out = new HubRoutedOutputStream(this, remoteFragmentation, remoteBufferSize);
+        this.in = new HubRoutedInputStream(this, localFragmentation, localBufferSize);            
     }
    
+    protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
+            int localBufferSize, VirtualSocketAddress target, 
+            ServiceLink serviceLink, Map p) {      
     
-    protected void connectionAccepted() throws IOException { 
+        super(target);
         
-        if (!serviceLink.acceptIncomingConnection(connectionIndex)) { 
-            // oops, we are too late!
-            close();
+        this.parent = parent;
+        this.serviceLink = serviceLink;
+        
+        this.localFragmentation = localFragmentation;        
+        this.localBufferSize = localBufferSize;
+                  
+    }
+ 
+    protected void connectionAccepted(int timeout) throws IOException { 
+    
+        long deadline = System.currentTimeMillis() + timeout;
+        long timeleft = timeout;
+    
+        // Send the ACK to the client side
+        serviceLink.ackVirtualConnection(connectionIndex, localFragmentation, 
+                localBufferSize);
+    
+        // Now wait for the ACKACK to come back to us (may time out).
+        synchronized (this) {
+            
+            waitingForACKACK = true;
+            
+            while (!gotACKACK) { 
+                
+                try { 
+                    wait(timeleft);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+
+                if (!gotACKACK) { 
+                    timeleft = deadline - System.currentTimeMillis();
+
+                    if (timeleft <= 0) {
+                        throw new SocketTimeoutException("Handshake timed out!");
+                    }
+                }
+            }
+            
+            waitingForACKACK = false;
+        }
+        
+        if (!gotACKACK || !ackACKResult) { 
+            throw new SocketException("Handshake failed");
         }
     }
     
     public void connectionRejected() { 
-        serviceLink.rejectIncomingConnection(connectionIndex);         
+        serviceLink.nackVirtualConnection(connectionIndex, 
+                ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);         
     }
     
     public void waitForAccept() throws IOException {
@@ -115,11 +165,6 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             }
             
             closed = true;        
-        
-            in.closePending();
-           
-            // Wakeup any thread blocked on a read....
-            notifyAll();
         }
         
         try {
@@ -128,6 +173,12 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             // ignore
         }
 
+        try {
+            in.close();
+        } catch (Exception e) { 
+            // ignore
+        }
+        
         if (local) { 
             parent.close(connectionIndex);
         }
@@ -271,58 +322,99 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         return "HubRoutedVirtualSocket(" + connectionIndex + ")";
     }
 
-    public synchronized void message(byte[] data) {
-        incoming.addLast(data);
-        
-        if (incoming.size() == 1) { 
-            notifyAll();
-        }
+    protected void message(byte[] data) {
+        // invoker (servicelink) is single threaded, so no need to synchronize
+        in.add(data);
     }
-    
-    private synchronized byte [] getBuffer(int timeout) throws IOException { 
-        
-        long start = System.currentTimeMillis(); 
-        long endTime = start + timeout;
-        
-        while (incoming.size() == 0) {
-            
-            if (closed) { 
-                return null;
-            }
-            
-            try {
-                int timeleft = 1000;
-                
-                if (timeout > 0) { 
-                    timeleft = (int) (endTime - System.currentTimeMillis()); 
-                
-                    if (timeleft <= 0) { 
-                        throw new SocketTimeoutException("Failed to receive " +
-                                "data in time");
-                    }
-                }
-                
-                wait(timeleft);                
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-        
-        return incoming.removeFirst();        
+  
+    protected void sendACK(int data) throws IOException { 
+        serviceLink.ackVirtualMessage(connectionIndex, data);
     }
     
     public void flush(byte[] buffer, int off, int len) throws IOException {        
         serviceLink.sendVirtualMessage(connectionIndex, buffer, off, len, 
                 timeout);        
     }
+   
+    protected synchronized void reset(long index) {
+        connectionIndex = index;
+        gotACK = false;
+        waitingForACK = true;
+    }
 
-    public byte[] getBuffer(byte[] buffer, int timeout) throws IOException {
+    protected synchronized int waitForACK(int timeout) {
         
-        if (buffer != null) {
-            // Ack a previous buffer 
-            serviceLink.ackVirtualMessage(connectionIndex, buffer);
+        long deadline = System.currentTimeMillis() + timeout;
+        long timeleft = timeout;
+        
+        while (!gotACK) { 
+            
+            try { 
+                wait(timeleft);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            
+            if (!gotACK) { 
+                timeleft = deadline - System.currentTimeMillis();
+                
+                if (timeleft <= 0) { 
+                    gotACK = true;
+                    ackResult = -1;
+                }
+            }
         }
+        
+        waitingForACK = false;
+        return ackResult;
+    }
 
-        return getBuffer(timeout); 
+    protected synchronized boolean connectACK(int fragment, int buffer) {
+       
+        if (!waitingForACK) { 
+            return false;
+        }
+        
+        gotACK = true;
+        ackResult = 0;
+        
+        remoteFragmentation = fragment;
+        remoteBufferSize = buffer;
+        
+        out = new HubRoutedOutputStream(this, remoteFragmentation, remoteBufferSize);
+        in = new HubRoutedInputStream(this, localFragmentation, localBufferSize); 
+       
+        notifyAll();
+        return true;
+    }
+
+    protected synchronized void connectNACK(byte reason) {
+        
+        if (!waitingForACK) { 
+            return;
+        }
+        
+        gotACK = true;
+        ackResult = reason;
+        
+        notifyAll();
+    }
+
+    public synchronized boolean connectACKACK(boolean succes) {
+        
+        if (!waitingForACK) { 
+            return false;
+        }
+        
+        gotACKACK = true;
+        ackACKResult = succes;
+        
+        notifyAll();
+        
+        return true;
     }   
+    
+    protected void messageACK(int data) {
+        out.messageACK(data);
+    }
 }

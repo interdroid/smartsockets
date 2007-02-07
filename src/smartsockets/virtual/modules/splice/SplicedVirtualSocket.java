@@ -31,11 +31,13 @@ public class SplicedVirtualSocket extends VirtualSocket {
         this.in = in;               
     }
     
-    protected void connectionAccepted() throws IOException { 
+    protected void connectionAccepted(int timeout) throws IOException { 
         
         try { 
             out.write(Splice.ACCEPT);
             out.flush();        
+            
+            // Do we need a three way hadshake here ????
             
             // Not sure why this is needed...
             //remote = new SocketAddressSet(in.readUTF());
@@ -235,5 +237,5 @@ public class SplicedVirtualSocket extends VirtualSocket {
     
     public String toString() {
         return "SplicedVirtualIbisSocket(" + s.toString() + ")";
-    }   
+    }
 }

@@ -14,6 +14,7 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.IPAddressSet;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.ConnectionProtocol;
 import smartsockets.hub.HubProtocol;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
@@ -307,7 +308,7 @@ public class Splice extends AbstractDirectModule {
             out = s.getOutputStream();
 
             // TODO: don't like this access here!
-            out.write(HubProtocol.GET_SPLICE_INFO);
+            out.write(ConnectionProtocol.GET_SPLICE_INFO);
             out.flush();
             
         } catch (IOException e) {            

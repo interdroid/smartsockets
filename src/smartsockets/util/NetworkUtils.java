@@ -382,9 +382,9 @@ public class NetworkUtils {
             String tmp = st.nextToken();
             
             if (hex) { 
-                result[i] = Byte.parseByte(tmp, 16); 
+                result[i] = (byte) (0xff & Integer.parseInt(tmp, 16));
             } else { 
-                result[i] = Byte.parseByte(tmp);
+                result[i] = (byte) (0xff & Integer.parseInt(tmp, 10));
             }
         }
         

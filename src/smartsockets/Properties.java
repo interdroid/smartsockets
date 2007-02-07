@@ -142,8 +142,8 @@ public class Properties {
             SL_SEND_BUFFER,         "-1", 
             SL_RECEIVE_BUFFER,      "-1",
             
-            ROUTED_BUFFER,          "100",
-            ROUTED_FRAGMENT,       "8176"            
+            ROUTED_BUFFER,          "65536",
+            ROUTED_FRAGMENT,        "8192"            
     };
 
     private static TypedProperties defaultProperties;

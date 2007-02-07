@@ -2,20 +2,32 @@ package smartsockets.virtual.modules.hubrouted;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
+import java.util.LinkedList;
 
 public class HubRoutedInputStream extends InputStream {
 
     private final HubRoutedVirtualSocket parent; 
     
-    private byte [] buffer;    
+    // Queue of incoming data
+    private final LinkedList<byte []> buffers = new LinkedList<byte[]>();
+  
+    // Current buffer 
+    private byte [] buffer;
+    
+    // Amount of data in current buffer that is already used.
     private int used = 0;
     
+    // To indicate if we are (about to be) closed.
     private boolean closePending = false;
     private boolean closed = false;
-        
+    
+    // Temporary buffer used to read a single byte (TODO: optimize!)
     private final byte [] single = new byte[1];
     
-    HubRoutedInputStream(HubRoutedVirtualSocket parent) { 
+    HubRoutedInputStream(HubRoutedVirtualSocket parent, int fragmentation, 
+            int bufferSize) { 
+        
         this.parent = parent;
     }
     
@@ -38,9 +50,6 @@ public class HubRoutedInputStream extends InputStream {
     }
 
     public int read(byte[] b) throws IOException { 
-        
- //       System.err.println("InputStream read(byte[])");
-        
         return read(b, 0, b.length);
     }
     
@@ -52,10 +61,10 @@ public class HubRoutedInputStream extends InputStream {
         
         if (buffer == null || used == buffer.length) {
           
-            buffer = parent.getBuffer(buffer, parent.getSoTimeout());
+            buffer = getBuffer(buffer, parent.getSoTimeout());
          
             if (buffer == null) { 
-                close();
+                doClose();
                 return -1;
             }
             
@@ -99,16 +108,68 @@ public class HubRoutedInputStream extends InputStream {
         }       
     }
     
-    public void close() { 
+    public synchronized void close() { 
+        closePending = true;
+        
+        // Wakeup anyone waiting for data
+        if (buffers.size() == 0) { 
+            notifyAll();
+        }
+    }
+    
+    private synchronized void doClose() { 
         closed = true;
     }
-    
-    public void closePending() { 
-        closePending = true;
-    }
-    
+       
     public boolean closed() { 
         return closed;
     }
     
+    private synchronized byte [] getBuffer(byte [] old, int timeout) throws IOException { 
+        
+        long deadline = 0;
+        long timeleft = timeout;
+        
+        if (timeout > 0) { 
+            deadline = System.currentTimeMillis() + timeout;
+        }
+        
+        if (old != null) { 
+            // TODO: accumulative ack ?
+            parent.sendACK(old.length);
+        }
+        
+        while (buffers.size() == 0) {
+            
+            if (closePending || closed) { 
+                return null;
+            }
+            
+            try {
+                wait(timeleft);                
+            } catch (InterruptedException e) {
+                // ignore
+            }
+                        
+            if (deadline > 0 && buffers.size() == 0) { 
+                timeleft = deadline - System.currentTimeMillis(); 
+            
+                if (timeleft <= 0) { 
+                    throw new SocketTimeoutException("Failed to receive " +
+                            "data in time");
+                }
+            }
+        }
+        
+        return buffers.removeFirst();        
+    }
+    
+    protected synchronized void add(byte [] data) {
+        buffers.addLast(data);
+        
+        // Check if anyone could have been waiting for us...
+        if (buffers.size() == 1) { 
+            notifyAll();
+        }
+    }
 }

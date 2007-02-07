@@ -40,6 +40,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
     private static final char EXTERNAL_START = '{';
     private static final char EXTERNAL_END = '}';
+   
+    // Should contain all of the above!
+    private static final String SEPARATORS = "{}-/~#";
     
     private transient InetSocketAddress [] external;
     private transient InetSocketAddress [] global;
@@ -752,6 +755,18 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return new SocketAddressSet(tmp);   
     }
    
+    public static void skip(DataInput in) throws IOException { 
+        
+        int len = in.readInt();
+        
+        if (len == 0) { 
+            return;
+        }
+       
+        in.skipBytes(len);
+    }
+   
+    
     public static SocketAddressSet getByAddress(byte [] coded) 
         throws UnknownHostException {
         
@@ -1006,7 +1021,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
 
     private static SocketAddressSet parseNewStyleAddress(String addressPort) {
         
-        StringTokenizer st = new StringTokenizer(addressPort, "{}/-~", true);
+        StringTokenizer st = new StringTokenizer(addressPort, SEPARATORS, true);
         
         boolean readingExternal = false;
         boolean readingPort = false;
@@ -1056,6 +1071,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     allowExternalStart = false;
                     allowAddress = true;
                     allowDone = false;
+                    allowUUID = false;
                     readingExternal = true;
                     break;
                 
@@ -1068,12 +1084,13 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     }
                 
                     allowExternalEnd = false; 
-                    allowExternalStart = true;
+                    allowExternalStart = false;
                     allowAddress = true;
                     readingExternal = false;
                     
                     if (local != null && local.length > 0) { 
                         allowDone = true;
+                        allowUUID = true;
                     }
                     
                     break;
@@ -1088,6 +1105,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     
                     allowSlash = false;
                     allowAddress = true;
+                    allowUUID = false;
                     break;
                     
                 case IP_PORT_SEPERATOR: 
@@ -1127,6 +1145,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
 
                     allowDone = false;
                     allowUser = false;
+                    allowUUID = false;
                     readingUser = true;
                     break;
                     
@@ -1138,7 +1157,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
 
                 
             } else if (readingUUID) { 
-
+                
                 UUID = NetworkUtils.StringToUUID(s);
 
                 readingUUID = false;
@@ -1179,6 +1198,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                 } else { 
                     allowDone = true;
                     allowUser = true;
+                    allowUUID = true; 
                 }
                  
             } else if (allowAddress) { 

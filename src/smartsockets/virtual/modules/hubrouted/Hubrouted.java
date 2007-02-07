@@ -2,14 +2,12 @@ package smartsockets.virtual.modules.hubrouted;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-
-import javax.print.attribute.standard.Severity;
+import java.util.Set;
 
 import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
@@ -27,13 +25,14 @@ public class Hubrouted extends ConnectModule
     implements VirtualConnectionCallBack {
     
     private static final int DEFAULT_TIMEOUT = 5000;   
+    private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 100;   
+     
+    private final Map<Long, HubRoutedVirtualSocket> sockets = 
+       Collections.synchronizedMap(new HashMap<Long, HubRoutedVirtualSocket>());
     
-    private final HashMap<Long, HubRoutedVirtualSocket> sockets = 
-        new HashMap<Long, HubRoutedVirtualSocket>();
-    
-    private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 10000;   
-    private final FixedSizeHashSet<Long> closedSockets = 
-        new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE);
+    // TODO: this is a sanity check only, may be removed later!!
+    private final Set<Long> closedSockets = Collections.synchronizedSet(
+                new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE));
     
     private int localFragmentation = 64*1024;
     private int localBufferSize = 1024*1024;
@@ -50,8 +49,12 @@ public class Hubrouted extends ConnectModule
                 localBufferSize);
         
         if (localFragmentation > localBufferSize) { 
-            localFragmentation = localBufferSize;            
-            // TODO: print warning!
+            
+            logger.warn("Fragment size (" + localFragmentation 
+                    + ") is larger than buffer size (" + localBufferSize 
+                    + ") -> reducing fragment to: " + localBufferSize);
+        
+            localFragmentation = localBufferSize;       
         } else if (localFragmentation < localBufferSize) { 
             
             // Make sure that the fragmentation fits into the buffer a integral 
@@ -73,7 +76,7 @@ public class Hubrouted extends ConnectModule
             throw new Exception(module + ": no service link available!");       
         }
         
-        serviceLink.register("__virtual", this);        
+        serviceLink.registerVCCallBack(this);        
     }
 
     public SocketAddressSet getAddresses() {
@@ -99,97 +102,87 @@ public class Hubrouted extends ConnectModule
             timeout = DEFAULT_TIMEOUT; 
         }
        
-        long index = -1;
-        long endTime = System.currentTimeMillis() + timeout;
-        boolean timeLeft = true;
+        final long deadline = System.currentTimeMillis() + timeout;
+        int timeleft = timeout;
         
-        HubRoutedVirtualSocket s = null;
+        // Create a socket first. Since this is a wrapper anyway, we can reuse 
+        // it until we get a connection.
+        HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, 
+                 localFragmentation, localBufferSize, target, serviceLink, null);
         
-        while (index == -1 && timeLeft) { 
+        while (true) { 
         
-            index = serviceLink.getConnectionNumber();
-            
-            // As soon as we get an index back we create the socket. Otherwise 
-            // there may be a race between the accept being handled and the 
-            // receipt of the first message...
-            s = new HubRoutedVirtualSocket(this, localFragmentation, 
-                    localBufferSize, -1, -1, target, serviceLink, index, null);
-            
-            synchronized (this) {
-                sockets.put(index, s);
-            }
+            long index = serviceLink.getConnectionNumber();
+          
+            s.reset(index);
+            sockets.put(index, s);
             
             try { 
                 outgoingConnectionAttempts++;
                 
                 serviceLink.createVirtualConnection(index, tm, hub, 
                         target.port(), localFragmentation, localBufferSize, 
-                        timeout);
+                        timeleft);
             
-                acceptedOutgoingConnections++;
-                
-            } catch (UnknownHostException e) {
-                
+            } catch (IOException e) {
+                // No connection to hub, or the send failed. Just retry ? 
                 failedOutgoingConnections++;
-                
-                synchronized (this) {
-                    sockets.remove(index);
-                }
-                   
-                index = -1;
-    
-                // The target machine isn't known (yet) -- retry as long as we 
-                // stick to the timeout....
+                sockets.remove(index);
                 
                 if (logger.isInfoEnabled()) {
                     logger.info("Failed to create virtual connection to " 
                             + target + " (unknown host -> will retry)!");
                 }
-                    
+                  
                 try { 
-                    // TODO: fix deadline
+                    // TODO: deadline + exp backoff ?
                     Thread.sleep(1000);
                 } catch (Exception x) {
                     // ignored
                 }
                 
-                if (timeout > 0) { 
-                    timeLeft = System.currentTimeMillis() < endTime; 
-                } 
-             
-                if (!timeLeft)  {
-                    throw new ModuleNotSuitableException("Failed to create virtual " +
-                            "connection to " + target + " within " + timeout 
-                            + " ms.", e);         
+                timeleft = (int) (deadline - System.currentTimeMillis()); 
+                
+                if (timeleft <= 0)  {
+                    throw new ModuleNotSuitableException("Failed to create "
+                            + "virtual connection to " + target + " within "
+                            + timeout + " ms.");         
                 }
-                
-            } catch (ConnectException e) {
-                
-                failedIncomingConnections++;
-                
-                //if (logger.isInfoEnabled()) {
-                    logger.warn(parent.getVirtualAddressAsString() + ": Failed to create virtual connection to " 
-                            + target + " (connection refused -> giving up)");
-                //}
-        
-                // The target refused the connection (this is user error)
-                throw new ConnectException("Connection refused by: " + target);
-                
-            } catch (IOException e) {
-              
-                failedOutgoingConnections++;
-                
-                //if (logger.isInfoEnabled()) {
-                    logger.warn(parent.getVirtualAddressAsString() + ": Failed to create virtual connection to " 
-                            + target + " (giving up)");
-                //}
+
+                index = -1;
+            } 
             
-                throw new ModuleNotSuitableException("Failed to create virtual " +
-                        "connection to " + target, e);
-            }
+            if (index != -1) { 
+                int result = s.waitForACK(timeout);
+                
+                switch (result) { 
+            
+                case 0: // success
+                    acceptedOutgoingConnections++;
+                    return s;
+                    
+                case -1: // timeout
+                    failedOutgoingConnections++;
+                    throw new SocketTimeoutException("ACK timed out!");
+                    
+                case ServiceLinkProtocol.ERROR_PORT_NOT_FOUND:
+                    failedOutgoingConnections++;
+                    throw new ConnectException("Remote port not found!");
+                    
+                case ServiceLinkProtocol.ERROR_CONNECTION_REFUSED:
+                    failedOutgoingConnections++;
+                    throw new ConnectException("Connection refused!");
+                    
+                case ServiceLinkProtocol.ERROR_UNKNOWN_HOST:
+                    failedOutgoingConnections++;
+                    throw new UnknownHostException("Unknown host " + target);
+                    
+                case ServiceLinkProtocol.ERROR_ILLEGAL_TARGET:
+                    failedOutgoingConnections++;
+                    throw new ConnectException("Connection refused!");
+                }
+            }   
         } 
-        
-        return s; 
     }
 
     public boolean matchAdditionalRuntimeRequirements(Map requirements) {
@@ -227,15 +220,10 @@ public class Hubrouted extends ConnectModule
                 localFragmentation, localBufferSize, remoteFragmentation, 
                 remoteBufferSize, sa, serviceLink, index, null);
         
-        synchronized (this) {            
-            sockets.put(index, s);
-        }
+        sockets.put(index, s);
                 
         if (!ss.incomingConnection(s)) { 
-            synchronized (this) {            
-                sockets.remove(index);
-            }               
-                
+            sockets.remove(index);
             rejectedIncomingConnections++;
             serviceLink.nackVirtualConnection(index, 
                     ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);
@@ -245,7 +233,7 @@ public class Hubrouted extends ConnectModule
         }
     }
 
-    public synchronized void disconnect(long vc) {
+    public void disconnect(long vc) {
         
         HubRoutedVirtualSocket s = sockets.remove(vc);
         
@@ -269,52 +257,109 @@ public class Hubrouted extends ConnectModule
         }
     }
 
-    public synchronized void gotMessage(long vc, byte[] data) {
+    public void close(long vc) {
 
-        HubRoutedVirtualSocket s = sockets.get(vc);
+        HubRoutedVirtualSocket s = sockets.remove(vc);
         
+        // logger.warn("Got close for socket!: " + vc);
+
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
             if (!closedSockets.contains(vc)) { 
-                logger.warn("BAD!! Got message for an unknown socket!: " + vc 
-                        + " size = " + data.length);
-            } else { 
-                logger.warn("BAD!! Got message for already closed socket!: " + vc 
-                        + " size = " + data.length);
+                logger.warn("BAD!! Got close for an unknown local socket!: " 
+                        + vc + " (" + closedSockets.size() + ")");
             }
+
             return;
         } 
 
-        s.message(data);
-    }
-
-    public void close(long vc) {
-
-        HubRoutedVirtualSocket s = null;
-        
-        synchronized (this) {
-            
-            s = sockets.remove(vc);
-            
-            // logger.warn("Got close for socket!: " + vc);
-        
-            if (s == null) { 
-                // This can happen if we have just been closed by the other side...
-                if (!closedSockets.contains(vc)) { 
-                    logger.warn("BAD!! Got close for an unknown local socket!: " 
-                            + vc + " (" + closedSockets.size() + ")");
-                }
-            
-                return;
-            } 
-
-            closedSockets.add(vc);
-        }
+        closedSockets.add(vc);
         
         try {
             serviceLink.closeVirtualConnection(vc);
         } catch (Exception e) {
             logger.warn("Failed to forward close for virtual socket: " + vc, e); 
         }
+    }
+
+    public void connectACK(long index, int fragment, int buffer) {
+        
+        HubRoutedVirtualSocket s = sockets.get(index);
+       
+        boolean result = false;
+        
+        if (s != null) { 
+            result = s.connectACK(fragment, buffer);
+        }
+        
+        serviceLink.ackAckVirtualConnection(index, result); 
+    }
+
+    public void connectNACK(long index, byte reason) {
+  
+        HubRoutedVirtualSocket s = sockets.remove(index);
+        
+        if (s != null) { 
+            s.connectNACK(reason);
+        }
+    }
+
+    public void connectACKACK(long index, boolean succes) {
+        
+        HubRoutedVirtualSocket s = sockets.get(index);
+        
+        boolean result = false;
+        
+        if (s != null) {
+            result = s.connectACKACK(succes);
+        } 
+        
+        // If the handshake failed and someone is waiting, we need to send a 
+        // close back.
+        if (succes && !result) { 
+            try { 
+                serviceLink.closeVirtualConnection(index);
+            } catch (Exception e) {
+                logger.info("Failed to process ACKACK for socket!: " 
+                        + index, e);
+            }
+        }
+    }
+    
+    public void gotMessage(long index, byte[] data) {
+
+        HubRoutedVirtualSocket s = sockets.get(index);
+        
+        // This can happen if we have just closed the socket.
+        if (s == null) { 
+            // Sanity check -- remove ASAP
+            if (!closedSockets.contains(index)) { 
+                logger.warn("BAD!! Got message for an unknown socket!: " + index 
+                        + " size = " + data.length);
+            } else { 
+                logger.warn("BAD!! Got message for already closed socket!: " 
+                        + index + " size = " + data.length);
+            }
+            return;
+        } 
+
+        s.message(data);
+    }
+    
+    public void gotMessageACK(long index, int data) {
+        
+        HubRoutedVirtualSocket s = sockets.get(index);
+        
+        // This can happen if we have just closed the socket.
+        if (s == null) {
+            // Sanity check -- remove ASAP
+            if (!closedSockets.contains(index)) { 
+                logger.warn("BAD!! Got message ACK for an unknown socket!: " 
+                        + index + " data = " + data);
+            } 
+            return;
+        }
+            
+        s.messageACK(data);
     }
 }

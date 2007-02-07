@@ -117,7 +117,7 @@ public class VirtualServerSocket {
             } else { 
                 // See if the other side is still willing to connect ...                
                 try { 
-                    result.connectionAccepted();
+                    result.connectionAccepted(timeout);
                 } catch (IOException e) {
                     VirtualSocketFactory.logger.info("VirtualServerPort( " 
                             + port + ") got exception during accept!", e);

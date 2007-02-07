@@ -2,6 +2,8 @@ package smartsockets.virtual.modules.hubrouted;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 public class HubRoutedOutputStream extends OutputStream {
 
@@ -10,13 +12,21 @@ public class HubRoutedOutputStream extends OutputStream {
     private final byte [] buffer;
     private final int size;
         
+    private final int remoteBufferSize;
+    private int remoteBufferFree;
+    
     private int used = 0;
     private boolean closed = false;
         
-    HubRoutedOutputStream(HubRoutedVirtualSocket parent, int size) {        
+    HubRoutedOutputStream(HubRoutedVirtualSocket parent, int fragmentation, 
+            int bufferSize) {        
+        
         this.parent = parent;
-        this.size = size;
-        buffer = new byte[size];
+        
+        this.size = fragmentation;
+        buffer = new byte[fragmentation];
+   
+        remoteBufferFree = remoteBufferSize = bufferSize;
     }
         
     public void write(byte[] b) throws IOException {        
@@ -45,40 +55,68 @@ public class HubRoutedOutputStream extends OutputStream {
                 return;
             } 
                 
-            // Data is larger than space, and there is some data in buffer
-            if (used != 0) { 
-                System.arraycopy(b, off, buffer, used, space);        
+            // Data is larger than space, and there may be some data in buffer
+            System.arraycopy(b, off, buffer, used, space);        
             
-                used = buffer.length;
-            
-                len -= space;
-                off += space;
+            used = buffer.length;
                 
-                flush();
+            len -= space;
+            off += space;
+                
+            flush();
+        }
+    }
+    
+    private synchronized void waitForBufferSpace() throws IOException {
+        
+        long timeleft = parent.getSoTimeout();
+        long deadline = 0;
+        
+        if (timeleft > 0) { 
+            deadline = System.currentTimeMillis() + timeleft;
+        }
+        
+        while (remoteBufferFree-used < 0) {
+            try { 
+                wait(timeleft);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            
+            if (remoteBufferFree-used >= 0) { 
+                return;
             } 
             
-            // Rest of the data is larger than buffer 
-            while (len > size) {
+            if (deadline > 0) { 
+                // Still no room, and we are on a tight schedule!
+                timeleft = System.currentTimeMillis() - deadline;
                 
-                // Directly copy the user data
-                parent.flush(b, off, size);
-                
-                off += size; 
-                len -= size;
+                if (timeleft <= 0) { 
+                    throw new SocketTimeoutException("Timeout while waiting " +
+                            "for buffer space");
+                }
             }
-        }
+        }        
+    }
+    
+    protected synchronized void messageACK(int data) { 
+        remoteBufferFree += data;
+        notifyAll();
     }
     
     public void flush() throws IOException {
         
-//        System.err.println("OutputStream flushing: " + used + " bytes"); 
-
         if (closed) { 
             return;
         }
         
         if (used > 0) { 
+           
+            // Will throw an exception on timeout!
+            waitForBufferSpace();
+            
             parent.flush(buffer, 0, used);
+            remoteBufferFree -= used;
             used = 0;
         }
     }

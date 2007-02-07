@@ -9,9 +9,11 @@ public interface VirtualConnectionCallBack {
     
     void connectACK(long index, int fragment, int buffer);    
     void connectNACK(long index, byte reason);
-    
+    void connectACKACK(long index, boolean succes);
+
     void disconnect(long index);
     
     void gotMessage(long index, byte [] data);    
     void gotMessageACK(long index, int data);
+
 }

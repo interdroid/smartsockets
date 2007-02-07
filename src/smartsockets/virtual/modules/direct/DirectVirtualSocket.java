@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
@@ -30,22 +31,29 @@ public class DirectVirtualSocket extends VirtualSocket {
         this.in = in;               
     }
     
-    protected void connectionAccepted() throws IOException { 
+    protected void connectionAccepted(int timeout) throws IOException { 
+      
+        int ack = -1;
         
-        try { 
+        try {
+            s.setSoTimeout(timeout);
+            
             out.write(Direct.ACCEPT);
             out.flush();        
-            
-            // Not sure why this is needed...
-            //remote = new SocketAddressSet(in.readUTF());
-            //remotePort = in.readInt();            
+
+            // We should do a three way handshake here to ensure both side agree
+            // that we have a connection...
+            ack = in.read();
         } catch (IOException e) { 
             DirectSocketFactory.close(s, out, in);  
             throw e;
         } 
+        
+        if (ack != Direct.ACCEPT) { 
+            throw new ConnectException("Client disconnected");
+        }
     }
     
-    // TODO: don't like that this is public!!
     public void connectionRejected() { 
         
         try { 
@@ -65,7 +73,8 @@ public class DirectVirtualSocket extends VirtualSocket {
         
             switch (result) {
             case Direct.ACCEPT:
-                // TODO: find decent port here ?
+                out.write(Direct.ACCEPT);
+                out.flush();
                 return;
                 
             case Direct.PORT_NOT_FOUND:
