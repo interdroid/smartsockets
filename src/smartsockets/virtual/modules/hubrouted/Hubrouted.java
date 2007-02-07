@@ -25,14 +25,14 @@ public class Hubrouted extends ConnectModule
     implements VirtualConnectionCallBack {
     
     private static final int DEFAULT_TIMEOUT = 5000;   
-    private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 100;   
+   // private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 10000;   
      
     private final Map<Long, HubRoutedVirtualSocket> sockets = 
        Collections.synchronizedMap(new HashMap<Long, HubRoutedVirtualSocket>());
     
     // TODO: this is a sanity check only, may be removed later!!
-    private final Set<Long> closedSockets = Collections.synchronizedSet(
-                new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE));
+    //private final Set<Long> closedSockets = Collections.synchronizedSet(
+    //            new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE));
     
     private int localFragmentation = 64*1024;
     private int localBufferSize = 1024*1024;
@@ -227,10 +227,14 @@ public class Hubrouted extends ConnectModule
             rejectedIncomingConnections++;
             serviceLink.nackVirtualConnection(index, 
                     ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);
-        } else {
+        } 
+        
+        /* ACK will be send during accept!
+          
+          else {
             acceptedIncomingConnections++;
             serviceLink.ackVirtualConnection(index, localFragmentation, localBufferSize); 
-        }
+        }*/
     }
 
     public void disconnect(long vc) {
@@ -239,16 +243,16 @@ public class Hubrouted extends ConnectModule
         
         if (s == null) { 
             // This can happen if we have just closed the socket...
-        
+            /* 
             if (!closedSockets.contains(vc)) {
                 logger.warn("BAD!! Got disconnect from an unknown remote " 
                         + "socket!: " + vc);                                        
             }
-            
+            */
             return;
         } 
         
-        closedSockets.add(vc);
+     //   closedSockets.add(vc);
         
         try { 
             s.close(false);
@@ -265,15 +269,15 @@ public class Hubrouted extends ConnectModule
 
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
-            if (!closedSockets.contains(vc)) { 
+          /*  if (!closedSockets.contains(vc)) { 
                 logger.warn("BAD!! Got close for an unknown local socket!: " 
                         + vc + " (" + closedSockets.size() + ")");
             }
-
+*/
             return;
         } 
 
-        closedSockets.add(vc);
+  //      closedSockets.add(vc);
         
         try {
             serviceLink.closeVirtualConnection(vc);
@@ -288,13 +292,18 @@ public class Hubrouted extends ConnectModule
        
         boolean result = false;
         
-        if (s != null) { 
-            result = s.connectACK(fragment, buffer);
+        if (s == null) { 
+            serviceLink.ackAckVirtualConnection(index, false);
+            return;
         }
         
-        serviceLink.ackAckVirtualConnection(index, result); 
+        s.connectACK(fragment, buffer);
     }
 
+    protected void sendAckAck(long index, boolean result) { 
+        serviceLink.ackAckVirtualConnection(index, result);
+    }
+    
     public void connectNACK(long index, byte reason) {
   
         HubRoutedVirtualSocket s = sockets.remove(index);
@@ -332,6 +341,8 @@ public class Hubrouted extends ConnectModule
         
         // This can happen if we have just closed the socket.
         if (s == null) { 
+            
+            /*
             // Sanity check -- remove ASAP
             if (!closedSockets.contains(index)) { 
                 logger.warn("BAD!! Got message for an unknown socket!: " + index 
@@ -339,7 +350,7 @@ public class Hubrouted extends ConnectModule
             } else { 
                 logger.warn("BAD!! Got message for already closed socket!: " 
                         + index + " size = " + data.length);
-            }
+            }*/
             return;
         } 
 
@@ -353,10 +364,10 @@ public class Hubrouted extends ConnectModule
         // This can happen if we have just closed the socket.
         if (s == null) {
             // Sanity check -- remove ASAP
-            if (!closedSockets.contains(index)) { 
+/*            if (!closedSockets.contains(index)) { 
                 logger.warn("BAD!! Got message ACK for an unknown socket!: " 
                         + index + " data = " + data);
-            } 
+            } */
             return;
         }
             

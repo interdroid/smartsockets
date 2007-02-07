@@ -83,16 +83,18 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     
         long deadline = System.currentTimeMillis() + timeout;
         long timeleft = timeout;
-    
+        
+        synchronized (this) {
+            waitingForACKACK = true;
+        }
+        
+        
         // Send the ACK to the client side
         serviceLink.ackVirtualConnection(connectionIndex, localFragmentation, 
                 localBufferSize);
     
         // Now wait for the ACKACK to come back to us (may time out).
         synchronized (this) {
-            
-            waitingForACKACK = true;
-            
             while (!gotACKACK) { 
                 
                 try { 
@@ -369,10 +371,16 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         return ackResult;
     }
 
-    protected synchronized boolean connectACK(int fragment, int buffer) {
+    protected synchronized void connectACK(int fragment, int buffer) {
        
+        // NOTE: We need to send the ACK ACK from here to prevent a race 
+        // condition. It we would do it from HubRouted itself, the user thread
+        // may start sending messages (or worse, do a close) before we have 
+        // send the ACK ACK!
+        
         if (!waitingForACK) { 
-            return false;
+            parent.sendAckAck(connectionIndex, false);
+            return;
         }
         
         gotACK = true;
@@ -385,7 +393,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         in = new HubRoutedInputStream(this, localFragmentation, localBufferSize); 
        
         notifyAll();
-        return true;
+       
+        parent.sendAckAck(connectionIndex, true);
     }
 
     protected synchronized void connectNACK(byte reason) {
@@ -402,7 +411,9 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
 
     public synchronized boolean connectACKACK(boolean succes) {
         
-        if (!waitingForACK) { 
+      //  .println("connectACKACK(" + succes + ")");
+        
+        if (!waitingForACKACK) { 
             return false;
         }
         

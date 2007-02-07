@@ -436,6 +436,8 @@ public class ServiceLink implements Runnable {
         int fragment = in.readInt();
         int buffer = in.readInt();
 
+  //      System.err.println("***** ACK IN " + index);
+        
         if (vcCallBack == null) {
 
             if (logger.isInfoEnabled()) {
@@ -459,6 +461,8 @@ public class ServiceLink implements Runnable {
 
         long index = in.readLong();
         boolean succes = in.readBoolean();
+        
+  //      System.err.println("** ACK ACK IN " + index);
         
         if (vcCallBack == null) {
 
@@ -624,6 +628,10 @@ public class ServiceLink implements Runnable {
             logger.debug("Got close for connection: " + index);
         }
 
+
+     //   System.err.println("***** CLOSE " + index);
+
+        
         disconnectCallback(index);
     }
 
@@ -664,7 +672,7 @@ public class ServiceLink implements Runnable {
 
         long index = in.readLong();
         int data = in.readInt();
-
+        
         if (logger.isDebugEnabled()) {
             logger.debug("Got Message ACK for connection: " + index);
         }
@@ -1238,6 +1246,8 @@ public class ServiceLink implements Runnable {
                     + "to hub");
         }
 
+     //   System.err.println("#### ACK " + index);
+        
         try {
             synchronized (out) {
                 out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL_ACK);
@@ -1265,6 +1275,8 @@ public class ServiceLink implements Runnable {
                     + "to hub");
         }
 
+     //   System.err.println("#### ACK ACK " + index);
+        
         try {
             synchronized (out) {
                 out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL_ACK_ACK);
@@ -1335,6 +1347,8 @@ public class ServiceLink implements Runnable {
             logger.debug("Closing virtual connection: " + index);
         }
 
+     //   System.err.println("##### CLOSE " + index);
+        
         try {
             sendClose(index);
         } catch (IOException e) {

@@ -319,6 +319,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         long index     = in.readLong();      
         boolean succes = in.readBoolean();
         
+       // System.err.println("****** ACK ACK IN " + index + " " + succes);
+        
         processVirtualConnectACKACK(index, succes);
     } 
     
@@ -399,6 +401,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         // TODO: Should be asynchronous ???
         
+       // System.err.println("****** ACK ACK OUT " + index + " " + succes);
+        
         // forward the ACK
         try {
             synchronized (out) {
@@ -410,6 +414,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         } catch (Exception e) {
             handleDisconnect(e);
         }        
+        
+      //  System.err.println("****** ACK ACK OUT DONE " + index + " " + succes);
     }
     
     private final void forwardVirtualConnectNACK(long index, byte reason) { 
@@ -892,6 +898,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         VirtualConnection vc = virtualConnections.find(key);
         
         if (vc == null) { 
+            
+         //   System.err.println("****** ACK ACK LOST " + index + " " + succes);
+            
             // Connection doesn't exist. It may already be closed by the other 
             // side due to a timeout, so we send a close back to inform the 
             // sender that the connection does no longer exist...
@@ -918,7 +927,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 vclogger.info("forward connect ACK for 1: " + vc.index1);
             }
             
-            vc.mfc1.forwardVirtualConnectACKACK(vc.index2, succes);
+            vc.mfc1.forwardVirtualConnectACKACK(vc.index1, succes);
                     
         } else { 
             
