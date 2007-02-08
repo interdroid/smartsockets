@@ -10,7 +10,6 @@ import java.util.Map;
 
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSimpleSocket;
-import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 

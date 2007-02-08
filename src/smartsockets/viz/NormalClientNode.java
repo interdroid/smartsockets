@@ -1,10 +1,7 @@
 package smartsockets.viz;
 
-import java.awt.Color;
-
 import smartsockets.hub.servicelink.ClientInfo;
 
-import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
 public class NormalClientNode extends ClientNode {

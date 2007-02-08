@@ -6,11 +6,13 @@ public class VirtualConnection {
     public final String key1;
     public final MessageForwardingConnection mfc1;
     public final long index1;
-
+    public final byte [] buffer1;
+    
     // The connection that we will forward messages to...
     public final String key2;
     public final MessageForwardingConnection mfc2;
     public final long index2;
+    public byte [] buffer2;
     
     private int maxCredits;    
     private int credits;
@@ -22,15 +24,17 @@ public class VirtualConnection {
     private boolean removing = false;
     
     VirtualConnection(MessageForwardingConnection mfc1, String key1, long index1, 
-            MessageForwardingConnection mfc2, String key2, long index2) {  
+            int fragment1, MessageForwardingConnection mfc2, String key2, long index2) {  
       
         this.key1 = key1;
         this.mfc1 = mfc1;
         this.index1 = index1;
-
+        this.buffer1 = new byte[fragment1];
+        
         this.key2 = key2;
         this.mfc2 = mfc2;
         this.index2 = index2;
+        this.buffer2 = null; // cannot be set yet...
     }
 
     /*
@@ -41,7 +45,9 @@ public class VirtualConnection {
     }
     */
     
-    
+    public void setSecondBuffer(int fragment2) {
+        buffer2 = new byte[fragment2];
+    }
    
     public void remove() { 
         

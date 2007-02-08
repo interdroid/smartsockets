@@ -11,7 +11,6 @@ import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
-import smartsockets.virtual.modules.ConnectModule;
 import smartsockets.virtual.modules.MessagingModule;
 import smartsockets.virtual.modules.direct.Direct;
 import smartsockets.virtual.modules.direct.DirectVirtualSocket;

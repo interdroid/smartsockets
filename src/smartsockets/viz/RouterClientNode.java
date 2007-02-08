@@ -1,10 +1,7 @@
 package smartsockets.viz;
 
 import java.awt.Color;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.StringTokenizer;
@@ -12,7 +9,6 @@ import java.util.StringTokenizer;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ClientInfo;
 
-import com.sun.org.apache.bcel.internal.generic.InstructionConstants.Clinit;
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 

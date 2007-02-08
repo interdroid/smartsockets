@@ -2,7 +2,6 @@ package smartsockets.virtual.modules.hubrouted;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 public class HubRoutedOutputStream extends OutputStream {

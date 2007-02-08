@@ -4,8 +4,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import javax.print.attribute.standard.Severity;
-
 import smartsockets.direct.SocketAddressSet;
 
 public class ClientDescription {

@@ -2,9 +2,6 @@ package smartsockets.hub.connections;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-
 import org.apache.log4j.Logger;
 
 public class VirtualConnections {

@@ -1,7 +1,5 @@
 package smartsockets.hub.state;
 
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;

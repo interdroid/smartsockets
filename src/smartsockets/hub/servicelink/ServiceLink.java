@@ -5,12 +5,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -19,7 +14,6 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.ConnectionProtocol;
-import smartsockets.hub.HubProtocol;
 import smartsockets.hub.connections.MessageForwarderProtocol;
 import smartsockets.hub.connections.VirtualConnectionIndex;
 import smartsockets.util.TypedProperties;

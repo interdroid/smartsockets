@@ -7,13 +7,10 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-
 import smartsockets.Properties;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.servicelink.VirtualConnectionCallBack;
-import smartsockets.util.FixedSizeHashSet;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;

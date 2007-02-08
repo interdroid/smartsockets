@@ -15,7 +15,6 @@ import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.IPAddressSet;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.ConnectionProtocol;
-import smartsockets.hub.HubProtocol;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;

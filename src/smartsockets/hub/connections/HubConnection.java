@@ -12,7 +12,6 @@ import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.SocketAddressSet;
 import smartsockets.hub.HubProtocol;
-import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.ClientDescription;
 import smartsockets.hub.state.HubDescription;
 import smartsockets.hub.state.HubList;
