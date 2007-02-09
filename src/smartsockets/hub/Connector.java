@@ -59,12 +59,12 @@ class Connector extends CommunicationThread {
         int opcode = in.read();
 
         switch (opcode) {
-        case ConnectionProtocol.HUB_CONNECTION_ACCEPTED:
+        case ConnectionProtocol.CONNECTION_ACCEPTED:
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.debug("Connection request accepted");
             }
             return true;
-        case ConnectionProtocol.HUB_CONNECTION_REFUSED:
+        case ConnectionProtocol.CONNECTION_REFUSED:
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.debug("Connection request refused (duplicate)");
             }

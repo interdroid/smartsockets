@@ -3,7 +3,7 @@
     default="build"
     basedir=".">
 
-    <property name="version" value="smartsockets-0.98"/>
+    <property name="version" value="smartsockets-0.99"/>
 
     <property name="srcdir" value="./src"/>
     <property name="builddir" value="./build"/>

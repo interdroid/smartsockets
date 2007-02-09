@@ -109,7 +109,7 @@ public class ClientConnection extends MessageForwardingConnection {
         LinkedList<String> result = as.getResult();
         
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
+            out.write(ServiceLinkProtocol.INFO_REPLY);           
             out.writeInt(id);            
             out.writeInt(result.size());
         
@@ -136,7 +136,7 @@ public class ClientConnection extends MessageForwardingConnection {
         LinkedList<String> result = as.getResult();
         
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
+            out.write(ServiceLinkProtocol.INFO_REPLY);           
             out.writeInt(id);            
             out.writeInt(result.size());
             
@@ -175,7 +175,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
       
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
+            out.write(ServiceLinkProtocol.INFO_REPLY);           
             out.writeInt(id);            
             out.writeInt(result.size());
 
@@ -203,7 +203,7 @@ public class ClientConnection extends MessageForwardingConnection {
         LinkedList<String> result = css.getResult();
 
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
+            out.write(ServiceLinkProtocol.INFO_REPLY);           
             out.writeInt(id);            
             out.writeInt(result.size());
 
@@ -236,7 +236,7 @@ public class ClientConnection extends MessageForwardingConnection {
         LinkedList<String> result = ds.getResult();
         
         synchronized (out) {
-            out.write(ServiceLinkProtocol.INFO);           
+            out.write(ServiceLinkProtocol.INFO_REPLY);           
             out.writeInt(id);            
             out.writeInt(result.size());
 
@@ -341,12 +341,6 @@ public class ClientConnection extends MessageForwardingConnection {
                      
         try { 
             switch (opcode) { 
-            case ServiceLinkProtocol.DISCONNECT:
-                if (conlogger.isDebugEnabled()) {
-                    conlogger.debug("Connection " + clientAddress + " disconnecting");
-                } 
-                handleDisconnect(null);
-                return false;
             
             case ServiceLinkProtocol.HUBS:
                 if (reqlogger.isDebugEnabled()) {

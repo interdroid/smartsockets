@@ -53,6 +53,8 @@ public class ServiceLink implements Runnable {
 
     private DataInputStream in;
 
+    private long pendingMessage = 0;
+    
     private int nextCallbackID = 0;
 
     private int maxWaitTime = DEFAULT_WAIT_TIME;
@@ -283,7 +285,7 @@ public class ServiceLink implements Runnable {
             int reply = in.read();
 
             // Throw an exception if the hub refuses our conenction
-            if (reply != ConnectionProtocol.SERVICELINK_ACCEPTED) {
+            if (reply != ConnectionProtocol.CONNECTION_ACCEPTED) {
                 throw new IOException("Hub denied connection request (got: "
                         + reply);
             }
@@ -308,14 +310,21 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    private void handleMessage() throws IOException {
+    private final void skip(int bytes) throws IOException {
+        while (bytes > 0) {
+            bytes -= in.skip(bytes);
+        }
+    }
+    
+    private void handleInfoMessage() throws IOException {
 
         SocketAddressSet source = SocketAddressSet.read(in);
         SocketAddressSet sourceHub = SocketAddressSet.read(in);
 
         // since we have reached our destination, the hop count and 
         // target addresses are not used anymore..
-        in.skip(4);
+        skip(4);
+        
         SocketAddressSet.skip(in);
         SocketAddressSet.skip(in);
 
@@ -639,10 +648,6 @@ public class ServiceLink implements Runnable {
                     + ") for connection: " + index);
         }
 
-        // TODO: optimize!
-        byte[] data = new byte[len];
-        in.readFully(data);
-
         incomingDataMessages++;
         incomingBytes += len;
 
@@ -650,6 +655,8 @@ public class ServiceLink implements Runnable {
             logger.warn("Received virtual message(" + len
                     + ") for connection: " + index + " which doesn't exist!!");
 
+            // Remove the message from the stream!
+            skip(len);
             sendClose(index);
             return;
         }
@@ -659,9 +666,14 @@ public class ServiceLink implements Runnable {
                     + " connection: " + index);
         }
 
-        vcCallBack.gotMessage(index, data);
+        if (!vcCallBack.gotMessage(index, len, in)) { 
+            if (logger.isInfoEnabled()) {
+                logger.debug("Message for " + index + " not read!");
+            }
+            skip(len);
+        }
     }
-
+    
     private void handleIncomingAck() throws IOException {
 
         long index = in.readLong();
@@ -701,8 +713,8 @@ public class ServiceLink implements Runnable {
                     closeConnectionToHub();
                     break;
 
-                case MessageForwarderProtocol.CLIENT_MESSAGE:
-                    handleMessage();
+                case MessageForwarderProtocol.INFO_MESSAGE:
+                    handleInfoMessage();
                     break;
 
                 case MessageForwarderProtocol.CREATE_VIRTUAL:
@@ -733,7 +745,7 @@ public class ServiceLink implements Runnable {
                     handleIncomingAck();
                     break;
 
-                case ServiceLinkProtocol.INFO:
+                case ServiceLinkProtocol.INFO_REPLY:
                     handleInfo();
                     break;
 
@@ -828,7 +840,7 @@ public class ServiceLink implements Runnable {
 
         try {
             synchronized (out) {
-                out.write(MessageForwarderProtocol.CLIENT_MESSAGE);
+                out.write(MessageForwarderProtocol.INFO_MESSAGE);
 
                 SocketAddressSet.write(myAddress, out);
                 SocketAddressSet.write(hubAddress, out); // may be null

@@ -1,6 +1,8 @@
 package smartsockets.hub;
 
-public interface HubProtocol {
-    public static final byte PING = 10;
-    public static final byte GOSSIP = 11;
+import smartsockets.hub.connections.MessageForwarderProtocol;
+
+public interface HubProtocol extends MessageForwarderProtocol {
+    
+    public static final byte GOSSIP = 20;
 } 

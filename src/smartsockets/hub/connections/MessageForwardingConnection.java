@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.hub.ConnectionProtocol;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.DirectionsSelector;
 import smartsockets.hub.state.HubDescription;
@@ -233,7 +234,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         try {
             synchronized (out) {
-                out.writeByte(MessageForwarderProtocol.CLIENT_MESSAGE);            
+                out.writeByte(MessageForwarderProtocol.INFO_MESSAGE);            
                 m.write(out);            
                 out.flush();
             }
@@ -1011,13 +1012,14 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             switch (opcode) { 
         
             case -1:
+            case ConnectionProtocol.DISCONNECT:
                 if (vclogger.isInfoEnabled()) { 
-                    vclogger.info("Connection got EOF!");
+                    vclogger.info("Connection got disconnect(" + opcode + ")!");
                 }
                 handleDisconnect(null);
                 return false;
-            
-            case MessageForwarderProtocol.CLIENT_MESSAGE:
+                
+            case MessageForwarderProtocol.INFO_MESSAGE:
                 if (meslogger.isInfoEnabled()) {
                     meslogger.info("HubConnection got message!");
                 }

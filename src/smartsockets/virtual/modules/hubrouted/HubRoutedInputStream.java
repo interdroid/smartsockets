@@ -1,52 +1,68 @@
 package smartsockets.virtual.modules.hubrouted;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketTimeoutException;
-import java.util.LinkedList;
 
 public class HubRoutedInputStream extends InputStream {
 
+    private final int MINIMAL_ACK_SIZE;
+
     private final HubRoutedVirtualSocket parent; 
-    
-    // Queue of incoming data
-    private final LinkedList<byte []> buffers = new LinkedList<byte[]>();
-  
+     
     // Current buffer 
-    private byte [] buffer;
+    private final byte [] buffer;
     
-    // Amount of data in current buffer that is already used.
-    private int used = 0;
+    // Postion in the buffer where we start reading.
+    private int startRead = 0;
+    
+    // Postion in the buffer where we start writing. 
+    private int startWrite = 0;
+    
+    // Amount of data in the buffer
+    private int available = 0;
+    
+    // Amount of data which still needs to be acked.
+    private int pendingACK = 0;
     
     // To indicate if we are (about to be) closed.
     private boolean closePending = false;
     private boolean closed = false;
     
-    // Temporary buffer used to read a single byte (TODO: optimize!)
-    private final byte [] single = new byte[1];
-    
     HubRoutedInputStream(HubRoutedVirtualSocket parent, int fragmentation, 
             int bufferSize) { 
         
         this.parent = parent;
+        this.buffer = new byte[bufferSize];
+        
+        // TODO: Does this heuristic work ??
+        // We won't send an ACK until at least 25% of the buffer is empty
+        this.MINIMAL_ACK_SIZE = bufferSize / 4;
     }
     
     public int read() throws IOException {
         
-        int result = read(single);
-        
-        while (result == 0) {
-            // TODO: is this right ? 
-            result = read(single);
+        if (closed) { 
+            throw new IOException("Stream closed!");
         }
+    
+        // Check how much data we can read. This will block if the buffer is 
+        // emtpy, and may throw a TimeOutException 
+        int avail = waitAvailable();
         
-        if (result == 1) {
-            //System.err.println("InputStream returning single byte: " + single[0]);            
-            return (single[0] & 0xff);
-        } else {
-            //System.err.println("InputStream returning single result: " + result);            
+        // If -1 is returned, the socket was closed
+        if (avail == -1) { 
+            doClose();
             return -1;
         }
+  
+        int result = buffer[startRead];
+        startRead = (startRead + 1) % buffer.length;
+        
+        decreaseAvailableAndACK(1);
+        
+        return result;    
     }
 
     public int read(byte[] b) throws IOException { 
@@ -58,61 +74,102 @@ public class HubRoutedInputStream extends InputStream {
         if (closed) { 
             throw new IOException("Stream closed!");
         }
+    
+        // Check how much data we can read. This will block if the buffer is 
+        // emtpy, and may throw a TimeOutException 
+        int avail = waitAvailable();
         
-        if (buffer == null || used == buffer.length) {
-          
-            buffer = getBuffer(buffer, parent.getSoTimeout());
-         
-            if (buffer == null) { 
-                doClose();
+        // If -1 is returned, the socket was closed
+        if (avail == -1) { 
+            doClose();
+            return -1;
+        }
+ 
+        // Check if there is more/less available than we need
+        int toRead = avail < len ? avail : len; 
+            
+        // Check if the buffer will wrap during the read
+        if (startRead + toRead <= buffer.length) { 
+            // all the data can be read in one go!
+            System.arraycopy(buffer, startRead, b, off, toRead);
+            startRead = (startRead + toRead) % buffer.length;
+        } else { 
+            // the buffer wraps, so read the data in two parts
+            int part = buffer.length - startRead; 
+            System.arraycopy(buffer, startRead, b, off, part);
+            System.arraycopy(buffer, 0, b, off+part, toRead-part);
+            startRead = toRead-part;
+        }
+        
+        decreaseAvailableAndACK(toRead);
+        
+        return toRead;               
+    }
+    
+    private void decreaseAvailableAndACK(int amount) throws IOException { 
+        
+        synchronized (this) {
+            available -= amount;
+        }
+        
+        pendingACK += amount;
+        
+        if (pendingACK > MINIMAL_ACK_SIZE) { 
+            parent.sendACK(pendingACK);
+            pendingACK = 0;
+        }
+    }
+    
+    private synchronized int waitAvailable() throws IOException { 
+        
+        // shortcut 
+        if (available > 0) { 
+            return available;
+        }
+        
+        long deadline = 0;
+        long timeleft = parent.getSoTimeout();
+        
+        if (timeleft > 0) { 
+            deadline = System.currentTimeMillis() + timeleft;
+        } else { 
+            timeleft = 0;
+        }
+        
+        while (available == 0) {
+            
+            if (closePending || closed) { 
                 return -1;
             }
             
-   //         System.err.println("InputStream got byte[" + buffer.length + "]");
+            try {
+                wait(timeleft);                
+            } catch (InterruptedException e) {
+                // ignore
+            }
+                        
+            if (deadline > 0 && available == 0) { 
+                timeleft = deadline - System.currentTimeMillis(); 
             
-            used = 0;
+                if (timeleft <= 0) { 
+                    throw new SocketTimeoutException("Timeout while reading " +
+                            "data");
+                }
+            }
         }
         
-        int avail = buffer.length - used;
-            
-        //System.err.println("InputStream has byte[" + buffer.length + "] used = "
-                //+ used + " avail = "+ avail); 
-        
-        if (len <= avail) { 
-            //System.err.println("InputStream has enough bytes: " + avail 
-                    //+ " (" + len + ")");            
-            
-            System.arraycopy(buffer, used, b, off, len);
-            used += len;
-            
-            //System.err.println("InputStream returning len: " + len);            
-            return len;                
-        } else { 
-            //System.err.println("InputStream has too few bytes: " + avail  
-              //      + " (" + len + ")");            
-            
-            System.arraycopy(buffer, used, b, off, avail);
-            used = buffer.length;
-            
-            //System.err.println("InputStream returning avail: " + avail);
-            return avail;
-        }               
+        return available;        
     }
     
-    public int available() { 
-        
-        if (buffer == null) { 
-            return 0;
-        } else { 
-            return buffer.length - used;
-        }       
+    public synchronized int available() { 
+        return available;
     }
     
     public synchronized void close() { 
         closePending = true;
         
         // Wakeup anyone waiting for data
-        if (buffers.size() == 0) { 
+        if (available == 0) { 
             notifyAll();
         }
     }
@@ -125,50 +182,33 @@ public class HubRoutedInputStream extends InputStream {
         return closed;
     }
     
-    private synchronized byte [] getBuffer(byte [] old, int timeout) throws IOException { 
+    protected final synchronized void add(int len, DataInputStream dis) throws IOException {
+       
+        // If the flow control is working correctly, we can alway write the 
+        // data here!!!!
         
-        long deadline = 0;
-        long timeleft = timeout;
-        
-        if (timeout > 0) { 
-            deadline = System.currentTimeMillis() + timeout;
+        // Sanity check -- remote ASAP
+        if (len > (buffer.length - available)) { 
+            System.err.println("EEK: buffer overflow!!");
         }
         
-        if (old != null) { 
-            // TODO: accumulative ack ?
-            parent.sendACK(old.length);
+        int cont = (buffer.length - startWrite);
+        
+        if (cont >= len) { 
+            // We can read the data in one go.
+            dis.readFully(buffer, startWrite, len);
+            startWrite = (startWrite + len) % buffer.length;
+        } else {         
+            // The buffer will wrap, so read in two parts
+            dis.readFully(buffer, startWrite, cont);
+            dis.readFully(buffer, 0, len-cont);
+            startWrite = len-cont;
         }
         
-        while (buffers.size() == 0) {
-            
-            if (closePending || closed) { 
-                return null;
-            }
-            
-            try {
-                wait(timeleft);                
-            } catch (InterruptedException e) {
-                // ignore
-            }
-                        
-            if (deadline > 0 && buffers.size() == 0) { 
-                timeleft = deadline - System.currentTimeMillis(); 
-            
-                if (timeleft <= 0) { 
-                    throw new SocketTimeoutException("Failed to receive " +
-                            "data in time");
-                }
-            }
-        }
-        
-        return buffers.removeFirst();        
-    }
-    
-    protected synchronized void add(byte [] data) {
-        buffers.addLast(data);
+        available += len;
         
         // Check if anyone could have been waiting for us...
-        if (buffers.size() == 1) { 
+        if (available == len) { 
             notifyAll();
         }
     }

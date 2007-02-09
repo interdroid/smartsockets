@@ -1,5 +1,6 @@
 package smartsockets.virtual.modules.hubrouted;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -324,9 +325,9 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         return "HubRoutedVirtualSocket(" + connectionIndex + ")";
     }
 
-    protected void message(byte[] data) {
+    protected final void message(int len, DataInputStream dis) throws IOException {
         // invoker (servicelink) is single threaded, so no need to synchronize
-        in.add(data);
+        in.add(len, dis);
     }
   
     protected void sendACK(int data) throws IOException { 

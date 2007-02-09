@@ -1,5 +1,6 @@
 package smartsockets.virtual.modules.hubrouted;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
@@ -335,7 +336,7 @@ public class Hubrouted extends ConnectModule
         }
     }
     
-    public void gotMessage(long index, byte[] data) {
+    public boolean gotMessage(long index, int len, DataInputStream in) throws IOException {
 
         HubRoutedVirtualSocket s = sockets.get(index);
         
@@ -351,10 +352,11 @@ public class Hubrouted extends ConnectModule
                 logger.warn("BAD!! Got message for already closed socket!: " 
                         + index + " size = " + data.length);
             }*/
-            return;
+            return false;
         } 
 
-        s.message(data);
+        s.message(len, in);
+        return true;
     }
     
     public void gotMessageACK(long index, int data) {
@@ -373,4 +375,6 @@ public class Hubrouted extends ConnectModule
             
         s.messageACK(data);
     }
+
+    
 }

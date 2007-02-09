@@ -102,7 +102,7 @@ public class Acceptor extends CommunicationThread {
                 hconlogger.info("Connection from " + addr + " refused (duplicate)");
             }
                       
-            out.write(ConnectionProtocol.HUB_CONNECTION_REFUSED);
+            out.write(ConnectionProtocol.CONNECTION_REFUSED);
             out.flush();
             return false;
         } else {                                     
@@ -111,7 +111,7 @@ public class Acceptor extends CommunicationThread {
                 hconlogger.warn("Connection accepted from hub " + addr);
            // }
 
-            out.write(ConnectionProtocol.HUB_CONNECTION_ACCEPTED);            
+            out.write(ConnectionProtocol.CONNECTION_ACCEPTED);            
             out.flush();
 
             // Now activate it. 
@@ -144,7 +144,7 @@ public class Acceptor extends CommunicationThread {
                     " refused, since it already exists!"); 
                 } 
 
-                out.write(ConnectionProtocol.SERVICELINK_REFUSED);
+                out.write(ConnectionProtocol.CONNECTION_REFUSED);
                 out.flush();
                 DirectSocketFactory.close(s, out, in);
                 return false;
@@ -158,7 +158,7 @@ public class Acceptor extends CommunicationThread {
                         + " accepted (" + connections.size() + ")"); 
          //   } 
 
-            out.write(ConnectionProtocol.SERVICELINK_ACCEPTED);
+            out.write(ConnectionProtocol.CONNECTION_ACCEPTED);
             out.writeUTF(server.getAddressSet().toString());            
             out.flush();
 

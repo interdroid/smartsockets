@@ -1,5 +1,8 @@
 package smartsockets.hub.servicelink;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+
 import smartsockets.direct.SocketAddressSet;
 
 public interface VirtualConnectionCallBack {
@@ -13,7 +16,7 @@ public interface VirtualConnectionCallBack {
 
     void disconnect(long index);
     
-    void gotMessage(long index, byte [] data);    
+    boolean gotMessage(long index, int len, DataInputStream in) throws IOException ;    
     void gotMessageACK(long index, int data);
 
 }

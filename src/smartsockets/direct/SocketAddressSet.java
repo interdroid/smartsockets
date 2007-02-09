@@ -2,6 +2,7 @@ package smartsockets.direct;
 
 
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -755,7 +756,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return new SocketAddressSet(tmp);   
     }
    
-    public static void skip(DataInput in) throws IOException { 
+    public static void skip(DataInputStream in) throws IOException { 
         
         int len = in.readInt();
         
@@ -763,7 +764,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             return;
         }
        
-        in.skipBytes(len);
+        while (len > 0) {
+            len -= in.skip(len);
+        }
     }
    
     
