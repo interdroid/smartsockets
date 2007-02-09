@@ -69,7 +69,8 @@ public class Properties {
     
     public static final String ROUTED_PREFIX    = MODULES_PREFIX + "routed.";
     public static final String ROUTED_BUFFER    = ROUTED_PREFIX + "receivebuffer";
-    public static final String ROUTED_FRAGMENT = ROUTED_PREFIX + "fragment";
+    public static final String ROUTED_FRAGMENT  = ROUTED_PREFIX + "fragment";
+    public static final String ROUTED_MIN_ACK   = ROUTED_PREFIX + "min_ack_size";
         
     public static final String DISCOVERY_PREFIX    = PREFIX + "discovery.";
     public static final String DISCOVERY_PREFERRED = DISCOVERY_PREFIX + "preferred"; 
@@ -88,8 +89,6 @@ public class Properties {
     public static final String HUB_RECEIVE_BUFFER = HUB_PREFIX + "receivebuffer";
     
     public static final String SL_PREFIX         = PREFIX + "servicelink.";        
-    public static final String SL_CREDITS        = SL_PREFIX + "credits";
-    public static final String SL_FRAGMENTATION  = SL_PREFIX + "fragment";    
     public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
     public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
         
@@ -137,13 +136,11 @@ public class Properties {
             DISCOVERY_PORT,         "24545", 
             DISCOVERY_TIMEOUT,      "5000",    
             
-            SL_CREDITS,             "100",
-            SL_FRAGMENTATION,       "8176",
             SL_SEND_BUFFER,         "-1", 
             SL_RECEIVE_BUFFER,      "-1",
             
             ROUTED_BUFFER,          "65536",
-            ROUTED_FRAGMENT,        "8192"            
+            ROUTED_FRAGMENT,        "8176"            
     };
 
     private static TypedProperties defaultProperties;

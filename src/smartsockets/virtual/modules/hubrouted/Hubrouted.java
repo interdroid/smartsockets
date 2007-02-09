@@ -27,14 +27,11 @@ public class Hubrouted extends ConnectModule
      
     private final Map<Long, HubRoutedVirtualSocket> sockets = 
        Collections.synchronizedMap(new HashMap<Long, HubRoutedVirtualSocket>());
-    
-    // TODO: this is a sanity check only, may be removed later!!
-    //private final Set<Long> closedSockets = Collections.synchronizedSet(
-    //            new FixedSizeHashSet<Long>(DEFAULT_CLOSED_CONNECTION_CACHE));
-    
-    private int localFragmentation = 64*1024;
+      
+    private int localFragmentation = 8*1024-16;
     private int localBufferSize = 1024*1024;
-    
+    private int localMinimalACKSize = localBufferSize / 4;
+        
     public Hubrouted() {
         super("ConnectModule(HubRouted)", true);
     }
@@ -45,6 +42,9 @@ public class Hubrouted extends ConnectModule
         
         localBufferSize = properties.getIntProperty(Properties.ROUTED_BUFFER, 
                 localBufferSize);
+        
+        localMinimalACKSize = properties.getIntProperty(
+                Properties.ROUTED_MIN_ACK, localMinimalACKSize);
         
         if (localFragmentation > localBufferSize) { 
             
@@ -109,7 +109,8 @@ public class Hubrouted extends ConnectModule
         // Create a socket first. Since this is a wrapper anyway, we can reuse 
         // it until we get a connection.
         HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, 
-                 localFragmentation, localBufferSize, target, serviceLink, null);
+                 localFragmentation, localBufferSize, localMinimalACKSize, 
+                 target, serviceLink, null);
         
         while (true) { 
         
@@ -218,8 +219,9 @@ public class Hubrouted extends ConnectModule
         VirtualSocketAddress sa = new VirtualSocketAddress(src, 0, srcHub, null);
         
         HubRoutedVirtualSocket s = new HubRoutedVirtualSocket(this, 
-                localFragmentation, localBufferSize, remoteFragmentation, 
-                remoteBufferSize, sa, serviceLink, index, null);
+                localFragmentation, localBufferSize, localMinimalACKSize, 
+                remoteFragmentation, remoteBufferSize, sa, serviceLink, index, 
+                null);
         
         sockets.put(index, s);
                 

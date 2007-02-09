@@ -32,6 +32,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
 
     private final int localFragmentation; 
     private final int localBufferSize; 
+    private final int localMinimalACKSize; 
     
     private int remoteFragmentation; 
     private int remoteBufferSize; 
@@ -46,7 +47,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     private boolean ackACKResult = false;
     
     protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
-            int localBufferSize, int remoteFragmentation, int remoteBufferSize,  
+            int localBufferSize, int localMinimalACKSize, 
+            int remoteFragmentation, int remoteBufferSize,  
             VirtualSocketAddress target, ServiceLink serviceLink, 
             long connectionIndex, Map p) {        
         
@@ -58,17 +60,21 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         
         this.localFragmentation = localFragmentation;        
         this.localBufferSize = localBufferSize;
-                
+        this.localMinimalACKSize = localMinimalACKSize;
+        
         this.remoteFragmentation = remoteFragmentation;
         this.remoteBufferSize = remoteBufferSize;
                 
-        this.out = new HubRoutedOutputStream(this, remoteFragmentation, remoteBufferSize);
-        this.in = new HubRoutedInputStream(this, localFragmentation, localBufferSize);            
+        this.out = new HubRoutedOutputStream(this, remoteFragmentation, 
+                remoteBufferSize);
+        
+        this.in = new HubRoutedInputStream(this, localFragmentation, 
+                localBufferSize, localMinimalACKSize);            
     }
    
     protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
-            int localBufferSize, VirtualSocketAddress target, 
-            ServiceLink serviceLink, Map p) {      
+            int localBufferSize, int localMinimalACKSize,  
+            VirtualSocketAddress target, ServiceLink serviceLink, Map p) {      
     
         super(target);
         
@@ -77,7 +83,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         
         this.localFragmentation = localFragmentation;        
         this.localBufferSize = localBufferSize;
-                  
+        this.localMinimalACKSize = localMinimalACKSize; 
     }
  
     protected void connectionAccepted(int timeout) throws IOException { 
@@ -390,8 +396,11 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         remoteFragmentation = fragment;
         remoteBufferSize = buffer;
         
-        out = new HubRoutedOutputStream(this, remoteFragmentation, remoteBufferSize);
-        in = new HubRoutedInputStream(this, localFragmentation, localBufferSize); 
+        out = new HubRoutedOutputStream(this, remoteFragmentation, 
+                remoteBufferSize);
+        
+        in = new HubRoutedInputStream(this, localFragmentation, 
+                localBufferSize, localMinimalACKSize); 
        
         notifyAll();
        

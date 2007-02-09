@@ -31,14 +31,11 @@ public class HubRoutedInputStream extends InputStream {
     private boolean closed = false;
     
     HubRoutedInputStream(HubRoutedVirtualSocket parent, int fragmentation, 
-            int bufferSize) { 
+            int bufferSize, int ackSize) { 
         
         this.parent = parent;
         this.buffer = new byte[bufferSize];
-        
-        // TODO: Does this heuristic work ??
-        // We won't send an ACK until at least 25% of the buffer is empty
-        this.MINIMAL_ACK_SIZE = bufferSize / 4;
+        this.MINIMAL_ACK_SIZE = ackSize;
     }
     
     public int read() throws IOException {

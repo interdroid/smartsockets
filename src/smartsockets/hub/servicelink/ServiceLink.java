@@ -31,8 +31,6 @@ public class ServiceLink implements Runnable {
 
     private static final int DEFAULT_WAIT_TIME = 10000;
 
-    private static final int DEFAULT_CREDITS = 50;
-
     private final HashMap<String, Object> callbacks = new HashMap<String, Object>();
 
     private final HashMap<Integer, Object> infoRequests = new HashMap<Integer, Object>();
@@ -53,8 +51,6 @@ public class ServiceLink implements Runnable {
 
     private DataInputStream in;
 
-    private long pendingMessage = 0;
-    
     private int nextCallbackID = 0;
 
     private int maxWaitTime = DEFAULT_WAIT_TIME;
@@ -108,8 +104,8 @@ public class ServiceLink implements Runnable {
     private long lastStatsPrint = 0;
 
     private ServiceLink(SocketAddressSet hubAddress,
-            SocketAddressSet myAddress, int credits, int sendBuffer,
-            int receiveBuffer) throws IOException {
+            SocketAddressSet myAddress, int sendBuffer, int receiveBuffer)
+            throws IOException {
 
         factory = DirectSocketFactory.getSocketFactory();
 
@@ -263,12 +259,13 @@ public class ServiceLink implements Runnable {
 
             hub.setTcpNoDelay(true);
 
-           // if (logger.isInfoEnabled()) {
-                logger.warn("Service link send buffer = "
-                        + hub.getSendBufferSize());
-                logger.warn("Service link recv buffer = "
-                        + hub.getReceiveBufferSize());
-           // }
+            // if (logger.isInfoEnabled()) {
+            logger
+                    .warn("Service link send buffer = "
+                            + hub.getSendBufferSize());
+            logger.warn("Service link recv buffer = "
+                    + hub.getReceiveBufferSize());
+            // }
 
             out = new DataOutputStream(new BufferedOutputStream(hub
                     .getOutputStream()));
@@ -315,7 +312,7 @@ public class ServiceLink implements Runnable {
             bytes -= in.skip(bytes);
         }
     }
-    
+
     private void handleInfoMessage() throws IOException {
 
         SocketAddressSet source = SocketAddressSet.read(in);
@@ -324,7 +321,7 @@ public class ServiceLink implements Runnable {
         // since we have reached our destination, the hop count and 
         // target addresses are not used anymore..
         skip(4);
-        
+
         SocketAddressSet.skip(in);
         SocketAddressSet.skip(in);
 
@@ -393,9 +390,9 @@ public class ServiceLink implements Runnable {
 
         SocketAddressSet source = SocketAddressSet.read(in);
         SocketAddressSet sourceHub = SocketAddressSet.read(in);
-        
-        SocketAddressSet target = SocketAddressSet.read(in);
-        SocketAddressSet targetHub = SocketAddressSet.read(in);
+
+        SocketAddressSet.skip(in);
+        SocketAddressSet.skip(in);
 
         long index = in.readLong();
 
@@ -439,8 +436,8 @@ public class ServiceLink implements Runnable {
         int fragment = in.readInt();
         int buffer = in.readInt();
 
-  //      System.err.println("***** ACK IN " + index);
-        
+        //      System.err.println("***** ACK IN " + index);
+
         if (vcCallBack == null) {
 
             if (logger.isInfoEnabled()) {
@@ -451,9 +448,9 @@ public class ServiceLink implements Runnable {
             sendClose(index);
             return;
         }
-        
+
         if (logger.isInfoEnabled()) {
-            logger.info("Delivering ACK: " + index + "(" + fragment + ", " 
+            logger.info("Delivering ACK: " + index + "(" + fragment + ", "
                     + buffer + ")");
         }
 
@@ -464,9 +461,9 @@ public class ServiceLink implements Runnable {
 
         long index = in.readLong();
         boolean succes = in.readBoolean();
-        
-  //      System.err.println("** ACK ACK IN " + index);
-        
+
+        //      System.err.println("** ACK ACK IN " + index);
+
         if (vcCallBack == null) {
 
             if (logger.isInfoEnabled()) {
@@ -475,17 +472,17 @@ public class ServiceLink implements Runnable {
             }
 
             // Send a close back if someone is waiting for us...
-            if (succes) { 
+            if (succes) {
                 sendClose(index);
             }
-            
+
             return;
-        } 
-        
+        }
+
         if (logger.isInfoEnabled()) {
             logger.info("Delivering ACK ACK: " + index);
         }
-        
+
         vcCallBack.connectACKACK(index, succes);
     }
 
@@ -507,7 +504,7 @@ public class ServiceLink implements Runnable {
         if (logger.isInfoEnabled()) {
             logger.info("Delivering NACK: " + index);
         }
-        
+
         vcCallBack.connectNACK(index, reason);
     }
 
@@ -631,10 +628,8 @@ public class ServiceLink implements Runnable {
             logger.debug("Got close for connection: " + index);
         }
 
+        //   System.err.println("***** CLOSE " + index);
 
-     //   System.err.println("***** CLOSE " + index);
-
-        
         disconnectCallback(index);
     }
 
@@ -666,19 +661,19 @@ public class ServiceLink implements Runnable {
                     + " connection: " + index);
         }
 
-        if (!vcCallBack.gotMessage(index, len, in)) { 
+        if (!vcCallBack.gotMessage(index, len, in)) {
             if (logger.isInfoEnabled()) {
                 logger.debug("Message for " + index + " not read!");
             }
             skip(len);
         }
     }
-    
+
     private void handleIncomingAck() throws IOException {
 
         long index = in.readLong();
         int data = in.readInt();
-        
+
         if (logger.isDebugEnabled()) {
             logger.debug("Got Message ACK for connection: " + index);
         }
@@ -1222,7 +1217,7 @@ public class ServiceLink implements Runnable {
 
                 SocketAddressSet.write(myAddress, out);
                 SocketAddressSet.write(hubAddress, out);
-                
+
                 SocketAddressSet.write(target, out);
                 SocketAddressSet.write(targetHub, out);
 
@@ -1252,8 +1247,8 @@ public class ServiceLink implements Runnable {
                     + "to hub");
         }
 
-     //   System.err.println("#### ACK " + index);
-        
+        //   System.err.println("#### ACK " + index);
+
         try {
             synchronized (out) {
                 out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL_ACK);
@@ -1281,8 +1276,8 @@ public class ServiceLink implements Runnable {
                     + "to hub");
         }
 
-     //   System.err.println("#### ACK ACK " + index);
-        
+        //   System.err.println("#### ACK ACK " + index);
+
         try {
             synchronized (out) {
                 out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL_ACK_ACK);
@@ -1353,8 +1348,8 @@ public class ServiceLink implements Runnable {
             logger.debug("Closing virtual connection: " + index);
         }
 
-     //   System.err.println("##### CLOSE " + index);
-        
+        //   System.err.println("##### CLOSE " + index);
+
         try {
             sendClose(index);
         } catch (IOException e) {
@@ -1381,36 +1376,6 @@ public class ServiceLink implements Runnable {
             logger.info("Sending virtual message for connection: " + index);
         }
 
-        /* CREDITS SHOULD BE HANDED BY THE SOCKET ITSELF!!
-         // May block until credits are available....
-
-         Credits c = credits.get(index);
-         
-         if (c == null) { 
-         logger.warn("Virtual connection: " + index + " does not exist!");            
-         throw new IOException("Not connected");
-         }
-         
-         int t = timeout > 0 ? timeout : DEFAULT_WAIT_TIME;
-         
-         boolean done = false;
-         
-         do { 
-         try {    
-         c.getCredit(t);
-         done = true;
-         } catch (TimeOutException e) {
-         if (timeout > 0) { 
-         logger.warn("getCredit timed out after " + t 
-         + " ms. (giving up)");
-         throw new IOException("Timeout while writing data!");
-         } else { 
-         logger.warn("getCredit timed out after " + t 
-         + " ms. (will keep trying)");
-         }
-         }
-         } while (!done);
-         */
         try {
             synchronized (out) {
                 out.write(MessageForwarderProtocol.MESSAGE_VIRTUAL);
@@ -1554,20 +1519,7 @@ public class ServiceLink implements Runnable {
             removeInfoRequest(id);
         }
     }
-
-    public SocketAddressSet findSharedHub(SocketAddressSet myMachine,
-            SocketAddressSet targetMachine) {
-
-        try {
-            waitConnected(maxWaitTime);
-        } catch (IOException e) {
-            return null;
-        }
-
-        // TODO DUMMY IMPLEMENTATION --- FIX!!!!!        
-        return hubAddress;
-    }
-
+   
     public void printStatistics(String prefix) {
 
         if (statslogger.isInfoEnabled()) {
@@ -1636,24 +1588,16 @@ public class ServiceLink implements Runnable {
             throw new NullPointerException("Local address is null!");
         }
 
-        int maxCredits = DEFAULT_CREDITS;
         int sendBuffer = -1;
         int receiveBuffer = -1;
 
         if (p != null) {
-            maxCredits = p.getIntProperty(Properties.SL_CREDITS,
-                    DEFAULT_CREDITS);
-
-            if (maxCredits <= 0) {
-                maxCredits = DEFAULT_CREDITS;
-            }
-
             sendBuffer = p.getIntProperty(Properties.SL_SEND_BUFFER, -1);
             receiveBuffer = p.getIntProperty(Properties.SL_RECEIVE_BUFFER, -1);
         }
 
         try {
-            return new ServiceLink(address, myAddress, maxCredits, sendBuffer,
+            return new ServiceLink(address, myAddress, sendBuffer,
                     receiveBuffer);
 
         } catch (Exception e) {
