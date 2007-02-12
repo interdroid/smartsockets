@@ -1,5 +1,7 @@
 package smartsockets.virtual.modules.splice;
 
+import ibis.util.ThreadPool;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -7,7 +9,9 @@ import java.io.OutputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 import smartsockets.direct.DirectSocket;
@@ -45,9 +49,17 @@ public class Splice extends AbstractDirectModule {
     
     private DirectSocketFactory factory;               
     
-    private SocketAddressSet externalHub;
     private SocketAddressSet myMachine;
-    
+    private SocketAddressSet externalHub;
+
+    private LinkedList<SocketAddressSet> hubsToTest = 
+        new LinkedList<SocketAddressSet>();    
+
+    private LinkedList<SocketAddressSet> testedHubs = 
+        new LinkedList<SocketAddressSet>();    
+   
+    private HashMap<String, String> hubConnectProperties;
+        
     private int nextID = 0;
     
     private final HashMap<Integer, byte [][]> replies = 
@@ -67,6 +79,42 @@ public class Splice extends AbstractDirectModule {
     
     private synchronized void setExternalHub(SocketAddressSet hub) { 
         externalHub = hub;
+    }
+    
+    private synchronized void addFailedHub(SocketAddressSet hub) {
+        
+        // Note: assumes number of hubs is small!
+        if (!testedHubs.contains(hub)) {         
+            testedHubs.add(hub);
+        }
+    }
+    
+    private synchronized SocketAddressSet getHubToTest() {
+        
+        // TODO: Remember which hub we have tried already ? 
+        if (hubsToTest.size() == 0) {
+            
+            try { 
+                SocketAddressSet [] tmp = serviceLink.hubs();            
+                
+                if (tmp != null) { 
+                    for (SocketAddressSet s : tmp) {                        
+                        if (!testedHubs.contains(s)) {                         
+                            hubsToTest.add(s);
+                        }
+                    }
+                }
+                
+            } catch (Exception e) {                
+                logger.info("Failed to retrieve hub list!", e);
+            }
+        }
+        
+        if (hubsToTest != null && hubsToTest.size() > 0) { 
+            return hubsToTest.removeFirst();
+        }
+            
+        return null;
     }
         
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
@@ -98,6 +146,8 @@ public class Splice extends AbstractDirectModule {
         int [] localPort = new int[1]; 
         
         timeout = getInfo(timeout, result, localPort);
+
+        System.err.println("Got splice info: " + result[0] + " " + localPort[0]);
         
         int id = getID();
         
@@ -230,6 +280,8 @@ public class Splice extends AbstractDirectModule {
     
     private synchronized byte [][] getReply(Integer id, int timeout) { 
         
+        //System.out.println("Waiting for ACK");
+        
         byte [][] message = replies.get(id);
         
         long deadline = System.currentTimeMillis() + timeout;
@@ -251,11 +303,13 @@ public class Splice extends AbstractDirectModule {
         
         replies.remove(id);        
         
+        // System.out.println("Got ACK ? " + (message != null));
+        
         return message;
     }
 
     private synchronized void storeReply(Integer id, byte [][] message) { 
-        
+       
         if (replies.containsKey(id)) { 
             replies.put(id, message);
             notifyAll();
@@ -268,36 +322,109 @@ public class Splice extends AbstractDirectModule {
 
     
     private int getInfo(int timeout, SocketAddressSet [] result, 
-            int [] localPort) throws IOException {
+            int [] localPort) throws IOException, ModuleNotSuitableException {
         
-        long start = System.currentTimeMillis();
+        int local = -1;        
+
+        long deadline = 0;
+        long timeleft = timeout;
         
+        if (timeleft > 0) { 
+            deadline = System.currentTimeMillis() + timeout;
+        }
+                
         if (myMachine.numberOfAddresses() == 1 && myMachine.hasGlobalAddress()) { 
             // nothing to map, so the result only depends on the local address
             localPort[0] = getLocalPort(timeout); 
             result[0] = SocketAddressSet.getByAddress(myMachine.getAddressSet(), 
-                    localPort[0]);            
-            return timeout - (int) (System.currentTimeMillis() - start);
+                    localPort[0]);
+            
+            if (deadline == 0) { 
+                return 0;
+            } else {             
+                return (int) (deadline - System.currentTimeMillis());
+            }
         }
+        
+        while (true) { 
 
-        // TODO: implement!!!!
-        // Connect to a hub to get our external address....
-        return 0;        
+            boolean testing = false;
+            SocketAddressSet hub = getExternalHub();
+
+            if (hub == null) { 
+                // No suitable external hub is known yet!
+                testing = true;
+                hub = getHubToTest();
+        
+                if (deadline > 0) {             
+                    timeleft = deadline - System.currentTimeMillis();
+                }
+        
+                // Failed to get list of hubs!
+                if (hub == null) {
+                    throw new ModuleNotSuitableException("Failed to find external hub");            
+                }
+            }
+                
+            try { 
+                local = getInfo(hub, (int) timeleft, local, result);
+            } catch (IOException e) {
+                // Failed to contact hub!
+                logger.info("Failed to contact hub: " + hub.toString() 
+                        + " for splice info (will try other hubs)", e);
+            }            
+                
+            if (result[0] != null) {
+                // Success!
+                localPort[0] = local;
+                
+                if (testing) {
+                    // We found a suitable hub, so save it!
+                    setExternalHub(hub);
+                }
+                
+                if (deadline > 0) {             
+                    return (int) (deadline - System.currentTimeMillis());                                       
+                } else { 
+                    return 0;
+                }                        
+            }  
+
+            if (testing) {
+                // This hub was just a test, so try the next one...
+                addFailedHub(hub);
+            } else { 
+                // We already had a decent hub, but it disappeared!
+                setExternalHub(null);
+            } 
+                
+            // Check deadline
+            if (deadline > 0) {
+                timeleft = deadline - System.currentTimeMillis();
+
+                if (timeleft <= 0) { 
+                    throw new SocketTimeoutException("Timeout while trying" 
+                            + " to find external hub");
+                }
+            }            
+        }
     }
     
     private int getInfo(SocketAddressSet externalHub, int timeout, int local, 
-            SocketAddressSet [] result) throws ModuleNotSuitableException { 
+            SocketAddressSet [] result) throws IOException { 
 
         DirectSocket s = null;
-        DataInputStream in = null;
         OutputStream out = null;
-
-        String addr = null;
-        int port = 0;
-                
+        DataInputStream in = null;
+        
+        if (hubConnectProperties == null) { 
+            hubConnectProperties = new HashMap<String, String>();
+            hubConnectProperties.put("direct.forcePublic", null);
+        }
+        
         try { 
             s = factory.createSocket(externalHub, timeout, local, -1, -1, 
-                    null, false, 0);
+                    hubConnectProperties, false, 0);
             
             s.setReuseAddress(true); // TODO: is this correct ?                       
             s.setSoTimeout(timeout);
@@ -305,31 +432,16 @@ public class Splice extends AbstractDirectModule {
             local = s.getLocalPort();
             
             out = s.getOutputStream();
-
-            // TODO: don't like this access here!
             out.write(ConnectionProtocol.GET_SPLICE_INFO);
             out.flush();
             
-        } catch (IOException e) {            
-            logger.warn("Got exception during splicing", e);
-
-            DirectSocketFactory.close(s, out, null);
-            
-            // Failed to create the exception, to the shared proxy 
-            // TODO: try to find other shared proxy ? 
-            throw new ModuleNotSuitableException(module + ": Failed to " +
-                    "connect to shared proxy " + externalHub + " " + e);                   
-        }
-        
-        try {
-            in = new DataInputStream(s.getInputStream());
-            
-            addr = in.readUTF();
-            port = in.readInt();
+            in = new DataInputStream(s.getInputStream());            
+            String addr = in.readUTF();
+            int port = in.readInt();
             
             SocketAddressSet tmp = SocketAddressSet.getByAddress(addr, port);
             
-            if (!result[0].hasGlobalAddress()) { 
+            if (!tmp.hasGlobalAddress()) { 
                 // We didn't get an external address! So we don't return any 
                 // mapping, just the local port (so it can be reused).
                 return local;                   
@@ -341,12 +453,7 @@ public class Splice extends AbstractDirectModule {
                 result[i] = SocketAddressSet.getByAddress(addr, port+i);
             }
             
-            return local;
-        } catch (IOException e) {
-            // Failed to create the exception, to the shared proxy 
-            // TODO: try to find other shared proxy ? 
-            throw new ModuleNotSuitableException(module + ": Failed to " +
-                    "get useful reply from hub " + externalHub + " " + e);                   
+            return local;        
         } finally { 
             DirectSocketFactory.close(s, out, in);
         }
@@ -359,16 +466,29 @@ public class Splice extends AbstractDirectModule {
         // fails! Better to fail fast and retry the entire setup ? Or maybe 
         // change the timeout to something small ? 
         
-            
+        // .println("Connect " + Arrays.deepToString(target));            
+        
+        long deadline = 0;
+        long timeleft = timeout;
+        
+        if (timeout > 0) { 
+            deadline = System.currentTimeMillis() + timeout;
+        }
+                
         if (target.length == 1) { 
             logger.debug(module + ": Single splice attempt!");
-            
+        
             try { 
                 return factory.createSocket(target[0], 5000, localPort, -1, -1,
-                        null, false, userdata);
+                        null, true, userdata);
             } catch (IOException e) {
                 logger.info(module + ": Connection failed " 
                         + target.toString(), e);
+                
+                
+              //  System.out.println(module + ": Connection failed " 
+              //          + target.toString() + " ");
+               // e.printStackTrace();
             }   
             
         } else { 
@@ -383,6 +503,9 @@ public class Splice extends AbstractDirectModule {
                     } catch (IOException e) {
                         logger.info(module + ": Connection failed " 
                                 + target.toString(), e);
+                        
+                        //System.out.println(module + ": Connection2 failed " 
+                        //        + target.toString() + " " + e);
                     }           
                 }    
             }
@@ -415,7 +538,7 @@ public class Splice extends AbstractDirectModule {
             throw new Exception(module + ": no service link available!");       
         }
         
-        behindNAT = parent.getLocalHost().hasGlobalAddress();   
+        behindNAT = !parent.getLocalHost().hasGlobalAddress();   
         behindNATByte[0] = (byte) (behindNAT ? 1 : 0);
         
         myMachine = parent.getLocalHost();
@@ -424,110 +547,74 @@ public class Splice extends AbstractDirectModule {
     private void handleConnect(SocketAddressSet src, SocketAddressSet srcHub, 
             byte [][] message) { 
 
-        // Try to extract the necessary info from the message 
-        int port = 0;
-        SocketAddressSet target;
-        int timeout = 0;
-        boolean otherBehindNAT = false;
+        // Try to extract the necessary info from the message
+        //System.out.println("Got splice request");
+        
+        // Next, check if the message has enough parts
+        if (message == null || message.length != 5) { 
+            logger.warn(module + ": malformed connect message " + src + "@" 
+                    + srcHub + "\"" +  Arrays.deepToString(message) + "\"");
+            return;
+        }
+        
+        SpliceRequest r = new SpliceRequest();   
+        
+        r.id = message[0];        
+        r.src = src;
+        r.srcHub = srcHub;
         
         try {
-            port = toInt(message[1]);
-            target = toSocketAddressSet(message[2]);
-            timeout = toInt(message[3]);
-            otherBehindNAT = (message[4][0] == 1);
+            r.port = toInt(message[1]);
+            r.target = toSocketAddressSet(message[2]);
+            r.timeout = toInt(message[3]);
+            r.otherBehindNAT = (message[4][0] == 1);
         } catch (Exception e) {
             logger.warn(module + ": failed to parse connect message " + src 
                     + "@" + srcHub + "\"" +  message + "\"", e);
             return;
         }
+
+       // System.out.println("Splice request: " + r.otherBehindNAT);
         
-        // Check if we can find the port that the sender is interested in
-        VirtualServerSocket ss = parent.getServerSocket(port);
-        
-        if (ss == null) {
-            if (logger.isInfoEnabled()) {
-                logger.info(module + ": port " + port + " not found!");
-            }
-            
-            // Port not found... send reply
-            serviceLink.send(src, srcHub, module, CONNECT_ACK, new byte[][] { 
-                    message[0], new byte[] { NOT_FOUND }});            
-            return;            
-        }
-        
-        SocketAddressSet [] result = new SocketAddressSet[1]; 
-        int [] localPort = new int[1];
-        
-        try {         
-            timeout = getInfo(timeout, result, localPort);
-        } catch (Exception e) {
-            // ignore
-        }
-        
-        if (result[0] == null) { 
-            // timeout or exception....
-            serviceLink.send(src, srcHub, module, CONNECT_ACK, new byte[][] { 
-                    message[0], new byte[] { NO_EXTERNAL_HUB }});            
-            return;                        
-        }
-        
-        // Send reply
-        serviceLink.send(src, srcHub, module, CONNECT_ACK, new byte[][] { 
-                message[0], new byte[] { OK }, fromSocketAddressSet(result[0]), 
-                behindNATByte});            
-        
-        // Setup connection     
-        try {            
-            SocketAddressSet [] a = getTargetRange(otherBehindNAT, target);
-            
-            // Create the connection to the shared proxy, and get the required
-            // information on where to connect to
-            DirectSocket s = connect(a, localPort[0], timeout, 0);
-            
-            if (s == null) {
-                if (logger.isInfoEnabled()) {
-                    logger.info(module + ": Incoming connection setup failed!");
-                }
-                return;
-            }
-               
-            handleAccept(s);
-                        
-        } catch (Exception e) {
-            logger.info(module + ": Incoming connection setup failed!", e);            
-        }
+        ThreadPool.createNew(r, "Splice Request Handler");
+ 
     }
     
-    public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
+    private void handleReply(SocketAddressSet src, SocketAddressSet srcHub, 
+            byte [][] message) { 
+        
+      //  System.out.println("Got splice reply");
+        
+        // Next, check if the message has enough parts
+        if (message == null || !(message.length == 2 || message.length == 4)) { 
+            logger.warn(module + ": malformed connect ack " + src + "@" 
+                    + srcHub + "\"" +  Arrays.deepToString(message) + "\"");
+            return;
+        }
+        
+        storeReply(new Integer(toInt(message[0])), message);
+    }
+    
+    public void gotMessage(SocketAddressSet src, SocketAddressSet srcHub, 
             int opcode, byte [][] message) {
 
         if (logger.isInfoEnabled()) {
-            logger.info(module + ": got message " + src + "@" + srcProxy + " " 
+            logger.info(module + ": got message " + src + "@" + srcHub + " " 
                     + opcode + " \"" +  message + "\"");
         }
-               
-        // Check if the opcode makes any sense
-        if (opcode != PLEASE_CONNECT) { 
-            logger.warn(module + ": ignoring message " + src + "@" + srcProxy 
-                    + " " + opcode + "\"" +  message + "\"");
-            return;
-        }
-                
-        // Next, check if the message has enough parts
-        if (message == null || message.length != 4) { 
-            logger.warn(module + ": malformed message " + src + "@" + srcProxy 
-                    + " " + opcode + "\"" +  message + "\"");
-            return;
-        }
-        
+                       
         switch (opcode) { 
         case PLEASE_CONNECT:
-            handleConnect(src, srcProxy, message);            
+            handleConnect(src, srcHub, message);            
             break;
             
         case CONNECT_ACK:            
-            storeReply(toInt(message[0]), message);
+            handleReply(src, srcHub, message);
             break;
+            
+        default:
+            logger.warn(module + ": ignoring message " + src + "@" + srcHub 
+                    + " " + opcode + "\"" +  message + "\"");
         }
     }
 
@@ -535,4 +622,80 @@ public class Splice extends AbstractDirectModule {
             DirectSocket s, DataOutputStream out, DataInputStream in) {     
         return new SplicedVirtualSocket(a, s, out, in, null);
     }
+        
+    private class SpliceRequest implements Runnable {
+        
+        byte [] id; 
+        
+        SocketAddressSet src; 
+        SocketAddressSet srcHub; 
+        SocketAddressSet target;
+        
+        int port = 0;    
+        int timeout = 0;
+        
+        boolean otherBehindNAT = false;
+
+        public void run() {
+            
+            // Check if we can find the port that the sender is interested in
+            VirtualServerSocket ss = parent.getServerSocket(port);
+            
+            if (ss == null) {
+                if (logger.isInfoEnabled()) {
+                    logger.info(module + ": port " + port + " not found!");
+                }
+                
+                // Port not found... send reply
+                serviceLink.send(src, srcHub, module, CONNECT_ACK, new byte[][] { 
+                        id, new byte[] { NOT_FOUND }});            
+                return;            
+            }
+            
+            SocketAddressSet [] result = new SocketAddressSet[1]; 
+            int [] localPort = new int[1];
+            
+            try {         
+                timeout = getInfo(timeout, result, localPort);
+            } catch (Exception e) {
+                // ignore
+            }
+            
+            if (result[0] == null) { 
+                // timeout or exception....
+            //    System.out.println("Sending NACK");
+                
+                serviceLink.send(src, srcHub, module, CONNECT_ACK, new byte[][] { 
+                        id, new byte[] { NO_EXTERNAL_HUB }});            
+                return;                        
+            }
+            
+        //    System.out.println("Sending ACK " + result[0] + " " + behindNATByte);
+            
+            // Send reply
+            serviceLink.send(src, srcHub, module, CONNECT_ACK, new byte[][] { 
+                    id, new byte[] { OK }, fromSocketAddressSet(result[0]), 
+                    behindNATByte});            
+            
+            // Setup connection     
+            try {            
+                SocketAddressSet [] a = getTargetRange(otherBehindNAT, target);
+            
+                DirectSocket s = connect(a, localPort[0], timeout, 0);
+                
+                if (s == null) {
+                    if (logger.isInfoEnabled()) {
+                        logger.info(module + ": Incoming connection setup failed!");
+                    }
+                    return;
+                }
+                   
+                handleAccept(s);
+                            
+            } catch (Exception e) {
+                logger.info(module + ": Incoming connection setup failed!", e);            
+            }
+        }    
+    }
+    
 }

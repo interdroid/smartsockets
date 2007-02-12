@@ -37,7 +37,7 @@ public class SplicedVirtualSocket extends VirtualSocket {
             out.write(Splice.ACCEPT);
             out.flush();        
             
-            // Do we need a three way hadshake here ????
+            // Do we need a three way handshake here ????
             
             // Not sure why this is needed...
             //remote = new SocketAddressSet(in.readUTF());

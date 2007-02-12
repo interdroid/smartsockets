@@ -55,11 +55,7 @@ public class Direct extends AbstractDirectModule {
         int port = 0;
         
         if (properties != null) { 
-            System.err.println("PROPERTIES!!!");
             port = properties.getIntProperty(Properties.DIRECT_PORT, 0);
-            System.err.println("PORT IS " + port);
-        } else { 
-            System.err.println("NO PROPERTIES!!!");
         }
         
         // Create a direct socket factory.

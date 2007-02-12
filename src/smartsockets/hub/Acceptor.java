@@ -7,9 +7,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -45,22 +42,7 @@ public class Acceptor extends CommunicationThread {
         
     private DirectServerSocket server;
     private boolean done = false;
-
-    private class SpliceInfo { 
         
-        String connectID;
-        long bestBefore; 
-        
-        DirectSimpleSocket s;
-        DataInputStream in;
-        DataOutputStream out;
-
-    }
-    
-    private long nextInvalidation = -1;
-   
-    private HashMap<String, SpliceInfo> spliceInfo = new HashMap<String, SpliceInfo>();
-    
     private int sendBuffer = -1;
     private int receiveBuffer = -1;
     
@@ -197,149 +179,33 @@ public class Acceptor extends CommunicationThread {
     private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {
         
-        boolean result = false;
-        String connectID = in.readUTF();
-        int time = in.readInt();
-        
         if (reqlogger.isInfoEnabled()) { 
-            reqlogger.info("Got request for splice info: " + connectID + " " + time);
+            reqlogger.info("Got request for splice info");
         }
-
-        DirectSimpleSocket dss = null;
         
         try { 
-            dss = (DirectSimpleSocket) s;
-        } catch (ClassCastException e) {
-            // Apperently this is not a direct connection, so we give up!
+            DirectSimpleSocket dss = (DirectSimpleSocket) s;            
+        
+            InetSocketAddress tmp = 
+                (InetSocketAddress) dss.getRemoteSocketAddress();
 
-            if (reqlogger.isInfoEnabled()) { 
-                reqlogger.info("Cannot handle request for splice info: " 
-                        + connectID + ": connection is not direct!");
+            out.writeUTF(tmp.getAddress().toString());
+            out.writeInt(tmp.getPort());
+            out.flush();
+            
+            if (reqlogger.isInfoEnabled()) {                     
+                reqlogger.info("Reply to splice info request " 
+                        + tmp.getAddress() + ":" + tmp.getPort());
             }
-
-            DirectSocketFactory.close(s, out, in);
-            return false;
-        }
-        
-        SpliceInfo info = null;
-        
-        synchronized (spliceInfo) {
-            info = (SpliceInfo) spliceInfo.remove(connectID);
-        }
-        
-        if (info == null) {
-        
-            if (reqlogger.isInfoEnabled()) {                
-                reqlogger.info("Request " + connectID + " is first");
+                
+        } catch (Exception e) {                
+            // The connections may have been closed already....
+            if (reqlogger.isInfoEnabled()) {                     
+                reqlogger.info("Failed to forward splice info!", e);
             }
-                        
-            // We're the first...            
-            info = new SpliceInfo();
-            
-            info.connectID = connectID;
-            info.s = dss;
-            info.out = out;
-            info.in = in;             
-            info.bestBefore = System.currentTimeMillis() + time;
-            
-            synchronized (spliceInfo) {
-                spliceInfo.put(connectID, info);
-            }
-            
-            if (nextInvalidation == -1 || info.bestBefore < nextInvalidation) { 
-                nextInvalidation = info.bestBefore;
-            }            
-            
-            // Thats it for now. Return true so the connection is kept open 
-            // until the other side arrives...
-            result = true;        
-        } else {
-            if (reqlogger.isInfoEnabled()) {                
-                reqlogger.info("Request " + connectID + " is second");
-            }
-            
-            // The peer is already waiting...
-            
-            // We now echo the essentials of the two connection that we see to 
-            // each client. Its up to them to decide what to do with it....
-            
-            try {                               
-                InetSocketAddress tmp = 
-                    (InetSocketAddress) dss.getRemoteSocketAddress();
-
-                info.out.writeUTF(tmp.getAddress().toString());
-                info.out.writeInt(tmp.getPort());
-                info.out.flush();
-            
-                if (reqlogger.isInfoEnabled()) {                     
-                    reqlogger.info("Reply to first " + tmp.getAddress() + ":" 
-                            + tmp.getPort());
-                }
-                
-                tmp = (InetSocketAddress) info.s.getRemoteSocketAddress();
-
-                out.writeUTF(tmp.getAddress().toString());
-                out.writeInt(tmp.getPort());
-                out.flush();
-
-                if (reqlogger.isInfoEnabled()) {                     
-                    reqlogger.info("Reply to second " + tmp.getAddress() + ":" 
-                            + tmp.getPort());
-                }
-                
-            } catch (Exception e) {                
-                // The connections may have been closed already....
-                if (reqlogger.isInfoEnabled()) {                     
-                    reqlogger.info("Failed to forward splice info!", e);
-                }
-            } finally { 
-                // We should close the first connection. The second will be 
-                // closed for us when we return false
-                DirectSocketFactory.close(info.s, info.out, info.in);
-            }            
-        }
-        
-        // Before we return, we do some garbage collection on the spliceInfo map
-        if (nextInvalidation != -1) {  
-
-            long now = System.currentTimeMillis();
-              
-            if (now >= nextInvalidation) { 
-
-                nextInvalidation = Long.MAX_VALUE;
-                
-                // Traverse the map, removing all entries which are out of date, 
-                // and recording the next time at which we should do a 
-                // traversal.  
-                synchronized (spliceInfo) {
-                    Iterator itt = spliceInfo.keySet().iterator();
-                    LinkedList<String> garbage = new LinkedList<String>();
-                    
-                    while (itt.hasNext()) { 
-                        String key = (String) itt.next();                   
-                        SpliceInfo tmp = (SpliceInfo) spliceInfo.get(key);
-                    
-                        if (tmp.bestBefore < now) { 
-                            garbage.add(key);
-                        } else { 
-                            if (tmp.bestBefore < nextInvalidation) { 
-                                nextInvalidation = tmp.bestBefore;
-                            } 
-                        } 
-                    }
-                
-                    for (String g: garbage) { 
-                        spliceInfo.remove(g);
-                    }
-                    
-                    if (spliceInfo.size() == 0) { 
-                        nextInvalidation = -1;
-                    }
-                }
-            } 
         } 
-
-        return result;
+        
+        return false;
     }
     
     private void doAccept() {

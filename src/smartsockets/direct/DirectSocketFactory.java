@@ -1352,6 +1352,48 @@ public class DirectSocketFactory {
         } 
     }
     
+    private DirectSocket createSingleSocket(SocketAddressSet target, 
+            InetSocketAddress sa, int timeout, int localPort, int sendBuffer, 
+            int receiveBuffer, byte [] userOut, byte [] userIn, 
+            boolean fillTimeout) throws IOException {
+
+        DirectSocket result = null;
+        
+        long deadline = 0; 
+        int timeleft = timeout; 
+        
+        if (timeout > 0) {
+            deadline = System.currentTimeMillis() + timeout;
+        }
+        
+        do {                
+            result = attemptConnection(target, sa, timeleft, sendBuffer, 
+                    receiveBuffer, localPort, true, userOut, userIn, false);
+        
+            if (result != null) {
+                int ud = (((userIn[0] & 0xff) << 24) | 
+                        ((userIn[1] & 0xff) << 16) |
+                        ((userIn[2] & 0xff) << 8) | 
+                        (userIn[3] & 0xff));
+                
+                result.setUserData(ud);
+                return result;
+            
+            } 
+                
+            timeleft = (int) (deadline - System.currentTimeMillis());
+                
+            if (timeleft <= 0) { 
+                throw new SocketTimeoutException("Timeout during " +
+                        "connection setup (" + timeout + ", " 
+                        + timeleft + ")");
+            }                    
+            
+        } while (result == null && fillTimeout);
+        
+        throw new ConnectException("Connection setup failed");
+    }
+
     
     /*
      * (non-Javadoc)
@@ -1493,25 +1535,15 @@ public class DirectSocketFactory {
                 timing[1] = System.nanoTime();
             }
             
-            DirectSocket result = attemptConnection(target, sas[0], timeout,
-                    sendBuffer, receiveBuffer, localPort, true, userOut, userIn,
-                    false);
-            
-            if (timing != null) { 
-                timing[1] = System.nanoTime() - timing[1];
+            try { 
+                return createSingleSocket(target, sas[0], timeout, localPort, 
+                        sendBuffer, receiveBuffer, userOut, userIn, 
+                        fillTimeout);
+            } finally { 
+                if (timing != null) { 
+                    timing[1] = System.nanoTime() - timing[1];
+                }
             }
-            
-            if (result != null) {
-                int ud = (((userIn[0] & 0xff) << 24) | 
-                        ((userIn[1] & 0xff) << 16) |
-                        ((userIn[2] & 0xff) << 8) | 
-                        (userIn[3] & 0xff));
-                
-                result.setUserData(ud);
-                return result;
-            }
-
-            throw new ConnectException("Connection setup failed");
         }
 
         // Select the addresses we want from the target set. Some may be removed
@@ -1602,7 +1634,7 @@ public class DirectSocketFactory {
         
         } while (fillTimeout);
         
-        throw new IOException("Connection setup failed!");
+        throw new ConnectException("Connection setup failed!");
         
         
         } finally { 
