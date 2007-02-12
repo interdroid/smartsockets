@@ -36,7 +36,7 @@ public class ConnectTest {
     
     public static void connect(VirtualSocketAddress target) { 
         
-        long time = System.currentTimeMillis();
+       
         
         long [] detailedDirect = new long[1+2*target.machine().numberOfAddresses()];
         long [] detailedVirtual = new long[5];
@@ -46,6 +46,8 @@ public class ConnectTest {
 
         int failed = 0;
         
+        long time = System.currentTimeMillis();
+                
         for (int c=0;c<count;c++) {
 
             InputStream in = null;
@@ -71,8 +73,7 @@ public class ConnectTest {
             } catch (Exception e) {
                 time = System.currentTimeMillis() - time;
 
-                System.out.println("Failed to create connection to " + target + 
-                        " after " + time + " ms.");
+                System.out.println("Failed to create connection to " + target); 
                 e.printStackTrace();
                 
                 failed++;

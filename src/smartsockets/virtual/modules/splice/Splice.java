@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -51,7 +52,8 @@ public class Splice extends AbstractDirectModule {
     
     private SocketAddressSet myMachine;
     private SocketAddressSet externalHub;
-
+    private IPAddressSet externalAddress;
+    
     private LinkedList<SocketAddressSet> hubsToTest = 
         new LinkedList<SocketAddressSet>();    
 
@@ -147,7 +149,7 @@ public class Splice extends AbstractDirectModule {
         
         timeout = getInfo(timeout, result, localPort);
 
-        System.err.println("Got splice info: " + result[0] + " " + localPort[0]);
+    //    System.err.println("Got splice info: " + result[0] + " " + localPort[0]);
         
         int id = getID();
         
@@ -319,31 +321,30 @@ public class Splice extends AbstractDirectModule {
             }
         }
     }
-
     
     private int getInfo(int timeout, SocketAddressSet [] result, 
             int [] localPort) throws IOException, ModuleNotSuitableException {
         
         int local = -1;        
-
+        
+        if (!behindNAT && externalAddress != null) { 
+            
+            // Shortcut for machines that are NOT behind NAT. Since there is  
+            // no port mapping here, we don't have to contact any hub. 
+            // Multihomed machines behind a firewall also use this shortcut as 
+            // soon as there external address is known.
+            localPort[0] = getLocalPort(timeout); 
+            result[0] = SocketAddressSet.getByAddress(externalAddress, 
+                    localPort[0]);
+            
+            return timeout;
+        }
+        
         long deadline = 0;
         long timeleft = timeout;
         
         if (timeleft > 0) { 
             deadline = System.currentTimeMillis() + timeout;
-        }
-                
-        if (myMachine.numberOfAddresses() == 1 && myMachine.hasGlobalAddress()) { 
-            // nothing to map, so the result only depends on the local address
-            localPort[0] = getLocalPort(timeout); 
-            result[0] = SocketAddressSet.getByAddress(myMachine.getAddressSet(), 
-                    localPort[0]);
-            
-            if (deadline == 0) { 
-                return 0;
-            } else {             
-                return (int) (deadline - System.currentTimeMillis());
-            }
         }
         
         while (true) { 
@@ -377,6 +378,11 @@ public class Splice extends AbstractDirectModule {
             if (result[0] != null) {
                 // Success!
                 localPort[0] = local;
+                
+                externalAddress = result[0].getAddressSet();
+
+                logger.info("Splicing found external address: " 
+                        + externalAddress + " port " + localPort[0]); 
                 
                 if (testing) {
                     // We found a suitable hub, so save it!
@@ -538,10 +544,14 @@ public class Splice extends AbstractDirectModule {
             throw new Exception(module + ": no service link available!");       
         }
         
-        behindNAT = !parent.getLocalHost().hasGlobalAddress();   
+        myMachine = parent.getLocalHost();
+                
+        behindNAT = !myMachine.hasGlobalAddress();        
         behindNATByte[0] = (byte) (behindNAT ? 1 : 0);
         
-        myMachine = parent.getLocalHost();
+        if (!behindNAT && myMachine.numberOfAddresses() == 1) {   
+            externalAddress = myMachine.getAddressSet();            
+        }                            
     }
    
     private void handleConnect(SocketAddressSet src, SocketAddressSet srcHub, 
@@ -583,7 +593,7 @@ public class Splice extends AbstractDirectModule {
     private void handleReply(SocketAddressSet src, SocketAddressSet srcHub, 
             byte [][] message) { 
         
-      //  System.out.println("Got splice reply");
+      //  System.out.println(" reply");
         
         // Next, check if the message has enough parts
         if (message == null || !(message.length == 2 || message.length == 4)) { 

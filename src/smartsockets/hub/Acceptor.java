@@ -89,9 +89,9 @@ public class Acceptor extends CommunicationThread {
             return false;
         } else {                                     
             // We just created a connection to this hub.
-          //  if (hconlogger.isInfoEnabled()) {
-                hconlogger.warn("Connection accepted from hub " + addr);
-           // }
+            if (hconlogger.isInfoEnabled()) {
+                hconlogger.info("Connection accepted from hub " + addr);
+            }
 
             out.write(ConnectionProtocol.CONNECTION_ACCEPTED);            
             out.flush();
@@ -132,13 +132,10 @@ public class Acceptor extends CommunicationThread {
                 return false;
             }
 
-         //   if (cconlogger.isDebugEnabled()) { 
-            //System.out.println("Incoming connection from " + src 
-             //       + " accepted (" + connections.size() + ")");
-            
-                cconlogger.warn("Incoming connection from " + src 
+            if (cconlogger.isInfoEnabled()) { 
+                 cconlogger.info("Incoming connection from " + src 
                         + " accepted (" + connections.size() + ")"); 
-         //   } 
+            } 
 
             out.write(ConnectionProtocol.CONNECTION_ACCEPTED);
             out.writeUTF(server.getAddressSet().toString());            
@@ -165,16 +162,6 @@ public class Acceptor extends CommunicationThread {
 
         return false;
     }
-
-    /*
-    private boolean handleBounce(DirectSocket s, DataInputStream in, 
-            DataOutputStream out) throws IOException {
-        
-        out.write(s.getLocalAddress().getAddress());
-        out.flush();
-        
-        return false;
-    }*/
         
     private boolean handleSpliceInfo(DirectSocket s, DataInputStream in, 
             DataOutputStream out) throws IOException {

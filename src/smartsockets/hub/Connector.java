@@ -151,8 +151,6 @@ class Connector extends CommunicationThread {
                     sendBuffer, receiveBuffer, null, false, 0);
             
             s.setTcpNoDelay(true);
-            //s.setSendBufferSize(256*1024);
-            //s.setReceiveBufferSize(256*1024);
             
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Send buffer = " + s.getSendBufferSize());
@@ -234,9 +232,10 @@ class Connector extends CommunicationThread {
        }
         
         if (result) {
-           // if (hconlogger.isDebugEnabled()) {
-                hconlogger.warn("Succesfully created connection to " + d.hubAddressAsString);
-           // }
+            if (hconlogger.isDebugEnabled()) {
+                hconlogger.debug("Succesfully created connection to " 
+                        + d.hubAddressAsString);
+            }
             
             connections.put(d.hubAddress, c);
             c.activate();            
@@ -250,7 +249,7 @@ class Connector extends CommunicationThread {
         }
     }
     
-    private void handleNewProxy() { 
+    private void handleNewHub() { 
 
         // Handles the connection setup to newly discovered proxies.
         HubDescription d = knownHubs.nextHubToCheck();
@@ -269,7 +268,7 @@ class Connector extends CommunicationThread {
     public void run() {
     
         while (!done) {            
-            handleNewProxy();
+            handleNewHub();
         }
     }    
 }

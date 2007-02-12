@@ -151,8 +151,6 @@ public class Reverse extends MessagingModule {
             }
         }
     }        
-    
-   
         
     public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
             int opcode, byte [][] message) {
