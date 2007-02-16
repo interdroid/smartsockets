@@ -32,7 +32,7 @@ public abstract class MessagingModule extends ConnectModule {
             return null;
         }
            
-        return SocketAddressSet.getByAddress(m);
+        return SocketAddressSet.fromBytes(m);
     }
     
     protected byte [] fromSocketAddressSet(SocketAddressSet s) {

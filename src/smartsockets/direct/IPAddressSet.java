@@ -335,22 +335,31 @@ public class IPAddressSet implements Serializable {
      */        
     public static IPAddressSet getByAddress(byte [] bytes) 
         throws UnknownHostException {  
+        return getByAddress(bytes, 0, bytes.length);
+    }
     
+    public static IPAddressSet getByAddress(byte [] bytes, int off, int len) 
+        throws UnknownHostException {  
+  
         InetAddress [] addresses = null;
         byte [] uuid = null;
                 
-        if (bytes.length == LENGTH_IPv4 || bytes.length == LENGTH_IPv6) {
+        if (len == LENGTH_IPv4 || len == LENGTH_IPv6) {
             // the byte [] contains a 'normal' InetAddress
-            addresses = new InetAddress[1];            
-            addresses[0] = InetAddress.getByAddress(bytes);
+            addresses = new InetAddress[1];
+            
+            byte [] tmp = new byte[len];
+            System.arraycopy(bytes, off, tmp, 0, len);
+            
+            addresses[0] = InetAddress.getByAddress(tmp);
         } else {
             // the byte [] contains a 'extended' InetAddress       
             int index = 0;        
-            int len = bytes[index++];
+            int length = bytes[index++];
          
             boolean hasUUID = (bytes[index++] != 0);
             
-            addresses = new InetAddress[len];
+            addresses = new InetAddress[length];
             
             byte [] tmp = null;
             

@@ -58,7 +58,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private transient String toStringCache = null;
     private transient IPAddressSet addressCache;      
     private transient InetSocketAddress [] allAddressesCache;
-        
+    
     private SocketAddressSet(InetSocketAddress [] external, 
             InetSocketAddress [] global, InetSocketAddress [] local, 
             byte [] UUID, String user) {
@@ -85,12 +85,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param address The InetSocketAddress.
      * @throws UnknownHostException 
      */    
-    private SocketAddressSet(byte [] coded) throws UnknownHostException {
-        decode(coded);
+    private SocketAddressSet(byte [] coded, int off) throws UnknownHostException {
+        decode(coded, off);
     } 
 
-    private void decode(byte [] coded) throws UnknownHostException { 
-        int index = 0;
+    private void decode(byte [] coded, int off) throws UnknownHostException { 
+        int index = off;
 
         external = new InetSocketAddress[coded[index++] & 0xFF];
         global = new InetSocketAddress[coded[index++] & 0xFF];
@@ -726,9 +726,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         byte [] tmp = new byte[len];
         
         in.readFully(tmp);       
-        decode(tmp);
+        decode(tmp, 0);
     }
-    
+       
     public static void write(SocketAddressSet s, DataOutput out) throws IOException { 
         
         if (s == null) {
@@ -753,7 +753,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         in.readFully(tmp);       
       
-        return new SocketAddressSet(tmp);   
+        return new SocketAddressSet(tmp, 0);   
     }
    
     public static void skip(DataInputStream in) throws IOException { 
@@ -769,11 +769,16 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
     }
    
+    public static SocketAddressSet fromBytes(byte [] coded) 
+        throws UnknownHostException {
+        return fromBytes(coded, 0);
+    }
+
     
-    public static SocketAddressSet getByAddress(byte [] coded) 
+    public static SocketAddressSet fromBytes(byte [] coded, int off) 
         throws UnknownHostException {
         
-        return new SocketAddressSet(coded);
+        return new SocketAddressSet(coded, off);
     }
     
     public static SocketAddressSet getByAddress(InetSocketAddress a) 

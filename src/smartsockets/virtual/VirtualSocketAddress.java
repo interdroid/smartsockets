@@ -1,10 +1,14 @@
 package smartsockets.virtual;
 
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 
 import smartsockets.direct.SocketAddressSet;
+import smartsockets.util.TransferUtils;
 
 public class VirtualSocketAddress implements Serializable { 
 
@@ -24,6 +28,29 @@ public class VirtualSocketAddress implements Serializable {
     // Cache for the coded form of this address
     private transient byte [] codedForm;
 
+    public VirtualSocketAddress(DataInput in) throws IOException {
+
+        int mlen = in.readShort();         
+        int hlen = in.readShort();
+        int clen = in.readShort();
+
+        machine = SocketAddressSet.read(in);        
+        
+        port = in.readInt();
+        
+        if (hlen > 0) { 
+            hub = SocketAddressSet.read(in);
+        } else { 
+            hub = null;
+        }
+        
+        if (clen > 0) { 
+            cluster = in.readUTF();
+        } else {
+            cluster= null;
+        }     
+    }
+        
     public VirtualSocketAddress(SocketAddressSet machine, int port) {
         this(machine, port, null, null);
     }
@@ -108,6 +135,38 @@ public class VirtualSocketAddress implements Serializable {
                 SocketAddressSet.getByAddress(hub), null);
     }
     
+    public void write(DataOutput out) throws IOException {
+
+        byte [] m = machine.getAddress();
+        
+        byte [] h = null;
+                
+        if (hub != null) { 
+            h = hub.getAddress();
+        }
+        
+        byte [] c = null;
+        
+        if (cluster != null) { 
+            c = cluster.getBytes();
+        }
+        
+        out.writeShort(m.length);
+        out.writeShort(h == null ? 0 : h.length);               
+        out.writeShort(c == null ? 0 : c.length);
+        
+        out.write(m);
+        out.writeInt(port);
+        
+        if (h != null) { 
+            out.write(h);
+        }
+        
+        if (c != null) { 
+            out.write(c);
+        }        
+    }
+    
     public SocketAddressSet hub() { 
         return hub;
     }
@@ -128,11 +187,44 @@ public class VirtualSocketAddress implements Serializable {
         
         if (codedForm == null) { 
             
+             byte [] m = machine.getAddress();             
+             byte [] h = hub == null ? new byte[0] : hub.getAddress();             
+             byte [] c = cluster == null ? new byte[0] : cluster.getBytes();
+             
+             int len = 3*2 + 4  + m.length; 
+
+             if (h != null) { 
+                 len += h.length;
+             }
+             
+             if (c != null) { 
+                 len += c.length;                 
+             }
+             
+             codedForm = new byte[len];
+             
+             TransferUtils.storeShort((short) m.length, codedForm, 0);
+             TransferUtils.storeShort((short) h.length, codedForm, 2);
+             TransferUtils.storeShort((short) c.length, codedForm, 4);
+             
+             System.arraycopy(m, 0, codedForm, 0, m.length);
+             
+             int off = 6 + m.length;
+             
+             TransferUtils.storeInt(port, codedForm, off);
+             off += 4;
+             
+             System.arraycopy(h, 0, codedForm, off, h.length);
+             off += h.length;
+             
+             System.arraycopy(c, 0, codedForm, off, c.length);
         }
         
         return codedForm;
     }
-        
+
+    
+    
     public String toString() {         
         return machine.toString() + ":" + port 
             + (hub == null ? "" : ("@" + hub.toString())) 
@@ -170,6 +262,38 @@ public class VirtualSocketAddress implements Serializable {
     
     public int hashCode() {
         return machine.hashCode() ^ port;        
+    }
+    
+    public static VirtualSocketAddress fromBytes(byte [] source, int offset) 
+        throws UnknownHostException {
+
+        int mlen = TransferUtils.readShort(source, offset);
+        int hlen = TransferUtils.readShort(source, offset+2);
+        int clen = TransferUtils.readShort(source, offset+4);
+
+        int off = offset + 6;
+        
+        SocketAddressSet machine = SocketAddressSet.fromBytes(source, off);        
+        off += mlen;
+        
+        int port = TransferUtils.readInt(source, offset+6+mlen);
+        off += 4;
+                
+        SocketAddressSet hub = null;
+        
+        if (hlen > 0) { 
+            hub = SocketAddressSet.fromBytes(source, offset+6+mlen+4);
+            off += hlen;            
+        }
+        
+        String cluster = null;
+        
+        if (clen > 0) { 
+            cluster = new String(source, offset+6+mlen+4+hlen, clen);
+            off += clen;
+        }
+        
+        return new VirtualSocketAddress(machine, port, hub, cluster);
     }
     
     public static VirtualSocketAddress partialAddress(String hostname, 

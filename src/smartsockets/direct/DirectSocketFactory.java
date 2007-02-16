@@ -75,10 +75,10 @@ public class DirectSocketFactory {
     private IPAddressSet externalAddress;  
     private IPAddressSet completeAddress;
     
-    private byte [] completeAddressInBytes;
+    //private byte [] completeAddressInBytes;
     private byte [] altCompleteAddressInBytes;
     
-    private byte [] networkNameInBytes;
+   // private byte [] networkNameInBytes;
     
     private InetAddress externalNATAddress;
 
@@ -171,12 +171,9 @@ public class DirectSocketFactory {
                  (preference == null ? "<none>" : preference.getNetworkName()));
         }
         
-        completeAddressInBytes = toBytes(0, completeAddress, 0);
-        altCompleteAddressInBytes = toBytes(5, completeAddress, 0);
-        
-        networkNameInBytes = toBytes(
+        altCompleteAddressInBytes = toBytes(5, completeAddress, 
                 preference == null ? null : preference.getNetworkName());
-        
+         
         getNATAddress();
     }
 
@@ -283,6 +280,29 @@ public class DirectSocketFactory {
         result[header+1] = (byte) ((tmp.length >> 8) & 0xFF);
         System.arraycopy(tmp, 0, result, header+2, tmp.length);
         
+        return result;
+    }
+
+    protected static byte [] toBytes(int header, IPAddressSet address, 
+            String s) { 
+        
+        byte [] tmp1 = address.getAddress();
+        byte [] tmp2 = (s == null ? new byte[0] : s.getBytes());
+        
+        byte [] result = new byte[header + 4 + tmp1.length + tmp2.length];
+        
+        result[header] = (byte) (tmp1.length & 0xFF);
+        result[header+1] = (byte) ((tmp1.length >> 8) & 0xFF);
+       
+        System.arraycopy(tmp1, 0, result, header+2, tmp1.length);
+        
+        int off = header + 2 + tmp1.length;
+        
+        result[off] = (byte) (tmp2.length & 0xFF);
+        result[off+1] = (byte) ((tmp1.length >> 8) & 0xFF);
+       
+        System.arraycopy(tmp2, 0, result, off+2, tmp2.length);
+       
         return result;
     }
 
@@ -787,87 +807,7 @@ public class DirectSocketFactory {
     private SocketAddressSet handShake(SocketAddressSet sas, 
             InetSocketAddress target, InputStream in, 
             OutputStream out, byte [] userOut, byte [] userIn, 
-            boolean checkIdentity) 
-        
-        throws FirewallException { 
-
-/* THIS IS THE MATHIJS/NIELS VERION 
-
-        SocketAddressSet server = null;
-        int opcode = -1;
-        
-        try {     
-            // Read the size of the machines address
-            int size = (in.read() & 0xFF);
-            size |= ((in.read() & 0xFF) << 8); 
-
-            // Read the address itself....
-            byte [] tmp = new byte[size];
-
-            int off = 0; 
-
-            while (off < size) { 
-                off += in.read(tmp, off, size-off);
-            }
-
-            // Now send our own address to the server side (who may decide to 
-            // -NOT- accept us based on this)
-            out.write(completeAddressInBytes);
-            out.write(networkNameInBytes);
-            out.flush();
-
-            // Create the address and see if we are to talking to the right 
-            // process....
-            server = SocketAddressSet.getByAddress(tmp);
-
-            if (!server.sameProcess(sas)) { 
-                out.write(DirectServerSocket.WRONG_MACHINE);
-                out.flush();
-
-                if (logger.isInfoEnabled()) { 
-                    logger.info("Got connecting to wrong machine: "  
-                            + sas.toString()
-                            + " using network "
-                            + NetworkUtils.ipToString(target.getAddress()) + ":"
-                            + target.getPort() 
-                            + " got me a connection to " 
-                            + server.toString() 
-                            + " will retry!");
-                }
-
-                return null;
-            }
-
-            out.write(DirectServerSocket.ACCEPT);             
-            out.flush();
-
-            opcode = in.read();
-
-        } catch (Exception e) {
-
-            if (logger.isInfoEnabled()) { 
-                logger.info("Handshake with target " 
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " failed!", e);
-            }
-
-            return null;
-        }
-
-        if (opcode != DirectServerSocket.ACCEPT) { 
-            if (logger.isInfoEnabled()) { 
-                logger.info("Target " 
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " refused our connection!");
-            }
-
-            throw new FirewallException("Connection refused by receivers" 
-                    + " firewall!");
-        }
-
-        return server;
-
-*/ 
+            boolean checkIdentity) throws FirewallException { 
 
         // HPDC+Mathijs Version
         SocketAddressSet server = null;
@@ -891,14 +831,12 @@ public class DirectSocketFactory {
                 }
                 
                 for (int i=0;i<4;i++) { 
-                    altCompleteAddressInBytes[i+1] = userOut[i];
+                    altCompleteAddressInBytes[1+i] = userOut[i];
                 }
             
                 out.write(altCompleteAddressInBytes);
-                out.write(networkNameInBytes);
+                out.flush();
             }
-            
-            //System.out.println("Writing address: " + Arrays.toString(altCompleteAddressInBytes));
             
             // Read the other sides type...
             int type = in.read();
@@ -927,7 +865,7 @@ public class DirectSocketFactory {
             size = (in.read() & 0xFF);
             size |= ((in.read() & 0xFF) << 8); 
 
-            // Read the address itself....
+            // Read the name itself....
             byte [] name = new byte[size];
 
             off = 0; 
