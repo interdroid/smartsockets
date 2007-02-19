@@ -1,4 +1,4 @@
-package test.virtual.simple;
+package test.virtual.address;
 
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocketAddress;

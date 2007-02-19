@@ -213,7 +213,7 @@ public class VirtualSocketAddress implements Serializable {
              TransferUtils.storeShort((short) h.length, codedForm, 2);
              TransferUtils.storeShort((short) c.length, codedForm, 4);
              
-             System.arraycopy(m, 0, codedForm, 0, m.length);
+             System.arraycopy(m, 0, codedForm, 6, m.length);
              
              int off = 6 + m.length;
              
