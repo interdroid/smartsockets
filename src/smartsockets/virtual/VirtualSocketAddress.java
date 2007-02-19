@@ -34,18 +34,24 @@ public class VirtualSocketAddress implements Serializable {
         int hlen = in.readShort();
         int clen = in.readShort();
 
-        machine = SocketAddressSet.read(in);        
+        byte [] m = new byte[mlen];        
+        in.readFully(m);        
+        machine = SocketAddressSet.fromBytes(m);        
         
         port = in.readInt();
         
         if (hlen > 0) { 
-            hub = SocketAddressSet.read(in);
+            byte [] h = new byte[hlen];        
+            in.readFully(h);        
+            hub = SocketAddressSet.fromBytes(m);        
         } else { 
             hub = null;
         }
         
         if (clen > 0) { 
-            cluster = in.readUTF();
+            byte [] c = new byte[clen];
+            in.readFully(c);
+            cluster = new String(c);
         } else {
             cluster= null;
         }     
