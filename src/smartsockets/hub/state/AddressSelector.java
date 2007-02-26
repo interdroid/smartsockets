@@ -2,11 +2,11 @@ package smartsockets.hub.state;
 
 import java.util.LinkedList;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class AddressSelector extends Selector {
 
-    private LinkedList<SocketAddressSet> result = new LinkedList<SocketAddressSet>();
+    private LinkedList<DirectSocketAddress> result = new LinkedList<DirectSocketAddress>();
     
     public boolean needAll() {
         return true;
@@ -19,7 +19,7 @@ public class AddressSelector extends Selector {
         }
     }
 
-    public LinkedList<SocketAddressSet> getResult() { 
+    public LinkedList<DirectSocketAddress> getResult() { 
         return result;
     }       
 }

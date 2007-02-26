@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import smartsockets.Properties;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.servicelink.VirtualConnectionCallBack;
 import smartsockets.util.TypedProperties;
@@ -80,17 +80,18 @@ public class Hubrouted extends ConnectModule
         serviceLink.registerVCCallBack(this);        
     }
 
-    public SocketAddressSet getAddresses() {
+    public DirectSocketAddress getAddresses() {
         return null;
     }
 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map properties) throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) 
+        throws ModuleNotSuitableException, IOException {
         
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module...
-        SocketAddressSet tm = target.machine(); 
-        SocketAddressSet hub = target.hub();
+        DirectSocketAddress tm = target.machine(); 
+        DirectSocketAddress hub = target.hub();
            
         /*
         if (tm.sameMachine(parent.getLocalHost())) { 
@@ -191,7 +192,7 @@ public class Hubrouted extends ConnectModule
         return true;
     }
 
-    public void connect(SocketAddressSet src, SocketAddressSet srcHub, int port,
+    public void connect(DirectSocketAddress src, DirectSocketAddress srcHub, int port,
             int remoteFragmentation, int remoteBufferSize, int timeout, 
             long index) {
 
@@ -293,8 +294,6 @@ public class Hubrouted extends ConnectModule
         
         HubRoutedVirtualSocket s = sockets.get(index);
        
-        boolean result = false;
-        
         if (s == null) { 
             serviceLink.ackAckVirtualConnection(index, false);
             return;

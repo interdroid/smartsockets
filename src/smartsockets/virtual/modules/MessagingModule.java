@@ -2,7 +2,7 @@ package smartsockets.virtual.modules;
 
 import java.net.UnknownHostException;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public abstract class MessagingModule extends ConnectModule {
 
@@ -25,17 +25,17 @@ public abstract class MessagingModule extends ConnectModule {
                 (byte)(0xff & v) };
     }
     
-    protected SocketAddressSet toSocketAddressSet(byte [] m) 
+    protected DirectSocketAddress toSocketAddressSet(byte [] m) 
         throws UnknownHostException { 
         
         if (m == null || m.length == 0) { 
             return null;
         }
            
-        return SocketAddressSet.fromBytes(m);
+        return DirectSocketAddress.fromBytes(m);
     }
     
-    protected byte [] fromSocketAddressSet(SocketAddressSet s) {
+    protected byte [] fromSocketAddressSet(DirectSocketAddress s) {
         if (s == null) { 
             return null;
         }

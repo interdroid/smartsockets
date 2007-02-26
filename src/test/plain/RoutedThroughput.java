@@ -52,12 +52,7 @@ public class RoutedThroughput {
         System.out.println(" receivebuffer = " + s.getReceiveBufferSize());
         System.out.println(" no delay      = " + s.getTcpNoDelay());        
     }
-   
-    private static void print(ServerSocket s) throws SocketException {         
-        System.out.println("Configured server socket: ");         
-        System.out.println(" receivebuffer = " + s.getReceiveBufferSize());               
-    }
-    
+  
     private static void connect() throws IOException { 
    
         sender = new Socket();

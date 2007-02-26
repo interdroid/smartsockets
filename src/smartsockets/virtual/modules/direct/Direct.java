@@ -10,7 +10,7 @@ import smartsockets.Properties;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualSocket;
@@ -107,7 +107,7 @@ public class Direct extends AbstractDirectModule {
         // nothing to do here...
     }
             
-    public SocketAddressSet getAddresses() { 
+    public DirectSocketAddress getAddresses() { 
         return server.getAddressSet();
     }
     
@@ -205,7 +205,7 @@ public class Direct extends AbstractDirectModule {
     }
                 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map properties) throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) throws ModuleNotSuitableException, IOException {
 
         outgoingConnectionAttempts++;
         

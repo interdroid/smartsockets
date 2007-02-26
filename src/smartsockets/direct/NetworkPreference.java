@@ -705,7 +705,7 @@ public class NetworkPreference {
         return defaultPreference.toString();
     }
 
-    public AddressIterator determineOrder(SocketAddressSet target) {
+    public AddressIterator determineOrder(DirectSocketAddress target) {
         // TODO Auto-generated method stub
         return null;
     }

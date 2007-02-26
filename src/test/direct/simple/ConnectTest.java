@@ -9,7 +9,7 @@ import java.util.Random;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class ConnectTest {
 
@@ -79,24 +79,24 @@ public class ConnectTest {
             }
 
             if (targetCount > 0) { 
-                SocketAddressSet[] targets = new SocketAddressSet[targetCount];
+                DirectSocketAddress[] targets = new DirectSocketAddress[targetCount];
                 int index = 0;
 
                 for (int i = 0; i < args.length; i++) {
                     if (args[i] != null) {
-                        targets[index++] = SocketAddressSet
+                        targets[index++] = DirectSocketAddress
                         .getByAddress(args[i]);
                     }
                 }
 
-                Map prop = null;
+                Map<String, Object> prop = null;
 
                 if (ssh) {
-                    prop = new HashMap();
+                    prop = new HashMap<String, Object>();
                     prop.put("allowSSH", "true");
                 }
 
-                for (SocketAddressSet t : targets) {
+                for (DirectSocketAddress t : targets) {
 
                     if (sleep) {
                         try {

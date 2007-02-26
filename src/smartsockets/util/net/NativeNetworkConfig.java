@@ -41,9 +41,10 @@ import smartsockets.util.NetworkUtils;
 
 public final class NativeNetworkConfig {
       
-    private static List info = new LinkedList();
+    private static List<NetworkInfo> info = new LinkedList<NetworkInfo>();
         
-    private static List parsers = new LinkedList(); 
+    private static List<NetworkInfoParser> parsers = 
+        new LinkedList<NetworkInfoParser>(); 
     
     static { 
         // TODO: use reflection here ?
@@ -117,11 +118,7 @@ public final class NativeNetworkConfig {
 
     public static NetworkInfo getNetworkInfo(InetAddress ip) {         
         
-        Iterator itt = info.iterator(); 
-        
-        while (itt.hasNext()) { 
-            NetworkInfo nw = (NetworkInfo) itt.next();
-            
+        for (NetworkInfo nw : info) {
             if (ip.equals(nw.ipv4) || ip.equals(nw.ipv6)) { 
                 return nw;
             }

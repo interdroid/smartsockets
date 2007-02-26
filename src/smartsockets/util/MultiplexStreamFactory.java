@@ -18,8 +18,11 @@ public class MultiplexStreamFactory {
     private final InputStream in;        
     private final OutputStream out;
         
-    private final HashMap inputs = new HashMap();
-    private final HashMap outputs = new HashMap();
+    private final HashMap<Integer, MultiplexInputStream> inputs = 
+        new HashMap<Integer, MultiplexInputStream>();
+    
+    private final HashMap<Integer, MultiplexOutputStream> outputs = 
+        new HashMap<Integer, MultiplexOutputStream>();
     
     private final InputReader reader;
                 
@@ -136,13 +139,13 @@ public class MultiplexStreamFactory {
     
     private final MultiplexInputStream findInput(int target) {
         synchronized (inputs) {
-            return (MultiplexInputStream) inputs.get(new Integer(target));
+            return inputs.get(new Integer(target));
         }
     }
     
     private final MultiplexOutputStream findOutput(int target) {
         synchronized (outputs) {
-            return (MultiplexOutputStream) outputs.get(new Integer(target));
+            return outputs.get(new Integer(target));
         }
     }
         

@@ -1,15 +1,15 @@
 package smartsockets.hub.state;
 
 import java.util.LinkedList;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class HubsForClientSelector extends Selector {
     
     private LinkedList<HubDescription> result = new LinkedList<HubDescription>();    
-    private final SocketAddressSet client;
+    private final DirectSocketAddress client;
     private final boolean includeLocal;
     
-    public HubsForClientSelector(SocketAddressSet client, boolean includeLocal) { 
+    public HubsForClientSelector(DirectSocketAddress client, boolean includeLocal) { 
         this.client = client;
         this.includeLocal = includeLocal;
     }

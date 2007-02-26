@@ -15,7 +15,6 @@ public class Throughput {
     private final static int REPEAT = 10;
     private final static int COUNT = 100;
     private final static int SIZE = 1024*1024;
-    private final static int BUFFER_SIZE = 1024*1024;
     
     private static int inbufPre = -1;
     private static int outbufPre = -1;
@@ -57,11 +56,6 @@ public class Throughput {
             s.setReceiveBufferSize(outbufPre);
     }
     
-      
-    private static void print(ServerSocket s) throws SocketException {         
-        System.out.println("Configured server socket: ");         
-        System.out.println(" receivebuffer = " + s.getReceiveBufferSize());               
-    }
     
     private static void send(Socket s, DataOutputStream out, DataInputStream in,
             int repeat, int count, byte [] data, int size) throws IOException { 

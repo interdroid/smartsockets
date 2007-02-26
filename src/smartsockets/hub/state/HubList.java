@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class HubList {
         
@@ -12,13 +12,18 @@ public class HubList {
         
     private final StateCounter state; 
   
-    private final LinkedList connectedHubs = new LinkedList();
-    
-    // TODO: actually use this list! 
-    private final LinkedList unConnectedHubs = new LinkedList();         
-    private final LinkedList mustCheck = new LinkedList();
+    private final LinkedList<HubDescription> connectedHubs = 
+        new LinkedList<HubDescription>();
         
-    private final HashMap map = new HashMap();    
+    private final LinkedList<HubDescription> mustCheck = 
+        new LinkedList<HubDescription>();
+    
+    // TODO: actually use this list ? 
+    private final LinkedList<HubDescription> unConnectedHubs = 
+        new LinkedList<HubDescription>();
+    
+    private final HashMap<DirectSocketAddress, HubDescription> map = 
+        new HashMap<DirectSocketAddress, HubDescription>();    
     
     private HubDescription localDescription;
     
@@ -39,11 +44,11 @@ public class HubList {
         
         while (true) { 
             // Get the first one from the list. 
-            HubDescription tmp = (HubDescription) mustCheck.getFirst();
+            HubDescription tmp = mustCheck.getFirst();
             
             if (tmp.getLastContact() == 0) {
                 // it's a new entry, so we can check it immediately
-                return (HubDescription) mustCheck.removeFirst();                        
+                return mustCheck.removeFirst();                        
             }
         
             // it's an old entry, so check it we have to wait for a while. 
@@ -82,12 +87,12 @@ public class HubList {
         return localDescription;
     }
                   
-    public synchronized boolean contains(SocketAddressSet m) {         
+    public synchronized boolean contains(DirectSocketAddress m) {         
         return map.containsKey(m); 
     }
            
-    public synchronized HubDescription get(SocketAddressSet m) {                        
-        return (HubDescription) map.get(m);
+    public synchronized HubDescription get(DirectSocketAddress m) {                        
+        return map.get(m);
     }
             
     public synchronized void select(Selector s) {
@@ -127,7 +132,7 @@ public class HubList {
         } 
     }
     
-    public synchronized HubDescription add(SocketAddressSet a) { 
+    public synchronized HubDescription add(DirectSocketAddress a) { 
         
         HubDescription tmp = get(a);
         
@@ -154,28 +159,19 @@ public class HubList {
         
         result.append("Hubs with a direct connection:\n");
         
-        Iterator itt = connectedHubs.iterator();
-        
-        while (itt.hasNext()) { 
-            HubDescription desc = (HubDescription) itt.next();
+        for (HubDescription desc : connectedHubs) { 
             result.append(desc).append('\n');            
         }
         
         result.append("Hubs without a direct connection:\n");
         
-        itt = unConnectedHubs.iterator();
-        
-        while (itt.hasNext()) { 
-            HubDescription desc = (HubDescription) itt.next();
+        for (HubDescription desc : unConnectedHubs) { 
             result.append(desc).append('\n');            
         }
         
         result.append("Hubs which need to be checked:\n");
-        
-        itt = mustCheck.iterator();
-        
-        while (itt.hasNext()) { 
-            HubDescription desc = (HubDescription) itt.next();
+
+        for (HubDescription desc : mustCheck) { 
             result.append(desc).append('\n');            
         }
         

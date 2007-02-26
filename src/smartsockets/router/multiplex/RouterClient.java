@@ -17,7 +17,7 @@ public class RouterClient implements Protocol {
         ibis.util.GetLogger.getLogger("smartsocket.router.client");
     
     private static long clientID = 0;
-    private static HashMap properties;       
+    private static HashMap<String, Object> properties;       
     
     public final long id;
     public final VirtualSocket s;
@@ -87,7 +87,7 @@ public class RouterClient implements Protocol {
             if (logger.isInfoEnabled()) {
                 logger.info("Initializing client-side router code");
             }
-            properties = new HashMap();
+            properties = new HashMap<String, Object>();
             properties.put("connect.module.skip", "routed");            
         }
         

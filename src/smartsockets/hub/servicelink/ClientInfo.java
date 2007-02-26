@@ -5,15 +5,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.virtual.VirtualSocketAddress;
 
 
 public class ClientInfo {
 
-    private final SocketAddressSet clientAddress;
+    private final DirectSocketAddress clientAddress;
     private final long version;
-    private final Map properties;
+    private final Map<String, String> properties;
         
     public ClientInfo(String clientAsString) { 
     
@@ -40,7 +40,7 @@ public class ClientInfo {
             }
 
             clientAddress = 
-                SocketAddressSet.getByAddress(clientAsString.substring(0, index));
+                DirectSocketAddress.getByAddress(clientAsString.substring(0, index));
         
             clientAsString = clientAsString.substring(index+2);
                         
@@ -57,7 +57,7 @@ public class ClientInfo {
 
             version = Long.parseLong(clientAsString.substring(0, index));
                         
-            properties = new HashMap();
+            properties = new HashMap<String, String>();
             
             clientAsString = clientAsString.substring(index);
         
@@ -91,13 +91,14 @@ public class ClientInfo {
         } 
     } 
     
-    public ClientInfo(SocketAddressSet clientAddress, long version, Map properties) { 
+    public ClientInfo(DirectSocketAddress clientAddress, long version, 
+            Map<String, String> properties) { 
         this.clientAddress = clientAddress;
         this.version = version;        
         this.properties = properties;
     }
     
-    public SocketAddressSet getClientAddress() { 
+    public DirectSocketAddress getClientAddress() { 
         return clientAddress;
     }
     
@@ -122,6 +123,10 @@ public class ClientInfo {
         
         result.append(clientAddress.toString());
         
+        result.append(", "); 
+        result.append(version);
+        result.append(", "); 
+                
         Iterator it = properties.keySet().iterator();
         
         while (it.hasNext()) { 

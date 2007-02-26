@@ -12,7 +12,7 @@ import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class SimpleSpliceTest {
 
@@ -25,7 +25,7 @@ public class SimpleSpliceTest {
                 
         if (args.length > 0) {
             
-            SocketAddressSet target = SocketAddressSet.getByAddress(args[0]); 
+            DirectSocketAddress target = DirectSocketAddress.getByAddress(args[0]); 
            
             DirectSocket s = null;
             DataInputStream in = null;
@@ -83,9 +83,9 @@ public class SimpleSpliceTest {
             // Now try if we can connect to the client using an outgoing 
             // connection
 
-            SocketAddressSet target = SocketAddressSet.getByAddress(address);
+            DirectSocketAddress target = DirectSocketAddress.getByAddress(address);
             
-            Map properties = new HashMap();
+            Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("allowSSH", "false");            
             
             for (int i=0;i<100;i++) {

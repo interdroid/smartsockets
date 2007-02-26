@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 import smartsockets.Properties;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.router.simple.RouterClient;
 import smartsockets.util.TypedProperties;
@@ -127,12 +127,13 @@ public class Routed extends ConnectModule {
         }
     }
 
-    public SocketAddressSet getAddresses() {
+    public DirectSocketAddress getAddresses() {
         return null;
     }
 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map properties) throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) 
+        throws ModuleNotSuitableException, IOException {
 
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module...

@@ -1,8 +1,8 @@
 package smartsockets.hub.servicelink;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public interface CallBack {
-    void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, int opcode,
+    void gotMessage(DirectSocketAddress src, DirectSocketAddress srcProxy, int opcode,
             byte [][] message);        
 }

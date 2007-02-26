@@ -10,7 +10,7 @@ import java.io.OutputStream;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.util.MultiplexStreamFactory;
 
 public class MultiplexTest2 {
@@ -69,7 +69,7 @@ public class MultiplexTest2 {
 
             System.out.println("I am client");
                         
-            SocketAddressSet target = SocketAddressSet.getByAddress(args[0]);
+            DirectSocketAddress target = DirectSocketAddress.getByAddress(args[0]);
             int senders = Integer.parseInt(args[1]);
             
             DirectSocket s = sf.createSocket(target, 0, null);

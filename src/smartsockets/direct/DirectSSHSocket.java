@@ -13,7 +13,7 @@ public class DirectSSHSocket extends DirectSocket {
     private final LocalStreamForwarder lsf;
     private boolean closed = false;
     
-    public DirectSSHSocket(SocketAddressSet local, SocketAddressSet remote, 
+    public DirectSSHSocket(DirectSocketAddress local, DirectSocketAddress remote, 
             InputStream in, OutputStream out, LocalStreamForwarder lsf) {
         
         super(local, remote, in, out);

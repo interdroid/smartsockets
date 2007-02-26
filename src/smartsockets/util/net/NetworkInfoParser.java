@@ -108,5 +108,5 @@ public abstract class NetworkInfoParser {
 
     abstract String [] getCommand(int number);
     
-    abstract boolean parse(byte [] output, List info);
+    abstract boolean parse(byte [] output, List<NetworkInfo> info);
 }

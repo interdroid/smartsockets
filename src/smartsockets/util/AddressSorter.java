@@ -1,10 +1,9 @@
 package smartsockets.util;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.Comparator;
  
-public class AddressSorter implements Comparator {
+public class AddressSorter implements Comparator<InetAddress> {
     
     /** 
      * Orders two addresses based on their length. If both addresses have 
@@ -78,10 +77,12 @@ public class AddressSorter implements Comparator {
      * If their length is the same, the individual bytes are compared. 
      * The address with the lowest byte values comes first.     
      */    
-    public int compare(Object o1, Object o2) {
+    public int compare(InetAddress i1, InetAddress i2) {
 
+        /*
         InetAddress i1 = null;
         InetAddress i2 = null;
+        
         
         if (o1 instanceof InetSocketAddress) { 
             i1 = ((InetSocketAddress) o1).getAddress();
@@ -90,7 +91,8 @@ public class AddressSorter implements Comparator {
             i1 = (InetAddress) o1;
             i2 = (InetAddress) o2;
         }
-    
+    */
+        
         int score1 = score(i1);
         int score2 = score(i2);            
         

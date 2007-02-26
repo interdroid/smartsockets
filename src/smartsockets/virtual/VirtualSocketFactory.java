@@ -17,7 +17,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import smartsockets.Properties;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.discovery.Discovery;
 import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.util.TypedProperties;
@@ -96,8 +96,8 @@ public class VirtualSocketFactory {
     
     private int nextPort = 3000;    
     
-    private SocketAddressSet myAddresses;      
-    private SocketAddressSet hubAddress;    
+    private DirectSocketAddress myAddresses;      
+    private DirectSocketAddress hubAddress;    
     
     private VirtualSocketAddress localVirtualAddress;
     private String localVirtualAddressAsString;
@@ -140,14 +140,14 @@ public class VirtualSocketFactory {
 
     private void createServiceLink(){ 
         
-        SocketAddressSet address = null;
+        DirectSocketAddress address = null;
         
         // Check if the proxy address was passed as a property.
         String tmp = properties.getProperty(Properties.HUB_ADDRESS);
         
         if (tmp != null) {
             try { 
-                address = SocketAddressSet.getByAddress(tmp);
+                address = DirectSocketAddress.getByAddress(tmp);
             } catch (Exception e) { 
                 logger.warn("Failed to understand proxy address: " + tmp, e);                                
             }           
@@ -178,7 +178,7 @@ public class VirtualSocketFactory {
             
             if (result != null) { 
                 try { 
-                    address = SocketAddressSet.getByAddress(result);
+                    address = DirectSocketAddress.getByAddress(result);
                     if (logger.isInfoEnabled()) {
                         logger.info("Hub found at: " + address.toString());
                     }
@@ -339,13 +339,13 @@ public class VirtualSocketFactory {
                     ConnectModule m = loadModule(mods[i]);            
                     m.init(this, mods[i], properties, logger);
 
-                    SocketAddressSet tmp = m.getAddresses();
+                    DirectSocketAddress tmp = m.getAddresses();
 
                     if (tmp != null) { 
                         if (myAddresses == null) {
                             myAddresses = tmp;
                         } else { 
-                            myAddresses = SocketAddressSet.merge(myAddresses, tmp);
+                            myAddresses = DirectSocketAddress.merge(myAddresses, tmp);
                         }                    
                     }
 
@@ -481,8 +481,8 @@ public class VirtualSocketFactory {
     }
         
     private VirtualSocket createClientSocket(ConnectModule m, 
-            VirtualSocketAddress target, int timeout, Map properties) 
-        throws IOException {
+            VirtualSocketAddress target, int timeout, 
+            Map<String, Object> properties) throws IOException {
         
         if (m.matchRuntimeRequirements(properties)) {
             if (conlogger.isDebugEnabled()) {
@@ -540,7 +540,7 @@ public class VirtualSocketFactory {
     }
     
     public VirtualSocket createClientSocket(VirtualSocketAddress target, 
-            int timeout, Map prop) throws IOException {
+            int timeout, Map<String, Object> prop) throws IOException {
 
         
         // Note: it's up to the user to ensure that this thing is large enough!
@@ -553,8 +553,6 @@ public class VirtualSocketFactory {
             if (timing != null) { 
                 timing[0] = System.nanoTime();
             }
-        } else { 
-            prop = properties;
         }
         
         try { 
@@ -686,7 +684,7 @@ public class VirtualSocketFactory {
     }
     
     public VirtualServerSocket createServerSocket(int port, int backlog, 
-            Map properties) throws IOException {
+            Map<String, Object> properties) throws IOException {
         
         if (backlog <= 0) { 
             backlog = DEFAULT_BACKLOG;
@@ -723,7 +721,7 @@ public class VirtualSocketFactory {
         return serviceLink;        
     }
     
-    public SocketAddressSet getLocalHost() { 
+    public DirectSocketAddress getLocalHost() { 
         return myAddresses;
     }
     
@@ -731,7 +729,7 @@ public class VirtualSocketFactory {
         return clusters.localCluster();
     }
     
-    public SocketAddressSet getLocalProxy() { 
+    public DirectSocketAddress getLocalProxy() { 
         return hubAddress;        
     }
     

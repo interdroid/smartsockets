@@ -11,8 +11,7 @@ public class ToBytes {
             
             VirtualSocketAddress one = new VirtualSocketAddress(serverString);                         
                                                                                             
-            VirtualSocketAddress two = 
-                VirtualSocketAddress.fromBytes(one.toBytes(), 0);                     
+            VirtualSocketAddress.fromBytes(one.toBytes(), 0);                     
             
         } catch (Exception e) {
             System.out.println("Oops: " + e);

@@ -11,7 +11,7 @@ import java.util.Map;
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class ThreePointSpliceTest {
 
@@ -20,10 +20,10 @@ public class ThreePointSpliceTest {
     private static DirectSocketFactory sf = 
         DirectSocketFactory.getSocketFactory();
 
-    private static void client(String key, SocketAddressSet server) 
+    private static void client(String key, DirectSocketAddress server) 
         throws IOException {
     
-        Map properties = new HashMap();
+        Map<String, Object> properties = new HashMap<String, Object>();
         properties.put("allowSSH", "false");
         
         DirectSimpleSocket s = (DirectSimpleSocket) sf.createSocket(server, 0, 
@@ -45,10 +45,10 @@ public class ThreePointSpliceTest {
         System.out.println("Server gives me " + addr + " " + port);
         
         
-        SocketAddressSet [] target = new SocketAddressSet[5];
+        DirectSocketAddress [] target = new DirectSocketAddress[5];
         
         for (int i=0;i<target.length;i++) {
-            target[i] = SocketAddressSet.getByAddress(addr, port+i);
+            target[i] = DirectSocketAddress.getByAddress(addr, port+i);
         }
         
         for (int i=0;i<30;i++) {
@@ -159,7 +159,7 @@ public class ThreePointSpliceTest {
     public static void main(String [] args) throws IOException { 
                 
         if (args.length == 2) {
-            client(args[0], SocketAddressSet.getByAddress(args[1]));
+            client(args[0], DirectSocketAddress.getByAddress(args[1]));
         } else { 
             server();
         } 

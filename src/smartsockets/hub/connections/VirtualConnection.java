@@ -14,13 +14,6 @@ public class VirtualConnection {
     public final long index2;
     public byte [] buffer2;
     
-    private int maxCredits;    
-    private int credits;
-    
-    private long bytes_1_to_2;
-    private long bytes_2_to_1;
-    
-    private boolean connected = false;
     private boolean removing = false;
     
     VirtualConnection(MessageForwardingConnection mfc1, String key1, long index1, 

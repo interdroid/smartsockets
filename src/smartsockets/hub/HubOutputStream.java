@@ -4,7 +4,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class HubOutputStream extends DataOutputStream {
 
@@ -12,7 +12,7 @@ public class HubOutputStream extends DataOutputStream {
         super(out);
     }
 
-    public void writeSocketAddressSet(SocketAddressSet a) throws IOException { 
+    public void writeSocketAddressSet(DirectSocketAddress a) throws IOException { 
         
         byte [] codedForm = a.getAddress();
         

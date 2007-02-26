@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
 import smartsockets.Properties;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.ConnectionProtocol;
 import smartsockets.hub.connections.MessageForwarderProtocol;
 import smartsockets.hub.connections.VirtualConnectionIndex;
@@ -37,13 +37,13 @@ public class ServiceLink implements Runnable {
 
     private final DirectSocketFactory factory;
 
-    private final SocketAddressSet myAddress;
+    private final DirectSocketAddress myAddress;
 
     private boolean connected = false;
 
-    private SocketAddressSet userSuppliedAddress;
+    private DirectSocketAddress userSuppliedAddress;
 
-    private SocketAddressSet hubAddress;
+    private DirectSocketAddress hubAddress;
 
     private DirectSocket hub;
 
@@ -101,10 +101,10 @@ public class ServiceLink implements Runnable {
 
     private long outgoingMetaMessages;
 
-    private long lastStatsPrint = 0;
+  //  private long lastStatsPrint = 0;
 
-    private ServiceLink(SocketAddressSet hubAddress,
-            SocketAddressSet myAddress, int sendBuffer, int receiveBuffer)
+    private ServiceLink(DirectSocketAddress hubAddress,
+            DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer)
             throws IOException {
 
         factory = DirectSocketFactory.getSocketFactory();
@@ -116,7 +116,7 @@ public class ServiceLink implements Runnable {
         this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;
 
-        this.lastStatsPrint = System.currentTimeMillis();
+      //  this.lastStatsPrint = System.currentTimeMillis();
 
         Thread t = new Thread(this, "ServiceLink Message Reader");
         t.setDaemon(true);
@@ -251,7 +251,7 @@ public class ServiceLink implements Runnable {
          */
     }
 
-    private void connectToHub(SocketAddressSet address) throws IOException {
+    private void connectToHub(DirectSocketAddress address) throws IOException {
         try {
             // Create a connection to the hub
             hub = factory.createSocket(address, TIMEOUT, 0, sendBuffer,
@@ -289,7 +289,7 @@ public class ServiceLink implements Runnable {
 
             // If the connection is accepted, the hub will give us its full 
             // address (since the user supplied one may be a partial).  
-            hubAddress = SocketAddressSet.getByAddress(in.readUTF());
+            hubAddress = DirectSocketAddress.getByAddress(in.readUTF());
 
             if (logger.isInfoEnabled()) {
                 logger.info("Hub at " + address + " accepted connection, "
@@ -315,15 +315,15 @@ public class ServiceLink implements Runnable {
 
     private void handleInfoMessage() throws IOException {
 
-        SocketAddressSet source = SocketAddressSet.read(in);
-        SocketAddressSet sourceHub = SocketAddressSet.read(in);
+        DirectSocketAddress source = DirectSocketAddress.read(in);
+        DirectSocketAddress sourceHub = DirectSocketAddress.read(in);
 
         // since we have reached our destination, the hop count and 
         // target addresses are not used anymore..
         skip(4);
 
-        SocketAddressSet.skip(in);
-        SocketAddressSet.skip(in);
+        DirectSocketAddress.skip(in);
+        DirectSocketAddress.skip(in);
 
         String targetModule = in.readUTF();
         int opcode = in.readInt();
@@ -388,11 +388,11 @@ public class ServiceLink implements Runnable {
 
         incomingConnections++;
 
-        SocketAddressSet source = SocketAddressSet.read(in);
-        SocketAddressSet sourceHub = SocketAddressSet.read(in);
+        DirectSocketAddress source = DirectSocketAddress.read(in);
+        DirectSocketAddress sourceHub = DirectSocketAddress.read(in);
 
-        SocketAddressSet.skip(in);
-        SocketAddressSet.skip(in);
+        DirectSocketAddress.skip(in);
+        DirectSocketAddress.skip(in);
 
         long index = in.readLong();
 
@@ -818,7 +818,7 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    public void send(SocketAddressSet target, SocketAddressSet targetHub,
+    public void send(DirectSocketAddress target, DirectSocketAddress targetHub,
             String targetModule, int opcode, byte[][] message) {
 
         if (!connected) {
@@ -837,14 +837,14 @@ public class ServiceLink implements Runnable {
             synchronized (out) {
                 out.write(MessageForwarderProtocol.INFO_MESSAGE);
 
-                SocketAddressSet.write(myAddress, out);
-                SocketAddressSet.write(hubAddress, out); // may be null
+                DirectSocketAddress.write(myAddress, out);
+                DirectSocketAddress.write(hubAddress, out); // may be null
 
                 // hops left is not used here...
                 out.writeInt(-1);
 
-                SocketAddressSet.write(target, out);
-                SocketAddressSet.write(targetHub, out); // may be null
+                DirectSocketAddress.write(target, out);
+                DirectSocketAddress.write(targetHub, out); // may be null
 
                 out.writeUTF(targetModule);
                 out.writeInt(opcode);
@@ -882,7 +882,7 @@ public class ServiceLink implements Runnable {
         return clients(hubAddress, tag);
     }
 
-    public ClientInfo[] clients(SocketAddressSet hub) throws IOException {
+    public ClientInfo[] clients(DirectSocketAddress hub) throws IOException {
         return clients(hub, "");
     }
 
@@ -908,7 +908,7 @@ public class ServiceLink implements Runnable {
         return result;
     }
 
-    public ClientInfo[] clients(SocketAddressSet hub, String tag)
+    public ClientInfo[] clients(DirectSocketAddress hub, String tag)
             throws IOException {
 
         if (logger.isInfoEnabled()) {
@@ -974,7 +974,7 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    public SocketAddressSet[] hubs() throws IOException {
+    public DirectSocketAddress[] hubs() throws IOException {
 
         if (logger.isInfoEnabled()) {
             logger.info("Requesting hub list from hub");
@@ -993,7 +993,7 @@ public class ServiceLink implements Runnable {
                 out.flush();
             }
 
-            return SocketAddressSet
+            return DirectSocketAddress
                     .convertToSocketAddressSet((String[]) getInfoReply(id));
 
         } catch (IOException e) {
@@ -1035,7 +1035,7 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    public SocketAddressSet[] locateClient(String client) throws IOException {
+    public DirectSocketAddress[] locateClient(String client) throws IOException {
 
         waitConnected(maxWaitTime);
 
@@ -1055,7 +1055,7 @@ public class ServiceLink implements Runnable {
                 out.flush();
             }
 
-            return SocketAddressSet
+            return DirectSocketAddress
                     .convertToSocketAddressSet((String[]) getInfoReply(id));
 
         } catch (IOException e) {
@@ -1067,7 +1067,7 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    public SocketAddressSet getAddress() throws IOException {
+    public DirectSocketAddress getAddress() throws IOException {
 
         waitConnected(maxWaitTime);
 
@@ -1195,8 +1195,8 @@ public class ServiceLink implements Runnable {
         return vcIndex.nextIndex();
     }
 
-    public void createVirtualConnection(long index, SocketAddressSet target,
-            SocketAddressSet targetHub, int port, int fragment, int buffer,
+    public void createVirtualConnection(long index, DirectSocketAddress target,
+            DirectSocketAddress targetHub, int port, int fragment, int buffer,
             int timeout) throws IOException {
 
         if (!getConnected()) {
@@ -1215,11 +1215,11 @@ public class ServiceLink implements Runnable {
             synchronized (out) {
                 out.writeByte(MessageForwarderProtocol.CREATE_VIRTUAL);
 
-                SocketAddressSet.write(myAddress, out);
-                SocketAddressSet.write(hubAddress, out);
+                DirectSocketAddress.write(myAddress, out);
+                DirectSocketAddress.write(hubAddress, out);
 
-                SocketAddressSet.write(target, out);
-                SocketAddressSet.write(targetHub, out);
+                DirectSocketAddress.write(target, out);
+                DirectSocketAddress.write(targetHub, out);
 
                 out.writeLong(index);
 
@@ -1575,7 +1575,7 @@ public class ServiceLink implements Runnable {
     }
 
     public static ServiceLink getServiceLink(TypedProperties p,
-            SocketAddressSet address, SocketAddressSet myAddress) {
+            DirectSocketAddress address, DirectSocketAddress myAddress) {
 
         // TODO: cache service linkes here ? Shared a link between multiple 
         // clients that use the same hub ?  

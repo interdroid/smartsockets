@@ -7,7 +7,7 @@ import java.io.DataOutputStream;
 import java.util.Map;
 
 import smartsockets.direct.DirectSocket;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.state.HubList;
 
 public abstract class BaseConnection implements Runnable {
@@ -16,13 +16,13 @@ public abstract class BaseConnection implements Runnable {
     protected final DataInputStream in;
     protected final DataOutputStream out; 
     
-    protected Map<SocketAddressSet, BaseConnection> connections;
+    protected Map<DirectSocketAddress, BaseConnection> connections;
     
     protected final HubList knownHubs; 
 
     protected BaseConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, 
-            Map<SocketAddressSet, BaseConnection> connections, 
+            Map<DirectSocketAddress, BaseConnection> connections, 
             HubList hubs) {
         
         this.s = s;

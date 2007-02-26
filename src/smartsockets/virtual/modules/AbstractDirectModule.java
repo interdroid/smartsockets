@@ -8,7 +8,6 @@ import java.util.Map;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -24,11 +23,6 @@ public abstract class AbstractDirectModule extends MessagingModule {
     
     protected AbstractDirectModule(String name, boolean requiresServiceLink) { 
         super(name, requiresServiceLink);
-    }
-        
-    private boolean checkTarget(SocketAddressSet target) {  
-        // TODO: implement
-        return true;
     }
         
     protected abstract VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
@@ -117,7 +111,7 @@ public abstract class AbstractDirectModule extends MessagingModule {
     }
     
     protected VirtualSocket handleConnect(VirtualSocketAddress target, 
-            DirectSocket s, int timeout, Map properties) throws IOException {
+            DirectSocket s, int timeout, Map<String, Object> properties) throws IOException {
         
         VirtualSocket tmp = null;
         DataInputStream in = null;

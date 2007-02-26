@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.AddressAsStringSelector;
 import smartsockets.hub.state.ClientsByTagAsStringSelector;
@@ -31,16 +31,16 @@ public class ClientConnection extends MessageForwardingConnection {
     private static Logger reglogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
     
-    private final SocketAddressSet clientAddress;
-    private final SocketAddressSet hubAddress;
+    private final DirectSocketAddress clientAddress;
+  //  private final DirectSocketAddress hubAddress;
     
     private final String clientAddressAsString;
     
     private final String uniquePrefix;
     
-    public ClientConnection(SocketAddressSet clientAddress, DirectSocket s, 
+    public ClientConnection(DirectSocketAddress clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, 
-            Map<SocketAddressSet, BaseConnection> connections,
+            Map<DirectSocketAddress, BaseConnection> connections,
             HubList hubs, VirtualConnections vcs) {
      
         super(s, in, out, connections, hubs, vcs, false, "Client(" + clientAddress.toString() + ")");        
@@ -48,7 +48,7 @@ public class ClientConnection extends MessageForwardingConnection {
         this.clientAddress = clientAddress;        
         this.clientAddressAsString = clientAddress.toString();
         
-        this.hubAddress = knownHubs.getLocalDescription().hubAddress;
+    //    this.hubAddress = knownHubs.getLocalDescription().hubAddress;
         
         this.uniquePrefix = clientAddressAsString + "__";
         
@@ -167,7 +167,7 @@ public class ClientConnection extends MessageForwardingConnection {
         LinkedList<String> result = new LinkedList<String>();
         
         try { 
-            HubDescription d = knownHubs.get(SocketAddressSet.getByAddress(hub));            
+            HubDescription d = knownHubs.get(DirectSocketAddress.getByAddress(hub));            
             d.getClientsAsString(result, tag);            
         } catch (UnknownHostException e) {
             reqlogger.warn("Connection " + clientAddress + " got illegal hub " 
@@ -229,7 +229,7 @@ public class ClientConnection extends MessageForwardingConnection {
         }
         
         DirectionsAsStringSelector ds = 
-            new DirectionsAsStringSelector(SocketAddressSet.getByAddress(client));
+            new DirectionsAsStringSelector(DirectSocketAddress.getByAddress(client));
         
         knownHubs.select(ds);
         

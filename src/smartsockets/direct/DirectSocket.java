@@ -11,12 +11,12 @@ public abstract class DirectSocket {
     protected final InputStream in;
     protected final OutputStream out;
     
-    protected final SocketAddressSet local;
-    protected final SocketAddressSet remote;
+    protected final DirectSocketAddress local;
+    protected final DirectSocketAddress remote;
     
     private int userData;
        
-    DirectSocket(SocketAddressSet local, SocketAddressSet remote, 
+    DirectSocket(DirectSocketAddress local, DirectSocketAddress remote, 
             InputStream in, OutputStream out) {
         
         this.local = local;
@@ -42,11 +42,11 @@ public abstract class DirectSocket {
         return out;
     }
         
-    public SocketAddressSet getLocalAddress() {
+    public DirectSocketAddress getLocalAddress() {
         return local;     
     }
       
-    public SocketAddressSet getRemoteAddress() {
+    public DirectSocketAddress getRemoteAddress() {
         return remote;
     }
     

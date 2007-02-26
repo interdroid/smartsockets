@@ -4,7 +4,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 
 import org.apache.log4j.Logger;
 
@@ -48,6 +47,7 @@ public class Sender extends Thread {
         sockets[0] = new DatagramSocket(sendport);        
     }
     
+    /*
     private DatagramSocket [] createSockets(InetAddress [] addresses, int port)
         throws Exception {
                
@@ -110,7 +110,8 @@ public class Sender extends Thread {
         
         return null;     
     }
-        
+    */
+    
     public void send() { 
      
         if (packet == null) {

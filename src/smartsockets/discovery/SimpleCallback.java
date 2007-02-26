@@ -9,7 +9,7 @@ public class SimpleCallback implements Callback {
     private static final Logger logger = 
         ibis.util.GetLogger.getLogger("smartsockets.discovery");
     
-    private final LinkedList messages = new LinkedList();    
+    private final LinkedList<String> messages = new LinkedList<String>();    
     private final boolean quitAfterMessage;
             
     public SimpleCallback(boolean quitAfterMessage) { 
@@ -35,7 +35,7 @@ public class SimpleCallback implements Callback {
             }                
         }
         
-        return (String) messages.removeFirst();
+        return messages.removeFirst();
     }
     
     public synchronized boolean gotMessage(String message) {

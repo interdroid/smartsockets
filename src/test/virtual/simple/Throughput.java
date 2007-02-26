@@ -26,7 +26,7 @@ public class Throughput {
     private static int size = DEFAULT_SIZE;
     
     private static VirtualSocketFactory sf;    
-    private static HashMap connectProperties;
+    private static HashMap<String, Object> connectProperties;
     
     private static void configure(VirtualSocket s) throws SocketException { 
  
@@ -157,7 +157,7 @@ public class Throughput {
     
     public static void main(String [] args) throws IOException { 
                 
-        connectProperties = new HashMap();
+        connectProperties = new HashMap<String, Object>();
 
         VirtualSocketAddress target = null;
 

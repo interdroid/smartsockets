@@ -10,13 +10,13 @@ public class MultiplexInputStream extends InputStream {
 
     private final int stream;
     
-    private LinkedList buffers = new LinkedList();       
+    private LinkedList<byte []> buffers = new LinkedList<byte []>();       
     private byte [] buffer;
     
     private int offset;
     private int length;
     
-    private boolean eos = false;
+ //   private boolean eos = false;
     private boolean closed = false;
         
     private int timeout;

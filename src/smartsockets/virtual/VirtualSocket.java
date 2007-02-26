@@ -9,14 +9,14 @@ import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public abstract class VirtualSocket {
    
-    protected SocketAddressSet remote;
+    protected DirectSocketAddress remote;
     protected int remotePort;       
     
-    protected Map props;
+    protected Map<String, Object> props;
         
     protected VirtualSocket(VirtualSocketAddress target) {         
         this.remote = target.machine();
@@ -225,7 +225,7 @@ public abstract class VirtualSocket {
      * @return a map containing implementation-specific properties of this 
      *         socket. 
      */
-    public Map properties() {
+    public Map<String, Object> properties() {
         return props;
     }
 
@@ -237,7 +237,7 @@ public abstract class VirtualSocket {
      * @param properties map containing the properties to set. 
      *       
      */
-    public void setProperties(Map properties) {
+    public void setProperties(Map<String, Object> properties) {
         // TODO: Add instead of overwrite ?
         props = properties;
     }

@@ -4,6 +4,7 @@ package smartsockets.util;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -107,6 +108,30 @@ public class NetworkUtils {
         }
         
         return false;
+    }
+    
+    /**
+     * Returns true if the array contains an address equal to the given address. 
+     * 
+     * @param inas the array of addresses
+     * @param a the address to check 
+     * @return <code>true</code> if an address equal to a is part of the array, 
+     * <code>false</code> otherwise.
+     */
+    public static boolean contains(InetSocketAddress [] inas, 
+            InetSocketAddress a) {
+        
+        if (inas == null || inas.length == 0 || a == null) { 
+            return false;
+        }
+        
+        for (InetSocketAddress sa : inas) {
+            if (sa != null && a.equals(sa)) { 
+                return true;
+            }
+        }
+
+        return false;        
     }
     
     /**

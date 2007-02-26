@@ -5,7 +5,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.VirtualConnections;
 import smartsockets.hub.state.HubList;
@@ -20,17 +20,17 @@ abstract class CommunicationThread extends Thread {
     protected static final Logger hublogger = 
         ibis.util.GetLogger.getLogger("smartsockets.hub"); 
         
-    protected final Map<SocketAddressSet, BaseConnection> connections;     
+    protected final Map<DirectSocketAddress, BaseConnection> connections;     
     
     protected final HubList knownHubs;
     protected final VirtualConnections virtualConnections;
     protected final DirectSocketFactory factory;    
     
-    protected SocketAddressSet local;
+    protected DirectSocketAddress local;
     protected String localAsString;
     
     protected CommunicationThread(String name, StateCounter state, 
-            Map<SocketAddressSet, BaseConnection> connections, 
+            Map<DirectSocketAddress, BaseConnection> connections, 
             HubList knownHubs, VirtualConnections vcs, 
             DirectSocketFactory factory) {
         
@@ -42,12 +42,12 @@ abstract class CommunicationThread extends Thread {
         this.factory = factory;        
     }
     
-    protected void setLocal(SocketAddressSet local) { 
+    protected void setLocal(DirectSocketAddress local) { 
         this.local = local;
         this.localAsString = local.toString();        
     }
     
-    protected SocketAddressSet getLocal() {
+    protected DirectSocketAddress getLocal() {
         return local;
     }
     

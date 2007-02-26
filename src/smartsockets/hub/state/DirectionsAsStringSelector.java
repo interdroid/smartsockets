@@ -2,7 +2,7 @@ package smartsockets.hub.state;
 
 import java.util.LinkedList;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class DirectionsAsStringSelector extends Selector {
     
@@ -10,9 +10,9 @@ public class DirectionsAsStringSelector extends Selector {
     private LinkedList<String> bad = new LinkedList<String>();    
     private LinkedList<String> ugly = new LinkedList<String>();    
 
-    private final SocketAddressSet client;
+    private final DirectSocketAddress client;
     
-    public DirectionsAsStringSelector(SocketAddressSet client) { 
+    public DirectionsAsStringSelector(DirectSocketAddress client) { 
         this.client = client;
     }
     

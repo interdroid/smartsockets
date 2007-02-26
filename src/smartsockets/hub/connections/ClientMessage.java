@@ -4,27 +4,27 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class ClientMessage {
 
-    SocketAddressSet source;
-    SocketAddressSet sourceHub;                      
-    SocketAddressSet target; 
-    SocketAddressSet targetHub;               
+    DirectSocketAddress source;
+    DirectSocketAddress sourceHub;                      
+    DirectSocketAddress target; 
+    DirectSocketAddress targetHub;               
     String module; 
     int code; 
     byte [] message;    
     int hopsLeft;
     
-    ClientMessage(SocketAddressSet source, SocketAddressSet sourceHub, 
+    ClientMessage(DirectSocketAddress source, DirectSocketAddress sourceHub, 
             int hopsLeft, DataInputStream in) throws IOException {
         
         this.source = source;
         this.sourceHub = sourceHub;
         
-        target = SocketAddressSet.read(in);
-        targetHub = SocketAddressSet.read(in);
+        target = DirectSocketAddress.read(in);
+        targetHub = DirectSocketAddress.read(in);
                 
         module = in.readUTF();
         code = in.readInt();
@@ -38,19 +38,19 @@ public class ClientMessage {
     }
     
     ClientMessage(DataInputStream in) throws IOException {
-        this(SocketAddressSet.read(in), SocketAddressSet.read(in), in.readInt(),
+        this(DirectSocketAddress.read(in), DirectSocketAddress.read(in), in.readInt(),
                 in);
     }
     
     void write(DataOutputStream out) throws IOException { 
     
-        SocketAddressSet.write(source, out);
-        SocketAddressSet.write(sourceHub, out);
+        DirectSocketAddress.write(source, out);
+        DirectSocketAddress.write(sourceHub, out);
 
         out.writeInt(hopsLeft);       
         
-        SocketAddressSet.write(target, out);
-        SocketAddressSet.write(targetHub, out);
+        DirectSocketAddress.write(target, out);
+        DirectSocketAddress.write(targetHub, out);
         
         out.writeUTF(module);
         out.writeInt(code);
@@ -65,8 +65,8 @@ public class ClientMessage {
     
     void writePartially(DataOutputStream out) throws IOException { 
 
-        SocketAddressSet.write(source, out);
-        SocketAddressSet.write(sourceHub, out);
+        DirectSocketAddress.write(source, out);
+        DirectSocketAddress.write(sourceHub, out);
            
         out.writeUTF(module);
         out.writeInt(code);

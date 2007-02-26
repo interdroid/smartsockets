@@ -20,17 +20,17 @@ import java.util.StringTokenizer;
 import smartsockets.util.NetworkUtils;
 
 /**
- * This class implements a multi-SocketAddress (any number of IP addresses 
+ * This class implements a multi SocketAddress (any number of IP addresses 
  * and port numbers).   
  *
- * It provides an immutable object used by IbisSockets for binding, connecting, 
+ * It provides an immutable object used by SmartSockets for binding, connecting, 
  * or as returned values.
  *  
  * @author Jason Maassen
  * @version 1.0 Dec 19, 2005
  * @since 1.0
  */
-public class SocketAddressSet extends SocketAddress implements Comparable {
+public class DirectSocketAddress extends SocketAddress implements Comparable {
         
     private static final long serialVersionUID = -2662260670251814982L;
     
@@ -59,24 +59,15 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     private transient IPAddressSet addressCache;      
     private transient InetSocketAddress [] allAddressesCache;
     
-    private SocketAddressSet(InetSocketAddress [] external, 
+    private DirectSocketAddress(InetSocketAddress [] external, 
             InetSocketAddress [] global, InetSocketAddress [] local, 
             byte [] UUID, String user) {
         
-        this.external = (external == null ? new InetSocketAddress[0] : external);
+        this.external = (external == null ? new InetSocketAddress[0]:external);
         this.global = (global == null ? new InetSocketAddress[0] : global);
         this.local = (local == null ? new InetSocketAddress[0] : local);
         this.UUID = UUID;
-        this.user = user;
-        
-        /*
-        System.err.println("Created SocketAddressSet: " + toString());
-        
-        System.err.println("  external: " + Arrays.deepToString(this.external));
-        System.err.println("  global  : " + Arrays.deepToString(this.global));
-        System.err.println("  local   : " + Arrays.deepToString(this.local));
-        */
-        
+        this.user = user;        
     }
     
     /**
@@ -85,7 +76,9 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param address The InetSocketAddress.
      * @throws UnknownHostException 
      */    
-    private SocketAddressSet(byte [] coded, int off) throws UnknownHostException {
+    private DirectSocketAddress(byte [] coded, int off) 
+        throws UnknownHostException {
+        
         decode(coded, off);
     } 
 
@@ -114,8 +107,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }        
     }    
     
-    private static int decode(InetSocketAddress[] target, byte [] src, int index) 
-        throws UnknownHostException { 
+    private static int decode(InetSocketAddress[] target, byte [] src, 
+            int index) throws UnknownHostException { 
         
         byte [] tmp4 = null;
         byte [] tmp16 = null;
@@ -302,6 +295,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return addressCache;        
     }
     
+    /**
+     * Return the port numbers used in this DirectSocketAddress. 
+     * 
+     * @param includeExternal should external (NAT) addresses be included ?
+     * @return the port numbers used in this DirectSocketAddress.
+     */
     public int [] getPorts(boolean includeExternal) { 
         
         int len = global.length + local.length;
@@ -336,7 +335,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * 
      * @return the addresses.
      */
-    public InetSocketAddress [] getSocketAddresses() { 
+    protected InetSocketAddress [] getSocketAddresses() { 
         
         // TODO: this is a VERY BAD IDEA!!! ONLY USED IN CONNECTION SETUP!! 
         // MUST REPLACE WITH SOMETHING SMARTER ASAP!!
@@ -362,52 +361,81 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return allAddressesCache;
     } 
     
+    /**
+     * Return the external addresses of this DirectSocketAddress. 
+     * 
+     * @return an array containing the external addresses of this 
+     *         DirectSocketAddress
+     */
     public InetSocketAddress [] getExternalAddresses() {
         return external;
     }
     
-    public InetSocketAddress [] getGlobalAddresses() {
+    /**
+     * Return the public addresses of this DirectSocketAddress. 
+     * 
+     * @return an array containing the public addresses of this 
+     *         DirectSocketAddress
+     */
+    public InetSocketAddress [] getPublicAddresses() {
         return global;
     }
     
-    public InetSocketAddress [] getLocalAddresses() {
+    /**
+     * Return the private addresses of this DirectSocketAddress. 
+     * 
+     * @return an array containing the private addresses of this 
+     *         DirectSocketAddress
+     */
+    public InetSocketAddress [] getPrivateAddresses() {
         return local;
     }
     
-    private boolean contains(InetSocketAddress [] adrs, InetSocketAddress a) {
-        
-        if (adrs.length == 0 || a == null) { 
-            return false;
-        }
-        
-        for (InetSocketAddress sa : adrs) {
-            if (a.equals(sa)) { 
-                return true;
-            }
-        }
-
-        return false;        
-    }
-    
-    public boolean hasGlobalAddress() {
+    /**
+     * Returns is this DirectSocketAddress has any public addresses. 
+     * 
+     * @return <code>true</code> if this DirectSocketAddress has any public 
+     * addresses, <code>false</code> otherwise.
+     */
+    public boolean hasPublicAddress() {
         return global != null & global.length > 0;
     }    
     
-    
-    public boolean isExternalAddresses(InetSocketAddress a) {
-        return contains(external, a);
-    }
-    
-    public boolean isGlobalAddresses(InetSocketAddress a) {
-        return contains(global, a);
-    }    
-    
-    public boolean isLocalAddresses(InetSocketAddress a) {
-        return contains(local, a);
+    /**
+     * Returns if the given InetSocketAddress is one of the external addresses 
+     * of this DirectSocketAddress. 
+     * 
+     * @return <code>true</code> if the given InetSocketAddress is one of the 
+     * external addresses, <code>false</code> otherwise.
+     */
+    public boolean inExternalAddress(InetSocketAddress a) {
+        return NetworkUtils.contains(external, a);
     }
     
     /**
-     * Gets the SSH-username
+     * Returns if the given InetSocketAddress is one of the public addresses 
+     * of this DirectSocketAddress. 
+     * 
+     * @return <code>true</code> if the given InetSocketAddress is one of the 
+     * public addresses, <code>false</code> otherwise.
+     */
+    public boolean inPublicAddress(InetSocketAddress a) {
+        return NetworkUtils.contains(global, a);
+    }    
+    
+    /**
+     * Returns if the given InetSocketAddress is one of the private addresses 
+     * of this DirectSocketAddress. 
+     * 
+     * @return <code>true</code> if the given InetSocketAddress is one of the 
+     * private addresses, <code>false</code> otherwise.
+     */
+    public boolean inPrivateAddress(InetSocketAddress a) {
+        return NetworkUtils.contains(local, a);
+    }
+    
+    /**
+     * Returns the username of the DirectSocketAddress. 
      * 
      * @return the username.
      */    
@@ -448,11 +476,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
         
         // Check type 
-        if (!(other instanceof SocketAddressSet)) {
+        if (!(other instanceof DirectSocketAddress)) {
             return false;
         }
                 
-        SocketAddressSet tmp = (SocketAddressSet) other;
+        DirectSocketAddress tmp = (DirectSocketAddress) other;
       
         // First, compare UUIDs 
         if (!Arrays.equals(UUID, tmp.UUID)) { 
@@ -590,11 +618,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
         
         // Check type 
-        if (!(other instanceof SocketAddressSet)) {
+        if (!(other instanceof DirectSocketAddress)) {
             return 0;
         }
                 
-        SocketAddressSet tmp = (SocketAddressSet) other;
+        DirectSocketAddress tmp = (DirectSocketAddress) other;
         
         if (hashCode() < tmp.hashCode()) { 
             return -1;
@@ -663,7 +691,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param target
      * @return
      */
-    private boolean isCompatible(SocketAddressSet other, boolean comparePorts) {
+    private boolean isCompatible(DirectSocketAddress other, boolean comparePorts) {
         
         // Check pointers
         if (this == other) { 
@@ -729,7 +757,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         decode(tmp, 0);
     }
        
-    public static void write(SocketAddressSet s, DataOutput out) throws IOException { 
+    public static void write(DirectSocketAddress s, DataOutput out) throws IOException { 
         
         if (s == null) {
             out.writeInt(0);
@@ -741,7 +769,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
     }
    
-    public static SocketAddressSet read(DataInput in) throws IOException { 
+    public static DirectSocketAddress read(DataInput in) throws IOException { 
         
         int len = in.readInt();
         
@@ -753,7 +781,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         
         in.readFully(tmp);       
       
-        return new SocketAddressSet(tmp, 0);   
+        return new DirectSocketAddress(tmp, 0);   
     }
    
     public static void skip(DataInputStream in) throws IOException { 
@@ -769,26 +797,26 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
     }
    
-    public static SocketAddressSet fromBytes(byte [] coded) 
+    public static DirectSocketAddress fromBytes(byte [] coded) 
         throws UnknownHostException {
         return fromBytes(coded, 0);
     }
 
     
-    public static SocketAddressSet fromBytes(byte [] coded, int off) 
+    public static DirectSocketAddress fromBytes(byte [] coded, int off) 
         throws UnknownHostException {
         
-        return new SocketAddressSet(coded, off);
+        return new DirectSocketAddress(coded, off);
     }
     
-    public static SocketAddressSet getByAddress(InetSocketAddress a) 
+    public static DirectSocketAddress getByAddress(InetSocketAddress a) 
         throws UnknownHostException {
         
         if (NetworkUtils.isLocalAddress(a.getAddress())) { 
-            return new SocketAddressSet(null, null, 
+            return new DirectSocketAddress(null, null, 
                     new InetSocketAddress [] { a }, null, null);
         } else { 
-            return new SocketAddressSet(null, new InetSocketAddress [] { a }, 
+            return new DirectSocketAddress(null, new InetSocketAddress [] { a }, 
                     null, null, null);
         }
     }
@@ -804,18 +832,18 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param address The IPAddressSet.
      * @param port The port number.
      */
-    public static SocketAddressSet getByAddress(IPAddressSet a, int port, String user) 
+    public static DirectSocketAddress getByAddress(IPAddressSet a, int port, String user) 
         throws UnknownHostException {
         
         return getByAddress(null, null, a, new int [] { port }, user);
     }
 
-    public static SocketAddressSet getByAddress(IPAddressSet a, int port) 
+    public static DirectSocketAddress getByAddress(IPAddressSet a, int port) 
         throws UnknownHostException {    
         return getByAddress(null, null, a, new int [] { port }, null);
     }
     
-    public static SocketAddressSet getByAddress(IPAddressSet external, 
+    public static DirectSocketAddress getByAddress(IPAddressSet external, 
             int externalPort, IPAddressSet other, int otherPort,  
             String user) {
         
@@ -842,7 +870,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      *                 should have size 1 or the same length as other has  
      *                 addresses.
      */
-    public static SocketAddressSet getByAddress(IPAddressSet external, 
+    public static DirectSocketAddress getByAddress(IPAddressSet external, 
             int [] externalPorts, IPAddressSet other, int [] otherPorts, 
             String user) {
     
@@ -921,7 +949,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             }
         }
         
-        return new SocketAddressSet(extern, global, local, other.UUID, user);
+        return new DirectSocketAddress(extern, global, local, other.UUID, user);
     }
     
     private static InetSocketAddress[] resize(InetSocketAddress [] orig, int add) { 
@@ -989,10 +1017,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param addressPort The String representation of a IbisSocketAddress.
      * @throws UnknownHostException
      */
-    public static SocketAddressSet getByAddress(String addressPort) 
+    public static DirectSocketAddress getByAddress(String addressPort) 
         throws UnknownHostException { 
         
-        SocketAddressSet result = parseOldStyleAddress(addressPort);
+        DirectSocketAddress result = parseOldStyleAddress(addressPort);
         
         if (result != null) { 
             return result;
@@ -1001,7 +1029,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         return parseNewStyleAddress(addressPort);
     }
     
-    private static SocketAddressSet parseOldStyleAddress(String addressPort) {
+    private static DirectSocketAddress parseOldStyleAddress(String addressPort) {
     
         int lastIndex = addressPort.lastIndexOf(':');
         
@@ -1019,7 +1047,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
         
         try { 
-            return SocketAddressSet.getByAddress(new InetSocketAddress(
+            return DirectSocketAddress.getByAddress(new InetSocketAddress(
                     addressPort.substring(0, lastIndex), port));
         } catch (Exception e) {
             // It's not a valid 'old' style address....
@@ -1027,7 +1055,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
         }
     }
 
-    private static SocketAddressSet parseNewStyleAddress(String addressPort) {
+    private static DirectSocketAddress parseNewStyleAddress(String addressPort) {
         
         StringTokenizer st = new StringTokenizer(addressPort, SEPARATORS, true);
         
@@ -1242,10 +1270,10 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
                     + " is incomplete!");
         }
         
-        return new SocketAddressSet(external, global, local, UUID, user);
+        return new DirectSocketAddress(external, global, local, UUID, user);
     }
     
-    public static SocketAddressSet getByAddress(String host, int port) throws UnknownHostException { 
+    public static DirectSocketAddress getByAddress(String host, int port) throws UnknownHostException { 
         return getByAddress(IPAddressSet.getFromString(host), port, null);
     }
     
@@ -1276,8 +1304,8 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param s2 the second IbisSocketAddress
      * @return a new SmartSocketAddress
      */
-    public static SocketAddressSet merge(SocketAddressSet s1, 
-            SocketAddressSet s2) {
+    public static DirectSocketAddress merge(DirectSocketAddress s1, 
+            DirectSocketAddress s2) {
         
         byte [] UUID = s1.UUID;
         
@@ -1307,7 +1335,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
             user = s2.user;
         }
         
-        return new SocketAddressSet(
+        return new DirectSocketAddress(
                 merge(s1.external, s2.external), 
                 merge(s1.global, s2.global), 
                 merge(s1.local, s2.local), UUID, user);
@@ -1316,12 +1344,12 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
     /**
      * Converts an array of SocketAddressSets to a String array.
      * 
-     * @param s the array of {@link SocketAddressSet}
+     * @param s the array of {@link DirectSocketAddress}
      * @return a new String array containing the {@link String} representations 
-     * of the {@link SocketAddressSet}s, or <code>null</code> if 
+     * of the {@link DirectSocketAddress}s, or <code>null</code> if 
      * s was <code>null</code> 
      */
-    public static String [] convertToStrings(SocketAddressSet [] s) {
+    public static String [] convertToStrings(DirectSocketAddress [] s) {
 
         if (s == null) { 
             return null;
@@ -1344,30 +1372,30 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param s the array of {@link String} to convert
      * @param ignoreProblems indicates if conversion problems should be silently 
      * ignored. 
-     * @return a new array containing the {@link SocketAddressSet}s 
+     * @return a new array containing the {@link DirectSocketAddress}s 
      * or <code>null</code> if s was <code>null</code> 
      * @throws UnknownHostException when any of the Strings cannot be converted 
      * and ignoreProblems is false 
      */
-    public static SocketAddressSet [] convertToSocketAddressSet(String [] s, 
+    public static DirectSocketAddress [] convertToSocketAddressSet(String [] s, 
             boolean ignoreProblems) throws UnknownHostException {
 
         if (s == null) { 
             return null;
         }
         
-        SocketAddressSet [] result = new SocketAddressSet[s.length];
+        DirectSocketAddress [] result = new DirectSocketAddress[s.length];
         
         for (int i=0;i<s.length;i++) {            
             if (s[i] != null) { 
                 if (ignoreProblems) {                 
                     try {                   
-                        result[i] = SocketAddressSet.getByAddress(s[i]);
+                        result[i] = DirectSocketAddress.getByAddress(s[i]);
                     } catch (UnknownHostException e) {
                         // ignore
                     }
                 } else { 
-                    result[i] = SocketAddressSet.getByAddress(s[i]);
+                    result[i] = DirectSocketAddress.getByAddress(s[i]);
                 } 
             }
         }
@@ -1379,11 +1407,11 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * Converts an array of Strings into an array of SocketAddressSets.  
      * 
      * @param s the array of {@link String} to convert
-     * @return a new array containing the {@link SocketAddressSet}s 
+     * @return a new array containing the {@link DirectSocketAddress}s 
      * or <code>null</code> if s was <code>null</code> 
      * @throws UnknownHostException when any of the Strings cannot be converted 
      */
-    public static SocketAddressSet [] convertToSocketAddressSet(String [] s) 
+    public static DirectSocketAddress [] convertToSocketAddressSet(String [] s) 
         throws UnknownHostException {
         return convertToSocketAddressSet(s, false);
     } 
@@ -1395,7 +1423,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param other the SocketAddressSet to compare to
      * @return if both SocketAddressSets represent the same machine
      */
-    public boolean sameMachine(SocketAddressSet other) { 
+    public boolean sameMachine(DirectSocketAddress other) { 
         return isCompatible(other, false);
     }
 
@@ -1406,7 +1434,7 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * @param other the SocketAddressSet to compare to
      * @return if both SocketAddressSets represent the same process
      */
-    public boolean sameProcess(SocketAddressSet other) {
+    public boolean sameProcess(DirectSocketAddress other) {
         return isCompatible(other, true);
     }
     
@@ -1414,15 +1442,15 @@ public class SocketAddressSet extends SocketAddress implements Comparable {
      * Returns if the two SocketAddressSets represent the same machine. 
      * 
      */
-    public static boolean sameMachine(SocketAddressSet a, SocketAddressSet b) { 
-        return a.sameProcess(b);
+    public static boolean sameMachine(DirectSocketAddress a, DirectSocketAddress b) { 
+        return a.sameMachine(b);
     }
 
     /**
      * Returns if the two SocketAddressSets represent the same process. 
      * 
      */
-    public static boolean sameProcess(SocketAddressSet a, SocketAddressSet b) {
+    public static boolean sameProcess(DirectSocketAddress a, DirectSocketAddress b) {
         return a.sameProcess(b);
     }
 

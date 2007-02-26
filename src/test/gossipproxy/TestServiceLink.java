@@ -10,7 +10,7 @@ import java.util.LinkedList;
 
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.CallBack;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.ServiceLink;
@@ -37,7 +37,7 @@ public class TestServiceLink implements CallBack {
         
         while (proxies.size() > 0) {
             serviceLink = ServiceLink.getServiceLink(null,
-                    (SocketAddressSet) proxies.removeFirst(), 
+                    (DirectSocketAddress) proxies.removeFirst(), 
                     ss.getAddressSet());
             
             if (serviceLink != null) { 
@@ -53,7 +53,7 @@ public class TestServiceLink implements CallBack {
         serviceLink.register("TEST", this);
     }
     
-    public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
+    public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcProxy, 
             int opcode, byte [][] message) {
     
         System.out.println("Got message from: " + src + "@" + srcProxy 
@@ -91,11 +91,11 @@ public class TestServiceLink implements CallBack {
         }
                 
         try { 
-            SocketAddressSet t = SocketAddressSet.getByAddress(target);
-            SocketAddressSet p = null; 
+            DirectSocketAddress t = DirectSocketAddress.getByAddress(target);
+            DirectSocketAddress p = null; 
             
             if (proxy != null) { 
-                p = SocketAddressSet.getByAddress(proxy);
+                p = DirectSocketAddress.getByAddress(proxy);
             }
 
             serviceLink.send(t, p, "TEST", message++, 
@@ -108,7 +108,7 @@ public class TestServiceLink implements CallBack {
     private void proxies() { 
         
         try {
-            SocketAddressSet [] result = serviceLink.hubs();
+            DirectSocketAddress [] result = serviceLink.hubs();
         
             System.out.println("Known proxies:" + result.length);
             
@@ -220,7 +220,9 @@ public class TestServiceLink implements CallBack {
         
         int port = DEFAULT_PORT;
         boolean interactive = false;                
-        LinkedList proxies = new LinkedList();
+        
+        LinkedList<DirectSocketAddress> proxies = 
+            new LinkedList<DirectSocketAddress>();
         
         for (int i=0;i<args.length;i++) { 
             if (args[i].equals("-port")) { 
@@ -229,7 +231,7 @@ public class TestServiceLink implements CallBack {
                 interactive = true;
             } else if (args[i].equals("-proxy")) {
                 try { 
-                    proxies.add(SocketAddressSet.getByAddress(args[++i]));
+                    proxies.add(DirectSocketAddress.getByAddress(args[++i]));
                 } catch (Exception e) {
                     System.err.println("Failed to parse proxy: " 
                             + args[i] + " (ignoring)");

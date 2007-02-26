@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.HubInfo;
 
@@ -16,8 +16,11 @@ public class HubNode extends Node {
     final SmartsocketsViz parent;
     
     private HubInfo info;
-    private HashMap edges = new HashMap();        
-    private HashMap clients = new HashMap();
+    private HashMap<DirectSocketAddress, Edge> edges = 
+        new HashMap<DirectSocketAddress, Edge>();
+    
+    private HashMap<Object, ClientNode> clients = 
+        new HashMap<Object, ClientNode>();
     
     private CollectionClientNode clientCollection;
     
@@ -50,7 +53,7 @@ public class HubNode extends Node {
     public void updateEdges() {
 
         HashMap oldEdges = edges;
-        edges = new HashMap();
+        edges = new HashMap<DirectSocketAddress, Edge>();
 
         System.out.println("Hub " + info.hubAddress.toString() 
                 + " connected to " + info.connectedTo.length + " others");
@@ -58,7 +61,7 @@ public class HubNode extends Node {
         // Refresh existing edges and add new ones..
         for (int i=0;i<info.connectedTo.length;i++) { 
 
-            SocketAddressSet to = info.connectedTo[i];
+            DirectSocketAddress to = info.connectedTo[i];
 
             Edge e = (Edge) oldEdges.remove(to);
 
@@ -94,7 +97,7 @@ public class HubNode extends Node {
     public synchronized void updateClients() {
     
         HashMap old = clients;
-        clients = new HashMap();
+        clients = new HashMap<Object, ClientNode>();
         
         if (info.clients > 0) { 
         
@@ -125,7 +128,7 @@ public class HubNode extends Node {
                     
                     for (int c=0;c<cs.length;c++) {
 
-                        SocketAddressSet a = cs[c].getClientAddress();
+                        DirectSocketAddress a = cs[c].getClientAddress();
                                                
                         ClientNode ci = (ClientNode) old.remove(a);
 
@@ -242,7 +245,7 @@ public class HubNode extends Node {
         }
     }    
     
-    public void getClients(HashMap target) {        
+    public void getClients(HashMap<Object, ClientNode> target) {        
         target.putAll(clients);        
     }   
 }

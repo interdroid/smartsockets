@@ -9,7 +9,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.ConnectionProtocol;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.hub.state.DirectionsSelector;
@@ -56,7 +56,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, 
-            Map<SocketAddressSet, BaseConnection> connections, 
+            Map<DirectSocketAddress, BaseConnection> connections, 
             HubList proxies, VirtualConnections vcs, boolean master, 
             String name) {
        
@@ -69,7 +69,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     }
 
     // Directly sends a message to a hub.
-    private boolean directlyToHub(SocketAddressSet hub, ClientMessage cm) {
+    private boolean directlyToHub(DirectSocketAddress hub, ClientMessage cm) {
 
         BaseConnection c = connections.get(hub); 
         
@@ -249,11 +249,11 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     // Virtual connection parts...
     protected final void handleCreateVirtual() throws IOException { 
         
-        SocketAddressSet source = SocketAddressSet.read(in);
-        SocketAddressSet sourceHub = SocketAddressSet.read(in);
+        DirectSocketAddress source = DirectSocketAddress.read(in);
+        DirectSocketAddress sourceHub = DirectSocketAddress.read(in);
         
-        SocketAddressSet target = SocketAddressSet.read(in);
-        SocketAddressSet targetHub = SocketAddressSet.read(in);
+        DirectSocketAddress target = DirectSocketAddress.read(in);
+        DirectSocketAddress targetHub = DirectSocketAddress.read(in);
 
         long index = in.readLong();
         
@@ -407,9 +407,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected abstract String getUniqueID(long index);
         
-    private final void forwardVirtualConnect(SocketAddressSet source,
-            SocketAddressSet sourceHub, SocketAddressSet target, 
-            SocketAddressSet targetHub, long index, int timeout, int port, 
+    private final void forwardVirtualConnect(DirectSocketAddress source,
+            DirectSocketAddress sourceHub, DirectSocketAddress target, 
+            DirectSocketAddress targetHub, long index, int timeout, int port, 
             int fragment, int buffer) { 
         
         // TODO: Should be asynchronous ???
@@ -419,11 +419,11 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             synchronized (out) {
                 out.write(MessageForwarderProtocol.CREATE_VIRTUAL);           
                 
-                SocketAddressSet.write(source, out);
-                SocketAddressSet.write(sourceHub, out);
+                DirectSocketAddress.write(source, out);
+                DirectSocketAddress.write(sourceHub, out);
                 
-                SocketAddressSet.write(target, out);
-                SocketAddressSet.write(targetHub, out);
+                DirectSocketAddress.write(target, out);
+                DirectSocketAddress.write(targetHub, out);
         
                 out.writeLong(index);
                 
@@ -549,11 +549,6 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }        
     }
     
-    private final void processMessage(long index, byte [] data) { 
-        
-       
-    }
-    
     private void processMessageACK(long index, int data) { 
         
         messageACK++;
@@ -664,9 +659,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 index2);
     }
          
-    private void processVirtualConnect(SocketAddressSet source, 
-            SocketAddressSet sourceHub, SocketAddressSet target, 
-            SocketAddressSet targetHub, long index, int timeout, int port, 
+    private void processVirtualConnect(DirectSocketAddress source, 
+            DirectSocketAddress sourceHub, DirectSocketAddress target, 
+            DirectSocketAddress targetHub, long index, int timeout, int port, 
             int fragment, int buffer) {
         
         connectionsTotal++;
@@ -751,7 +746,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
             knownHubs.select(ds);
 
-            LinkedList<SocketAddressSet> result = ds.getResult();
+            LinkedList<DirectSocketAddress> result = ds.getResult();
 
             if (result.size() > 0) {
                 // TODO: send in Multiple directions.... ?

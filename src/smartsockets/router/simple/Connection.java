@@ -11,7 +11,7 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.util.Forwarder;
 import smartsockets.util.ForwarderCallback;
@@ -151,11 +151,11 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
 
     
     private boolean connectToTarget(VirtualSocketAddress target, long timeout, 
-            SocketAddressSet [] directions) { 
+            DirectSocketAddress [] directions) { 
                         
         // Check if the target is local to my proxy. If so, my local proxy 
         // address should be in the first entry of the directions array.
-        SocketAddressSet proxy = parent.getHubAddress();
+        DirectSocketAddress proxy = parent.getHubAddress();
 
         if (proxy == null) {
             if (logger.isDebugEnabled()) {
@@ -269,11 +269,11 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
                 logger.debug("     timeout: " + timeout);
             }
 
-            SocketAddressSet machine = target.machine();
-            SocketAddressSet proxy = target.hub();
+            DirectSocketAddress machine = target.machine();
+            DirectSocketAddress proxy = target.hub();
             
             if (proxy != null) { 
-                SocketAddressSet [] dir = new SocketAddressSet [] { proxy };                 
+                DirectSocketAddress [] dir = new DirectSocketAddress [] { proxy };                 
                 succes = connectToTarget(target, timeout, dir);
          
                 if (!succes) { 
@@ -284,7 +284,7 @@ class Connection implements Runnable, Protocol, ForwarderCallback {
             
             if (!succes) {                
                 // Failed to connect to target. The proxy was invalid or null.
-                SocketAddressSet [] directions = parent.locateMachine(machine);
+                DirectSocketAddress [] directions = parent.locateMachine(machine);
             
                 if (directions == null || directions.length == 0) { 
                     logger.warn("Connection " + socketToClient + " failed"

@@ -16,7 +16,7 @@ import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSimpleSocket;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.ClientConnection;
 import smartsockets.hub.connections.HubConnection;
@@ -47,7 +47,7 @@ public class Acceptor extends CommunicationThread {
     private int receiveBuffer = -1;
     
     Acceptor(TypedProperties p, int port, StateCounter state, 
-            Map<SocketAddressSet, BaseConnection> connections, 
+            Map<DirectSocketAddress, BaseConnection> connections, 
             HubList knownProxies, VirtualConnections vcs,
             DirectSocketFactory factory) throws IOException {
 
@@ -66,7 +66,7 @@ public class Acceptor extends CommunicationThread {
             DataInputStream in, DataOutputStream out) throws IOException { 
 
         String otherAsString = in.readUTF();        
-        SocketAddressSet addr = SocketAddressSet.getByAddress(otherAsString); 
+        DirectSocketAddress addr = DirectSocketAddress.getByAddress(otherAsString); 
 
         if (hconlogger.isDebugEnabled()) { 
             hconlogger.debug("Got connection from " + addr);
@@ -107,7 +107,7 @@ public class Acceptor extends CommunicationThread {
     private boolean handlePing(DirectSocket s, 
             DataInputStream in, DataOutputStream out) throws IOException {
 
-        String sender = in.readUTF();         
+        in.readUTF();         
         //logger.info("Got ping from: " + sender);      
         return false;
     }    
@@ -118,7 +118,7 @@ public class Acceptor extends CommunicationThread {
         try { 
             String src = in.readUTF();
             
-            SocketAddressSet srcAddr = SocketAddressSet.getByAddress(src);
+            DirectSocketAddress srcAddr = DirectSocketAddress.getByAddress(src);
                         
             if (connections.get(srcAddr) != null) { 
                 if (cconlogger.isDebugEnabled()) { 

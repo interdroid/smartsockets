@@ -4,20 +4,20 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class ClientDescription {
 
-    final SocketAddressSet clientAddress;
+    final DirectSocketAddress clientAddress;
     
     private long version = 0;    
     private HashMap<String, String> services;
     
-    public ClientDescription(SocketAddressSet clientAddress) { 
+    public ClientDescription(DirectSocketAddress clientAddress) { 
         this.clientAddress = clientAddress;
     }
     
-    private ClientDescription(SocketAddressSet clientAddress, long version, 
+    private ClientDescription(DirectSocketAddress clientAddress, long version, 
             HashMap<String, String> services) {
         
         this.clientAddress = clientAddress;
@@ -159,7 +159,7 @@ public class ClientDescription {
     
     public static ClientDescription read(DataInputStream in) throws IOException { 
         
-        SocketAddressSet adress = SocketAddressSet.getByAddress(in.readUTF());
+        DirectSocketAddress adress = DirectSocketAddress.getByAddress(in.readUTF());
         long version = in.readLong();                      
         int services = in.readInt();
         

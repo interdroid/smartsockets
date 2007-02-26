@@ -24,7 +24,7 @@ public class DirectServerSocket {
         
     // This is the local address, i.e., the SocketAddress that uses IP's + ports
     // that are directly found on this machine.    
-    private final SocketAddressSet local;
+    private final DirectSocketAddress local;
     
     // This is the initial message which contains the local address in coded 
     // form. The first two bytes contain the size of the address..
@@ -43,13 +43,13 @@ public class DirectServerSocket {
     //
     // Note that the IP's in the external addresses are not bound to a local 
     // network.     
-    private SocketAddressSet external;
+    private DirectSocketAddress external;
     
     // The network preferences that this server socket should take into account.
     private final NetworkPreference preference;
     private final boolean haveFirewallRules;
     
-    protected DirectServerSocket(SocketAddressSet local, ServerSocket ss, 
+    protected DirectServerSocket(DirectSocketAddress local, ServerSocket ss, 
             NetworkPreference preference) {
         
         /*super(null);*/
@@ -85,14 +85,14 @@ public class DirectServerSocket {
      * 
      * @param address the external address to add. 
      */
-    protected void addExternalAddress(SocketAddressSet address) {        
+    protected void addExternalAddress(DirectSocketAddress address) {        
         // TODO: some checks on the address to see if it makes sence ? 
         
         // Create array if it doesn't exist yet. 
         if (external == null) {
             external = address;            
         } else { 
-            external = SocketAddressSet.merge(external, address);
+            external = DirectSocketAddress.merge(external, address);
         }
     }
              
@@ -269,7 +269,7 @@ public class DirectServerSocket {
                 }                
             
                 IPAddressSet a = IPAddressSet.getByAddress(tmp);
-                SocketAddressSet sa = SocketAddressSet.getByAddress(a, 1, null); 
+                DirectSocketAddress sa = DirectSocketAddress.getByAddress(a, 1, null); 
                 
                 // Optimistically create the socket ? 
                 // TODO: fix to get 'real' port numbers here... 
@@ -336,19 +336,19 @@ public class DirectServerSocket {
         return serverSocket.getChannel();
     }
        
-    public SocketAddressSet getAddressSet() {
+    public DirectSocketAddress getAddressSet() {
         if (external != null) { 
-            return SocketAddressSet.merge(local, external);            
+            return DirectSocketAddress.merge(local, external);            
         } else { 
             return local;
         }
     }
     
-    public SocketAddressSet getLocalAddressSet() {       
+    public DirectSocketAddress getLocalAddressSet() {       
         return local;
     }
     
-    public SocketAddressSet getExternalAddressSet() {       
+    public DirectSocketAddress getExternalAddressSet() {       
         return external;
     }
         

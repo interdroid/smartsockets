@@ -7,20 +7,20 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.UnknownHostException;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.util.TransferUtils;
 
 public class VirtualSocketAddress implements Serializable { 
 
     private static final long serialVersionUID = 3340517955293464166L;
     
-    private final SocketAddressSet machine;
+    private final DirectSocketAddress machine;
     private final int port;
     
     // This hub field is a hint of the location of the machine. It may be null
     // or change over time (e.g., when a hub crashes and a machine registers 
     // at another hub).     
-    private final SocketAddressSet hub;
+    private final DirectSocketAddress hub;
     
     // This field indicates which 'virtual cluster' the machine is part of.
     private final String cluster;
@@ -36,14 +36,14 @@ public class VirtualSocketAddress implements Serializable {
 
         byte [] m = new byte[mlen];        
         in.readFully(m);        
-        machine = SocketAddressSet.fromBytes(m);        
+        machine = DirectSocketAddress.fromBytes(m);        
         
         port = in.readInt();
         
         if (hlen > 0) { 
             byte [] h = new byte[hlen];        
             in.readFully(h);        
-            hub = SocketAddressSet.fromBytes(m);        
+            hub = DirectSocketAddress.fromBytes(m);        
         } else { 
             hub = null;
         }
@@ -57,12 +57,12 @@ public class VirtualSocketAddress implements Serializable {
         }     
     }
         
-    public VirtualSocketAddress(SocketAddressSet machine, int port) {
+    public VirtualSocketAddress(DirectSocketAddress machine, int port) {
         this(machine, port, null, null);
     }
     
-    public VirtualSocketAddress(SocketAddressSet machine,
-            int port, SocketAddressSet hub, String cluster) {
+    public VirtualSocketAddress(DirectSocketAddress machine,
+            int port, DirectSocketAddress hub, String cluster) {
         
         this.hub = hub;
         this.machine = machine;
@@ -90,7 +90,7 @@ public class VirtualSocketAddress implements Serializable {
 
         if (index2 < index1) {
             // The hub is after the cluster (or cluster does not exist).
-            hub = SocketAddressSet.getByAddress(address.substring(index1+1));
+            hub = DirectSocketAddress.getByAddress(address.substring(index1+1));
             
             if (index2 != -1) { 
                 cluster = address.substring(index2+1, index1);
@@ -105,7 +105,7 @@ public class VirtualSocketAddress implements Serializable {
             cluster = address.substring(index2+1);
             
             if (index1 != -1) {            
-                hub = SocketAddressSet.getByAddress(address.substring(index1+1, index2));
+                hub = DirectSocketAddress.getByAddress(address.substring(index1+1, index2));
                 address = address.substring(0, index1);
             } else { 
                 address = address.substring(0, index2);
@@ -124,21 +124,21 @@ public class VirtualSocketAddress implements Serializable {
                     + "VirtualSocketAddress!");
         }
                 
-        machine = SocketAddressSet.getByAddress(address.substring(0, index));
+        machine = DirectSocketAddress.getByAddress(address.substring(0, index));
         port = Integer.parseInt(address.substring(index+1));                        
     }
 
     public VirtualSocketAddress(String machine, int port) 
         throws UnknownHostException {
         
-        this(SocketAddressSet.getByAddress(machine), port, null, null);
+        this(DirectSocketAddress.getByAddress(machine), port, null, null);
     }
 
     public VirtualSocketAddress(String hub, String machine, int port) 
         throws UnknownHostException {    
         
-        this(SocketAddressSet.getByAddress(machine), port, 
-                SocketAddressSet.getByAddress(hub), null);
+        this(DirectSocketAddress.getByAddress(machine), port, 
+                DirectSocketAddress.getByAddress(hub), null);
     }
     
     public void write(DataOutput out) throws IOException {
@@ -173,11 +173,11 @@ public class VirtualSocketAddress implements Serializable {
         }        
     }
     
-    public SocketAddressSet hub() { 
+    public DirectSocketAddress hub() { 
         return hub;
     }
     
-    public SocketAddressSet machine() { 
+    public DirectSocketAddress machine() { 
         return machine;
     }
 
@@ -279,16 +279,16 @@ public class VirtualSocketAddress implements Serializable {
 
         int off = offset + 6;
         
-        SocketAddressSet machine = SocketAddressSet.fromBytes(source, off);        
+        DirectSocketAddress machine = DirectSocketAddress.fromBytes(source, off);        
         off += mlen;
         
         int port = TransferUtils.readInt(source, offset+6+mlen);
         off += 4;
                 
-        SocketAddressSet hub = null;
+        DirectSocketAddress hub = null;
         
         if (hlen > 0) { 
-            hub = SocketAddressSet.fromBytes(source, offset+6+mlen+4);
+            hub = DirectSocketAddress.fromBytes(source, offset+6+mlen+4);
             off += hlen;            
         }
         
@@ -306,7 +306,7 @@ public class VirtualSocketAddress implements Serializable {
             int realport, int virtualport) throws UnknownHostException {
      
         return new VirtualSocketAddress(
-                SocketAddressSet.getByAddress(hostname, realport), virtualport);
+                DirectSocketAddress.getByAddress(hostname, realport), virtualport);
     }
     
     public static VirtualSocketAddress partialAddress(String hostname, 

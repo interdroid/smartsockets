@@ -66,16 +66,18 @@ public class FixedSizeHashSet<K> implements Set<K> {
         return changed;    
     }
 
+    @SuppressWarnings("unchecked")
     public boolean retainAll(Collection<?> c) {
 
         int before = map.size();
         
         HashSet<K> tmp = new HashSet<K>();
         
-        for (Object k : c) {            
+        for (Object k : c) {
+            
             if (map.containsKey(k)) { 
                 tmp.add((K) k);
-            }
+            }            
         }
 
         map.clear();

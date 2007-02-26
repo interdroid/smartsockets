@@ -307,7 +307,7 @@ public class Test extends Thread {
     
     private VirtualSocketFactory sf;
     
-    private HashMap connectProperties;
+    private HashMap<String, Object> connectProperties;
     
     private ArrayList<Connection> connections = new ArrayList<Connection>();
 
@@ -324,7 +324,7 @@ public class Test extends Thread {
     
     private Test(int port) throws IOException {
         
-        connectProperties = new HashMap();
+        connectProperties = new HashMap<String, Object>();
         sf = VirtualSocketFactory.createSocketFactory();
             
         normal = sf.createServerSocket(port, 0, connectProperties);

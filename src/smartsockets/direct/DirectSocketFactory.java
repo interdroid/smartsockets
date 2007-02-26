@@ -55,7 +55,7 @@ public class DirectSocketFactory {
     private final int DEFAULT_BACKLOG;
     private final int DEFAULT_LOCAL_TIMEOUT;
     
-    private final TypedProperties properties;
+  //  private final TypedProperties properties;
     
     private final boolean USE_NIO;
     
@@ -98,7 +98,7 @@ public class DirectSocketFactory {
 
     private DirectSocketFactory(TypedProperties p) {
         
-        properties = p;
+        //properties = p;
     
         DEFAULT_BACKLOG = p.getIntProperty(Properties.DIRECT_BACKLOG, 100);
         DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
@@ -305,19 +305,6 @@ public class DirectSocketFactory {
        
         return result;
     }
-
-    private byte [] toBytes(String s) { 
-        
-        byte [] tmp = (s == null ? new byte[0] : s.getBytes());
-        byte [] result = new byte[2+tmp.length];
-            
-        result[0] = (byte) (tmp.length & 0xFF);
-        result[1] = (byte) ((tmp.length >> 8) & 0xFF);
-        System.arraycopy(tmp, 0, result, 2, tmp.length);
-        
-        return result;
-    }
-
     
     private void applyMask(byte[] mask, byte[] address) {
         for (int i = 0; i < address.length; i++) {
@@ -492,7 +479,7 @@ public class DirectSocketFactory {
         }
     }
 
-    private DirectSocket attemptSSHForwarding(SocketAddressSet sas, 
+    private DirectSocket attemptSSHForwarding(DirectSocketAddress sas, 
             InetSocketAddress target, InetSocketAddress forwardTo, 
             Connection conn, long start,  byte [] userOut, byte [] userIn, 
             boolean check) throws FirewallException {         
@@ -516,7 +503,7 @@ public class DirectSocketFactory {
             InputStream in = lsf.getInputStream();
             OutputStream out = lsf.getOutputStream();
             
-            SocketAddressSet realAddress = handShake(sas, target, in, out, 
+            DirectSocketAddress realAddress = handShake(sas, target, in, out, 
                     userOut, userIn, check); 
             
             if (realAddress == null) {
@@ -544,7 +531,7 @@ public class DirectSocketFactory {
                 }  
                 
                 // TODO: is this correct ? 
-                SocketAddressSet a = SocketAddressSet.getByAddress(
+                DirectSocketAddress a = DirectSocketAddress.getByAddress(
                         externalAddress, 1, localAddress, 1, null);
                 
                 return new DirectSSHSocket(a, realAddress, in, out, lsf);
@@ -580,7 +567,7 @@ public class DirectSocketFactory {
         return null;    
     }
     
-    private DirectSocket attemptSSHConnection(SocketAddressSet sas,
+    private DirectSocket attemptSSHConnection(DirectSocketAddress sas,
             InetSocketAddress target, int timeout, int localPort, 
             boolean mayBlock, String user, byte [] userOut, byte [] userIn, 
             boolean check) {
@@ -630,14 +617,14 @@ public class DirectSocketFactory {
                         + " in " + (System.currentTimeMillis()-start) + " ms.");
             }  
         
-            if (!sas.isExternalAddresses(target)) {
+            if (!sas.inExternalAddress(target)) {
             
                 // We should be able to foward a connection to the same IP!
                 result = attemptSSHForwarding(sas, target, target, conn, start, 
                         userOut, userIn, true);
             } else { 
                 // We should forward to a local IP                 
-                for (InetSocketAddress t : sas.getLocalAddresses()) { 
+                for (InetSocketAddress t : sas.getPrivateAddresses()) { 
                     result = attemptSSHForwarding(sas, target, t, conn, start, 
                             userOut, userIn, true);
                     
@@ -648,7 +635,7 @@ public class DirectSocketFactory {
                 
                 if (result == null) { 
                     // local IP didn't work. Try the global ones ?                  
-                    for (InetSocketAddress t : sas.getGlobalAddresses()) { 
+                    for (InetSocketAddress t : sas.getPublicAddresses()) { 
                         result = attemptSSHForwarding(sas, target, t, conn, 
                                 start, userOut, userIn, true);
                         
@@ -686,7 +673,7 @@ public class DirectSocketFactory {
         return result; 
     }
         
-    private DirectSocket attemptConnection(SocketAddressSet sas,
+    private DirectSocket attemptConnection(DirectSocketAddress sas,
             InetSocketAddress target, int timeout, int sndbuf, int rcvbuf, 
             int localPort, boolean mayBlock, byte [] userOut, byte [] userIn, 
             boolean check) throws FirewallException {
@@ -738,7 +725,7 @@ public class DirectSocketFactory {
             in = s.getInputStream();
             out = s.getOutputStream();
 
-            SocketAddressSet realAddress = handShake(sas, target, in, out, 
+            DirectSocketAddress realAddress = handShake(sas, target, in, out, 
                     userOut, userIn, check);
 
             if (realAddress == null) { 
@@ -758,7 +745,7 @@ public class DirectSocketFactory {
             s.setSoTimeout(0);
 
             // TODO: get real port here ? How about the UUID ? 
-            SocketAddressSet a = SocketAddressSet.getByAddress(
+            DirectSocketAddress a = DirectSocketAddress.getByAddress(
                     externalAddress, 1, localAddress, 1, null);
 
             DirectSocket r = new DirectSimpleSocket(a, realAddress, in, out, s);
@@ -804,13 +791,13 @@ public class DirectSocketFactory {
         }
     }
     
-    private SocketAddressSet handShake(SocketAddressSet sas, 
+    private DirectSocketAddress handShake(DirectSocketAddress sas, 
             InetSocketAddress target, InputStream in, 
             OutputStream out, byte [] userOut, byte [] userIn, 
             boolean checkIdentity) throws FirewallException { 
 
         // HPDC+Mathijs Version
-        SocketAddressSet server = null;
+        DirectSocketAddress server = null;
         int opcode = -1;
         
         try {     
@@ -882,7 +869,7 @@ public class DirectSocketFactory {
             
            // System.out.println("Got address: " + ipas);
             
-            server = SocketAddressSet.getByAddress(ipas, 1, null); 
+            server = DirectSocketAddress.getByAddress(ipas, 1, null); 
             
             if (checkIdentity) { 
                 
@@ -1011,7 +998,7 @@ public class DirectSocketFactory {
         if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port
             // forwarding, so just return the server socket
-            SocketAddressSet a = SocketAddressSet.getByAddress(
+            DirectSocketAddress a = DirectSocketAddress.getByAddress(
                     externalAddress, ss.getLocalPort(), 
                     localAddress, ss.getLocalPort(), user);
                         
@@ -1032,7 +1019,7 @@ public class DirectSocketFactory {
             
             if (forwardingMayFail) {
                 // It's OK, so return the socket.
-                SocketAddressSet a = SocketAddressSet.getByAddress(
+                DirectSocketAddress a = DirectSocketAddress.getByAddress(
                         externalAddress, ss.getLocalPort(), localAddress, 
                         ss.getLocalPort(), user);
                                
@@ -1064,13 +1051,13 @@ public class DirectSocketFactory {
             port = ss.getLocalPort();
         }
 
-        SocketAddressSet local = null;
+        DirectSocketAddress local = null;
         
         try {
             int ePort = sameExternalPort ? port : 0;
             ePort = UPNP.addPortMapping(port, ePort, myNATAddress, 0, "TCP");
             
-            local = SocketAddressSet.getByAddress(externalAddress, 
+            local = DirectSocketAddress.getByAddress(externalAddress, 
                     new int [] { ePort }, localAddress, 
                     new int [] { ss.getLocalPort() }, user);
           
@@ -1090,7 +1077,7 @@ public class DirectSocketFactory {
                 throw new IOException("Port forwarding failed: " + e);
             }
             
-            local = SocketAddressSet.getByAddress(localAddress, 
+            local = DirectSocketAddress.getByAddress(localAddress, 
                     ss.getLocalPort(), user);
         }
 
@@ -1221,20 +1208,21 @@ public class DirectSocketFactory {
      * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
      *      int, java.util.Map)
      */
-    public DirectSocket createSocket(SocketAddressSet target, int timeout,
-            Map properties) throws IOException {
+    public DirectSocket createSocket(DirectSocketAddress target, int timeout,
+            Map<String, Object> properties) throws IOException {
         return createSocket(target, timeout, 0, -1, -1, properties, false, 0);
     }
 
-    public DirectSocket createSocket(SocketAddressSet target, int timeout,
-            Map properties, int userdata) throws IOException {
+    public DirectSocket createSocket(DirectSocketAddress target, int timeout,
+            Map<String, Object> properties, int userdata) throws IOException {
         
         return createSocket(target, timeout, 0, -1, -1, properties, false, 
                 userdata);
     }
 
     
-    private boolean mayUseSSH(SocketAddressSet target, Map properties) { 
+    private boolean mayUseSSH(DirectSocketAddress target, 
+            Map<String, Object> properties) { 
         
         if (FORCE_SSH_OUT && target.getUser() != null) { 
             return true;
@@ -1268,9 +1256,11 @@ public class DirectSocketFactory {
      * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
      *      int, java.util.Map)
      */
-    public DirectSocket createSocket(SocketAddressSet target, int timeout,
-            int localPort, Map properties) throws IOException {
-        return createSocket(target, timeout, localPort, -1, -1, properties, false, 0);
+    public DirectSocket createSocket(DirectSocketAddress target, int timeout,
+            int localPort, Map<String, Object> properties) throws IOException {
+        
+        return createSocket(target, timeout, localPort, -1, -1, properties, 
+                false, 0);
     } 
     
    // public DirectSocket createSocket(int localPort, Map properties) { 
@@ -1290,7 +1280,7 @@ public class DirectSocketFactory {
         } 
     }
     
-    private DirectSocket createSingleSocket(SocketAddressSet target, 
+    private DirectSocket createSingleSocket(DirectSocketAddress target, 
             InetSocketAddress sa, int timeout, int localPort, int sendBuffer, 
             int receiveBuffer, byte [] userOut, byte [] userIn, 
             boolean fillTimeout) throws IOException {
@@ -1339,9 +1329,10 @@ public class DirectSocketFactory {
      * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
      *      int, java.util.Map)
      */
-    public DirectSocket createSocket(SocketAddressSet target, int timeout,
-            int localPort, int sendBuffer, int receiveBuffer, Map properties, 
-            boolean fillTimeout, int userData) throws IOException {
+    public DirectSocket createSocket(DirectSocketAddress target, int timeout,
+            int localPort, int sendBuffer, int receiveBuffer, 
+            Map<String, Object> properties, boolean fillTimeout, int userData) 
+        throws IOException {
 
         if (timeout < 0) {
             timeout = DEFAULT_TIMEOUT;
@@ -1583,7 +1574,7 @@ public class DirectSocketFactory {
         
     }
 
-    private DirectSocket loopOverOptions(SocketAddressSet target, 
+    private DirectSocket loopOverOptions(DirectSocketAddress target, 
             InetSocketAddress [] sas, int localPort, int timeout, int sendBuffer, 
             int receiveBuffer, String user, byte [] userOut, byte [] userIn, 
             long [] timing) throws FirewallException {

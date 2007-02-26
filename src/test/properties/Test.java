@@ -33,7 +33,7 @@ public class Test {
     public static void main(String [] args) { 
      
         // These are the default values.....
-        HashMap defaults = new HashMap();
+        HashMap<String, String> defaults = new HashMap<String, String>();
         defaults.put("smartsockets.networks.default", "site,link,global");
         
         TypedProperties tp = new TypedProperties(defaults);

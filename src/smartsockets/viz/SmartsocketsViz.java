@@ -14,7 +14,7 @@ import java.util.Iterator;
 
 import smartsockets.direct.DirectServerSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.HubInfo;
 import smartsockets.hub.servicelink.ServiceLink;
@@ -37,13 +37,16 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
 
     private ServiceLink sl;
 
-    private HashMap hubs = new HashMap();
-    private HashMap oldHubs = new HashMap();
+    private HashMap<DirectSocketAddress, HubNode> hubs = 
+        new HashMap<DirectSocketAddress, HubNode>();
+    
+    private HashMap<DirectSocketAddress, HubNode> oldHubs = 
+        new HashMap<DirectSocketAddress, HubNode>();
 
     /** Default constructor.
      * @param hub 
      */
-    public SmartsocketsViz(SocketAddressSet hub) {
+    public SmartsocketsViz(DirectSocketAddress hub) {
         super();
 
         tgPanel.setBackground(Color.BLACK);
@@ -125,7 +128,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         }
     }
 
-    synchronized ClientInfo[] getClientsForHub(SocketAddressSet hub) {
+    synchronized ClientInfo[] getClientsForHub(DirectSocketAddress hub) {
         try {
             return sl.clients(hub);
         } catch (IOException e) {
@@ -173,7 +176,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         }
 
         // Flip the hashmaps 
-        HashMap tmp = hubs;
+        HashMap<DirectSocketAddress, HubNode> tmp = hubs;
         hubs = oldHubs;
         oldHubs = tmp;
 
@@ -192,33 +195,22 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
 
         // Now update the connections between the hubs and the clients that 
         // are connected to them...
-        Iterator itt = hubs.values().iterator();
-        
-        while (itt.hasNext()) {            
-            HubNode n = (HubNode) itt.next();             
+        for (HubNode n : hubs.values()) { 
             n.updateEdges();
             n.updateClients();
         }
         
         // Finally update router information (which may depend on information of 
         // other clients  
-        HashMap clients = new HashMap();
+        HashMap<Object, ClientNode> clients = new HashMap<Object, ClientNode>();
         
-        itt = hubs.values().iterator();
-        
-        while (itt.hasNext()) {            
-            HubNode n = (HubNode) itt.next();             
+        for (HubNode n : hubs.values()) { 
             n.getClients(clients);
         }
 
-        itt = hubs.values().iterator();
-        
-        while (itt.hasNext()) {            
-            HubNode n = (HubNode) itt.next();             
+        for (HubNode n : hubs.values()) { 
             n.updateRouters(clients);
         }
-
-        
     }
 
     public void run() {
@@ -241,10 +233,10 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             System.exit(1);
         }
 
-        SocketAddressSet hub = null;
+        DirectSocketAddress hub = null;
 
         try {
-            hub = SocketAddressSet.getByAddress(args[0]);
+            hub = DirectSocketAddress.getByAddress(args[0]);
         } catch (Exception e1) {
             System.err.println("Coudn't parse hub address: " + args[0]);
             System.exit(1);
@@ -272,7 +264,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
         tgPanel.deleteEdge(e);
     }
 
-    public HubNode getHubNode(SocketAddressSet to) {
+    public HubNode getHubNode(DirectSocketAddress to) {
         return (HubNode) hubs.get(to);
     }
 

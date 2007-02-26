@@ -8,7 +8,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.CallBack;
 import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.util.TypedProperties;
@@ -29,7 +29,7 @@ public abstract class ConnectModule implements CallBack {
     protected VirtualSocketFactory parent;
     protected Logger logger;
     protected ServiceLink serviceLink;     
-    protected Map properties; 
+    protected Map<String, Object> properties; 
     
     protected String name;
     
@@ -50,12 +50,14 @@ public abstract class ConnectModule implements CallBack {
         this(name, requiresServiceLink, null);
     }
     
-    protected ConnectModule(String name, boolean requiresServiceLink, Map p) { 
+    protected ConnectModule(String name, boolean requiresServiceLink, 
+            Map<String, Object> p) {
+        
         this.module = name;
         this.requiresServiceLink = requiresServiceLink;
         
         if (p == null) {         
-            this.properties = new HashMap();
+            this.properties = new HashMap<String, Object>();
         } else { 
             this.properties = p;
         }
@@ -108,7 +110,7 @@ public abstract class ConnectModule implements CallBack {
         startModule();
     }
     
-    public void gotMessage(SocketAddressSet src, SocketAddressSet proxy, 
+    public void gotMessage(DirectSocketAddress src, DirectSocketAddress proxy, 
             int opcode, byte [][] message) {
         // Note: Default implementation. Should be extended by any module 
         // which requires use of service links         
@@ -265,10 +267,11 @@ public abstract class ConnectModule implements CallBack {
 
     public abstract boolean matchAdditionalRuntimeRequirements(Map requirements);
     
-    public abstract SocketAddressSet getAddresses(); 
+    public abstract DirectSocketAddress getAddresses(); 
     
-    public abstract VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map properties) throws ModuleNotSuitableException, IOException;
+    public abstract VirtualSocket connect(VirtualSocketAddress target, 
+            int timeout, Map<String, Object> properties) 
+        throws ModuleNotSuitableException, IOException;
 
     public void printStatistics(String prefix) {
         

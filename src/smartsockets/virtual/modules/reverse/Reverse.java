@@ -2,10 +2,9 @@ package smartsockets.virtual.modules.reverse;
 
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
@@ -21,8 +20,6 @@ public class Reverse extends MessagingModule {
     private static final boolean USE_THREAD = true; 
     
     private static final int PLEASE_CONNECT = 1; 
-    
-    private static final HashMap poperties = new HashMap();
     
     private Direct direct;    
     
@@ -63,13 +60,14 @@ public class Reverse extends MessagingModule {
     }
 
     
-    public SocketAddressSet getAddresses() {       
+    public DirectSocketAddress getAddresses() {       
         // Nothing to do here....
         return null;
     }
         
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map properties) throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) 
+        throws ModuleNotSuitableException, IOException {
 
         // When the reverse module is asked for a connection to a remote 
         // address, it simply creates a local serversocket and send a message 
@@ -152,7 +150,7 @@ public class Reverse extends MessagingModule {
         }
     }        
         
-    public void gotMessage(SocketAddressSet src, SocketAddressSet srcProxy, 
+    public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcProxy, 
             int opcode, byte [][] message) {
 
         if (opcode != PLEASE_CONNECT) { 
@@ -171,9 +169,9 @@ public class Reverse extends MessagingModule {
         
         try {
             localport                = toInt(message[0]);                        
-            SocketAddressSet machine = toSocketAddressSet(message[1]);            
+            DirectSocketAddress machine = toSocketAddressSet(message[1]);            
             int port                 = toInt(message[2]); 
-            SocketAddressSet hub     = toSocketAddressSet(message[3]);                        
+            DirectSocketAddress hub     = toSocketAddressSet(message[3]);                        
             String cluster           = toString(message[4]);
             
             target = new VirtualSocketAddress(machine, port, hub, cluster);            

@@ -8,7 +8,7 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.virtual.VirtualServerSocket;
@@ -35,13 +35,13 @@ public class Router extends Thread {
    
     private VirtualSocketAddress local; 
     
-    private HashMap properties = new HashMap();
+    private HashMap<String, Object> properties = new HashMap<String, Object>();
     
     private ServiceLink serviceLink;
     
     private long nextConnectionID = 0;
 
-    private HashMap connections = new HashMap();
+    private HashMap<String, Connection> connections = new HashMap<String, Connection>();
     
     private String currentStats = "0";
     
@@ -51,7 +51,7 @@ public class Router extends Thread {
         this(null);        
     }
     
-    public Router(SocketAddressSet hub) throws IOException {         
+    public Router(DirectSocketAddress hub) throws IOException {         
         
         properties.put("smartsockets.modules.skip", "routed"); 
         
@@ -92,13 +92,13 @@ public class Router extends Thread {
         }
     } 
                
-    synchronized SocketAddressSet [] locateMachine(SocketAddressSet machine) 
+    synchronized DirectSocketAddress [] locateMachine(DirectSocketAddress machine) 
         throws IOException {
         
         return serviceLink.locateClient(machine.toString());
     }
     
-    synchronized ClientInfo [] findClients(SocketAddressSet hub, String service) 
+    synchronized ClientInfo [] findClients(DirectSocketAddress hub, String service) 
         throws IOException {
         
         return serviceLink.clients(hub, service);
@@ -109,7 +109,7 @@ public class Router extends Thread {
         return factory.createClientSocket(target, (int) timeout, properties);
     }
     
-    public SocketAddressSet getLocalAddress() {
+    public DirectSocketAddress getLocalAddress() {
         return factory.getLocalHost();
     }
         
@@ -220,7 +220,7 @@ public class Router extends Thread {
         } 
     }
         
-    public SocketAddressSet getHubAddress() {
+    public DirectSocketAddress getHubAddress() {
         try { 
             return serviceLink.getAddress();
         } catch (IOException e) {

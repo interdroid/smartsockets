@@ -20,7 +20,7 @@ public class LinuxNetworkInfoParser extends NetworkInfoParser {
         super("Linux");
     }
  
-    public boolean parse(byte [] output, List info) { 
+    public boolean parse(byte [] output, List<NetworkInfo> info) { 
         
         boolean result = false;
         StringBuffer tmp = new StringBuffer(new String(output));
@@ -41,7 +41,7 @@ public class LinuxNetworkInfoParser extends NetworkInfoParser {
         return result;
     }
      
-    private boolean parseBlock(String tmp, List info) { 
+    private boolean parseBlock(String tmp, List<NetworkInfo> info) { 
                
         // // System.out.println("Parse block:\n" + tmp + "\n\n");
         

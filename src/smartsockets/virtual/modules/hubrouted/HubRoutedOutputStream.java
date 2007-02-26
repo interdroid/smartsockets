@@ -11,7 +11,6 @@ public class HubRoutedOutputStream extends OutputStream {
     private final byte [] buffer;
     private final int size;
         
-    private final int remoteBufferSize;
     private int remoteBufferFree;
     
     private int used = 0;
@@ -25,7 +24,7 @@ public class HubRoutedOutputStream extends OutputStream {
         this.size = fragmentation;
         buffer = new byte[fragmentation];
    
-        remoteBufferFree = remoteBufferSize = bufferSize;
+        remoteBufferFree = bufferSize;
     }
         
     public void write(byte[] b) throws IOException {        

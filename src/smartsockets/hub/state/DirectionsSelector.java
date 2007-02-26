@@ -2,17 +2,17 @@ package smartsockets.hub.state;
 
 import java.util.LinkedList;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public class DirectionsSelector extends Selector {
     
-    private LinkedList<SocketAddressSet> good = new LinkedList<SocketAddressSet>();    
-    private LinkedList<SocketAddressSet> bad = new LinkedList<SocketAddressSet>();    
+    private LinkedList<DirectSocketAddress> good = new LinkedList<DirectSocketAddress>();    
+    private LinkedList<DirectSocketAddress> bad = new LinkedList<DirectSocketAddress>();    
     
-    private final SocketAddressSet client;
+    private final DirectSocketAddress client;
     private final boolean includeLocal;
     
-    public DirectionsSelector(SocketAddressSet client, boolean includeLocal) { 
+    public DirectionsSelector(DirectSocketAddress client, boolean includeLocal) { 
         this.client = client;
         this.includeLocal = includeLocal;
     }
@@ -59,9 +59,9 @@ public class DirectionsSelector extends Selector {
         }
     }
 
-    public LinkedList<SocketAddressSet> getResult() {
+    public LinkedList<DirectSocketAddress> getResult() {
 
-        LinkedList<SocketAddressSet> result = new LinkedList<SocketAddressSet>();
+        LinkedList<DirectSocketAddress> result = new LinkedList<DirectSocketAddress>();
         
         result.addAll(good);        
         result.addAll(bad);

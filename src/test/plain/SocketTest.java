@@ -1,5 +1,7 @@
 package test.plain;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -79,7 +81,7 @@ public class SocketTest {
                             try { 
                                 s.connect(a, 1000);
                                 
-                            /*    if (pingpong) { 
+                                if (pingpong) { 
                                     s.setTcpNoDelay(true);
                                     
                                     OutputStream out = s.getOutputStream();
@@ -92,7 +94,7 @@ public class SocketTest {
                                 
                                     in.close();
                                     out.close();
-                                } */
+                                }
                                 
                                 s.close();
                                 s = null;
@@ -121,7 +123,7 @@ public class SocketTest {
                 while (true) {
                     Socket s = ss.accept();
                     
-/*                    if (pingpong) { 
+                    if (pingpong) { 
                         s.setTcpNoDelay(true);
                         
                         InputStream in = s.getInputStream();
@@ -135,7 +137,7 @@ public class SocketTest {
                         in.close();
                         out.close();
                     }
-                     */
+
                     s.close();
                 }
             }

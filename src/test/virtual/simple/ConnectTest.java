@@ -26,7 +26,7 @@ public class ConnectTest {
     
     private static VirtualSocketFactory sf;
     
-    private static HashMap connectProperties;
+    private static HashMap<String, Object> connectProperties;
     
     private static boolean pingpong = PINGPONG;
     private static int count = COUNT;
@@ -141,7 +141,7 @@ public class ConnectTest {
         
         sf = VirtualSocketFactory.createSocketFactory();
         
-        connectProperties = new HashMap();
+        connectProperties = new HashMap<String, Object>();
 
         String id = null;
         

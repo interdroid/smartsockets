@@ -12,7 +12,7 @@ public class DirectSimpleSocket extends DirectSocket {
 
     private final Socket socket; 
     
-    DirectSimpleSocket(SocketAddressSet local, SocketAddressSet remote, 
+    DirectSimpleSocket(DirectSocketAddress local, DirectSocketAddress remote, 
             InputStream in, OutputStream out, Socket socket) {
         
         super(local, remote, in, out);

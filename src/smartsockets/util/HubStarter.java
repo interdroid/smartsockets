@@ -4,7 +4,7 @@ package smartsockets.util;
 import java.io.IOException;
 
 import smartsockets.Properties;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.Hub;
 import smartsockets.router.simple.Router;
 
@@ -20,7 +20,7 @@ public class HubStarter {
         boolean startRouter = false;
         boolean startHub = true;
         
-        SocketAddressSet [] hubs = new SocketAddressSet[args.length];
+        DirectSocketAddress [] hubs = new DirectSocketAddress[args.length];
         int port = DEFAULT_ACCEPT_PORT;
         int numHubs = 0;
 
@@ -72,7 +72,7 @@ public class HubStarter {
             } else {                
                 // Assume it's an address...
                 try { 
-                    hubs[i] = SocketAddressSet.getByAddress(args[i]);
+                    hubs[i] = DirectSocketAddress.getByAddress(args[i]);
                     numHubs++;
                     
                     System.out.println("Got hub address: " + hubs[i].toString());
@@ -83,7 +83,7 @@ public class HubStarter {
             } 
         }
         
-        SocketAddressSet [] tmp = new SocketAddressSet[numHubs];
+        DirectSocketAddress [] tmp = new DirectSocketAddress[numHubs];
         
         int index = 0;
         
@@ -113,7 +113,7 @@ public class HubStarter {
         
         if (startRouter) {
             
-            SocketAddressSet adr = null;
+            DirectSocketAddress adr = null;
             
             if (h != null) { 
                 adr = h.getHubAddress();                

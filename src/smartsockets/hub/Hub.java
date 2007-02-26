@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.Properties;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.discovery.Discovery;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.HubConnection;
@@ -39,7 +39,7 @@ public class Hub extends Thread {
     private static final long STAT_FREQ = 60000;
     
     private final HubList hubs;    
-    private final Map<SocketAddressSet, BaseConnection> connections;
+    private final Map<DirectSocketAddress, BaseConnection> connections;
     
     private final Acceptor acceptor;
     private final Connector connector;
@@ -52,7 +52,7 @@ public class Hub extends Thread {
     
     private long nextStats;
     
-    public Hub(SocketAddressSet [] hubAddresses, TypedProperties p) 
+    public Hub(DirectSocketAddress [] hubAddresses, TypedProperties p) 
         throws IOException { 
 
         super("Hub");
@@ -86,7 +86,7 @@ public class Hub extends Thread {
         hubs = new HubList(state);
                 
         connections = Collections.synchronizedMap(
-                new HashMap<SocketAddressSet, BaseConnection>());
+                new HashMap<DirectSocketAddress, BaseConnection>());
         
         virtualConnections = new VirtualConnections();
        
@@ -97,7 +97,7 @@ public class Hub extends Thread {
         acceptor = new Acceptor(p, port, state, connections, hubs, virtualConnections, factory);        
         connector = new Connector(p, state, connections, hubs, virtualConnections, factory);
         
-        SocketAddressSet local = acceptor.getLocal();         
+        DirectSocketAddress local = acceptor.getLocal();         
         
         connector.setLocal(local);
                 
@@ -187,12 +187,12 @@ public class Hub extends Thread {
         start();
     }
     
-    public void addHubs(SocketAddressSet [] hubAddresses, String [] moreHubs) { 
+    public void addHubs(DirectSocketAddress [] hubAddresses, String [] moreHubs) { 
         
-        SocketAddressSet local = hubs.getLocalDescription().hubAddress;
+        DirectSocketAddress local = hubs.getLocalDescription().hubAddress;
         
         if (hubAddresses != null) { 
-                for (SocketAddressSet s : hubAddresses) { 
+                for (DirectSocketAddress s : hubAddresses) { 
                 if (s != null && !local.sameProcess(s)) { 
                     misclogger.info("Adding hub address: " + s);
                     hubs.add(s);
@@ -205,7 +205,7 @@ public class Hub extends Thread {
             
                 if (s != null) { 
                     try { 
-                        SocketAddressSet tmp = SocketAddressSet.getByAddress(s);
+                        DirectSocketAddress tmp = DirectSocketAddress.getByAddress(s);
                     
                         if (!local.sameProcess(tmp)) {
                             misclogger.info("Adding hub address: " + s);
@@ -245,7 +245,7 @@ public class Hub extends Thread {
         }                   
     }
     
-    public SocketAddressSet getHubAddress() { 
+    public DirectSocketAddress getHubAddress() { 
         return acceptor.getLocal();
     }
     
@@ -257,9 +257,9 @@ public class Hub extends Thread {
             return;
         }
         
-        SocketAddressSet [] cons = connections.keySet().toArray(new SocketAddressSet[0]);
+        DirectSocketAddress [] cons = connections.keySet().toArray(new DirectSocketAddress[0]);
         
-        for (SocketAddressSet s : cons) { 
+        for (DirectSocketAddress s : cons) { 
             
             BaseConnection b = connections.get(s);
             

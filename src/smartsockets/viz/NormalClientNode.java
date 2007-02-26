@@ -6,7 +6,7 @@ import com.touchgraph.graphlayout.Node;
 
 public class NormalClientNode extends ClientNode {
     
-    private ClientInfo client;
+   // private ClientInfo client;
     
     public NormalClientNode(ClientInfo info, HubNode hub) { 
         super(info.getClientAddress().toString(), hub);        

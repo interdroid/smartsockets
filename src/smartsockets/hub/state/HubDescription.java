@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.connections.HubConnection;
 
 public class HubDescription {
@@ -17,7 +17,7 @@ public class HubDescription {
 
     // Address of the hub, which should be unique. Also stored in String form, 
     // since this is used quite a lot...
-    public final SocketAddressSet hubAddress;
+    public final DirectSocketAddress hubAddress;
     public final String hubAddressAsString;
     
     // The human-readable name of the hub. Note that this is not used for 
@@ -58,7 +58,7 @@ public class HubDescription {
 
     // Maintain a list of machines that have registered themselves as clients. 
     // Note that this is only used on the local hub. 
-    private HashMap<SocketAddressSet, ClientDescription> clients; 
+    private HashMap<DirectSocketAddress, ClientDescription> clients; 
     
     // For remote machines we only maintain a client count.
    // private int numberOfClients;        
@@ -78,11 +78,11 @@ public class HubDescription {
     // the time.     
     private ArrayList<String> connectedTo = new ArrayList<String>();
     
-    public HubDescription(SocketAddressSet address, StateCounter state) {
+    public HubDescription(DirectSocketAddress address, StateCounter state) {
         this(null, address, state, false);
     } 
     
-    public HubDescription(String name, SocketAddressSet address, 
+    public HubDescription(String name, DirectSocketAddress address, 
             StateCounter state, boolean local) {
         
         this.name = name;
@@ -95,10 +95,10 @@ public class HubDescription {
         this.canReachMe = UNKNOWN;
         
         this.local = local;        
-        this.clients = new HashMap<SocketAddressSet, ClientDescription>();         
+        this.clients = new HashMap<DirectSocketAddress, ClientDescription>();         
     }
     
-    public boolean addClient(SocketAddressSet client) {
+    public boolean addClient(DirectSocketAddress client) {
         
         if (!local) { 
             throw new IllegalStateException("Cannot add clients to remote"
@@ -116,14 +116,14 @@ public class HubDescription {
         } 
     }
     
-    public boolean knowsClient(SocketAddressSet client) {
+    public boolean knowsClient(DirectSocketAddress client) {
         
         synchronized (clients) {            
             return clients.containsKey(client);
         }
     }
     
-    public boolean removeClient(SocketAddressSet client) {
+    public boolean removeClient(DirectSocketAddress client) {
         
         if (!local) { 
             throw new IllegalStateException("Cannot remove clients from remote"
@@ -181,7 +181,7 @@ public class HubDescription {
         return homeState;
     }
     
-    public boolean addService(SocketAddressSet client, String tag, String address) {
+    public boolean addService(DirectSocketAddress client, String tag, String address) {
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -199,7 +199,7 @@ public class HubDescription {
         }
     }
 
-    public boolean updateService(SocketAddressSet client, String tag, String address) {
+    public boolean updateService(DirectSocketAddress client, String tag, String address) {
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -217,7 +217,7 @@ public class HubDescription {
         }
     }
 
-    public boolean removeService(SocketAddressSet client, String tag) {
+    public boolean removeService(DirectSocketAddress client, String tag) {
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -235,7 +235,7 @@ public class HubDescription {
         }
     }
     
-    boolean containsClient(SocketAddressSet client) {
+    boolean containsClient(DirectSocketAddress client) {
         synchronized (client) {
             return clients.containsKey(client);
         } 

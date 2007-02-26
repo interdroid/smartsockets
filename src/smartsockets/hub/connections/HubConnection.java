@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.HubProtocol;
 import smartsockets.hub.state.ClientDescription;
 import smartsockets.hub.state.HubDescription;
@@ -40,7 +40,7 @@ public class HubConnection extends MessageForwardingConnection {
     
     public HubConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, HubDescription peer, 
-            Map<SocketAddressSet, BaseConnection> connections, 
+            Map<DirectSocketAddress, BaseConnection> connections, 
             HubList proxies, StateCounter state, VirtualConnections vcs, 
             boolean master) {
         
@@ -160,7 +160,7 @@ public class HubConnection extends MessageForwardingConnection {
         
     private void readHub() throws IOException {
                 
-        SocketAddressSet address = SocketAddressSet.getByAddress(in.readUTF());        
+        DirectSocketAddress address = DirectSocketAddress.getByAddress(in.readUTF());        
         String name = in.readUTF();
         
         HubDescription tmp = knownHubs.add(address);

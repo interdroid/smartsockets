@@ -3,11 +3,11 @@ package smartsockets.hub.servicelink;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 
 public interface VirtualConnectionCallBack {
 
-    void connect(SocketAddressSet src, SocketAddressSet sourceHub, int port, 
+    void connect(DirectSocketAddress src, DirectSocketAddress sourceHub, int port, 
             int fragment, int buffer, int timeout, long index);
     
     void connectACK(long index, int fragment, int buffer);    

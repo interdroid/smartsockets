@@ -27,11 +27,11 @@ public class VirtualServerSocket {
     
     private VirtualSocketAddress localAddress;
 
-    private Map properties;
+    private Map<String, Object> properties;
     
     protected VirtualServerSocket(VirtualSocketFactory parent, 
             VirtualSocketAddress address, int port, int backlog, 
-            Map p) {
+            Map<String, Object> p) {
         
         this.parent = parent;
         this.port = port;
@@ -186,7 +186,7 @@ public class VirtualServerSocket {
         return properties;
     }
 
-    public void setProperties(Map properties) {
+    public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
     }
     

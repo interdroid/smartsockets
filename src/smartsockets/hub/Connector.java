@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 import smartsockets.Properties;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.connections.BaseConnection;
 import smartsockets.hub.connections.HubConnection;
 import smartsockets.hub.connections.VirtualConnections;
@@ -35,7 +35,7 @@ class Connector extends CommunicationThread {
     private int receiveBuffer = -1;
 
     Connector(TypedProperties p, StateCounter state, 
-            Map<SocketAddressSet, BaseConnection> connections,
+            Map<DirectSocketAddress, BaseConnection> connections,
             HubList knownProxies, VirtualConnections vcs, 
             DirectSocketFactory factory) {
         

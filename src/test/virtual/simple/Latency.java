@@ -23,7 +23,7 @@ public class Latency {
     private static int repeat = DEFAULT_REPEAT;
     
     private static VirtualSocketFactory sf;    
-    private static HashMap connectProperties;
+    private static HashMap<String, Object> connectProperties;
     
     private static void configure(VirtualSocket s) throws SocketException { 
  
@@ -130,7 +130,7 @@ public class Latency {
         
         sf = VirtualSocketFactory.createSocketFactory();
         
-        connectProperties = new HashMap();
+        connectProperties = new HashMap<String, Object>();
 
         VirtualSocketAddress target = null;
 

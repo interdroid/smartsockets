@@ -6,7 +6,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -18,7 +17,7 @@ import java.util.Map;
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
 import smartsockets.direct.IPAddressSet;
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.ConnectionProtocol;
 import smartsockets.util.TypedProperties;
 import smartsockets.virtual.ModuleNotSuitableException;
@@ -50,17 +49,17 @@ public class Splice extends AbstractDirectModule {
     
     private DirectSocketFactory factory;               
     
-    private SocketAddressSet myMachine;
-    private SocketAddressSet externalHub;
+    private DirectSocketAddress myMachine;
+    private DirectSocketAddress externalHub;
     private IPAddressSet externalAddress;
     
-    private LinkedList<SocketAddressSet> hubsToTest = 
-        new LinkedList<SocketAddressSet>();    
+    private LinkedList<DirectSocketAddress> hubsToTest = 
+        new LinkedList<DirectSocketAddress>();    
 
-    private LinkedList<SocketAddressSet> testedHubs = 
-        new LinkedList<SocketAddressSet>();    
+    private LinkedList<DirectSocketAddress> testedHubs = 
+        new LinkedList<DirectSocketAddress>();    
    
-    private HashMap<String, String> hubConnectProperties;
+    private HashMap<String, Object> hubConnectProperties;
         
     private int nextID = 0;
     
@@ -75,15 +74,15 @@ public class Splice extends AbstractDirectModule {
         return nextID++;
     }
     
-    private synchronized SocketAddressSet getExternalHub() { 
+    private synchronized DirectSocketAddress getExternalHub() { 
         return externalHub;
     }
     
-    private synchronized void setExternalHub(SocketAddressSet hub) { 
+    private synchronized void setExternalHub(DirectSocketAddress hub) { 
         externalHub = hub;
     }
     
-    private synchronized void addFailedHub(SocketAddressSet hub) {
+    private synchronized void addFailedHub(DirectSocketAddress hub) {
         
         // Note: assumes number of hubs is small!
         if (!testedHubs.contains(hub)) {         
@@ -91,16 +90,16 @@ public class Splice extends AbstractDirectModule {
         }
     }
     
-    private synchronized SocketAddressSet getHubToTest() {
+    private synchronized DirectSocketAddress getHubToTest() {
         
         // TODO: Remember which hub we have tried already ? 
         if (hubsToTest.size() == 0) {
             
             try { 
-                SocketAddressSet [] tmp = serviceLink.hubs();            
+                DirectSocketAddress [] tmp = serviceLink.hubs();            
                 
                 if (tmp != null) { 
-                    for (SocketAddressSet s : tmp) {                        
+                    for (DirectSocketAddress s : tmp) {                        
                         if (!testedHubs.contains(s)) {                         
                             hubsToTest.add(s);
                         }
@@ -120,7 +119,8 @@ public class Splice extends AbstractDirectModule {
     }
         
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map properties) throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties)         
+        throws ModuleNotSuitableException, IOException {
 
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
@@ -134,17 +134,17 @@ public class Splice extends AbstractDirectModule {
         }
         
         // Start by extracting the machine address of the target.
-        SocketAddressSet targetMachine = target.machine();
+        DirectSocketAddress targetMachine = target.machine();
         
         // Next we get our own machine address. 
-        SocketAddressSet myMachine = parent.getLocalHost();
+        //DirectSocketAddress myMachine = parent.getLocalHost();
         
         // We must get an address and port for this machine for the splicing to 
         // be successful. If the machine is NATed this will also produce the 
         // address/port mapping. If the machine is not NATed, it may still 
         // be multihomed and we need to find out which address to use to reach 
         // the outside world....
-        SocketAddressSet [] result = new SocketAddressSet[1];
+        DirectSocketAddress [] result = new DirectSocketAddress[1];
         int [] localPort = new int[1]; 
         
         timeout = getInfo(timeout, result, localPort);
@@ -206,10 +206,10 @@ public class Splice extends AbstractDirectModule {
         }
         
         // We got our reply, so get the target range we want to check....
-        SocketAddressSet tmp = toSocketAddressSet(message[2]);
+        DirectSocketAddress tmp = toSocketAddressSet(message[2]);
         boolean otherBehindNAT = (message[3][0] == 1);
         
-        SocketAddressSet [] a = getTargetRange(otherBehindNAT, tmp);
+        DirectSocketAddress [] a = getTargetRange(otherBehindNAT, tmp);
         
         // Try to connect to the target
         DirectSocket s = connect(a, localPort[0], DEFAULT_TIMEOUT, target.port());
@@ -224,26 +224,26 @@ public class Splice extends AbstractDirectModule {
         return handleConnect(target, s, timeout, properties);
     }
 
-    private SocketAddressSet [] getTargetRange(boolean behindNAT,  
-            SocketAddressSet realTarget) throws UnknownHostException { 
+    private DirectSocketAddress [] getTargetRange(boolean behindNAT,  
+            DirectSocketAddress realTarget) throws UnknownHostException { 
         
-        SocketAddressSet [] a = null;
+        DirectSocketAddress [] a = null;
         
         if (!behindNAT) { 
             // the machine is likely to be behind a firewall, so no port range 
             // prediction is necessary
-            a = new SocketAddressSet[1];
+            a = new DirectSocketAddress[1];
             a[0] = realTarget;
         } else { 
             // The machine is behind a NAT, so use port range prediction...
-            a = new SocketAddressSet[PORT_RANGE];
+            a = new DirectSocketAddress[PORT_RANGE];
             a[0] = realTarget;
             
             int port = realTarget.getPorts(false)[0];
             IPAddressSet ads = realTarget.getAddressSet();
             
             for (int i=1;i<PORT_RANGE;i++) { 
-                a[i] = SocketAddressSet.getByAddress(ads, port+1);
+                a[i] = DirectSocketAddress.getByAddress(ads, port+1);
             }
         }
 
@@ -322,7 +322,7 @@ public class Splice extends AbstractDirectModule {
         }
     }
     
-    private int getInfo(int timeout, SocketAddressSet [] result, 
+    private int getInfo(int timeout, DirectSocketAddress [] result, 
             int [] localPort) throws IOException, ModuleNotSuitableException {
         
         int local = -1;        
@@ -334,7 +334,7 @@ public class Splice extends AbstractDirectModule {
             // Multihomed machines behind a firewall also use this shortcut as 
             // soon as there external address is known.
             localPort[0] = getLocalPort(timeout); 
-            result[0] = SocketAddressSet.getByAddress(externalAddress, 
+            result[0] = DirectSocketAddress.getByAddress(externalAddress, 
                     localPort[0]);
             
             return timeout;
@@ -350,7 +350,7 @@ public class Splice extends AbstractDirectModule {
         while (true) { 
 
             boolean testing = false;
-            SocketAddressSet hub = getExternalHub();
+            DirectSocketAddress hub = getExternalHub();
 
             if (hub == null) { 
                 // No suitable external hub is known yet!
@@ -416,15 +416,15 @@ public class Splice extends AbstractDirectModule {
         }
     }
     
-    private int getInfo(SocketAddressSet externalHub, int timeout, int local, 
-            SocketAddressSet [] result) throws IOException { 
+    private int getInfo(DirectSocketAddress externalHub, int timeout, int local, 
+            DirectSocketAddress [] result) throws IOException { 
 
         DirectSocket s = null;
         OutputStream out = null;
         DataInputStream in = null;
         
         if (hubConnectProperties == null) { 
-            hubConnectProperties = new HashMap<String, String>();
+            hubConnectProperties = new HashMap<String, Object>();
             hubConnectProperties.put("direct.forcePublic", null);
         }
         
@@ -445,9 +445,9 @@ public class Splice extends AbstractDirectModule {
             String addr = in.readUTF();
             int port = in.readInt();
             
-            SocketAddressSet tmp = SocketAddressSet.getByAddress(addr, port);
+            DirectSocketAddress tmp = DirectSocketAddress.getByAddress(addr, port);
             
-            if (!tmp.hasGlobalAddress()) { 
+            if (!tmp.hasPublicAddress()) { 
                 // We didn't get an external address! So we don't return any 
                 // mapping, just the local port (so it can be reused).
                 return local;                   
@@ -456,7 +456,7 @@ public class Splice extends AbstractDirectModule {
             result[0] = tmp;
             
             for (int i=1;i<result.length;i++) {
-                result[i] = SocketAddressSet.getByAddress(addr, port+i);
+                result[i] = DirectSocketAddress.getByAddress(addr, port+i);
             }
             
             return local;        
@@ -465,21 +465,21 @@ public class Splice extends AbstractDirectModule {
         }
     }
     
-    private DirectSocket connect(SocketAddressSet [] target, int localPort, 
+    private DirectSocket connect(DirectSocketAddress [] target, int localPort, 
             int timeout, int userdata) throws IOException, ModuleNotSuitableException {
         
         // TODO: This will give you very long waiting time before the setup 
         // fails! Better to fail fast and retry the entire setup ? Or maybe 
         // change the timeout to something small ? 
-        
-        // .println("Connect " + Arrays.deepToString(target));            
-        
+   
+        /*
         long deadline = 0;
         long timeleft = timeout;
         
         if (timeout > 0) { 
             deadline = System.currentTimeMillis() + timeout;
-        }
+        }*/
+        
                 
         if (target.length == 1) { 
             logger.debug(module + ": Single splice attempt!");
@@ -523,7 +523,7 @@ public class Splice extends AbstractDirectModule {
         return null;
     }
     
-    public SocketAddressSet getAddresses() {
+    public DirectSocketAddress getAddresses() {
         // Nothing to do here, since we don't extend the address in any way... 
         return null;
     }
@@ -546,7 +546,7 @@ public class Splice extends AbstractDirectModule {
         
         myMachine = parent.getLocalHost();
                 
-        behindNAT = !myMachine.hasGlobalAddress();        
+        behindNAT = !myMachine.hasPublicAddress();        
         behindNATByte[0] = (byte) (behindNAT ? 1 : 0);
         
         if (!behindNAT && myMachine.numberOfAddresses() == 1) {   
@@ -554,7 +554,7 @@ public class Splice extends AbstractDirectModule {
         }                            
     }
    
-    private void handleConnect(SocketAddressSet src, SocketAddressSet srcHub, 
+    private void handleConnect(DirectSocketAddress src, DirectSocketAddress srcHub, 
             byte [][] message) { 
 
         // Try to extract the necessary info from the message
@@ -590,7 +590,7 @@ public class Splice extends AbstractDirectModule {
  
     }
     
-    private void handleReply(SocketAddressSet src, SocketAddressSet srcHub, 
+    private void handleReply(DirectSocketAddress src, DirectSocketAddress srcHub, 
             byte [][] message) { 
         
       //  System.out.println(" reply");
@@ -605,7 +605,7 @@ public class Splice extends AbstractDirectModule {
         storeReply(new Integer(toInt(message[0])), message);
     }
     
-    public void gotMessage(SocketAddressSet src, SocketAddressSet srcHub, 
+    public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcHub, 
             int opcode, byte [][] message) {
 
         if (logger.isInfoEnabled()) {
@@ -637,9 +637,9 @@ public class Splice extends AbstractDirectModule {
         
         byte [] id; 
         
-        SocketAddressSet src; 
-        SocketAddressSet srcHub; 
-        SocketAddressSet target;
+        DirectSocketAddress src; 
+        DirectSocketAddress srcHub; 
+        DirectSocketAddress target;
         
         int port = 0;    
         int timeout = 0;
@@ -662,7 +662,7 @@ public class Splice extends AbstractDirectModule {
                 return;            
             }
             
-            SocketAddressSet [] result = new SocketAddressSet[1]; 
+            DirectSocketAddress [] result = new DirectSocketAddress[1]; 
             int [] localPort = new int[1];
             
             try {         
@@ -689,7 +689,7 @@ public class Splice extends AbstractDirectModule {
             
             // Setup connection     
             try {            
-                SocketAddressSet [] a = getTargetRange(otherBehindNAT, target);
+                DirectSocketAddress [] a = getTargetRange(otherBehindNAT, target);
             
                 DirectSocket s = connect(a, localPort[0], timeout, 0);
                 

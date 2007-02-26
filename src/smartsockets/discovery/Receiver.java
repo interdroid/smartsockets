@@ -18,7 +18,7 @@ class Receiver extends Thread {
     private DatagramPacket packet; 
     
     private final Callback callback;
-    private final InetAddress[] addresses;
+    //private final InetAddress[] addresses;
     private final int timeout;
     
     Receiver(InetAddress [] ads, int port, Callback callback) 
@@ -31,7 +31,7 @@ class Receiver extends Thread {
         
         super("discovery.Receiver");
     
-        this.addresses = ads;
+        //this.addresses = ads;
         this.callback = callback;
         this.timeout = timeout;
         

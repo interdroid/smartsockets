@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
-import smartsockets.direct.SocketAddressSet;
+import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 
 import com.touchgraph.graphlayout.Edge;
@@ -14,24 +14,27 @@ import com.touchgraph.graphlayout.Node;
 
 public class RouterClientNode extends ClientNode {
 
-    private ClientInfo client;
+   // private ClientInfo client;
     
-    private ArrayList mouseOverText = new ArrayList();
+    private ArrayList<String> mouseOverText = new ArrayList<String>();
     
-    private HashMap cons = new HashMap();
-    private HashMap oldCons = new HashMap();
+    private HashMap<String, ConnectionInfo> cons = 
+        new HashMap<String, ConnectionInfo>();
+    
+    private HashMap<String, ConnectionInfo> oldCons = 
+        new HashMap<String, ConnectionInfo>();
         
     private class ConnectionInfo {        
         String id;         
         
-        SocketAddressSet from;
-        SocketAddressSet to;        
+        DirectSocketAddress from;
+        DirectSocketAddress to;        
         long tp;
         
         Edge edge1;    
         Edge edge2;    
                 
-        ConnectionInfo(SocketAddressSet from, SocketAddressSet to, String id, 
+        ConnectionInfo(DirectSocketAddress from, DirectSocketAddress to, String id, 
                 long tp) { 
             this.from = from;
             this.to = to;
@@ -81,8 +84,8 @@ public class RouterClientNode extends ClientNode {
         if (c == null) {
             
             try {
-                c = new ConnectionInfo(SocketAddressSet.getByAddress(from), 
-                        SocketAddressSet.getByAddress(to), id, 
+                c = new ConnectionInfo(DirectSocketAddress.getByAddress(from), 
+                        DirectSocketAddress.getByAddress(to), id, 
                         Long.parseLong(tp));
             } catch (Exception e) {
                 System.out.println("Failed to create ConnectionInfo " + e);
@@ -106,7 +109,7 @@ public class RouterClientNode extends ClientNode {
             return;
         }
     
-        HashMap tmp = cons;
+        HashMap<String, ConnectionInfo> tmp = cons;
         cons = oldCons;
         oldCons = tmp;
         
