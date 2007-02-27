@@ -155,12 +155,12 @@ public class IPAddressSet implements Serializable {
     }
         
     /**
-     * Checks if this IPAddressSet contains at least one global InetAddress. 
+     * Checks if this IPAddressSet contains at least one public InetAddress. 
      * 
-     * @return true if this IPAddressSet contains at least one global address, 
+     * @return true if this IPAddressSet contains at least one public address, 
      * false otherwise.  
      */
-    public boolean containsGlobalAddress() {        
+    public boolean containsPublicAddress() {        
         return NetworkUtils.containsGlobalAddress(addresses);        
     }
     
@@ -480,10 +480,10 @@ public class IPAddressSet implements Serializable {
 
             if (!NetworkUtils.containsGlobalAddress(addresses)) {
                 DirectSocketFactory.logger.info(" Result does NOT contain " +
-                "global address!");
+                "public address!");
                 // TODO: Try to find the external address here ?
             } else { 
-                DirectSocketFactory.logger.info(" Result contains global " +
+                DirectSocketFactory.logger.info(" Result contains public " +
                 "address!");
             }
 

@@ -45,9 +45,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
     // Should contain all of the above!
     private static final String SEPARATORS = "{}-/~#";
     
-    private transient InetSocketAddress [] external;
-    private transient InetSocketAddress [] global;
-    private transient InetSocketAddress [] local;
+    private transient InetSocketAddress [] externalAds;
+    private transient InetSocketAddress [] publicAds;
+    private transient InetSocketAddress [] privateAds;
     private transient byte [] UUID;
         
     // Unfortunately, this is the least that is required for SSH-tunneling...
@@ -59,13 +59,13 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
     private transient IPAddressSet addressCache;      
     private transient InetSocketAddress [] allAddressesCache;
     
-    private DirectSocketAddress(InetSocketAddress [] external, 
-            InetSocketAddress [] global, InetSocketAddress [] local, 
+    private DirectSocketAddress(InetSocketAddress [] externalAds, 
+            InetSocketAddress [] publicAds, InetSocketAddress [] privateAds, 
             byte [] UUID, String user) {
         
-        this.external = (external == null ? new InetSocketAddress[0]:external);
-        this.global = (global == null ? new InetSocketAddress[0] : global);
-        this.local = (local == null ? new InetSocketAddress[0] : local);
+        this.externalAds = (externalAds == null ? new InetSocketAddress[0]:externalAds);
+        this.publicAds = (publicAds == null ? new InetSocketAddress[0] : publicAds);
+        this.privateAds = (privateAds == null ? new InetSocketAddress[0] : privateAds);
         this.UUID = UUID;
         this.user = user;        
     }
@@ -85,16 +85,16 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
     private void decode(byte [] coded, int off) throws UnknownHostException { 
         int index = off;
 
-        external = new InetSocketAddress[coded[index++] & 0xFF];
-        global = new InetSocketAddress[coded[index++] & 0xFF];
-        local = new InetSocketAddress[coded[index++] & 0xFF];
+        externalAds = new InetSocketAddress[coded[index++] & 0xFF];
+        publicAds = new InetSocketAddress[coded[index++] & 0xFF];
+        privateAds = new InetSocketAddress[coded[index++] & 0xFF];
         
         int uuidLen = coded[index++];
         int userLen = coded[index++] & 0xFF;
         
-        index = decode(external, coded, index);
-        index = decode(global, coded, index);
-        index = decode(local, coded, index);
+        index = decode(externalAds, coded, index);
+        index = decode(publicAds, coded, index);
+        index = decode(privateAds, coded, index);
         
         if (uuidLen > 0) {
             UUID = new byte[uuidLen];
@@ -203,8 +203,8 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * InetAddress + port number, or it has the form (EGLMN (SAP)* (U)*) where:
      *  
      *   E is the number of external addresses that follow (1 byte)
-     *   G is the number of global addresses that follow (1 byte)
-     *   L is the number of local addresses that follow (1 byte)
+     *   G is the number of public addresses that follow (1 byte)
+     *   L is the number of private addresses that follow (1 byte)
      *   M is the length of the UUID (1 byte, normally 0 or 16)
      *   N is the length of the username (1 byte, 0 if unused)
      *   S is the length of the next address (1 byte)
@@ -223,9 +223,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             // First calculate the size of the address n bytes....
             int len = 5;
           
-            len += codedSize(external);
-            len += codedSize(global);
-            len += codedSize(local);
+            len += codedSize(externalAds);
+            len += codedSize(publicAds);
+            len += codedSize(privateAds);
             
             if (UUID != null) { 
                 len += UUID.length;
@@ -241,16 +241,16 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             
             int index = 0;
             
-            codedForm[index++] = (byte) (external.length & 0xFF);
-            codedForm[index++] = (byte) (global.length & 0xFF);
-            codedForm[index++] = (byte) (local.length & 0xFF);
+            codedForm[index++] = (byte) (externalAds.length & 0xFF);
+            codedForm[index++] = (byte) (publicAds.length & 0xFF);
+            codedForm[index++] = (byte) (privateAds.length & 0xFF);
             codedForm[index++] = (byte) ((UUID == null ? 0 : UUID.length) & 0xFF);
             codedForm[index++] = 
                 (byte) ((codedUser == null ? 0 : codedUser.length) & 0xFF);
             
-            index = encode(external, codedForm, index);
-            index = encode(global, codedForm, index);
-            index = encode(local, codedForm, index);
+            index = encode(externalAds, codedForm, index);
+            index = encode(publicAds, codedForm, index);
+            index = encode(privateAds, codedForm, index);
             
             if (UUID != null) { 
                 System.arraycopy(UUID, 0, codedForm, index, UUID.length);
@@ -276,15 +276,15 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             
             ArrayList<InetAddress> tmp = new ArrayList<InetAddress>();
             
-            for (InetSocketAddress a : global) { 
+            for (InetSocketAddress a : publicAds) { 
                 tmp.add(a.getAddress());
             }
             
-            for (InetSocketAddress a : external) { 
+            for (InetSocketAddress a : externalAds) { 
                 tmp.add(a.getAddress());
             }
         
-            for (InetSocketAddress a : local) { 
+            for (InetSocketAddress a : privateAds) { 
                 tmp.add(a.getAddress());
             }
         
@@ -303,26 +303,26 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      */
     public int [] getPorts(boolean includeExternal) { 
         
-        int len = global.length + local.length;
+        int len = publicAds.length + privateAds.length;
         
         if (includeExternal) { 
-            len += external.length;
+            len += externalAds.length;
         }
         
         int [] result = new int[len];
         
         int index = 0;
         
-        for (InetSocketAddress i : global) { 
+        for (InetSocketAddress i : publicAds) { 
             result[index++] = i.getPort();
         }
         
-        for (InetSocketAddress i : local) { 
+        for (InetSocketAddress i : privateAds) { 
             result[index++] = i.getPort();
         }
         
         if (includeExternal) { 
-            for (InetSocketAddress i : external) { 
+            for (InetSocketAddress i : externalAds) { 
                 result[index++] = i.getPort();
             }
         }
@@ -342,20 +342,20 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         
         if (allAddressesCache == null) {
             
-            int len = global.length + external.length + local.length;
+            int len = publicAds.length + externalAds.length + privateAds.length;
                 
             allAddressesCache = new InetSocketAddress[len];
             
             int index = 0;
             
-            System.arraycopy(global, 0, allAddressesCache, index, global.length);
-            index += global.length;
+            System.arraycopy(publicAds, 0, allAddressesCache, index, publicAds.length);
+            index += publicAds.length;
             
-            System.arraycopy(external, 0, allAddressesCache, index, external.length);
-            index += external.length;
+            System.arraycopy(externalAds, 0, allAddressesCache, index, externalAds.length);
+            index += externalAds.length;
             
-            System.arraycopy(local, 0, allAddressesCache, index, local.length);
-            index += local.length;   
+            System.arraycopy(privateAds, 0, allAddressesCache, index, privateAds.length);
+            index += privateAds.length;   
         }
         
         return allAddressesCache;
@@ -368,7 +368,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      *         DirectSocketAddress
      */
     public InetSocketAddress [] getExternalAddresses() {
-        return external;
+        return externalAds;
     }
     
     /**
@@ -378,7 +378,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      *         DirectSocketAddress
      */
     public InetSocketAddress [] getPublicAddresses() {
-        return global;
+        return publicAds;
     }
     
     /**
@@ -388,7 +388,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      *         DirectSocketAddress
      */
     public InetSocketAddress [] getPrivateAddresses() {
-        return local;
+        return privateAds;
     }
     
     /**
@@ -398,7 +398,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * addresses, <code>false</code> otherwise.
      */
     public boolean hasPublicAddress() {
-        return global != null & global.length > 0;
+        return publicAds != null & publicAds.length > 0;
     }    
     
     /**
@@ -409,7 +409,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * external addresses, <code>false</code> otherwise.
      */
     public boolean inExternalAddress(InetSocketAddress a) {
-        return NetworkUtils.contains(external, a);
+        return NetworkUtils.contains(externalAds, a);
     }
     
     /**
@@ -420,7 +420,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * public addresses, <code>false</code> otherwise.
      */
     public boolean inPublicAddress(InetSocketAddress a) {
-        return NetworkUtils.contains(global, a);
+        return NetworkUtils.contains(publicAds, a);
     }    
     
     /**
@@ -431,7 +431,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * private addresses, <code>false</code> otherwise.
      */
     public boolean inPrivateAddress(InetSocketAddress a) {
-        return NetworkUtils.contains(local, a);
+        return NetworkUtils.contains(privateAds, a);
     }
     
     /**
@@ -450,8 +450,8 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         
         if (hashCode == 0) { 
             
-            hashCode = (Arrays.hashCode(external) ^ Arrays.hashCode(global)
-                ^ Arrays.hashCode(local));
+            hashCode = (Arrays.hashCode(externalAds) ^ Arrays.hashCode(publicAds)
+                ^ Arrays.hashCode(privateAds));
             
             // Small chance, but let's fix this case anyway...
             if (hashCode == 0) { 
@@ -488,15 +488,15 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         } 
                  
         // Next, compare ports and addresses..        
-        if (!compare(external, tmp.external)) { 
+        if (!compare(externalAds, tmp.externalAds)) { 
             return false;
         }
         
-        if (!compare(global, tmp.global)) { 
+        if (!compare(publicAds, tmp.publicAds)) { 
             return false;
         }
         
-        if (!compare(local, tmp.local)) { 
+        if (!compare(privateAds, tmp.privateAds)) { 
             return false;
         }
          
@@ -567,31 +567,31 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
 
             boolean needSlash = false;
             
-            if (external.length > 0) { 
+            if (externalAds.length > 0) { 
                 b.append(EXTERNAL_START);
-                partialToString(b, external);
+                partialToString(b, externalAds);
                 b.append(EXTERNAL_END);
                 
                 needSlash = true;
             }
             
-            if (global.length > 0) {
+            if (publicAds.length > 0) {
                 
                 if (needSlash) { 
                     b.append(ADDRESS_SEPERATOR);
                 }
                 
-                partialToString(b, global);
+                partialToString(b, publicAds);
                 needSlash = true;
             }
         
-            if (local.length > 0) {
+            if (privateAds.length > 0) {
                 
                 if (needSlash) { 
                     b.append(ADDRESS_SEPERATOR);
                 }
                 
-                partialToString(b, local);
+                partialToString(b, privateAds);
                 needSlash = true;
             }
         
@@ -680,11 +680,11 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * 
      * if either is loopback -> return true
      * 
-     * if both have global -> return (global overlap ?)
+     * if both have public -> return (public overlap ?)
      * 
      * if both have external && !(external overlap) return false
      * 
-     * if both have local -> return (local overlap)
+     * if both have private -> return (private overlap)
      * 
      * else they are different machines -> return false
      * 
@@ -707,42 +707,42 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                     return false;
                 } 
             } else { 
-                if (other.global.length > 0) { 
+                if (other.publicAds.length > 0) { 
                     // I have a UUID so I must only have private addresses, 
-                    // while the other has global addresses as well...  
+                    // while the other has public addresses as well...  
                     return false;
                 }
             }
         } else { 
-            if (other.UUID != null && global.length > 0) { 
+            if (other.UUID != null && publicAds.length > 0) { 
                 // The other has a UUID so it must only have private addresses, 
-                // while I have global addresses as well...  
+                // while I have public addresses as well...  
                 return false;
             }
         }
         
         // If either is loopback, we always match
-        if (isLoopBack(local) || isLoopBack(other.local)) {
+        if (isLoopBack(privateAds) || isLoopBack(other.privateAds)) {
             return true;
         }
         
         // If both have 'public' addresses, they -MUST- overlap. 
-        if (global.length > 0 && other.global.length > 0) {
-            return compatible(global, other.global, comparePorts);
+        if (publicAds.length > 0 && other.publicAds.length > 0) {
+            return compatible(publicAds, other.publicAds, comparePorts);
         } 
                 
         // If both have external (NAT) addresses, they -MUST- overlap, and the 
-        // local addresses -MUST- overlap also!
+        // private addresses -MUST- overlap also!
        
         // TODO: does this work in the multiple NAT case ? We should also have a
         //   UUID there.... 
-        if (external.length > 0 && other.external.length > 0) {
-            return (compatible(external, other.external, comparePorts) && 
-                compatible(local, other.local, comparePorts));   
+        if (externalAds.length > 0 && other.externalAds.length > 0) {
+            return (compatible(externalAds, other.externalAds, comparePorts) && 
+                compatible(privateAds, other.privateAds, comparePorts));   
         }
         
-        // Else, just check the local addresses.
-        return compatible(local, other.local, comparePorts);
+        // Else, just check the private addresses.
+        return compatible(privateAds, other.privateAds, comparePorts);
     }
     
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -883,22 +883,22 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                     + "number of addresses");
         }        
     
-        int numGlobal = 0;
-        int numLocal = 0;
+        int numPublic = 0;
+        int numPrivate = 0;
         
         for (InetAddress a : other.addresses) {     
             if (NetworkUtils.isExternalAddress(a)) { 
-                numGlobal++;
+                numPublic++;
             } else { 
-                numLocal++;
+                numPrivate++;
             }
         }
 
-        InetSocketAddress [] global = new InetSocketAddress[numGlobal];
-        InetSocketAddress [] local = new InetSocketAddress[numLocal];
+        InetSocketAddress [] publicAds = new InetSocketAddress[numPublic];
+        InetSocketAddress [] privateAds = new InetSocketAddress[numPrivate];
         
-        int globalIndex = 0;
-        int localIndex = 0;
+        int publicIndex = 0;
+        int privateIndex = 0;
         
         for (int i=0;i<other.addresses.length;i++) { 
          
@@ -915,10 +915,10 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             }
             
             if (NetworkUtils.isExternalAddress(other.addresses[i])) { 
-                global[globalIndex++] = 
+                publicAds[publicIndex++] = 
                     new InetSocketAddress(other.addresses[i], port);
             } else { 
-                local[localIndex++] = 
+                privateAds[privateIndex++] = 
                     new InetSocketAddress(other.addresses[i], port);
             }
         }
@@ -949,7 +949,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             }
         }
         
-        return new DirectSocketAddress(extern, global, local, other.UUID, user);
+        return new DirectSocketAddress(extern, publicAds, privateAds, other.UUID, user);
     }
     
     private static InetSocketAddress[] resize(InetSocketAddress [] orig, int add) { 
@@ -1073,10 +1073,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         boolean allowUser = false; 
         boolean allowUUID = false; 
         
-        
-        InetSocketAddress [] external = null; 
-        InetSocketAddress [] global = null; 
-        InetSocketAddress [] local = null; 
+        InetSocketAddress [] externalAds = null; 
+        InetSocketAddress [] publicAds = null; 
+        InetSocketAddress [] privateAds = null; 
         
         byte [] UUID = null;
         
@@ -1124,7 +1123,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                     allowAddress = true;
                     readingExternal = false;
                     
-                    if (local != null && local.length > 0) { 
+                    if (privateAds != null && privateAds.length > 0) { 
                         allowDone = true;
                         allowUUID = true;
                     }
@@ -1220,10 +1219,10 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 }
                     
                 if (readingExternal) { 
-                    external = addToArray(external, currentGlobal, port);
+                    externalAds = addToArray(externalAds, currentGlobal, port);
                 } else { 
-                    global = addToArray(global, currentGlobal, port);
-                    local = addToArray(local, currentLocal, port);
+                    publicAds = addToArray(publicAds, currentGlobal, port);
+                    privateAds = addToArray(privateAds, currentLocal, port);
                 }
                 
                 readingPort = false;
@@ -1270,7 +1269,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                     + " is incomplete!");
         }
         
-        return new DirectSocketAddress(external, global, local, UUID, user);
+        return new DirectSocketAddress(externalAds, publicAds, privateAds, UUID, user);
     }
     
     public static DirectSocketAddress getByAddress(String host, int port) throws UnknownHostException { 
@@ -1336,9 +1335,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         }
         
         return new DirectSocketAddress(
-                merge(s1.external, s2.external), 
-                merge(s1.global, s2.global), 
-                merge(s1.local, s2.local), UUID, user);
+                merge(s1.externalAds, s2.externalAds), 
+                merge(s1.publicAds, s2.publicAds), 
+                merge(s1.privateAds, s2.privateAds), UUID, user);
     } 
     
     /**
@@ -1455,7 +1454,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
     }
 
     public int numberOfAddresses() {
-        return external.length + global.length + local.length;
+        return externalAds.length + publicAds.length + privateAds.length;
     }
 
   

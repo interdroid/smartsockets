@@ -90,7 +90,7 @@ public class DirectSocketFactory {
 
     private NetworkPreference preference;
 
-    private Preference globalFirst;
+    private Preference publicFirst;
     
     private String keyFilePass = "";
 
@@ -139,7 +139,7 @@ public class DirectSocketFactory {
                         
         localAddress = IPAddressSet.getLocalHost();            
                 
-        if (!localAddress.containsGlobalAddress()) {
+        if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;
 
             getUUID();       
@@ -160,10 +160,10 @@ public class DirectSocketFactory {
         preference = NetworkPreference.getPreference(completeAddress, p);
         preference.sort(completeAddress.getAddresses(), true);
 
-        globalFirst = new Preference("PublicBeforePrivate", false);
-        globalFirst.addGlobal();
-        globalFirst.addSite();
-        globalFirst.addLink();
+        publicFirst = new Preference("PublicBeforePrivate", false);
+        publicFirst.addGlobal();
+        publicFirst.addSite();
+        publicFirst.addLink();
         
         if (logger.isInfoEnabled()) {
             logger.info("Local address: " + completeAddress);
@@ -365,7 +365,7 @@ public class DirectSocketFactory {
     }
 
     /**
-     * This method tries to find a global address that is valid for this
+     * This method tries to find a public address that is valid for this
      * machine. When an address is found, it it stored in the externalAddress
      * field.
      */
@@ -412,7 +412,7 @@ public class DirectSocketFactory {
         } 
         
         if (ALLOW_UPNP) {
-            // Try to obtain the global IP address by using UPNP.
+            // Try to obtain the public IP address by using UPNP.
             if (logger.isDebugEnabled()) {
                 logger.debug("Using UPNP to find external address...");
             }
@@ -634,7 +634,7 @@ public class DirectSocketFactory {
                 }
                 
                 if (result == null) { 
-                    // local IP didn't work. Try the global ones ?                  
+                    // local IP didn't work. Try the public ones ?                  
                     for (InetSocketAddress t : sas.getPublicAddresses()) { 
                         result = attemptSSHForwarding(sas, target, t, conn, 
                                 start, userOut, userIn, true);
@@ -1480,7 +1480,7 @@ public class DirectSocketFactory {
         
         // TODO: shouldn't this be done first ?  
         if (forceGlobalFirst) { 
-            sas = globalFirst.sort(sas, false);
+            sas = publicFirst.sort(sas, false);
         } else { 
             sas = preference.sort(sas, false);
         }
