@@ -119,9 +119,14 @@ public class VirtualSocketFactory {
     
         // NOTE: order is VERY important here!
         loadModules();        
-        loadClusterDefinitions();                        
-        createServiceLink();
+        
+        String localCluster = p.getProperty(Properties.CLUSTER_MEMBER, null);
+        
+        createServiceLink(localCluster);
         startModules();        
+        
+        loadClusterDefinitions();                        
+        
         
         if (modules.size() == 0) { 
             logger.warn("Failed to load any modules!");
@@ -138,7 +143,7 @@ public class VirtualSocketFactory {
         clusters = new VirtualClusters(this, properties, getModules()); 
     }
 
-    private void createServiceLink(){ 
+    private void createServiceLink(String localCluster) { 
         
         DirectSocketAddress address = null;
         
@@ -172,7 +177,7 @@ public class VirtualSocketFactory {
             
             String message = "Any Proxies? "; 
             
-            message += clusters.localCluster();
+            message += localCluster;
             
             String result = d.broadcastWithReply(message);
             
@@ -239,7 +244,6 @@ public class VirtualSocketFactory {
                 }
             }
         }
-        
     }
     
     private ConnectModule loadModule(String name) {         
