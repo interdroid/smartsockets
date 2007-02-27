@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.ServiceLink;
+import smartsockets.virtual.InitializationException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -64,7 +65,12 @@ public class Router extends Thread {
             logger.debug("Router creating VirtualSocketFactory");
         }
         
-        factory = VirtualSocketFactory.createSocketFactory(properties, true);        
+        try {
+            factory = VirtualSocketFactory.createSocketFactory(properties, true);
+        } catch (InitializationException e) {
+            throw new IOException("Failed to create socket factory!");
+        }        
+        
         serviceLink = factory.getServiceLink();
         
         if (serviceLink == null) { 

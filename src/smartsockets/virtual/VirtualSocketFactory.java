@@ -1,6 +1,5 @@
 package smartsockets.virtual;
 
-
 import ibis.util.ThreadPool;
 
 import java.io.IOException;
@@ -105,7 +104,7 @@ public class VirtualSocketFactory {
     private ServiceLink serviceLink;    
     private VirtualClusters clusters;
     
-    private VirtualSocketFactory(TypedProperties p) throws Exception {
+    private VirtualSocketFactory(TypedProperties p) throws InitializationException {
                 
         if (logger.isInfoEnabled()) {
             logger.info("Creating VirtualSocketFactory");
@@ -130,7 +129,7 @@ public class VirtualSocketFactory {
         
         if (modules.size() == 0) { 
             logger.warn("Failed to load any modules!");
-            throw new Exception("Failed to load any modules!");
+            throw new InitializationException("Failed to load any modules!");
         }       
         
         localVirtualAddress = new VirtualSocketAddress(myAddresses, 0, 
@@ -294,7 +293,7 @@ public class VirtualSocketFactory {
         return null;
     }
     
-    private void loadModules() throws Exception {         
+    private void loadModules() {         
         // Get the list of modules that we should load...
         String [] mods = 
             properties.getStringList(Properties.MODULES_DEFINE, ",", null);
@@ -752,7 +751,8 @@ public class VirtualSocketFactory {
         factories.put(name, factory);        
     }
         
-    public static VirtualSocketFactory createSocketFactory() {
+    public static VirtualSocketFactory createSocketFactory() 
+        throws InitializationException {
         
         VirtualSocketFactory f = getSocketFactory("default");
         
@@ -765,19 +765,15 @@ public class VirtualSocketFactory {
         return f;        
     }
            
-    public static VirtualSocketFactory createSocketFactory(HashMap p, 
-            boolean addDefaults) {
+    public static VirtualSocketFactory createSocketFactory(Map p, 
+            boolean addDefaults) throws InitializationException {
         return createSocketFactory(new TypedProperties(p), addDefaults);        
     } 
     
     public static VirtualSocketFactory createSocketFactory(TypedProperties p, 
-            boolean addDefaults) {
-        
-        //logger.warn("Creating VirtualSocketFactory(Prop, bool)!", new Exception());
-
-       // System.err.println("Creating VirtualSocketFactory(Prop, bool)!");
-        //new Exception().printStackTrace(System.err);
-
+            boolean addDefaults) throws InitializationException {
+       
+        /*
         if (printerInterval == -1 && printer == null) { 
             
             printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 0);
@@ -787,7 +783,7 @@ public class VirtualSocketFactory {
                 ThreadPool.createNew(printer, "SmartSockets Statistics Printer");
             }
         }
-        
+        */ 
         
         if (p == null) { 
             p = Properties.getDefaultProperties();            
@@ -804,14 +800,10 @@ public class VirtualSocketFactory {
         }
         
         if (factory == null) { 
-            try { 
-                factory = new VirtualSocketFactory(p);
+            factory = new VirtualSocketFactory(p);
                 
-                if (name != null) {                 
-                    factories.put(name, factory);
-                }
-            } catch (Exception e) {
-                logger.warn("Failed to create VirtualSocketFactory!", e);
+            if (name != null) {                 
+                factories.put(name, factory);
             }                       
         }
         

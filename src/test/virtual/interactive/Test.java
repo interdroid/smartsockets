@@ -13,6 +13,7 @@ import java.util.StringTokenizer;
 
 import smartsockets.hub.servicelink.ClientInfo;
 import smartsockets.hub.servicelink.HubInfo;
+import smartsockets.virtual.InitializationException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -325,7 +326,12 @@ public class Test extends Thread {
     private Test(int port) throws IOException {
         
         connectProperties = new HashMap<String, Object>();
-        sf = VirtualSocketFactory.createSocketFactory();
+        
+        try {
+            sf = VirtualSocketFactory.createSocketFactory();
+        } catch (InitializationException e1) {
+            throw new IOException("Failed to create socketfactory!");
+        }
             
         normal = sf.createServerSocket(port, 0, connectProperties);
         connectTest = sf.createServerSocket(port+1, 0, connectProperties);

@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import smartsockets.util.MultiplexStreamFactory;
+import smartsockets.virtual.InitializationException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -15,7 +16,15 @@ public class MultiplexTest1 {
     
     public static void main(String [] args) throws IOException { 
         
-        VirtualSocketFactory sf = VirtualSocketFactory.createSocketFactory();  
+        VirtualSocketFactory sf = null;
+        
+        try {
+            sf = VirtualSocketFactory.createSocketFactory();
+        } catch (InitializationException e1) {
+            System.out.println("Failed to create socketfactory!");
+            e1.printStackTrace();
+            System.exit(1);
+        }
         
         if (args.length > 0) {             
             for  (int i=0;i<args.length;i++) { 

@@ -8,6 +8,7 @@ import java.net.SocketException;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import smartsockets.virtual.InitializationException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -179,7 +180,13 @@ public class Throughput {
             }
         }
 
-        sf = VirtualSocketFactory.createSocketFactory(connectProperties, true);
+        try {
+            sf = VirtualSocketFactory.createSocketFactory(connectProperties, true);
+        } catch (InitializationException e) {
+            System.out.println("Failed to create socketfactory!");
+            e.printStackTrace();
+            System.exit(1);
+        }
         
         if (target == null) { 
             server();

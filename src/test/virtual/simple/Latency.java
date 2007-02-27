@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.util.HashMap;
 
+import smartsockets.virtual.InitializationException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
@@ -128,7 +129,13 @@ public class Latency {
     
     public static void main(String [] args) throws IOException { 
         
-        sf = VirtualSocketFactory.createSocketFactory();
+        try {
+            sf = VirtualSocketFactory.createSocketFactory();
+        } catch (InitializationException e1) {
+            System.out.println("Failed to create socketfactory!");
+            e1.printStackTrace();
+            System.exit(1);
+        }
         
         connectProperties = new HashMap<String, Object>();
 
