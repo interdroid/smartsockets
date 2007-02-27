@@ -986,8 +986,6 @@ public class DirectSocketFactory {
 
         ServerSocket ss = createUnboundServerSocket();
         
-        System.err.println("SS: rec buf: " + receiveBuffer);
-        
         // Must be set here to have any effect...
         if (receiveBuffer > 0) { 
             ss.setReceiveBufferSize(receiveBuffer);
