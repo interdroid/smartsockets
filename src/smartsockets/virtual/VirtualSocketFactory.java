@@ -34,22 +34,20 @@ public class VirtualSocketFactory {
     
     private static class StatisticsPrinter implements Runnable {
         
-        private final int timeout;
+        private int timeout;
         
         StatisticsPrinter(int timeout) { 
-            
-            if (timeout < 1000) { 
-                timeout *= 1000;
-            }
-            
             this.timeout = timeout;
         }
         
         public void run() {
             
             while (true) { 
+                
+                int t = getTimeout();
+                
                 try { 
-                    Thread.sleep(timeout);
+                    Thread.sleep(t);
                 } catch (Exception e){ 
                     // ignore
                 }
@@ -61,6 +59,16 @@ public class VirtualSocketFactory {
                 } catch (Exception e) {
                     // TODO: IGNORE ?
                 }
+            }
+        }
+
+        private synchronized int getTimeout() {
+            return timeout;
+        }
+        
+        public synchronized void adjustInterval(int interval) {
+            if (interval < timeout) { 
+                timeout = interval;
             }
         } 
     }
@@ -773,18 +781,6 @@ public class VirtualSocketFactory {
     public static VirtualSocketFactory createSocketFactory(TypedProperties p, 
             boolean addDefaults) throws InitializationException {
        
-        /*
-        if (printerInterval == -1 && printer == null) { 
-            
-            printerInterval = p.getIntProperty(Properties.STATISTICS_INTERVAL, 0);
-            
-            if (printerInterval > 0) {
-                printer = new StatisticsPrinter(printerInterval);
-                ThreadPool.createNew(printer, "SmartSockets Statistics Printer");
-            }
-        }
-        */ 
-        
         if (p == null) { 
             p = Properties.getDefaultProperties();            
         } else if (addDefaults) { 
@@ -798,13 +794,33 @@ public class VirtualSocketFactory {
         if (name != null) { 
             factory = factories.get(name);
         }
-        
+              
         if (factory == null) { 
             factory = new VirtualSocketFactory(p);
                 
             if (name != null) {                 
                 factories.put(name, factory);
             }                       
+        
+            if (p.containsKey("smartsockets.factory.statistics")) { 
+            
+                int tmp = p.getIntProperty(Properties.STATISTICS_INTERVAL, 0);
+                
+                if (tmp > 0) {
+                
+                    if (tmp < 1000) { 
+                        tmp *= 1000;
+                    }
+                
+                    if (printer == null) { 
+                        printer = new StatisticsPrinter(tmp);
+                        ThreadPool.createNew(printer, 
+                                "SmartSockets Statistics Printer");
+                    } else { 
+                        printer.adjustInterval(tmp);
+                    }
+                }
+            }
         }
         
         return factory;

@@ -111,6 +111,8 @@ public class Properties {
             TIMEOUT,                "5000", 
             LOCAL_TIMEOUT,          "100", 
             
+            STATISTICS_INTERVAL,    "60000",
+            
             SSH_OUT,                "false", 
             SSH_IN,                 "false",
             
