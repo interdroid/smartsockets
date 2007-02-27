@@ -1,16 +1,17 @@
 <project
-    name="multi ip lib"
+    name="SmartSockets"
     default="build"
     basedir=".">
 
     <property name="version" value="smartsockets-1.0rc1"/>
+    <property name="jar" value="${version}.jar"/>
 
     <property name="srcdir" value="./src"/>
     <property name="builddir" value="./build"/>
     <property name="distdir" value="./jars"/>
 
     <property name="external" value="./external/jug-lgpl-2.0.0.jar:./external/ganymed-ssh2-build211beta4-jason.jar:./external/jstun-0.6.0.jar:./external/log4j-1.2.9.jar:./external/ibis-util.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar:./external/TGGraphLayout-JM.jar"/>
-	
+
     <!-- Internal target - Preparations for building. -->
     <target name="prepare"> 
     	<mkdir dir="${distdir}" />
@@ -29,9 +30,9 @@
     <!-- Internal target - Builds the JAR file -->
     <target name="jar" depends="compile">
 
-	<delete failonerror="false" file="${distdir}/smart-sockets.jar" />
+	<delete failonerror="false" file="${distdir}/${jar}" />
 
-	<jar 	jarfile="${distdir}/smart-sockets.jar"
+	<jar 	jarfile="${distdir}/${jar}"
                 basedir="${builddir}"
 		includes="**">
        		<manifest>
@@ -49,7 +50,7 @@
 
 	 <zip destfile="${version}.zip">
             <zipfileset dir="." prefix="${version}"
-                includes="external/**,jars/**,smartsockets.properties,log4j.properties"
+                includes="external/**,jars/**,*.properties"
                 />
             <zipfileset dir="." prefix="${version}" filemode="755"
                 includes="bin/**"
