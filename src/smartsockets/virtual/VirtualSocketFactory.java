@@ -125,20 +125,24 @@ public class VirtualSocketFactory {
        // DISCOVERY_PORT = 
     
         // NOTE: order is VERY important here!
-        loadModules();        
+        loadModules();
+        
+        if (modules.size() == 0) { 
+            logger.info("Failed to load any modules!");
+            throw new InitializationException("Failed to load any modules!");
+        }   
         
         String localCluster = p.getProperty(Properties.CLUSTER_MEMBER, null);
         
         createServiceLink(localCluster);
         startModules();        
         
-        loadClusterDefinitions();                        
-        
-        
         if (modules.size() == 0) { 
-            logger.warn("Failed to load any modules!");
+            logger.info("Failed to start any modules!");
             throw new InitializationException("Failed to load any modules!");
         }       
+        
+        loadClusterDefinitions();                        
         
         localVirtualAddress = new VirtualSocketAddress(myAddresses, 0, 
                 hubAddress, clusters.localCluster());
@@ -210,8 +214,8 @@ public class VirtualSocketFactory {
         if (address == null) { 
             // properties not set, so no central hub is available
           //  if (logger.isInfoEnabled()) {
-                System.out.println("ServiceLink not created: no hub address available!");
-                logger.warn("ServiceLink not created: no hub address available!");
+              //  System.out.println("ServiceLink not created: no hub address available!");
+                logger.info("ServiceLink not created: no hub address available!");
           //  }
             return;
         }  
@@ -295,7 +299,7 @@ public class VirtualSocketFactory {
             return (ConnectModule) c.newInstance();
             
         } catch (Exception e) {
-            logger.warn("Failed to load module " + classname, e);
+            logger.info("Failed to load module " + classname, e);
         }
 
         return null;
@@ -303,13 +307,13 @@ public class VirtualSocketFactory {
     
     private void loadModules() {         
         // Get the list of modules that we should load...
-        String [] mods = 
-            properties.getStringList(Properties.MODULES_DEFINE, ",", null);
+        String [] mods = properties.getStringList(Properties.MODULES_DEFINE, 
+                ",", new String[0]);
 
         int count = mods.length;
         
         if (mods == null || mods.length == 0) { 
-            logger.error("No smartsockets modules defined!");
+            logger.info("No smartsockets modules defined!");
             return;
         }
         
@@ -362,7 +366,7 @@ public class VirtualSocketFactory {
 
                     modules.add(m);
                 } catch (Exception e) {
-                    logger.warn("Failed to load module: " + mods[i], e);
+                    logger.info("Failed to load module: " + mods[i], e);
                     mods[i] = null;
                     count--;
                 }
@@ -419,7 +423,7 @@ public class VirtualSocketFactory {
             }  
         
             for (ConnectModule c : failed) {
-                logger.warn("Module " + c.module 
+                logger.info("Module " + c.module 
                         + " removed (no serviceLink)!");  
                 modules.remove(c);
             }

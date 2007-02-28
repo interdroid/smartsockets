@@ -89,7 +89,7 @@ public class Direct extends AbstractDirectModule {
             }
             
         } catch (IOException e) {            
-            logger.warn(module + ": Failed to create ServerSocket on port " 
+            logger.info(module + ": Failed to create ServerSocket on port " 
                     + port, e);
             throw e;
         }
