@@ -259,6 +259,6 @@ public class Properties {
             defaultProperties.putAll(system);
         } 
         
-        return defaultProperties;        
+        return new TypedProperties(defaultProperties);        
     }
 }

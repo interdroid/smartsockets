@@ -31,6 +31,20 @@ public class TypedProperties extends Properties {
     }
 
     /**
+     * Adds all properties to the current property set, possibly overwriting
+     * the current ones. Unlike the default putAll method, this one also
+     * looks in the nested property sets of the parameter.
+     * @param p the properties to add.
+     */
+    public void putAll(Properties p) {
+        for (Enumeration e = p.propertyNames(); e.hasMoreElements();) {
+            String key = (String) e.nextElement();
+            String value = p.getProperty(key);
+            setProperty(key, value);
+        }
+    }
+
+    /**
      * Returns true if property <code>name</code> is defined and has a value
      * that is conventionally associated with 'true' (as in Ant): any of 1, on,
      * true, yes.
