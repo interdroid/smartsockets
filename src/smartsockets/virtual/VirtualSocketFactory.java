@@ -583,7 +583,7 @@ public class VirtualSocketFactory {
         int timeLeft = timeout;
         int partialTimeout;
         
-        if (timeout > 0 && order.length > 1) { 
+        if (timeout > 0 && order.length > 0) { 
             partialTimeout = (timeout / order.length);
         } else if (order.length > 0)  { 
             partialTimeout = DEFAULT_TIMEOUT;
