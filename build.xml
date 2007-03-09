@@ -3,7 +3,7 @@
     default="build"
     basedir=".">
 
-    <property name="version" value="smartsockets-1.0rc3"/>
+    <property name="version" value="smartsockets-1.0rc4"/>
     <property name="jar" value="${version}.jar"/>
 
     <property name="srcdir" value="./src"/>

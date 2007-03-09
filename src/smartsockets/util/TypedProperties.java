@@ -16,8 +16,8 @@ public class TypedProperties extends Properties {
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("unchecked")
-    public TypedProperties(Map initialValues) {        
-        if (initialValues != null) {        
+    public TypedProperties(Map initialValues) {
+        if (initialValues != null) {
             putAll(initialValues);
         }
     }
@@ -31,10 +31,12 @@ public class TypedProperties extends Properties {
     }
 
     /**
-     * Adds all properties to the current property set, possibly overwriting
-     * the current ones. Unlike the default putAll method, this one also
-     * looks in the nested property sets of the parameter.
-     * @param p the properties to add.
+     * Adds all properties to the current property set, possibly overwriting the
+     * current ones. Unlike the default putAll method, this one also looks in
+     * the nested property sets of the parameter.
+     * 
+     * @param p
+     *            the properties to add.
      */
     public void putAll(Properties p) {
         for (Enumeration e = p.propertyNames(); e.hasMoreElements();) {
@@ -73,7 +75,7 @@ public class TypedProperties extends Properties {
 
         if (value != null) {
             return value.equals("1") || value.equals("on") || value.equals("")
-                || value.equals("true") || value.equals("yes");
+                    || value.equals("true") || value.equals("yes");
         }
 
         return defaultValue;
@@ -99,7 +101,7 @@ public class TypedProperties extends Properties {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new NumberFormatException("Integer expected for property "
-                + key + ", not \"" + value + "\"");
+                    + key + ", not \"" + value + "\"");
         }
     }
 
@@ -125,7 +127,7 @@ public class TypedProperties extends Properties {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             throw new NumberFormatException("Integer expected for property "
-                + key + ", not \"" + value + "\"");
+                    + key + ", not \"" + value + "\"");
         }
     }
 
@@ -149,7 +151,7 @@ public class TypedProperties extends Properties {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
             throw new NumberFormatException("Long expected for property " + key
-                + ", not \"" + value + "\"");
+                    + ", not \"" + value + "\"");
         }
     }
 
@@ -175,7 +177,7 @@ public class TypedProperties extends Properties {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
             throw new NumberFormatException("Long expected for property " + key
-                + ", not \"" + value + "\"");
+                    + ", not \"" + value + "\"");
         }
     }
 
@@ -199,7 +201,7 @@ public class TypedProperties extends Properties {
             return Short.parseShort(value);
         } catch (NumberFormatException e) {
             throw new NumberFormatException("Short expected for property "
-                + key + ", not \"" + value + "\"");
+                    + key + ", not \"" + value + "\"");
         }
     }
 
@@ -225,7 +227,7 @@ public class TypedProperties extends Properties {
             return Short.parseShort(value);
         } catch (NumberFormatException e) {
             throw new NumberFormatException("Short expected for property "
-                + key + ", not \"" + value + "\"");
+                    + key + ", not \"" + value + "\"");
         }
     }
 
@@ -288,20 +290,21 @@ public class TypedProperties extends Properties {
 
         } catch (NumberFormatException e) {
             throw new NumberFormatException(
-                "Long[G|g|M|m|K|k] expected for property " + key + ", not \""
-                    + value + "\"");
+                    "Long[G|g|M|m|K|k] expected for property " + key
+                            + ", not \"" + value + "\"");
         }
     }
-    
+
     public String[] getStringList(String key) {
         return getStringList(key, ",", new String[0]);
     }
-   
+
     public String[] getStringList(String key, String delim) {
         return getStringList(key, delim, new String[0]);
     }
 
-    public String[] getStringList(String key, String delim, String [] defaultValue) {
+    public String[] getStringList(String key, String delim,
+            String[] defaultValue) {
         String value = getProperty(key);
 
         if (value == null) {
@@ -310,8 +313,7 @@ public class TypedProperties extends Properties {
 
         return value.split(delim);
     }
-    
-    
+
     /**
      * Returns true if property name is defined and has a string value that
      * equals match.
@@ -370,7 +372,7 @@ public class TypedProperties extends Properties {
      *            unknown property
      */
     public TypedProperties checkProperties(String prefix, String[] validKeys,
-        String[] validPrefixes, boolean printWarning) {
+            String[] validPrefixes, boolean printWarning) {
         TypedProperties result = new TypedProperties();
 
         if (prefix == null) {
@@ -388,10 +390,10 @@ public class TypedProperties extends Properties {
                 String suffix = key.substring(prefix.length());
 
                 if (!startsWith(suffix, validPrefixes)
-                    && !contains(validKeys, suffix)) {
+                        && !contains(validKeys, suffix)) {
                     if (printWarning) {
                         System.err.println("Warning, unknown property: " + key
-                            + " with value: " + value);
+                                + " with value: " + value);
                     }
                     result.put(key, value);
                 }
@@ -403,13 +405,15 @@ public class TypedProperties extends Properties {
     /**
      * Returns all properties who's key start with a certain prefix.
      * 
-     * @return a Property object containing all matching properties. 
-     * @param prefix the desired prefix
-     * @param removePrefix should the prefix be removed from the property name ? 
+     * @return a Property object containing all matching properties.
+     * @param prefix
+     *            the desired prefix
+     * @param removePrefix
+     *            should the prefix be removed from the property name ?
      */
-    public TypedProperties filter(String prefix, boolean removePrefix, 
+    public TypedProperties filter(String prefix, boolean removePrefix,
             boolean removeProperties) {
-        
+
         TypedProperties result = new TypedProperties();
 
         if (prefix == null) {
@@ -418,20 +422,20 @@ public class TypedProperties extends Properties {
 
         for (Enumeration e = propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
-            
+
             if (key.startsWith(prefix)) {
-            
+
                 String value = getProperty(key);
-               
+
                 if (removePrefix) {
-                    result.put(key.substring(prefix.length()),  value);
-                } else {                 
+                    result.put(key.substring(prefix.length()), value);
+                } else {
                     result.put(key, value);
                 }
-                
-                if (removeProperties) { 
+
+                if (removeProperties) {
                     remove(key);
-                }                
+                }
             }
         }
 
@@ -477,5 +481,27 @@ public class TypedProperties extends Properties {
         }
 
         return result;
-    }    
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof TypedProperties)) {
+            return false;
+        }
+
+        TypedProperties other = (TypedProperties) object;
+
+        for (Enumeration e = propertyNames(); e.hasMoreElements();) {
+            String key = (String) e.nextElement();
+            String value = getProperty(key);
+
+            String otherValue = other.getProperty(key);
+
+            if (otherValue == null || !otherValue.equals(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
