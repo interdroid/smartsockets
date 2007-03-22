@@ -821,12 +821,12 @@ public class VirtualSocketFactory {
 
         TypedProperties typedProperties = new TypedProperties();
 
-        if (properties != null) {
-            typedProperties.putAll(properties);
-        }
-
         if (addDefaults) {
             typedProperties.putAll(Properties.getDefaultProperties());
+        }
+
+        if (properties != null) {
+            typedProperties.putAll(properties);
         }
 
         VirtualSocketFactory factory = new VirtualSocketFactory(typedProperties);
