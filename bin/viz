@@ -16,7 +16,7 @@ SPECIAL=
 while [ $# -gt 0 ]
 do
 
-        HEADER=`echo $1 | head --bytes=2`
+        HEADER=`echo $1 | sed 's/\(..\).*/\1/'`
 
         case "$HEADER" in
         -D)
