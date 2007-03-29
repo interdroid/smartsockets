@@ -236,20 +236,26 @@ public class Properties {
 
             // If the file is not explicitly set to null, we try to load it.
             if (file != null) {
-                
-                TypedProperties fromFile = getPropertyFile(file);
-                
-                if (fromFile == null) { 
-	            if (!file.equals(DEFAULT_FILE)) { 
-                    	// If we fail to load the user specified file, we give an
-                    	// error, since only the default file may fail silently.                     
-                    	logger.error("User specified preferences \"" + file 
-                        	    + "\" not found!");
-                    }                                            
-                } else {                  
-                    // If we managed to load the file, we add the properties to 
-                    // the 'defaultProperties' possibly overwriting defaults.
+                String fn = System.getProperty("user.home")
+                    + System.getProperty("file.separator") + file;
+                TypedProperties fromFile = getPropertyFile(fn);
+                if (fromFile != null) {
                     defaultProperties.putAll(fromFile);
+                } else {
+                    fromFile = getPropertyFile(file);
+                    
+                    if (fromFile == null) { 
+                        if (!file.equals(DEFAULT_FILE)) { 
+                            // If we fail to load the user specified file, we give an
+                            // error, since only the default file may fail silently.                     
+                            logger.error("User specified preferences \"" + file 
+                                        + "\" not found!");
+                        }                                            
+                    } else {                  
+                        // If we managed to load the file, we add the properties to 
+                        // the 'defaultProperties' possibly overwriting defaults.
+                        defaultProperties.putAll(fromFile);
+                    }
                 }
             }
             
