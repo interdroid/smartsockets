@@ -284,14 +284,18 @@ public class NetworkPreference {
             
             for (NetworkSet s : nws) {
                 
-                logger.warn("Got Network \"" + name + "\" looking for: \"" + s.name + "\"");
+                if (logger.isInfoEnabled()) { 
+                    logger.info("Got Network \"" + name + "\" looking for: \"" 
+                            + s.name + "\"");
+                } 
                 
                 if (name.equals(s.name)) { 
                     found = true;
                     tmp.add(s);
-                    
-                    logger.warn("Got IT!");
-                    
+                
+                    if (logger.isInfoEnabled()) { 
+                        logger.info("Found requested network!");
+                    } 
                     
                     break;
                 }

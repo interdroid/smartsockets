@@ -259,13 +259,12 @@ public class ServiceLink implements Runnable {
 
             hub.setTcpNoDelay(true);
 
-            // if (logger.isInfoEnabled()) {
-            logger
-                    .warn("Service link send buffer = "
+            if (logger.isInfoEnabled()) {
+                logger.info("Service link send buffer = "
                             + hub.getSendBufferSize());
-            logger.warn("Service link recv buffer = "
+                logger.info("Service link recv buffer = "
                     + hub.getReceiveBufferSize());
-            // }
+            }
 
             out = new DataOutputStream(new BufferedOutputStream(hub
                     .getOutputStream()));

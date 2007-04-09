@@ -126,7 +126,7 @@ public class Hubrouted extends ConnectModule
                         target.port(), localFragmentation, localBufferSize, 
                         timeleft);
             
-                return s;               
+             //   return s;               
             } catch (IOException e) {
                 // No connection to hub, or the send failed. Just retry ? 
                 failedOutgoingConnections++;

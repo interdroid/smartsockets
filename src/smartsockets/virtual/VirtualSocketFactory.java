@@ -602,6 +602,13 @@ public class VirtualSocketFactory {
                     newTimeout = 1000;
                 }
                 
+                if (conlogger.isInfoEnabled()) {
+                    conlogger.info(getVirtualAddressAsString()
+                            + ": Success " + m.module + " connected to "
+                            + target + " now waiting for accept (for max. " 
+                            + newTimeout + " ms.)");
+                }
+                                
                 try { 
                     vs.waitForAccept(newTimeout);
                     vs.setTcpNoDelay(false);
@@ -610,7 +617,7 @@ public class VirtualSocketFactory {
                     
                     if (conlogger.isInfoEnabled()) {
                         conlogger.info(getVirtualAddressAsString()
-                                + ": Sucess " + m.module + " connected to "
+                                + ": Success " + m.module + " connected to "
                                 + target + " (time = " + (end - start)
                                 + " ms.)");
                     }
@@ -649,8 +656,16 @@ public class VirtualSocketFactory {
                     }
                     
                     backoff *= 2;
+                
+                } catch (IOException e) {
+
+                    if (conlogger.isDebugEnabled()) {
+                        conlogger.debug("Connection failed due to exception", e);
+                    }
+    
+                    throw e;
                 }
-            }
+            } 
         }
     }
 
@@ -659,6 +674,12 @@ public class VirtualSocketFactory {
 
         // Note: it's up to the user to ensure that this thing is large enough!
         // i.e., it should be of size 1+modules.length
+        
+        if (conlogger.isDebugEnabled()) { 
+            conlogger.debug("createClientSocket(" + target + ", " + timeout 
+                    + ", " + prop + ")");
+        }
+        
         long[] timing = null;
 
         if (prop != null) {

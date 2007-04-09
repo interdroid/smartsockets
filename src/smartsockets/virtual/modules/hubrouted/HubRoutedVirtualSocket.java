@@ -15,6 +15,7 @@ import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.virtual.TargetOverloadedException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
+import smartsockets.virtual.VirtualSocketFactory;
 
 public class HubRoutedVirtualSocket extends VirtualSocket {
     
@@ -91,6 +92,11 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
  
     protected void connectionAccepted(int timeout) throws IOException { 
     
+        if (timeout <= 0) { 
+            // TODO: Use property here to set default timeout!
+            timeout = 120000;
+        }
+        
         long deadline = System.currentTimeMillis() + timeout;
         long timeleft = timeout;
         
@@ -117,7 +123,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
                     timeleft = deadline - System.currentTimeMillis();
 
                     if (timeleft <= 0) {
-                        throw new SocketTimeoutException("Handshake timed out!");
+                        throw new SocketTimeoutException("Handshake timed out (" + timeout + ", " + timeleft + ") !");
                     }
                 }
             }
