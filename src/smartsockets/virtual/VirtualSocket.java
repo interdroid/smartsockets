@@ -291,9 +291,9 @@ public abstract class VirtualSocket {
     }
       */
 
-    public abstract void waitForAccept() throws IOException;
+    public abstract void waitForAccept(int timeout) throws IOException;
     protected abstract void connectionAccepted(int timeout) throws IOException;
-    protected abstract void connectionRejected();
+    protected abstract void connectionRejected(int timeout);
         
     
 }

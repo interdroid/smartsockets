@@ -34,9 +34,10 @@ public class SplicedVirtualSocket extends VirtualSocket {
     protected void connectionAccepted(int timeout) throws IOException { 
         
         try { 
+            s.setSoTimeout(timeout);
             out.write(Splice.ACCEPT);
             out.flush();        
-            
+            s.setSoTimeout(0);
             // Do we need a three way handshake here ????
             
             // Not sure why this is needed...
@@ -49,9 +50,10 @@ public class SplicedVirtualSocket extends VirtualSocket {
     }
     
     // TODO: don't like that this is public!!
-    public void connectionRejected() { 
+    public void connectionRejected(int timeout) { 
         
         try { 
+            s.setSoTimeout(timeout);
             out.write(Splice.CONNECTION_REJECTED);
             out.flush();
         } catch (Exception e) {
@@ -61,14 +63,17 @@ public class SplicedVirtualSocket extends VirtualSocket {
         } 
     }
     
-    public void waitForAccept() throws IOException {
+    public void waitForAccept(int timeout) throws IOException {
         
         try { 
+            s.setSoTimeout(timeout);
+            
             int result = in.read();
         
             switch (result) {
             case Splice.ACCEPT:
                 // TODO: find decent port here ?
+                s.setSoTimeout(0);
                 return;
                 
             case Splice.PORT_NOT_FOUND:

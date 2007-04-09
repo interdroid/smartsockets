@@ -3,11 +3,10 @@ package smartsockets.virtual.modules.hubrouted;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
 import smartsockets.Properties;
 import smartsockets.direct.DirectSocketAddress;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
@@ -85,8 +84,8 @@ public class Hubrouted extends ConnectModule
     }
 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map<String, Object> properties) 
-        throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) throws ModuleNotSuitableException, 
+            IOException {
         
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module...
@@ -127,6 +126,7 @@ public class Hubrouted extends ConnectModule
                         target.port(), localFragmentation, localBufferSize, 
                         timeleft);
             
+                return s;               
             } catch (IOException e) {
                 // No connection to hub, or the send failed. Just retry ? 
                 failedOutgoingConnections++;
@@ -164,23 +164,39 @@ public class Hubrouted extends ConnectModule
                     acceptedOutgoingConnections++;
                     return s;
                     
-                case -1: // timeout
-                    failedOutgoingConnections++;
-                    throw new SocketTimeoutException("ACK timed out!");
+                case ServiceLinkProtocol.ERROR_SERVER_OVERLOAD:
+                    // This one should be handled on a higher level, where we 
+                    // have a clue about timeouts
+                    s.setTargetOverload();
+                    return s;
                     
+                case -1: 
+                    // Timeout. Assume it is this module's fault
+                    failedOutgoingConnections++;
+                    throw new ModuleNotSuitableException("Failed to create "
+                            + "virtual connection to " + target + " within "
+                            + timeout + " ms.");      
+                    // throw new SocketTimeoutException("ACK timed out!");
+                
+                case ServiceLinkProtocol.ERROR_UNKNOWN_HOST:
+                    // We couldn't find the machine. Assume its our own fault.
+                    failedOutgoingConnections++;
+                    throw new ModuleNotSuitableException("Failed to find "
+                            + target + " within " + timeout + " ms.");      
+                    // throw new UnknownHostException("Unknown host " + target);
+                
                 case ServiceLinkProtocol.ERROR_PORT_NOT_FOUND:
+                    // User error
                     failedOutgoingConnections++;
                     throw new ConnectException("Remote port not found!");
                     
                 case ServiceLinkProtocol.ERROR_CONNECTION_REFUSED:
+                    // User error
                     failedOutgoingConnections++;
                     throw new ConnectException("Connection refused!");
                     
-                case ServiceLinkProtocol.ERROR_UNKNOWN_HOST:
-                    failedOutgoingConnections++;
-                    throw new UnknownHostException("Unknown host " + target);
-                    
                 case ServiceLinkProtocol.ERROR_ILLEGAL_TARGET:
+                    // User error
                     failedOutgoingConnections++;
                     throw new ConnectException("Connection refused!");
                 }
@@ -226,19 +242,20 @@ public class Hubrouted extends ConnectModule
         
         sockets.put(index, s);
                 
-        if (!ss.incomingConnection(s)) { 
+        int accept = ss.incomingConnection(s);
+        
+        if (accept != 0) { 
             sockets.remove(index);
             rejectedIncomingConnections++;
-            serviceLink.nackVirtualConnection(index, 
-                    ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);
+            
+            if (accept == -1) { 
+                serviceLink.nackVirtualConnection(index, 
+                        ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);
+            } else { 
+                serviceLink.nackVirtualConnection(index, 
+                        ServiceLinkProtocol.ERROR_SERVER_OVERLOAD);
+            }
         } 
-        
-        /* ACK will be send during accept!
-          
-          else {
-            acceptedIncomingConnections++;
-            serviceLink.ackVirtualConnection(index, localFragmentation, localBufferSize); 
-        }*/
     }
 
     public void disconnect(long vc) {

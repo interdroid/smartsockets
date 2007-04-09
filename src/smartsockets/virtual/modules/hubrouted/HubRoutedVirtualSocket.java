@@ -12,6 +12,7 @@ import java.util.Map;
 
 import smartsockets.hub.servicelink.ServiceLink;
 import smartsockets.hub.servicelink.ServiceLinkProtocol;
+import smartsockets.virtual.TargetOverloadedException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
 
@@ -45,6 +46,8 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
     private boolean waitingForACKACK = false;
     private boolean gotACKACK = false;
     private boolean ackACKResult = false;
+    
+    private boolean gotTargetOverload = false;
     
     protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
             int localBufferSize, int localMinimalACKSize, 
@@ -127,43 +130,17 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
         }
     }
     
-    public void connectionRejected() { 
+    public void connectionRejected(int timeout) { 
         serviceLink.nackVirtualConnection(connectionIndex, 
                 ServiceLinkProtocol.ERROR_CONNECTION_REFUSED);         
     }
     
-    public void waitForAccept() throws IOException {
+    public void waitForAccept(int timeout) throws IOException {
         
-        /*
-        try { 
-            int result = in.read();
-        
-            switch (result) {
-            case Direct.ACCEPT:
-                // TODO: find decent port here ?
-                return;
-                
-            case Direct.PORT_NOT_FOUND:
-                throw new SocketException("Remote port not found");                
-                
-            case Direct.WRONG_MACHINE:            
-                throw new SocketException("Connection ended up on wrong machine!");
-                
-            case Direct.CONNECTION_REJECTED:
-                throw new SocketException("Connection rejected");
-                
-            default:
-                throw new SocketException("Got unknown reply during connect!");
-            }
-            
-        } catch (IOException e) {
-            // This module worked fine, but we got a 'normal' exception while 
-            // connecting (i.e., because the other side refused to connection). 
-            // There is no use trying other modules.
-            DirectSocketFactory.close(s, out, in);
-            throw e;
-        } */
-        
+        if (gotTargetOverload) { 
+            throw new TargetOverloadedException("Connection refused, " +
+                    "target socket overloaded!");
+        }
     }
         
     protected void close(boolean local) {
@@ -345,10 +322,15 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
                 timeout);        
     }
    
+    protected void setTargetOverload() { 
+        gotTargetOverload = true;
+    }
+    
     protected synchronized void reset(long index) {
         connectionIndex = index;
         gotACK = false;
         waitingForACK = true;
+        gotTargetOverload = false;
     }
 
     protected synchronized int waitForACK(int timeout) {

@@ -119,8 +119,8 @@ public class Splice extends AbstractDirectModule {
     }
         
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map<String, Object> properties)         
-        throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) throws ModuleNotSuitableException,
+            IOException {
 
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
@@ -205,23 +205,32 @@ public class Splice extends AbstractDirectModule {
                     target + " failed to participate in splicing");
         }
         
+        
         // We got our reply, so get the target range we want to check....
-        DirectSocketAddress tmp = toSocketAddressSet(message[2]);
-        boolean otherBehindNAT = (message[3][0] == 1);
+        try { 
+            DirectSocketAddress tmp = toSocketAddressSet(message[2]);
+            boolean otherBehindNAT = (message[3][0] == 1);
         
-        DirectSocketAddress [] a = getTargetRange(otherBehindNAT, tmp);
-        
-        // Try to connect to the target
-        DirectSocket s = connect(a, localPort[0], DEFAULT_TIMEOUT, target.port());
-                
-        if (s == null) { 
+            DirectSocketAddress [] a = getTargetRange(otherBehindNAT, tmp);
+      
+            // Try to connect to the target
+            DirectSocket s = connect(a, localPort[0], DEFAULT_TIMEOUT, target.port());
+                  
+            if (s == null) { 
+                throw new ModuleNotSuitableException(module + ": Failed to connect "
+                        + " to " + target);                         
+            }  
+            
+            return createVirtualSocket(target, s);
+               
+        } catch (IOException e) { 
             throw new ModuleNotSuitableException(module + ": Failed to connect "
-                    + " to " + target);                         
-        }
-
+                    + " to " + target, e);
+        }    
+        
         // If the connection was succesfull, we hand over the socket to the 
         // parent for handshakes, checks, etc.
-        return handleConnect(target, s, timeout, properties);
+       // return handleConnect(target, s, timeout, properties);
     }
 
     private DirectSocketAddress [] getTargetRange(boolean behindNAT,  
@@ -323,7 +332,7 @@ public class Splice extends AbstractDirectModule {
     }
     
     private int getInfo(int timeout, DirectSocketAddress [] result, 
-            int [] localPort) throws IOException, ModuleNotSuitableException {
+            int [] localPort) throws ModuleNotSuitableException {
         
         int local = -1;        
         
@@ -332,11 +341,16 @@ public class Splice extends AbstractDirectModule {
             // Shortcut for machines that are NOT behind NAT. Since there is  
             // no port mapping here, we don't have to contact any hub. 
             // Multihomed machines behind a firewall also use this shortcut as 
-            // soon as there external address is known.
-            localPort[0] = getLocalPort(timeout); 
-            result[0] = DirectSocketAddress.getByAddress(externalAddress, 
-                    localPort[0]);
-            
+            // soon as an external address is known.
+            try { 
+                localPort[0] = getLocalPort(timeout); 
+                result[0] = DirectSocketAddress.getByAddress(externalAddress, 
+                        localPort[0]);
+            } catch (IOException e) { 
+                throw new ModuleNotSuitableException("Failed to create local" 
+                        + " port");
+            }
+                
             return timeout;
         }
         
@@ -363,7 +377,8 @@ public class Splice extends AbstractDirectModule {
         
                 // Failed to get list of hubs!
                 if (hub == null) {
-                    throw new ModuleNotSuitableException("Failed to find external hub");            
+                    throw new ModuleNotSuitableException("Failed to find " +
+                            "external hub");            
                 }
             }
                 
@@ -409,8 +424,8 @@ public class Splice extends AbstractDirectModule {
                 timeleft = deadline - System.currentTimeMillis();
 
                 if (timeleft <= 0) { 
-                    throw new SocketTimeoutException("Timeout while trying" 
-                            + " to find external hub");
+                    throw new ModuleNotSuitableException("Timeout while looking"
+                            + " for external hub");        
                 }
             }            
         }
@@ -466,7 +481,7 @@ public class Splice extends AbstractDirectModule {
     }
     
     private DirectSocket connect(DirectSocketAddress [] target, int localPort, 
-            int timeout, int userdata) throws IOException, ModuleNotSuitableException {
+            int timeout, int userdata) throws ModuleNotSuitableException {
         
         // TODO: This will give you very long waiting time before the setup 
         // fails! Better to fail fast and retry the entire setup ? Or maybe 
@@ -628,6 +643,26 @@ public class Splice extends AbstractDirectModule {
         }
     }
 
+    private VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
+            DirectSocket s) throws IOException {
+        
+        DataInputStream in = null;
+        DataOutputStream out = null;
+        
+        try {
+            in = new DataInputStream(s.getInputStream());
+            out = new DataOutputStream(s.getOutputStream());    
+            return new SplicedVirtualSocket(a, s, out, in, null);     
+        } catch (IOException e) {
+            // This module worked fine, but we got a 'normal' exception while 
+            // connecting (i.e., because the other side refused to connection). 
+            // There is no use trying other modules.          
+            failedOutgoingConnections++;
+            DirectSocketFactory.close(s, out, in);
+            throw e;
+        }
+    }   
+    
     protected VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
             DirectSocket s, DataOutputStream out, DataInputStream in) {     
         return new SplicedVirtualSocket(a, s, out, in, null);

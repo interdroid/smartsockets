@@ -1,7 +1,5 @@
 package smartsockets.virtual.modules.reverse;
 
-
-import java.io.IOException;
 import java.util.Map;
 
 import smartsockets.direct.DirectSocketAddress;
@@ -10,6 +8,7 @@ import smartsockets.virtual.ModuleNotSuitableException;
 import smartsockets.virtual.VirtualServerSocket;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
+import smartsockets.virtual.modules.AbstractDirectModule;
 import smartsockets.virtual.modules.MessagingModule;
 import smartsockets.virtual.modules.direct.Direct;
 import smartsockets.virtual.modules.direct.DirectVirtualSocket;
@@ -64,11 +63,10 @@ public class Reverse extends MessagingModule {
         // Nothing to do here....
         return null;
     }
-        
+    
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map<String, Object> properties) 
-        throws ModuleNotSuitableException, IOException {
-
+            Map<String, Object> properties) throws ModuleNotSuitableException {
+       
         // When the reverse module is asked for a connection to a remote 
         // address, it simply creates a local serversocket and send a message 
         // to the remote machine asking for a connection. If no connection comes 
@@ -84,13 +82,21 @@ public class Reverse extends MessagingModule {
                 "a connection to myself!"); 
         }
                 
-        if (timeout == 0 || timeout > DEFAULT_TIMEOUT) { 
+        if (timeout == 0) { 
             timeout = DEFAULT_TIMEOUT; 
         }
-                        
-        VirtualServerSocket ss = 
-            (VirtualServerSocket) parent.createServerSocket(0, 1, null);
-                       
+        
+        VirtualServerSocket ss = null;
+        
+        try { 
+            ss = (VirtualServerSocket) parent.createServerSocket(0, 1, null);
+        } catch (Exception e) {
+            // All exceptions are converted into a module not suitable 
+            // exception. 
+            throw new ModuleNotSuitableException(module + ": Failed to set up " +
+                    "reverse connection", e); 
+        } 
+        
         byte [][] message = new byte[5][];
         
         VirtualSocketAddress vs = ss.getLocalSocketAddress();
@@ -99,7 +105,7 @@ public class Reverse extends MessagingModule {
         message[1] = fromSocketAddressSet(vs.machine());
         message[2] = fromInt(vs.port());
         message[3] = fromSocketAddressSet(vs.hub());
-        message[4] = fromString(vs.cluster());
+        message[4] = fromString(vs.cluster());        
         
         serviceLink.send(target.machine(), target.hub(), module, PLEASE_CONNECT, 
                 message);
@@ -108,17 +114,22 @@ public class Reverse extends MessagingModule {
         
         try { 
             ss.setSoTimeout(timeout);            
-            // TODO: Check we connected to the right machine here ? 
             s = (DirectVirtualSocket) ss.accept();
         } catch (Exception e) {
+            // All exceptions are converted into a module not suitable 
+            // exception. 
             throw new ModuleNotSuitableException(module + ": Failed to set up " +
-                    "reverse connection"); 
+                    "reverse connection", e); 
         } finally { 
-            ss.close();
+            try { 
+                ss.close();
+            } catch (Exception e) {
+                // ignored
+            }
         }
         
-        // Now wait for the remote accept to finish 
-        s.waitForAccept();      
+        // The rest of the connection setup is handled by the generic code in 
+        // the virtual socket factory. 
         return s;
     }
     
@@ -136,12 +147,19 @@ public class Reverse extends MessagingModule {
             // we created on the other side. Now we must check if the server 
             // socket on our side is also willing to accept it.
                         
-            if (!ss.incomingConnection(s)) { 
-                // TODO: send reply ??
+            int accept = ss.incomingConnection(s);
+            
+            if (accept != 0) {
+                
+                if (accept == -1) { 
+                    s.connectionRejected(AbstractDirectModule.CONNECTION_REJECTED);
+                } else { 
+                    s.connectionRejected(AbstractDirectModule.SERVER_OVERLOAD);
+                }
+                
                 if (logger.isInfoEnabled()) {
                     logger.info(module + ": ServerSocket refused " + target);
                 }
-                s.connectionRejected();
             }
         } catch (Exception e) {
             if (logger.isInfoEnabled()) {

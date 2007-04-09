@@ -3,8 +3,6 @@ package smartsockets.virtual.modules;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.Map;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
@@ -14,11 +12,11 @@ import smartsockets.virtual.VirtualSocketAddress;
 
 public abstract class AbstractDirectModule extends MessagingModule {
     
-   
-    protected static final byte ACCEPT              = 1;
-    protected static final byte PORT_NOT_FOUND      = 2;
-    protected static final byte CONNECTION_REJECTED = 4;   
-   
+    public static final byte ACCEPT              = 1;
+    public static final byte PORT_NOT_FOUND      = 2;
+    public static final byte CONNECTION_REJECTED = 4;   
+    public static final byte SERVER_OVERLOAD     = 5;   
+    
     protected DirectSocketFactory direct;  
     
     protected AbstractDirectModule(String name, boolean requiresServiceLink) { 
@@ -84,22 +82,27 @@ public abstract class AbstractDirectModule extends MessagingModule {
                             ds, out, in);
             
             // Next check if the serverSocket is willing to accept                        
-            boolean accept = vss.incomingConnection(vs);
+            int accept = vss.incomingConnection(vs);
             
-            if (!accept) {
+            if (accept != 0) {
                 
                 rejectedIncomingConnections++;
                 
-                out.write(CONNECTION_REJECTED);
+                if (accept == -1) {                 
+                    out.write(CONNECTION_REJECTED);
+                } else { 
+                    out.write(SERVER_OVERLOAD);
+                }
                 out.flush();                
                 DirectSocketFactory.close(ds, out, in);
                 
                 //if (logger.isDebugEnabled()) { 
-                    logger.warn(module + ": Connection failed, QUEUE FULL!");
+                    logger.warn(module + ": Connection failed: " 
+                            + (accept < 0 ? "REFUSED" : "OVERLOAD")) ;
                // }
                 
-                return;
-            }
+                return;                
+            } 
             
             acceptedIncomingConnections++;
             
@@ -110,6 +113,7 @@ public abstract class AbstractDirectModule extends MessagingModule {
         }
     }
     
+    /*
     protected VirtualSocket handleConnect(VirtualSocketAddress target, 
             DirectSocket s, int timeout, Map<String, Object> properties) throws IOException {
         
@@ -134,14 +138,12 @@ public abstract class AbstractDirectModule extends MessagingModule {
                 
         // Now wait until the other side agrees to the connection (may throw an
         // exception and close the socket if something is wrong) 
-        tmp.waitForAccept();
+        tmp.waitForAccept(timeout);
         
         acceptedOutgoingConnections++;
         
-        // Reset the timeout to the default value (infinite). 
-        s.setSoTimeout(0);
         return tmp;        
-    }
+    }*/
     
    
 }

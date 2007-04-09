@@ -18,11 +18,7 @@ import smartsockets.virtual.VirtualSocketAddress;
 import smartsockets.virtual.modules.AbstractDirectModule;
 
 public class Direct extends AbstractDirectModule {
-
-    protected static final byte ACCEPT              = 1;
-    protected static final byte PORT_NOT_FOUND      = 2;
-    protected static final byte CONNECTION_REJECTED = 4;   
-           
+    
     private DirectSocketFactory direct;   
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
@@ -205,12 +201,10 @@ public class Direct extends AbstractDirectModule {
     }
                 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map<String, Object> properties) throws ModuleNotSuitableException, IOException {
+            Map<String, Object> properties) throws ModuleNotSuitableException {
 
         outgoingConnectionAttempts++;
         
-        DirectSocket s = null;
-
         int sendBuffer = defaultSendBuffer;
         int receiveBuffer = defaultReceiveBuffer;
                 
@@ -227,60 +221,53 @@ public class Direct extends AbstractDirectModule {
             if (tmp != null) { 
                 receiveBuffer = tmp;
             } 
-        }        
+        }   
         
         try { 
-            s = direct.createSocket(target.machine(), timeout, 0, sendBuffer, 
-                    receiveBuffer, properties, false, target.port());
+            DirectSocket s = direct.createSocket(target.machine(), timeout, 0, 
+                    sendBuffer, receiveBuffer, properties, false, 
+                    target.port());
+            
+            // Next, we wrap the direct socket in a virtual socket and return it.
+            // Any exceptions thrown here are forwarded to the user. Note that the 
+            // connection setup is not complete yet, but the rest of it is in 
+            // generic code.
+            return createVirtualSocket(target, s);  
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            
             throw new ModuleNotSuitableException(module + ": Failed to " +
                     "connect to " + target + " " + e);           
         }
-
-        return handleConnect(target, s, timeout, properties);
-        
-        /*
-        DirectVirtualSocket tmp = null;
-        
-        try { 
-            s.setSoTimeout(timeout);
-            
-            in = new DataInputStream(s.getInputStream());
-            out = new DataOutputStream(s.getOutputStream());
-                        
-            tmp = new DirectVirtualSocket(target, s, out, in, properties);
-                                                     
-            out.writeUTF(target.machine().toString());
-            out.writeInt(target.port());
-            out.flush();                                
-        } catch (IOException e) {
-            // This module worked fine, but we got a 'normal' exception while 
-            // connecting (i.e., because the other side refused to connection). 
-            // There is no use trying other modules.            
-            DirectSocketFactory.close(s, out, in);
-            throw e;
-        }
-                
-        // Now wait until the other side agrees to the connection (may throw an
-        // exceptionand close the socket if something is wrong) 
-        tmp.waitForAccept();
-        
-        // Reset the timeout to the default value (infinite). 
-        s.setSoTimeout(0);
-        
-        return tmp;
-        */
     }
-
+    
     public boolean matchAdditionalRuntimeRequirements(Map requirements) {
         // No additional properties, so always matches requirements.
         return true;
     }
 
     protected VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
-            DirectSocket s, DataOutputStream out, DataInputStream in) {        
-        return new DirectVirtualSocket(a, s, out, in, null); 
+            DirectSocket s, DataOutputStream out, DataInputStream in) { 
+        return new DirectVirtualSocket(a, s, out, in, null);        
+    }
+    
+    private VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
+            DirectSocket s) throws IOException {
+        
+        DataInputStream in = null;
+        DataOutputStream out = null;
+        
+        try {
+            in = new DataInputStream(s.getInputStream());
+            out = new DataOutputStream(s.getOutputStream());    
+            return new DirectVirtualSocket(a, s, out, in, null);     
+        } catch (IOException e) {
+            // This module worked fine, but we got a 'normal' exception while 
+            // connecting (i.e., because the other side refused to connection). 
+            // There is no use trying other modules.          
+            failedOutgoingConnections++;
+            DirectSocketFactory.close(s, out, in);
+            throw e;
+        }
     }   
 }

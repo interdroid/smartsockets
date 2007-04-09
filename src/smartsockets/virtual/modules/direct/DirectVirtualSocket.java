@@ -12,8 +12,10 @@ import java.util.Map;
 
 import smartsockets.direct.DirectSocket;
 import smartsockets.direct.DirectSocketFactory;
+import smartsockets.virtual.TargetOverloadedException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
+import smartsockets.virtual.modules.AbstractDirectModule;
 
 public class DirectVirtualSocket extends VirtualSocket {
     
@@ -38,26 +40,28 @@ public class DirectVirtualSocket extends VirtualSocket {
         try {
             s.setSoTimeout(timeout);
             
-            out.write(Direct.ACCEPT);
+            out.write(AbstractDirectModule.ACCEPT);
             out.flush();        
 
             // We should do a three way handshake here to ensure both side agree
             // that we have a connection...
             ack = in.read();
+            
+            s.setSoTimeout(0);
         } catch (IOException e) { 
             DirectSocketFactory.close(s, out, in);  
             throw e;
         } 
-        
-        if (ack != Direct.ACCEPT) { 
+
+        if (ack != AbstractDirectModule.ACCEPT) { 
             throw new ConnectException("Client disconnected");
         }
     }
-    
-    public void connectionRejected() { 
+
+    public void connectionRejected(int timeout, byte opcode) { 
         
         try { 
-            out.write(Direct.CONNECTION_REJECTED);
+            out.write(opcode);
             out.flush();
         } catch (Exception e) {
             // ignore ?
@@ -66,34 +70,43 @@ public class DirectVirtualSocket extends VirtualSocket {
         } 
     }
     
-    public void waitForAccept() throws IOException {
+    public void connectionRejected(int timeout) { 
+        connectionRejected(timeout, AbstractDirectModule.CONNECTION_REJECTED);
+    }
+    
+    public void waitForAccept(int timeout) throws IOException {
         
         try { 
+            s.setSoTimeout(timeout);
+            
             int result = in.read();
-        
+            
             switch (result) {
-            case Direct.ACCEPT:
-                out.write(Direct.ACCEPT);
+            case AbstractDirectModule.ACCEPT:
+                out.write(AbstractDirectModule.ACCEPT);
                 out.flush();
+                s.setSoTimeout(0);
                 return;
                 
-            case Direct.PORT_NOT_FOUND:
+            case AbstractDirectModule.PORT_NOT_FOUND:
                 throw new SocketException("Remote port not found");                
                 
-            case Direct.CONNECTION_REJECTED:
-                throw new SocketException("Connection rejected, server overloaded");
+            case AbstractDirectModule.SERVER_OVERLOAD:
+                throw new TargetOverloadedException("Connection rejected (server overloaded)");
+            
+            case AbstractDirectModule.CONNECTION_REJECTED:
+                throw new SocketException("Connection rejected");            
                 
             default:
                 throw new SocketException("Got unknown reply during connect!");
             }
-            
         } catch (IOException e) {
             // This module worked fine, but we got a 'normal' exception while 
             // connecting (i.e., because the other side refused to connection). 
             // There is no use trying other modules.
             DirectSocketFactory.close(s, out, in);
             throw e;
-        }        
+        }         
     }
     
     public void close() throws IOException {        

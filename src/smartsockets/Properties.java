@@ -108,7 +108,7 @@ public class Properties {
     private static final String [] defaults = new String [] {
             DIRECT_BACKLOG,         "255", 
             BACKLOG,                "100", 
-            TIMEOUT,                "5000", 
+            TIMEOUT,                "120000", 
             LOCAL_TIMEOUT,          "100", 
             
             STATISTICS_INTERVAL,    "60000",

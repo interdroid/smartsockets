@@ -505,41 +505,69 @@ public class VirtualSocketFactory {
     }
 
     private VirtualSocket createClientSocket(ConnectModule m,
-            VirtualSocketAddress target, int timeout,
+            VirtualSocketAddress target, int timeout, int timeLeft, 
             Map<String, Object> properties) throws IOException {
 
-        if (m.matchRuntimeRequirements(properties)) {
-            if (conlogger.isDebugEnabled()) {
-                conlogger.debug("Using module " + m.module + " to set up "
-                        + "connection to " + target + " timeout = " + timeout);
+        int backoff = 500;
+        
+        if (!m.matchRuntimeRequirements(properties)) {
+            if (conlogger.isInfoEnabled()) {
+                conlogger.warn("Failed: module " + m.module
+                        + " may not be used to set " + "up connection to "
+                        + target);
             }
 
-            long start = System.currentTimeMillis();
+            m.notAllowed();
+            return null;
+        }
+            
+        if (conlogger.isDebugEnabled()) {
+            conlogger.debug("Using module " + m.module + " to set up "
+                    + "connection to " + target + " timeout = " + timeout 
+                    + " timeleft = " + timeLeft);
+        }
 
-            try {
-
-                VirtualSocket vs = m.connect(target, timeout, properties);
-
-                long end = System.currentTimeMillis();
-
-                // TODO: move to ibis ?
-                if (vs != null) {
-                    vs.setTcpNoDelay(true);
-                    if (conlogger.isInfoEnabled()) {
-                        conlogger.info(getVirtualAddressAsString()
-                                + ": Sucess " + m.module + " connected to "
-                                + target + " (time = " + (end - start)
-                                + " ms.)");
-                    }
-
-                    m.success(end - start);
-                    return vs;
+        // We now try to set up a connection. Normally we may not exceed the 
+        // timeout, but when we succesfully create a connection we are allowed
+        // to extend this time to timeLeft (either to wait for an accept, or to
+        // retry after a TargetOverLoaded exception). Note that any exception 
+        // other than ModuleNotSuitable or TargetOverloaded is passed to the 
+        // user.
+        VirtualSocket vs = null;
+        int overloaded = 0;
+        
+        long start = System.currentTimeMillis();
+        
+        while (true) {         
+            
+            long t = System.currentTimeMillis() - start;
+       
+            // Check if we ran out of time. If so, the throw a target overloaded 
+            // exception or a timeout exception depending on the value of the 
+            // overloaded counter.  
+            if (t >= timeLeft) { 
+        
+                if (conlogger.isDebugEnabled()) {
+                    conlogger.debug("Timeout while using module " + m.module 
+                            + " to set up "
+                            + "connection to " + target + " timeout = " + timeout 
+                            + " timeleft = " + timeLeft + " t = " + t);
                 }
-
-                m.failed(end - start);
-
+                    
+                if (overloaded > 0) { 
+                    throw new TargetOverloadedException("Failed to create "
+                            + "virtual connection to " + target + " within "
+                            + timeLeft + " ms. (Target overloaded " 
+                            + overloaded + " times)");
+                } else { 
+                    throw new SocketTimeoutException("Timeout while waiting for"
+                            + " accept on virtual connection to " + target);
+                }
+            }
+            
+            try {
+                vs = m.connect(target, timeout, properties);
             } catch (ModuleNotSuitableException e) {
-
                 long end = System.currentTimeMillis();
 
                 // Just print and try the next module...
@@ -550,19 +578,80 @@ public class VirtualSocketFactory {
                 }
 
                 m.failed(end - start);
-            }
-            // NOTE: other exceptions are forwarded to the user!
-        } else {
-            if (conlogger.isInfoEnabled()) {
-                conlogger.warn("Failed: module " + m.module
-                        + " may not be used to set " + "up connection to "
-                        + target);
-            }
+                return null;
+                
+                // NOTE: all IOExceptions are forwarded to the user! 
+            } 
 
-            m.notAllowed();
+            t = System.currentTimeMillis() - start;
+            
+            if (vs != null) { 
+                // We now have a connection to the correct machine and must wait 
+                // for an accept from the serversocket. Since we don't have to 
+                // try any other modules, we are allowed to spend all of the 
+                // time that is left. Therefore, we start by calculating a new 
+                // timeout here, which is based on the left over time for the 
+                // entire connect call, minus the time we have spend so far in 
+                // this connect. This is the timeout we pass to 'waitForAccept'. 
+                int newTimeout = (int) (timeLeft - t);
+                
+                if (newTimeout <= 0) {
+                    // Bit of a hack. If we run out of time at the last moment
+                    // we allow some extra time to finish the connection setup.
+                    // TODO: should we do this ?
+                    newTimeout = 1000;
+                }
+                
+                try { 
+                    vs.waitForAccept(newTimeout);
+                    vs.setTcpNoDelay(false);
+                        
+                    long end = System.currentTimeMillis();
+                    
+                    if (conlogger.isInfoEnabled()) {
+                        conlogger.info(getVirtualAddressAsString()
+                                + ": Sucess " + m.module + " connected to "
+                                + target + " (time = " + (end - start)
+                                + " ms.)");
+                    }
+
+                    m.success(end - start);
+                    return vs;
+                } catch (TargetOverloadedException e) { 
+                    if (conlogger.isDebugEnabled()) {
+                        conlogger.debug("Connection failed, target " + target 
+                                + " overloaded (" + overloaded + ") while using " 
+                                + " module " + m.module);
+                    }
+
+                    overloaded++;
+                   
+                    t = System.currentTimeMillis() - start;
+                    
+                    int leftover = (int) (timeLeft-t);
+                    
+                    if (leftover < 0) { 
+                        leftover = 0;
+                    } 
+                        
+                    int sleeptime = Math.min(backoff, leftover);
+                    
+                    if (leftover > 500 && sleeptime == leftover) {
+                        // In the last attempt we sleep half a second shorter. 
+                        // This allows us to attempt a connection setup.
+                        sleeptime -= 500;
+                    }
+                
+                    try { 
+                        Thread.sleep(sleeptime);
+                    } catch (Exception x) {
+                        // ignored
+                    }
+                    
+                    backoff *= 2;
+                }
+            }
         }
-
-        return null;
     }
 
     public VirtualSocket createClientSocket(VirtualSocketAddress target,
@@ -584,7 +673,7 @@ public class VirtualSocketFactory {
 
             int notSuitableCount = 0;
 
-            if (timeout < 0) {
+            if (timeout <= 0) {
                 timeout = DEFAULT_TIMEOUT;
             }
 
@@ -593,12 +682,10 @@ public class VirtualSocketFactory {
             int timeLeft = timeout;
             int partialTimeout;
 
-            if (timeout > 0 && order.length > 0) {
+            if (order.length > 1) {
                 partialTimeout = (timeout / order.length);
-            } else if (order.length > 0) {
-                partialTimeout = DEFAULT_TIMEOUT;
-            } else {
-                partialTimeout = 0;
+            } else { 
+                partialTimeout = timeout;
             }
 
             // Now try the remaining modules (or all of them if we weren't
@@ -618,7 +705,7 @@ public class VirtualSocketFactory {
                 }
 
                 VirtualSocket vs = createClientSocket(m, target,
-                        partialTimeout, prop);
+                        partialTimeout, timeLeft, prop);
 
                 if (timing != null) {
                     timing[1 + i] = System.nanoTime() - timing[1 + i];
@@ -634,12 +721,13 @@ public class VirtualSocketFactory {
                     return vs;
                 }
 
-                if (timeout > 0 && i < order.length - 1) {
+                if (order.length > 1 && i < order.length - 1) {
                     timeLeft -= System.currentTimeMillis() - start;
 
                     if (timeLeft <= 0) {
                         // TODO can this happen ?
-                        partialTimeout = 1000;
+                        throw new SocketTimeoutException("Timeout during " +
+                                "connect to " + target);
                     } else {
                         partialTimeout = (timeLeft / (order.length - (i + 1)));
                     }

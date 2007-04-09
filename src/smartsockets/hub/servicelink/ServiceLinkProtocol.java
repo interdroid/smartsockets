@@ -28,5 +28,5 @@ public interface ServiceLinkProtocol extends MessageForwarderProtocol {
     public static final byte ERROR_CONNECTION_REFUSED = 3;
     public static final byte ERROR_UNKNOWN_HOST       = 4;           
     public static final byte ERROR_ILLEGAL_TARGET     = 5;       
-      
+    public static final byte ERROR_SERVER_OVERLOAD    = 6;
 }

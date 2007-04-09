@@ -43,7 +43,7 @@ public class VirtualSocketAddress implements Serializable {
         if (hlen > 0) { 
             byte [] h = new byte[hlen];        
             in.readFully(h);        
-            hub = DirectSocketAddress.fromBytes(m);        
+            hub = DirectSocketAddress.fromBytes(h);        
         } else { 
             hub = null;
         }
