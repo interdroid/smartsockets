@@ -4,6 +4,7 @@ package smartsockets.virtual;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
@@ -215,6 +216,15 @@ public abstract class VirtualSocket {
                 + this);
     }
 
+    public void setPerformancePreferences(int connectionTime, int latency, 
+            int bandwidth) {
+        System.err.println("setPerformancePreferences() not implemented by " 
+                + this);
+      
+        throw new RuntimeException("shutdownOutput() not implemented by "
+                + this);
+    }  
+    
     public String toString() {
         return "unimplemented toString()!";
     }
@@ -294,6 +304,17 @@ public abstract class VirtualSocket {
     public abstract void waitForAccept(int timeout) throws IOException;
     protected abstract void connectionAccepted(int timeout) throws IOException;
     protected abstract void connectionRejected(int timeout);
+
+    public InetAddress getLocalAddress() {
+        // NOTE: Can never be implemented correctly ?
+        return null;
+    }
+
+    public InetAddress getInetAddress() {
+        // NOTE: Can never be implemented correctly ?
+        return null;
+    }
+   
         
     
 }

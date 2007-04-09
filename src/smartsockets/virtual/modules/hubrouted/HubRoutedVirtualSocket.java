@@ -15,7 +15,6 @@ import smartsockets.hub.servicelink.ServiceLinkProtocol;
 import smartsockets.virtual.TargetOverloadedException;
 import smartsockets.virtual.VirtualSocket;
 import smartsockets.virtual.VirtualSocketAddress;
-import smartsockets.virtual.VirtualSocketFactory;
 
 public class HubRoutedVirtualSocket extends VirtualSocket {
     

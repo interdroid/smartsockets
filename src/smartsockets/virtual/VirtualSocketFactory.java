@@ -822,6 +822,23 @@ public class VirtualSocketFactory {
         return result;
     }
 
+    public VirtualServerSocket createServerSocket(
+            Map<String, Object> properties) throws IOException {
+        return new VirtualServerSocket(this, properties);
+    }
+
+    protected void bindServerSocket(VirtualServerSocket vss, int port) 
+        throws BindException {
+        
+        synchronized (serverSockets) {
+            if (serverSockets.containsKey(port)) {
+                throw new BindException("Port " + port + " already in use!");
+            }
+
+            serverSockets.put(port, vss);
+        }
+    }
+    
     public VirtualServerSocket createServerSocket(int port, int backlog,
             Map<String, Object> properties) throws IOException {
 

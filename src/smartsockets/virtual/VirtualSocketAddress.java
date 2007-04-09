@@ -1,16 +1,18 @@
 package smartsockets.virtual;
 
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
 import smartsockets.direct.DirectSocketAddress;
 import smartsockets.util.TransferUtils;
 
-public class VirtualSocketAddress implements Serializable { 
+public class VirtualSocketAddress extends SocketAddress implements Serializable { 
 
     private static final long serialVersionUID = 3340517955293464166L;
     
@@ -302,6 +304,14 @@ public class VirtualSocketAddress implements Serializable {
         return new VirtualSocketAddress(machine, port, hub, cluster);
     }
     
+    public static VirtualSocketAddress partialAddress(InetAddress host, 
+            int realport, int virtualport) throws UnknownHostException {
+        return new VirtualSocketAddress(
+                DirectSocketAddress.getByAddress(
+                        new InetSocketAddress(host, realport)), virtualport);
+    }
+    
+    
     public static VirtualSocketAddress partialAddress(String hostname, 
             int realport, int virtualport) throws UnknownHostException {
      
@@ -314,4 +324,8 @@ public class VirtualSocketAddress implements Serializable {
         return partialAddress(hostname, port, port);
     }    
     
+    public static VirtualSocketAddress partialAddress(InetAddress host, 
+            int port) throws UnknownHostException {     
+        return partialAddress(host, port, port);
+    }  
 }

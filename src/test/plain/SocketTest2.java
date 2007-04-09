@@ -1,30 +1,21 @@
 package test.plain;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.security.KeyStore;
 
-import javax.net.ServerSocketFactory;
-import javax.net.SocketFactory;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-
-import smartsockets.SmartServerSocketFactory;
 import smartsockets.SmartSocketAddress;
-import smartsockets.SmartSocketFactory;
+import smartsockets.SmartSocketImplFactory;
 
-public class SocketTest {
+public class SocketTest2 {
     
     private final static int PORT = 8899;
     private final static int REPEAT = 10;
     private final static int COUNT = 10;
 
-    private static ServerSocketFactory createServerSocketFactory(String type) { 
+    private static void setSocketImplFactory(String type) { 
         
         if (type == null) {
             type = "plain";
@@ -33,95 +24,28 @@ public class SocketTest {
         }
         
         if (type.equalsIgnoreCase("plain")) { 
-            return ServerSocketFactory.getDefault(); 
+            return;
         }
       
-        if (type.equalsIgnoreCase("SmartSockets")) { 
-            return SmartServerSocketFactory.getDefault();
-        }
-
-        if (type.equalsIgnoreCase("SSL")) { 
-            try {
-                // set up key manager to do server authentication
-                char[] passphrase = "passphrase".toCharArray();
-
-                SSLContext ctx = SSLContext.getInstance("TLS");
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                KeyStore ks = KeyStore.getInstance("JKS");
-
-                ks.load(new FileInputStream("testkeys"), passphrase);
-                kmf.init(ks, passphrase);
-                ctx.init(kmf.getKeyManagers(), null, null);
-
-                return ctx.getServerSocketFactory();
+        if (type.equalsIgnoreCase("SmartSockets")) {
+            try { 
+                SmartSocketImplFactory f = new SmartSocketImplFactory();
+                Socket.setSocketImplFactory(f);
+                ServerSocket.setSocketFactory(f);
             } catch (Exception e) {
-                System.err.println("Failed to create SSLServerSocketFactory");
+                System.err.println("Failed to install SocketFactory type: " + type);
                 e.printStackTrace(System.err);
                 System.exit(1);
             }
-        }            
-       
-        System.err.println("Unknown ServerSocketFactory type: " + type);
-        System.exit(1);
-
-        // Stupid compiler;-)
-        return null;
-    }
-    
-    private static SocketFactory createSocketFactory(String type) { 
-        
-        if (type == null) {
-            type = "plain";
-        } else { 
-            type = type.trim();
+            return;
         }
-        
-        if (type.equalsIgnoreCase("plain")) { 
-            return SocketFactory.getDefault(); 
-        }
-
-        if (type.equalsIgnoreCase("SmartSockets")) { 
-            return SmartSocketFactory.getDefault();
-        }
-        
-        if (type.equalsIgnoreCase("SSL")) { 
-            try {
-                // set up key manager to do server authentication
-              /*  char[] passphrase = "passphrase".toCharArray();
-
-                SSLContext ctx = SSLContext.getInstance("TLS");
-                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-                KeyStore ks = KeyStore.getInstance("JKS");
-
-                ks.load(new FileInputStream("testkeys"), passphrase);
-                kmf.init(ks, passphrase);
-                ctx.init(kmf.getKeyManagers(), null, null);
-
-                return ctx.getSocketFactory();
-                */
-                
-                return SSLSocketFactory.getDefault();
-            } catch (Exception e) {
-                System.err.println("Failed to create SSLSocketFactory");
-                e.printStackTrace(System.err);
-                System.exit(1);
-            }
-        }            
-        
 
         System.err.println("Unknown ServerSocketFactory type: " + type);
         System.exit(1);
-                
-        // Stupid compiler;-)
-        return null;
     }
-    
-    
+        
     public static void main(String[] args) {
 
-        SocketFactory sf = null;
-        ServerSocketFactory ssf = null;
-        
         int targets = args.length;
         int repeat = REPEAT;        
         int count = COUNT;
@@ -163,8 +87,7 @@ public class SocketTest {
             smart = true;
         }
         
-        sf = createSocketFactory(type);
-        ssf = createServerSocketFactory(type);
+        setSocketImplFactory(type);
         
         try {
             SocketAddress [] targetAds = new SocketAddress[targets];
@@ -198,7 +121,7 @@ public class SocketTest {
                         for (int c = 0; c < count; c++) {
                             
                             if (s == null) {                             
-                                s = sf.createSocket();
+                                s = new Socket();
                                 s.setReuseAddress(true);
                             }
                             
@@ -240,7 +163,7 @@ public class SocketTest {
 
                 System.out.println("Creating server socket");
 
-                ServerSocket ss = ssf.createServerSocket(PORT, 100);
+                ServerSocket ss = new ServerSocket(PORT, 100);
 
                 System.out.println("Created server on " + ss.toString());
 

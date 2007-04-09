@@ -808,7 +808,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         
         return new DirectSocketAddress(coded, off);
     }
-    
+  
     public static DirectSocketAddress getByAddress(InetSocketAddress a) 
         throws UnknownHostException {
         

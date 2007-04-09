@@ -1,6 +1,8 @@
 package smartsockets.virtual;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.ServerSocketChannel;
@@ -13,12 +15,12 @@ import smartsockets.direct.IPAddressSet;
 public class VirtualServerSocket {
     
     private final VirtualSocketFactory parent;
-    private final int port;
+    private int port;
     
     private final LinkedList<VirtualSocket> incoming = 
         new LinkedList<VirtualSocket>();
     
-    private final int backlog; 
+    private int backlog; 
         
     private int timeout = 0;
     private boolean reuseAddress = true;
@@ -28,6 +30,18 @@ public class VirtualServerSocket {
 
     private Map<String, Object> properties;
     
+    private boolean bound;
+    private int receiveBufferSize = -1;
+    
+    // Create unbound port
+    protected VirtualServerSocket(VirtualSocketFactory parent, 
+            Map<String, Object> p) {
+        this.parent = parent;
+        this.properties = p;        
+        this.bound = false;
+    }
+    
+    // Create bound port
     protected VirtualServerSocket(VirtualSocketFactory parent, 
             VirtualSocketAddress address, int port, int backlog, 
             Map<String, Object> p) {
@@ -37,6 +51,7 @@ public class VirtualServerSocket {
         this.backlog = backlog;
         this.localAddress = address;
         this.properties = p;        
+        this.bound = true;
     }
 
     public synchronized int incomingConnection(VirtualSocket s) {  
@@ -80,7 +95,7 @@ public class VirtualServerSocket {
     private synchronized VirtualSocket getConnection() 
         throws SocketTimeoutException { 
      
-        long time = System.currentTimeMillis();
+    //    long time = System.currentTimeMillis();
         
         while (incoming.size() == 0 && !closed) { 
             try { 
@@ -230,5 +245,46 @@ public class VirtualServerSocket {
     
     public void setProperty(String key, Object val) {
         properties.put(key, val);
+    }
+
+    public boolean isBound() {
+        return bound;
+    }
+
+    public void setReceiveBufferSize(int size) {
+        // TODO: Find a way to this in the bind operation ?
+        receiveBufferSize = size;
+    }
+
+    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
+        // not implemented
+    }
+
+    public int getReceiveBufferSize() {
+        return receiveBufferSize;
+    }
+
+    public int getLocalPort() {
+        return port;
+    }
+
+    public InetAddress getInetAddress() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void bind(SocketAddress endpoint, int backlog) throws IOException {
+       
+        if (endpoint instanceof VirtualSocketAddress) {
+            
+            int tmp = ((VirtualSocketAddress) endpoint).port();
+            
+            parent.bindServerSocket(this, tmp);
+            
+            this.port = tmp;
+            this.localAddress = ((VirtualSocketAddress) endpoint);
+        } else { 
+            throw new IOException("Unsupported address type");
+        }
     }
 }
