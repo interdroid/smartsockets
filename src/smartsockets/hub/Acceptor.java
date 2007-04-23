@@ -29,16 +29,16 @@ import smartsockets.util.TypedProperties;
 public class Acceptor extends CommunicationThread {
     
     private static final Logger hconlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
+        Logger.getLogger("smartsockets.hub.connections.hub"); 
     
     private static final Logger cconlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.client"); 
+        Logger.getLogger("smartsockets.hub.connections.client"); 
     
     private static final Logger reglogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
+        Logger.getLogger("smartsockets.hub.registration"); 
     
     private static final Logger reqlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.request"); 
+        Logger.getLogger("smartsockets.hub.request"); 
         
     private DirectServerSocket server;
     private boolean done = false;

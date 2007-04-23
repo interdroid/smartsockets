@@ -147,8 +147,12 @@ public class Properties {
 
     private static TypedProperties defaultProperties;
 
-    protected static Logger logger =         
-            ibis.util.GetLogger.getLogger("smartsockets.properties");
+    protected static Logger logger;
+    
+    static {
+        ibis.util.Log.initLog4J("smartsockets");
+        logger = Logger.getLogger("smartsockets.properties");
+    }
     
     private static TypedProperties getPropertyFile(String file) {
 

@@ -79,15 +79,18 @@ public class VirtualSocketFactory {
 
     private static StatisticsPrinter printer = null;
 
-    protected static Logger logger = ibis.util.GetLogger
-            .getLogger("smartsockets.virtual.misc");
+    protected static Logger logger;
 
-    protected static Logger conlogger = ibis.util.GetLogger
-            .getLogger("smartsockets.virtual.connect");
+    protected static Logger conlogger;
 
-    private static final Logger statslogger = ibis.util.GetLogger
-            .getLogger("smartsockets.statistics");
+    private static final Logger statslogger;
 
+    static {
+        ibis.util.Log.initLog4J("smartsockets");
+        conlogger = Logger.getLogger("smartsockets.virtual.connect");
+        logger = Logger.getLogger("smartsockets.virtual.misc");
+        statslogger = Logger.getLogger("smartsockets.statistics");
+    }
     private final ArrayList<ConnectModule> modules = new ArrayList<ConnectModule>();
 
     private final TypedProperties properties;

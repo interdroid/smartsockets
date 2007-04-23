@@ -21,10 +21,10 @@ import smartsockets.util.TypedProperties;
 public class ServiceLink implements Runnable {
 
     // TODO: create different loggers here!
-    private static final Logger logger = ibis.util.GetLogger
+    private static final Logger logger = Logger
             .getLogger("smartsockets.hub.servicelink");
 
-    private static final Logger statslogger = ibis.util.GetLogger
+    private static final Logger statslogger = Logger
             .getLogger("smartsockets.statistics");
 
     private static final int TIMEOUT = 5000;

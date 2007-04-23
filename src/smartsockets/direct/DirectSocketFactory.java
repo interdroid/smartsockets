@@ -46,8 +46,7 @@ import ch.ethz.ssh2.LocalStreamForwarder;
  */
 public class DirectSocketFactory {
 
-    protected static Logger logger = ibis.util.GetLogger
-        .getLogger("smartsockets.direct");
+    protected static Logger logger = Logger.getLogger("smartsockets.direct");
 
     private static DirectSocketFactory defaultFactory; 
     

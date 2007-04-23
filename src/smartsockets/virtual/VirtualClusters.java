@@ -12,7 +12,7 @@ import smartsockets.virtual.modules.ConnectModule;
 public class VirtualClusters {
     
     protected static Logger logger =         
-        ibis.util.GetLogger.getLogger("smartsockets.virtual.clustering");
+        Logger.getLogger("smartsockets.virtual.clustering");
         
     private static class ClusterDefinition {         
         final String name;        

@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 public class SimpleCallback implements Callback {
     
     private static final Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsockets.discovery");
+        Logger.getLogger("smartsockets.discovery");
     
     private final LinkedList<String> messages = new LinkedList<String>();    
     private final boolean quitAfterMessage;

@@ -24,7 +24,7 @@ public class Router extends Thread {
     private static final long STATS_UPDATE_TIME = 10000;
 
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsocket.router");
+        Logger.getLogger("smartsocket.router");
              
     private static int ACCEPT_TIMEOUT = 30000; 
         

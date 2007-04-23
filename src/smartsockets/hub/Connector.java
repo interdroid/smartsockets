@@ -25,7 +25,7 @@ import smartsockets.util.TypedProperties;
 class Connector extends CommunicationThread {
     
     private static final Logger hconlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
+        Logger.getLogger("smartsockets.hub.connections.hub"); 
     
     private boolean done = false;
     

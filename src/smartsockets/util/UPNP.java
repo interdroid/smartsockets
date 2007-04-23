@@ -21,7 +21,7 @@ import org.apache.log4j.Logger;
 public class UPNP {
     
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger(UPNP.class.getName());
+        Logger.getLogger(UPNP.class.getName());
     
     private static final String GATEWAY_DEVICE_URN = 
         "urn:schemas-upnp-org:device:InternetGatewayDevice:1";                    

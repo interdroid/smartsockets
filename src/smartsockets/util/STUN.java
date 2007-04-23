@@ -12,7 +12,7 @@ import de.javawi.jstun.test.DiscoveryTest;
 public class STUN {
     
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger(STUN.class.getName());
+        Logger.getLogger(STUN.class.getName());
     
     private static String [] DEFAULT_SERVERS = 
         new String [] { "stun.voipbuster.com",

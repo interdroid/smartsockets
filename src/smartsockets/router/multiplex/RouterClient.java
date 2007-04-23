@@ -14,7 +14,7 @@ import smartsockets.virtual.VirtualSocketFactory;
 public class RouterClient implements Protocol {
 
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsocket.router.client");
+        Logger.getLogger("smartsocket.router.client");
     
     private static long clientID = 0;
     private static HashMap<String, Object> properties;       

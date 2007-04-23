@@ -20,10 +20,10 @@ import smartsockets.hub.state.HubsForClientSelector;
 public abstract class MessageForwardingConnection extends BaseConnection {
 
     protected final static Logger meslogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.messages"); 
+        Logger.getLogger("smartsockets.hub.messages"); 
     
     protected final static Logger vclogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.virtual"); 
+        Logger.getLogger("smartsockets.hub.connections.virtual"); 
        
     protected final static int DEFAULT_CREDITS = 10; 
     

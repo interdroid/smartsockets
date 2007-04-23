@@ -22,7 +22,7 @@ import smartsockets.virtual.VirtualSocketFactory;
 class Connection implements Runnable, Protocol, ForwarderCallback {       
 
     private static Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsocket.router.connections");
+        Logger.getLogger("smartsocket.router.connections");
     
     private final Router parent;
     

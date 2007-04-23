@@ -43,7 +43,7 @@ public class Hubrouted extends ConnectModule
                 localBufferSize);
         
         localMinimalACKSize = properties.getIntProperty(
-                Properties.ROUTED_MIN_ACK, localMinimalACKSize);
+                Properties.ROUTED_MIN_ACK, localBufferSize/4);
         
         if (localFragmentation > localBufferSize) { 
             
@@ -64,9 +64,18 @@ public class Hubrouted extends ConnectModule
             }
         }
         
+        if (localMinimalACKSize > localBufferSize) { 
+            logger.warn("Minimal ACK size (" + localMinimalACKSize
+                    + ") is larger than buffer size (" + localBufferSize 
+                    + ") -> reducing minimal ACK size to: " + localBufferSize);
+        
+            localFragmentation = localBufferSize;       
+        }
+        
         if (logger.isInfoEnabled()) { 
             logger.info("Using local fragment size: " + localFragmentation);
             logger.info("Using local buffer size  : " + localBufferSize);
+            logger.info("Using minimal ACK size  : " + localMinimalACKSize);
         }
     }
 
@@ -366,10 +375,11 @@ public class Hubrouted extends ConnectModule
             if (!closedSockets.contains(index)) { 
                 logger.warn("BAD!! Got message for an unknown socket!: " + index 
                         + " size = " + data.length);
-            } else { 
+            } else { */
+            
                 logger.warn("BAD!! Got message for already closed socket!: " 
-                        + index + " size = " + data.length);
-            }*/
+                        + index + " size = " + len);
+            /*}*/
             return false;
         } 
 

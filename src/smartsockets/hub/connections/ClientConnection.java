@@ -23,13 +23,13 @@ import smartsockets.hub.state.HubList;
 public class ClientConnection extends MessageForwardingConnection {
 
     private static Logger conlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.client"); 
+        Logger.getLogger("smartsockets.hub.connections.client"); 
     
     private static Logger reqlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.request"); 
+        Logger.getLogger("smartsockets.hub.request"); 
     
     private static Logger reglogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.registration"); 
+        Logger.getLogger("smartsockets.hub.registration"); 
     
     private final DirectSocketAddress clientAddress;
   //  private final DirectSocketAddress hubAddress;

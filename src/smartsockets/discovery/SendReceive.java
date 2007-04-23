@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
 public class SendReceive {
     
     private static final Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsockets.discovery");
+        Logger.getLogger("smartsockets.discovery");
     
     private final DatagramSocket socket;
     

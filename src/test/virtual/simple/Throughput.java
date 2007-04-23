@@ -19,7 +19,7 @@ public class Throughput {
     private static int DEFAULT_REPEAT = 10;
     private static int DEFAULT_COUNT = 100;
     
-    private static int TIMEOUT = 5000;
+    private static int TIMEOUT = 15000;
     private static int DEFAULT_SIZE = 1024*1024;
     
     private static int count = DEFAULT_COUNT;    

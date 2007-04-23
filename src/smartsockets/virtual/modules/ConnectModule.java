@@ -20,7 +20,7 @@ import smartsockets.virtual.VirtualSocketFactory;
 public abstract class ConnectModule implements CallBack {
     
     protected static final Logger statslogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.statistics");
+        Logger.getLogger("smartsockets.statistics");
     
     public final String module;
     

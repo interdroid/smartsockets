@@ -204,6 +204,8 @@ public class HubRoutedInputStream extends InputStream {
         
         available += len;
         
+      //  System.err.println("Buffer has " + available + " bytes...");
+        
         // Check if anyone could have been waiting for us...
         if (available == len) { 
             notifyAll();

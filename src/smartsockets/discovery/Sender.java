@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 public class Sender extends Thread {
     
     private static final Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsockets.discovery");
+        Logger.getLogger("smartsockets.discovery");
     
     private final int sleep;
     

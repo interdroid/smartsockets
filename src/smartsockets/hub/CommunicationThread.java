@@ -18,7 +18,7 @@ abstract class CommunicationThread extends Thread {
     protected final StateCounter state;         
     
     protected static final Logger hublogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub"); 
+        Logger.getLogger("smartsockets.hub"); 
         
     protected final Map<DirectSocketAddress, BaseConnection> connections;     
     

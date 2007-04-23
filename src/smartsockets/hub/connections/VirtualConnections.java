@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 public class VirtualConnections {
 
     private static Logger vclogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.virtual");
+        Logger.getLogger("smartsockets.hub.connections.virtual");
     
     private final HashMap<String, VirtualConnection> vcs = 
         new HashMap<String, VirtualConnection>();

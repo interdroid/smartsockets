@@ -18,7 +18,7 @@ public class Latency {
     private static int DEFAULT_REPEAT = 10;
     private static int DEFAULT_COUNT = 10000;
     
-    private static int TIMEOUT = 5000;
+    private static int TIMEOUT = 15000;
     
     private static int count = DEFAULT_COUNT;    
     private static int repeat = DEFAULT_REPEAT;

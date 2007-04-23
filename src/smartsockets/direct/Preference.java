@@ -15,7 +15,7 @@ import smartsockets.util.NetworkUtils;
 class Preference {
 
     private static final Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsockets.network.preference");
+        Logger.getLogger("smartsockets.network.preference");
     
     private final String name;
 

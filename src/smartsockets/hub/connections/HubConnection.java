@@ -21,10 +21,10 @@ import smartsockets.hub.state.StateSelector;
 public class HubConnection extends MessageForwardingConnection {
 
     private static final Logger conlogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.connections.hub"); 
+        Logger.getLogger("smartsockets.hub.connections.hub"); 
      
     private static final Logger goslogger = 
-        ibis.util.GetLogger.getLogger("smartsockets.hub.gossip"); 
+        Logger.getLogger("smartsockets.hub.gossip"); 
           
     private final HubDescription peer;
     private final HubDescription local;    

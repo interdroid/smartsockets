@@ -21,8 +21,11 @@ import smartsockets.util.net.NativeNetworkConfig;
  */
 public class NetworkUtils {
 
-    protected static Logger logger = 
-        ibis.util.GetLogger.getLogger("smartsockets.network.util");
+    protected static Logger logger;
+    static {
+        ibis.util.Log.initLog4J("smartsockets");
+        logger = Logger.getLogger("smartsockets.network.util");
+    }
     
     // This matrix contains the possible IPv4 subnet/mask values. Note that the 
     // each entry consists of three parts: the subnet, the mask needed to match 

@@ -18,8 +18,8 @@ import smartsockets.util.NetworkUtils;
 
 public class NetworkPreference {
    
-    private static final Logger logger = ibis.util.GetLogger
-            .getLogger("smartsockets.network.preference");
+    private static final Logger logger
+            = Logger.getLogger("smartsockets.network.preference");
 
     private Preference defaultPreference;
     private Preference networksPreference;
