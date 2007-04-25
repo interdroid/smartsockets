@@ -187,8 +187,8 @@ public class Hub extends Thread {
             goslogger.info("Start Gossiping!");
         }
 
-        printStatistics = p.booleanProperty(Properties.HUB_STATISTICS); 
-        STAT_FREQ = p.getIntProperty(Properties.HUB_STATS_INTERVAL);
+        printStatistics = p.booleanProperty(Properties.HUB_STATISTICS, false); 
+        STAT_FREQ = p.getIntProperty(Properties.HUB_STATS_INTERVAL, 60000);
         
         nextStats = System.currentTimeMillis() + STAT_FREQ;
         
