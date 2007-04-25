@@ -310,7 +310,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             // Connection doesn't exist. It may already be closed by the other 
             // side due to a timeout. Send a close back to inform the sender 
             // that the connection does no longer exist...
-            vclogger.warn("Lost message! " + index + "[" + size 
+            vclogger.info("Lost message! " + index + "[" + size 
                     + "] target VC not found!");
         
             messagesLost++;
@@ -666,10 +666,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         
         connectionsTotal++;
         
-     //   if (vclogger.isInfoEnabled()) {                            
-            vclogger.warn("ANY connection request for: " + index + " to " + 
+        if (vclogger.isInfoEnabled()) {                            
+            vclogger.info("ANY connection request for: " + index + " to " + 
                     target);
-      //  }
+        }
         
         MessageForwardingConnection mf = null;
         
@@ -728,13 +728,13 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                        // vclogger.warn("GOT indirection!");
                         
                     } else { 
-                        vclogger.warn("Failed to find indirection for hub: " 
+                        vclogger.info("Failed to find indirection for hub: " 
                                 + targetHub 
                                 + " during virtual connection setup ("
                                 + source + " -> " + target + ") : "  + index);
                     }
                 } else { 
-                    vclogger.warn("Failed to find hub: " + targetHub 
+                    vclogger.info("Failed to find hub: " + targetHub 
                             + " during virtual connection setup ("
                             + source + " -> " + target + ") : "  + index); 
                 }

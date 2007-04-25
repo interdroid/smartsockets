@@ -40,7 +40,8 @@ public class Hub extends Thread {
         goslogger = Logger.getLogger("smartsockets.hub.gossip");
     }
     
-    private static final long STAT_FREQ = 60000;
+    private static boolean printStatistics = false;
+    private static long STAT_FREQ = 60000;
     
     private final HubList hubs;    
     private final Map<DirectSocketAddress, BaseConnection> connections;
@@ -185,6 +186,9 @@ public class Hub extends Thread {
         if (goslogger.isInfoEnabled()) {
             goslogger.info("Start Gossiping!");
         }
+
+        printStatistics = p.booleanProperty(Properties.HUB_STATISTICS); 
+        STAT_FREQ = p.getIntProperty(Properties.HUB_STATS_INTERVAL);
         
         nextStats = System.currentTimeMillis() + STAT_FREQ;
         
@@ -255,13 +259,18 @@ public class Hub extends Thread {
     
     private void statistics() { 
         
+        if (!printStatistics) { 
+            return;
+        }
+        
         long now = System.currentTimeMillis();
         
         if (now < nextStats) {
             return;
         }
         
-        DirectSocketAddress [] cons = connections.keySet().toArray(new DirectSocketAddress[0]);
+        DirectSocketAddress [] cons = connections.keySet().toArray(
+                new DirectSocketAddress[0]);
         
         for (DirectSocketAddress s : cons) { 
             

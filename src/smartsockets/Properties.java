@@ -87,7 +87,9 @@ public class Properties {
     public static final String HUB_KNOWN_HUBS     = HUB_PREFIX + "known";
     public static final String HUB_SEND_BUFFER    = HUB_PREFIX + "sendbuffer";
     public static final String HUB_RECEIVE_BUFFER = HUB_PREFIX + "receivebuffer";
-    
+    public static final String HUB_STATISTICS     = HUB_PREFIX + "statistics";                 
+    public static final String HUB_STATS_INTERVAL = HUB_PREFIX + "statistics.interval";                 
+        
     public static final String SL_PREFIX         = PREFIX + "servicelink.";        
     public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
     public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
@@ -129,6 +131,8 @@ public class Properties {
             HUB_PORT,               "17878",
             HUB_SEND_BUFFER,        "-1",
             HUB_RECEIVE_BUFFER,     "-1",
+            HUB_STATISTICS,         "false",
+            HUB_STATS_INTERVAL,     "60000",
             
             MODULES_DEFINE,         "direct,reverse,splice,hubrouted", 
             MODULES_ORDER,          "direct,reverse,splice,hubrouted",

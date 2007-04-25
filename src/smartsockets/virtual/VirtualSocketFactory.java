@@ -91,6 +91,7 @@ public class VirtualSocketFactory {
         logger = Logger.getLogger("smartsockets.virtual.misc");
         statslogger = Logger.getLogger("smartsockets.statistics");
     }
+    
     private final ArrayList<ConnectModule> modules = new ArrayList<ConnectModule>();
 
     private final TypedProperties properties;
@@ -184,8 +185,8 @@ public class VirtualSocketFactory {
         // Check if we can discover the proxy address using UDP multicast.
         if (useDiscovery && (discoveryPreferred || address == null)) {
             if (logger.isInfoEnabled()) {
-                logger
-                        .info("Attempting to discover proxy using UDP multicast...");
+                logger.info("Attempting to discover proxy using UDP" +
+                        " multicast...");
             }
 
             int port = properties.getIntProperty(Properties.DISCOVERY_PORT);
@@ -323,7 +324,7 @@ public class VirtualSocketFactory {
         int count = mods.length;
 
         if (mods == null || mods.length == 0) {
-            logger.info("No smartsockets modules defined!");
+            logger.error("No smartsockets modules defined!");
             return;
         }
 
@@ -357,6 +358,11 @@ public class VirtualSocketFactory {
             logger.info("Loading " + count + " modules: " + t);
         }
 
+        if (count == 0) {
+            logger.error("No smartsockets modules left after filtering!");
+            return;
+        }
+        
         for (int i = 0; i < mods.length; i++) {
 
             if (mods[i] != null) {
@@ -377,13 +383,25 @@ public class VirtualSocketFactory {
 
                     modules.add(m);
                 } catch (Exception e) {
-                    logger.info("Failed to load module: " + mods[i], e);
+        
+                    if (logger.isInfoEnabled()) {
+                        logger.warn("Failed to load module: " + mods[i], e);
+                    } else { 
+                        logger.warn("Failed to load module: " + mods[i]);                            
+                    }
+                    
                     mods[i] = null;
                     count--;
                 }
             }
         }
-
+        
+        if (myAddresses == null) {
+            logger.info("Failed to retrieve my own address!");        
+            modules.clear();      
+            return;
+        }
+            
         if (logger.isInfoEnabled()) {
             logger.info(count + " modules loaded.");
         }
