@@ -385,9 +385,7 @@ public class VirtualSocketFactory {
                 } catch (Exception e) {
         
                     if (logger.isInfoEnabled()) {
-                        logger.warn("Failed to load module: " + mods[i], e);
-                    } else { 
-                        logger.warn("Failed to load module: " + mods[i]);                            
+                        logger.info("Failed to load module: " + mods[i], e);
                     }
                     
                     mods[i] = null;
