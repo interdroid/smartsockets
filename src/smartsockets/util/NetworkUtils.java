@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Random;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
@@ -22,10 +23,16 @@ import smartsockets.util.net.NativeNetworkConfig;
 public class NetworkUtils {
 
     protected static Logger logger;
+    
     static {
         ibis.util.Log.initLog4J("smartsockets");
         logger = Logger.getLogger("smartsockets.network.util");
     }
+    
+    // The number of milliseconds between October 15th 1582 (the start of the 
+    // Gregorian calendar) and January 1st 1970 (the start of Unix time). This
+    // is needed in UUID generation.     
+    private static long MILLIS_1582_1970 = 12216618000000L;
     
     // This matrix contains the possible IPv4 subnet/mask values. Note that the 
     // each entry consists of three parts: the subnet, the mask needed to match 
@@ -454,6 +461,49 @@ public class NetworkUtils {
     
     public static byte [] StringToUUID(String UUID) { 
         return stringToBytes(UUID, true, '.');
+    }
+    
+    public static byte [] getUUID() { 
+        
+        // Get the time since the start of the calendar
+        long time = (System.currentTimeMillis() + MILLIS_1582_1970) * 10;
+        
+        // Or in the version number
+        time |= 2;
+
+        // Get a random 'clock' value
+        Random r = new Random();
+        int clock = r.nextInt((2 << 16) - 1);
+
+        // Or in the variant code
+        clock |= (1 << 2);
+        
+        // Get the MAC address
+        byte [] mac = NetworkUtils.getAnyMACAddress(
+                getAllHostAddresses(false, true));        
+
+        if (mac == null) { 
+            // If we failed to get a MAC address, we use a random value instead.
+            mac = new byte[6];
+            r.nextBytes(mac);
+        }
+        
+        // Finally construct the UUID
+        byte [] uuid = new byte[16];
+        
+        for (int i=7;i>=0;i--) { 
+            uuid[i] = (byte) ((time >> i*8) & 0xff); 
+        }
+        
+        for (int i=1;i>=0;i--) { 
+            uuid[8+i] = (byte) ((clock >> i*8) & 0xff); 
+        }
+        
+        for (int i=0;i<6;i++) { 
+            uuid[10+i] = mac[i]; 
+        }
+        
+        return uuid;
     }
     
     

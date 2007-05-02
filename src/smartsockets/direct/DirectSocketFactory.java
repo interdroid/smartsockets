@@ -18,9 +18,6 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.safehaus.uuid.EthernetAddress;
-import org.safehaus.uuid.UUID;
-import org.safehaus.uuid.UUIDGenerator;
 
 import smartsockets.Properties;
 import smartsockets.util.NetworkUtils;
@@ -47,9 +44,9 @@ import ch.ethz.ssh2.LocalStreamForwarder;
 public class DirectSocketFactory {
 
     protected static Logger logger = Logger.getLogger("smartsockets.direct");
-
-    private static DirectSocketFactory defaultFactory; 
     
+    private static DirectSocketFactory defaultFactory; 
+
     private final int DEFAULT_TIMEOUT;
     private final int DEFAULT_BACKLOG;
     private final int DEFAULT_LOCAL_TIMEOUT;
@@ -141,7 +138,10 @@ public class DirectSocketFactory {
         if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;
 
-            getUUID();       
+            byte [] uuid = NetworkUtils.getUUID();
+            
+            localAddress = IPAddressSet.merge(localAddress, uuid);    
+            
             getExternalAddress(p);
             
             if (externalNATAddress != null) {
@@ -176,24 +176,6 @@ public class DirectSocketFactory {
         getNATAddress();
     }
 
-    private void getUUID() { 
-        
-        byte [] mac = NetworkUtils.getAnyMACAddress(localAddress.getAddresses());        
-        
-        UUIDGenerator gen = UUIDGenerator.getInstance();                    
-        UUID uuid = null;
-        
-        if (mac != null) {             
-            uuid = gen.generateTimeBasedUUID(new EthernetAddress(mac));                        
-        } else { 
-            uuid = gen.generateRandomBasedUUID();
-        }
-        
-        byte [] id = uuid.asByteArray();
-        
-        localAddress = IPAddressSet.merge(localAddress, id);                           
-    }
-    
     private char [] getPrivateSSHKey() { 
 
         // Check if we can find the files we need to setup an outgoing ssh 
