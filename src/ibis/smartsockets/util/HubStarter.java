@@ -45,13 +45,13 @@ public class HubStarter {
                 
                 String clusters = args[++i];
                 
-                p.put("ibis.smartsockets.hub.clusters", clusters);
+                p.put("smartsockets.hub.clusters", clusters);
                 
                 // Check if the property is a comma seperated list of strings
                 String [] tmp = null;
                 
                 try {             
-                    tmp = p.getStringList("ibis.smartsockets.hub.clusters", ",", null);               
+                    tmp = p.getStringList("smartsockets.hub.clusters", ",", null);               
                 } catch (Exception e) { 
                     // ignore
                 }
@@ -97,8 +97,8 @@ public class HubStarter {
         hubs = tmp;
         
         if (port != DEFAULT_ACCEPT_PORT && 
-                (p.getIntProperty("ibis.smartsockets.hub.port", -1) != -1)) {         
-            p.put("ibis.smartsockets.hub.port", Integer.toString(port));
+                (p.getIntProperty("smartsockets.hub.port", -1) != -1)) {         
+            p.put("smartsockets.hub.port", Integer.toString(port));
         }
         
         if (startHub) { 

@@ -97,7 +97,7 @@ public class NetworkPreference {
         //TypedProperties tp = new TypedProperties
         
         String file = Properties
-                .stringProperty(ibis.smartsockets.direct.Properties.CONNECT_FILE);
+                .stringProperty(smartsockets.direct.Properties.CONNECT_FILE);
         
         //System.err.println("GETTING FILE: "  + file);
         
@@ -379,13 +379,13 @@ public class NetworkPreference {
                 firewallDefaultAccept = false;
                 firewallAcceptAll = false;
             } else { 
-                logger.warn("Property \"ibis.smartsockets.networks.firewall." 
+                logger.warn("Property \"smartsockets.networks.firewall." 
                         + localNetworks.name + ".default\" has illegal value: " 
                         + firewall[2][0] + " (must be \"accept\" or \"deny\")");
             }
             
             if (firewall[2].length > 1) { 
-                logger.warn("Property \"ibis.smartsockets.networks.firewall." 
+                logger.warn("Property \"smartsockets.networks.firewall." 
                         + localNetworks.name + ".default\" may only have a " 
                         + "single value!");
             }

@@ -55,10 +55,10 @@ public class Router extends Thread {
     
     public Router(DirectSocketAddress hub) throws IOException {         
         
-        properties.put("ibis.smartsockets.modules.skip", "routed"); 
+        properties.put("smartsockets.modules.skip", "routed"); 
         
         if (hub != null) { 
-            properties.put("ibis.smartsockets.hub", hub.toString());
+            properties.put("smartsockets.hub", hub.toString());
         }
              
         if (logger.isDebugEnabled()) {

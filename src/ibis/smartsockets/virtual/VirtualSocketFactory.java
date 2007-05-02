@@ -245,7 +245,7 @@ public class VirtualSocketFactory {
 
         // Check if the users want us to register any properties with the hub.
         String[] props = properties.getStringList(
-                "ibis.smartsockets.register.property", ",", null);
+                "smartsockets.register.property", ",", null);
 
         if (props != null && props.length > 0) {
             try {
@@ -281,10 +281,10 @@ public class VirtualSocketFactory {
             // The class implementing the module is not explicitly defined, so
             // instead we use an 'educated guess' of the form:
             //
-            // ibis.smartsockets.virtual.modules.<name>.<Name>
+            // smartsockets.virtual.modules.<name>.<Name>
             //            
             StringBuffer tmp = new StringBuffer();
-            tmp.append("ibis.smartsockets.virtual.modules.");
+            tmp.append("smartsockets.virtual.modules.");
             tmp.append(name.toLowerCase());
             tmp.append(".");
             tmp.append(Character.toUpperCase(name.charAt(0)));
@@ -324,7 +324,7 @@ public class VirtualSocketFactory {
         int count = mods.length;
 
         if (mods == null || mods.length == 0) {
-            logger.error("No ibis.smartsockets modules defined!");
+            logger.error("No smartsockets modules defined!");
             return;
         }
 
@@ -359,7 +359,7 @@ public class VirtualSocketFactory {
         }
 
         if (count == 0) {
-            logger.error("No ibis.smartsockets modules left after filtering!");
+            logger.error("No smartsockets modules left after filtering!");
             return;
         }
         
@@ -976,7 +976,7 @@ public class VirtualSocketFactory {
 
         VirtualSocketFactory factory = new VirtualSocketFactory(typedProperties);
 
-        if (typedProperties.containsKey("ibis.smartsockets.factory.statistics")) {
+        if (typedProperties.containsKey("smartsockets.factory.statistics")) {
 
             int tmp = typedProperties.getIntProperty(Properties.STATISTICS_INTERVAL,
                     0);

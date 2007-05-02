@@ -13,9 +13,9 @@ import org.apache.log4j.Logger;
 
 public class Properties {
 
-    public static final String DEFAULT_FILE = "ibis.smartsockets.properties";
+    public static final String DEFAULT_FILE = "smartsockets.properties";
     
-    public static final String PREFIX = "ibis.smartsockets.";
+    public static final String PREFIX = "smartsockets.";
     
     public static final String FILE                = PREFIX + "file";
     public static final String ROUTERS             = PREFIX + "routers";  
@@ -236,7 +236,7 @@ public class Properties {
                 defaultProperties.put(defaults[i], defaults[i+1]);            
             }
       
-            // Get the ibis.smartsockets related properties from the commandline. 
+            // Get the smartsockets related properties from the commandline. 
             TypedProperties system = 
                 new TypedProperties(System.getProperties()).filter(PREFIX);
 
@@ -268,7 +268,7 @@ public class Properties {
                 }
             }
             
-            // Finally, add the ibis.smartsockets related properties from the command
+            // Finally, add the smartsockets related properties from the command
             // line to the result, possibly overriding entries from file or the 
             // defaults.            
             defaultProperties.putAll(system);
