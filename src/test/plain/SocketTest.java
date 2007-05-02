@@ -1,5 +1,9 @@
 package test.plain;
 
+import ibis.smartsockets.SmartServerSocketFactory;
+import ibis.smartsockets.SmartSocketAddress;
+import ibis.smartsockets.SmartSocketFactory;
+
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,9 +18,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
-import smartsockets.SmartServerSocketFactory;
-import smartsockets.SmartSocketAddress;
-import smartsockets.SmartSocketFactory;
 
 public class SocketTest {
     

@@ -1,13 +1,14 @@
 package test.plain;
 
+import ibis.smartsockets.SmartSocketAddress;
+import ibis.smartsockets.SmartSocketImplFactory;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-import smartsockets.SmartSocketAddress;
-import smartsockets.SmartSocketImplFactory;
 
 public class SocketTest2 {
     

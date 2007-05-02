@@ -1,8 +1,8 @@
 package test.virtual.address;
 
-import smartsockets.virtual.VirtualServerSocket;
-import smartsockets.virtual.VirtualSocketAddress;
-import smartsockets.virtual.VirtualSocketFactory;
+import ibis.smartsockets.virtual.VirtualServerSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
+import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public class AddressSize {
 

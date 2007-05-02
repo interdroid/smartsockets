@@ -1,6 +1,11 @@
 package test.direct.splice;
 
 
+import ibis.smartsockets.direct.DirectServerSocket;
+import ibis.smartsockets.direct.DirectSimpleSocket;
+import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.direct.DirectSocketFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -8,10 +13,6 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
-import smartsockets.direct.DirectServerSocket;
-import smartsockets.direct.DirectSimpleSocket;
-import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.DirectSocketAddress;
 
 public class ThreePointSpliceTest {
 

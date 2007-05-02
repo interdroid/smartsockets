@@ -1,14 +1,15 @@
 package test.virtual.alltoall;
 
 
+import ibis.smartsockets.virtual.VirtualServerSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
+import ibis.smartsockets.virtual.VirtualSocketFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import smartsockets.virtual.VirtualServerSocket;
-import smartsockets.virtual.VirtualSocket;
-import smartsockets.virtual.VirtualSocketAddress;
-import smartsockets.virtual.VirtualSocketFactory;
 
 public class Server {
 

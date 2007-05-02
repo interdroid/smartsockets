@@ -1,9 +1,10 @@
 package test.properties;
 
+import ibis.smartsockets.util.TypedProperties;
+
 import java.io.FileInputStream;
 import java.util.HashMap;
 
-import smartsockets.util.TypedProperties;
 
 public class Test {
     
@@ -34,7 +35,7 @@ public class Test {
      
         // These are the default values.....
         HashMap<String, String> defaults = new HashMap<String, String>();
-        defaults.put("smartsockets.networks.default", "site,link,global");
+        defaults.put("ibis.smartsockets.networks.default", "site,link,global");
         
         TypedProperties tp = new TypedProperties(defaults);
                         
@@ -50,23 +51,23 @@ public class Test {
         
         TypedProperties sys = new TypedProperties(System.getProperties());
         
-        tp.putAll(sys.filter("smartsockets.", false, false));
+        tp.putAll(sys.filter("ibis.smartsockets.", false, false));
                                
         System.out.println("I now know " + tp.size() + " properties.");
         System.out.println(tp.toVerboseString());
         
         System.out.println("Network ======================== ");               
-        TypedProperties tmp = tp.filter("smartsockets.networks.", true, true);
-        def(tmp, "smartsockets.networks.");
+        TypedProperties tmp = tp.filter("ibis.smartsockets.networks.", true, true);
+        def(tmp, "ibis.smartsockets.networks.");
                         
         
         System.out.println("Modules ======================== ");
-        tmp = tp.filter("smartsockets.modules.", true, true); 
-        def(tmp, "smartsockets.modules.");
+        tmp = tp.filter("ibis.smartsockets.modules.", true, true); 
+        def(tmp, "ibis.smartsockets.modules.");
 
         System.out.println("Cluster ======================== ");        
-        tmp = tp.filter("smartsockets.cluster.", true, true);
-        def(tmp, "smartsockets.cluster.");
+        tmp = tp.filter("ibis.smartsockets.cluster.", true, true);
+        def(tmp, "ibis.smartsockets.cluster.");
 
         System.out.println("Leftover ======================== ");
                 

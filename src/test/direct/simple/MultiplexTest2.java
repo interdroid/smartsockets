@@ -1,17 +1,18 @@
 package test.direct.simple;
 
 
+import ibis.smartsockets.direct.DirectServerSocket;
+import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.direct.DirectSocketFactory;
+import ibis.smartsockets.util.MultiplexStreamFactory;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import smartsockets.direct.DirectServerSocket;
-import smartsockets.direct.DirectSocket;
-import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.DirectSocketAddress;
-import smartsockets.util.MultiplexStreamFactory;
 
 public class MultiplexTest2 {
     

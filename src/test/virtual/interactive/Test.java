@@ -1,5 +1,13 @@
 package test.virtual.interactive;
 
+import ibis.smartsockets.hub.servicelink.ClientInfo;
+import ibis.smartsockets.hub.servicelink.HubInfo;
+import ibis.smartsockets.virtual.InitializationException;
+import ibis.smartsockets.virtual.VirtualServerSocket;
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.VirtualSocketAddress;
+import ibis.smartsockets.virtual.VirtualSocketFactory;
+
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -11,13 +19,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 
-import smartsockets.hub.servicelink.ClientInfo;
-import smartsockets.hub.servicelink.HubInfo;
-import smartsockets.virtual.InitializationException;
-import smartsockets.virtual.VirtualServerSocket;
-import smartsockets.virtual.VirtualSocket;
-import smartsockets.virtual.VirtualSocketAddress;
-import smartsockets.virtual.VirtualSocketFactory;
  
 public class Test extends Thread {
     

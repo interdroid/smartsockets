@@ -3,17 +3,18 @@ package test.gossipproxy;
 
 
 
+import ibis.smartsockets.direct.DirectServerSocket;
+import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.direct.DirectSocketFactory;
+import ibis.smartsockets.hub.servicelink.CallBack;
+import ibis.smartsockets.hub.servicelink.ClientInfo;
+import ibis.smartsockets.hub.servicelink.ServiceLink;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 
-import smartsockets.direct.DirectServerSocket;
-import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.DirectSocketAddress;
-import smartsockets.hub.servicelink.CallBack;
-import smartsockets.hub.servicelink.ClientInfo;
-import smartsockets.hub.servicelink.ServiceLink;
 
 public class TestServiceLink implements CallBack {
     

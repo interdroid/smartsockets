@@ -1,15 +1,16 @@
 package test.direct.simple;
 
+import ibis.smartsockets.direct.DirectServerSocket;
+import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.direct.DirectSocketFactory;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import smartsockets.direct.DirectServerSocket;
-import smartsockets.direct.DirectSocket;
-import smartsockets.direct.DirectSocketFactory;
-import smartsockets.direct.DirectSocketAddress;
 
 public class ConnectTest {
 
