@@ -284,7 +284,7 @@ public class VirtualSocketFactory {
             // smartsockets.virtual.modules.<name>.<Name>
             //            
             StringBuffer tmp = new StringBuffer();
-            tmp.append("smartsockets.virtual.modules.");
+            tmp.append("ibis.smartsockets.virtual.modules.");
             tmp.append(name.toLowerCase());
             tmp.append(".");
             tmp.append(Character.toUpperCase(name.charAt(0)));
