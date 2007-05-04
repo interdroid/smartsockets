@@ -7,7 +7,7 @@ import java.net.SocketException;
 
 import org.apache.log4j.Logger;
 
-public class AnsweringMachine extends Thread {
+public class AnsweringMachine implements Runnable {
 
     private static final Logger logger = 
         Logger.getLogger("ibis.smartsockets.discovery");
@@ -21,8 +21,6 @@ public class AnsweringMachine extends Thread {
           
     AnsweringMachine(int port, String prefix, String [] tags, String reply) 
         throws SocketException {
-        
-        super("discovery.AnsweringMachine");
         
         this.prefix = prefix;
         this.tags = tags;

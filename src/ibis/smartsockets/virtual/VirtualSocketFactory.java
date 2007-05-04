@@ -20,6 +20,8 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -250,7 +252,7 @@ public class VirtualSocketFactory {
         DirectSocketAddress address = null;
 
         if (logger.isInfoEnabled()) {
-            logger.info("Attempting to discover proxy using UDP multicast...");
+            logger.info("Attempting to discover hub using UDP multicast...");
         }
 
         int port = properties.getIntProperty(SmartSocketsProperties.DISCOVERY_PORT);
@@ -286,26 +288,31 @@ public class VirtualSocketFactory {
     
     private void createServiceLink(String localCluster) {
 
-        DirectSocketAddress address = null;
+        List<DirectSocketAddress> hubs = new LinkedList<DirectSocketAddress>();
+        
+        // Check if the hub address was passed as a property.
+        String [] tmp = properties.getStringList(
+                SmartSocketsProperties.HUB_ADDRESSES);
 
-        // Check if the proxy address was passed as a property.
-        String tmp = properties.getProperty(SmartSocketsProperties.HUB_ADDRESS);
-
-        if (tmp != null) {
-            try {
-                address = DirectSocketAddress.getByAddress(tmp);
-            } catch (Exception e) {
-                logger.warn("Failed to understand proxy address: " + tmp, e);
+        if (tmp != null && tmp.length == 0) {
+            for (String a : tmp) {             
+                try {
+                    hubs.add(DirectSocketAddress.getByAddress(a));
+                } catch (Exception e) {
+                    logger.warn("Failed to understand hub address: " + tmp, e);
+                }
             }
         }
 
         // If we don't have a hub address, we try to find one ourselves
-        if (address == null) {            
+        if (hubs.size() == 0) {            
             boolean useDiscovery = properties.booleanProperty(
                     SmartSocketsProperties.DISCOVERY_ALLOWED, false);
 
             boolean discoveryPreferred = properties.booleanProperty(
                     SmartSocketsProperties.DISCOVERY_PREFERRED, false);
+            
+            DirectSocketAddress address = null;
             
             if (useDiscovery && (discoveryPreferred || hub == null)) { 
                 address = discoverHub(localCluster);                    
@@ -314,10 +321,14 @@ public class VirtualSocketFactory {
             if (address == null && hub != null) { 
                 address = hub.getHubAddress();
             } 
+            
+            if (address != null) { 
+                hubs.add(address);
+            }
         } 
 
         // Still no address ? Give up...
-        if (address == null) {
+        if (hubs.size() == 0) {
             // properties not set, so no central hub is available
             // if (logger.isInfoEnabled()) {
             System.out.println("ServiceLink not created: no hub address available!");
@@ -327,7 +338,7 @@ public class VirtualSocketFactory {
         }
 
         try {
-            serviceLink = ServiceLink.getServiceLink(properties, address,
+            serviceLink = ServiceLink.getServiceLink(properties, hubs,
                     myAddresses);
 
             hubAddress = serviceLink.getAddress();
@@ -1002,10 +1013,39 @@ public class VirtualSocketFactory {
         return clusters.localCluster();
     }
 
-    public DirectSocketAddress getLocalProxy() {
+    public DirectSocketAddress getLocalHub() {
         return hubAddress;
     }
 
+    public void addHubs(DirectSocketAddress [] hubs) {
+        if (hub != null) { 
+            hub.addHubs(hubs);
+        } else if (serviceLink != null) { 
+            serviceLink.addHubs(hubs);
+        }
+    }
+            
+    public DirectSocketAddress [] getKnownHubs() {
+        
+        if (hub != null) { 
+            return hub.knownHubs();
+        } else if (serviceLink != null) {            
+            try {
+                return serviceLink.hubs();
+            } catch (IOException e) {
+                logger.info("Failed to retrieve hub list!", e);
+            }
+        }
+        
+        return null;        
+    }
+    
+    public void end() { 
+        if (hub != null) { 
+            hub.end();
+        }
+    }
+    
     protected void closed(int port) {
         synchronized (serverSockets) {
             serverSockets.remove(new Integer(port));

@@ -28,17 +28,16 @@ public class TestServiceLink implements CallBack {
 
     private int message = 0;
     
-    private TestServiceLink(int port, LinkedList proxies, boolean interactive) 
-        throws IOException {         
+    private TestServiceLink(int port, LinkedList<DirectSocketAddress> hubs, 
+            boolean interactive) throws IOException {         
     
         this.interactive = interactive;
         
         factory = DirectSocketFactory.getSocketFactory();        
         ss = factory.createServerSocket(port, 10, null);        
         
-        while (proxies.size() > 0) {
-            serviceLink = ServiceLink.getServiceLink(null,
-                    (DirectSocketAddress) proxies.removeFirst(), 
+        while (hubs.size() > 0) {
+            serviceLink = ServiceLink.getServiceLink(null, hubs, 
                     ss.getAddressSet());
             
             if (serviceLink != null) { 
@@ -222,7 +221,7 @@ public class TestServiceLink implements CallBack {
         int port = DEFAULT_PORT;
         boolean interactive = false;                
         
-        LinkedList<DirectSocketAddress> proxies = 
+        LinkedList<DirectSocketAddress> hubs = 
             new LinkedList<DirectSocketAddress>();
         
         for (int i=0;i<args.length;i++) { 
@@ -232,7 +231,7 @@ public class TestServiceLink implements CallBack {
                 interactive = true;
             } else if (args[i].equals("-proxy")) {
                 try { 
-                    proxies.add(DirectSocketAddress.getByAddress(args[++i]));
+                    hubs.add(DirectSocketAddress.getByAddress(args[++i]));
                 } catch (Exception e) {
                     System.err.println("Failed to parse proxy: " 
                             + args[i] + " (ignoring)");
@@ -243,13 +242,13 @@ public class TestServiceLink implements CallBack {
             }           
         }
         
-        if (!interactive && proxies.size() == 0) { 
+        if (!interactive && hubs.size() == 0) { 
             System.err.println("No proxies specified!");
             System.exit(1);        
         }        
         
         try { 
-            new TestServiceLink(port, proxies, interactive).start();
+            new TestServiceLink(port, hubs, interactive).start();
         } catch (Exception e) { 
             System.err.println("EEK " + e);
             System.exit(1);

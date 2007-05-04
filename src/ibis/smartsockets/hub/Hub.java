@@ -59,6 +59,8 @@ public class Hub extends Thread {
     
     private long nextStats;
     
+    private boolean done = false;
+    
     public Hub(TypedProperties p) throws IOException { 
 
         super("Hub");
@@ -163,8 +165,8 @@ public class Hub extends Thread {
             goslogger.info("Starting Gossip connector/acceptor");
         }
                 
-        acceptor.start();
-        connector.start();
+        acceptor.activate();
+        connector.activate();
 
         if (misclogger.isInfoEnabled()) {
             misclogger.info("Listning for broadcast on LAN");
@@ -253,7 +255,6 @@ public class Hub extends Thread {
         
     }
     
-    
     private void gossip() { 
         
         if (goslogger.isInfoEnabled()) {
@@ -287,6 +288,32 @@ public class Hub extends Thread {
         return acceptor.getLocal();
     }
     
+    public DirectSocketAddress [] knownHubs() {        
+        return hubs.knownHubs();        
+    }
+    
+    private synchronized boolean getDone() { 
+        return done;
+    }
+    
+    public void end() {     
+        
+        // Shuts down gossip thread.
+        synchronized (this) {
+            done = true;
+        }
+        
+        try {  
+            interrupt();
+        } catch (Exception e) {
+            // ignore 
+        }
+        
+        // Shut down the other threads....
+        acceptor.end();
+        connector.end();
+    }
+    
     private void statistics() { 
         
         if (!printStatistics) { 
@@ -317,7 +344,7 @@ public class Hub extends Thread {
         
     public void run() { 
         
-        while (true) { 
+        while (!getDone()) { 
             try { 
                 if (goslogger.isInfoEnabled()) {
                     goslogger.info("Sleeping for " + GOSSIP_SLEEP + " ms.");
@@ -327,8 +354,7 @@ public class Hub extends Thread {
                 // ignore
             }
             
-            gossip();
-            
+            gossip();            
             statistics();
         }        
     }     

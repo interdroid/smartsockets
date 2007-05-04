@@ -2,6 +2,7 @@ package ibis.smartsockets.discovery;
 
 
 import ibis.smartsockets.util.NetworkUtils;
+import ibis.util.ThreadPool;
 
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -76,8 +77,8 @@ public class Discovery {
     public void answeringMachine(String prefix, String [] tags, String reply) { 
         
         try {
-            answer = new AnsweringMachine(receivePort, prefix, tags, reply);
-            answer.start();
+            answer = new AnsweringMachine(receivePort, prefix, tags, reply);            
+            ThreadPool.createNew(answer, "discovery.AnsweringMachine");
         } catch (SocketException e) {
             logger.warn("Failed to create answering machine!", e);
         }

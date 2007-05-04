@@ -18,6 +18,8 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 
 import com.touchgraph.graphlayout.Edge;
@@ -47,7 +49,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
     /** Default constructor.
      * @param hub 
      */
-    public SmartsocketsViz(DirectSocketAddress hub) {
+    public SmartsocketsViz(List<DirectSocketAddress> hub) {
         super();
 
         tgPanel.setBackground(Color.BLACK);
@@ -234,15 +236,21 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             System.exit(1);
         }
 
-        DirectSocketAddress hub = null;
+        List<DirectSocketAddress> hub = new LinkedList<DirectSocketAddress>();
 
-        try {
-            hub = DirectSocketAddress.getByAddress(args[0]);
-        } catch (Exception e1) {
-            System.err.println("Coudn't parse hub address: " + args[0]);
-            System.exit(1);
+        for (String s : args) {         
+            try {
+                hub.add(DirectSocketAddress.getByAddress(s));
+            } catch (Exception e1) {
+                System.err.println("Couldn't parse hub address: " + s);
+            }
         }
-
+        
+        if (hub.size() == 0) { 
+            System.err.println("No hubs provided!");
+            System.exit(1);            
+        }
+            
         final Frame frame;
         final SmartsocketsViz glPanel = new SmartsocketsViz(hub);
         frame = new Frame("TouchGraph GraphLayout");

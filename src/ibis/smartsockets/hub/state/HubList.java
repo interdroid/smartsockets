@@ -2,6 +2,7 @@ package ibis.smartsockets.hub.state;
 
 import ibis.smartsockets.direct.DirectSocketAddress;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -19,9 +20,11 @@ public class HubList {
     private final LinkedList<HubDescription> mustCheck = 
         new LinkedList<HubDescription>();
     
-    // TODO: actually use this list ? 
+    // TODO: do actually use this list ? 
+    /*
     private final LinkedList<HubDescription> unConnectedHubs = 
         new LinkedList<HubDescription>();
+    */
     
     private final HashMap<DirectSocketAddress, HubDescription> map = 
         new HashMap<DirectSocketAddress, HubDescription>();    
@@ -35,11 +38,12 @@ public class HubList {
     public synchronized HubDescription nextHubToCheck() {
                
         // Wait until there are proxies to check.
-        while (mustCheck.size() == 0) {            
-            try { 
+        while (mustCheck.size() == 0) {             
+            try {
                 wait();
             } catch (InterruptedException e) {
-                // ignore
+                // Hub shutting down ? 
+                return null;
             }
         } 
         
@@ -56,20 +60,21 @@ public class HubList {
             long now = System.currentTimeMillis();
 
             if (tmp.getLastConnect()+RETRY_DELAY < now) {
-                // we've passed the deadline and can return the proxy. 
+                // we've passed the deadline and can return the hub. 
                 return (HubDescription) mustCheck.removeFirst();
             }
             
-            long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;
+            long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;            
             
             try {
                 wait(waitTime);
             } catch (InterruptedException e) {
-                // ignore
+                // Hub shutting down ? 
+                return null;
             }
             
             // We may have reached this point because the deadline has passed, 
-            // OR because we have been interrupted by a new proxy that was added 
+            // OR because we have been interrupted by a new hub that was added 
             // to the list. We decide on what to next by running the loop again.            
         } 
     }
@@ -150,6 +155,29 @@ public class HubList {
         
         return tmp;
     }
+    
+    public synchronized DirectSocketAddress[] knownHubs() {
+        
+        ArrayList<DirectSocketAddress> l = new ArrayList<DirectSocketAddress>();
+        
+        l.add(localDescription.hubAddress);
+        
+        for (HubDescription d : connectedHubs) { 
+            l.add(d.hubAddress);                        
+        }
+        
+        for (HubDescription d : mustCheck) { 
+            
+            if (d.haveConnection()) {             
+                l.add(d.hubAddress);
+            } else if (d.state.get() > 0) { 
+                l.add(d.hubAddress);
+            }
+        }
+        
+        return l.toArray(new DirectSocketAddress[l.size()]);
+    }
+
        
     public String toString() {
         
@@ -166,9 +194,11 @@ public class HubList {
         
         result.append("Hubs without a direct connection:\n");
         
+        /*
         for (HubDescription desc : unConnectedHubs) { 
             result.append(desc).append('\n');            
         }
+        */
         
         result.append("Hubs which need to be checked:\n");
 

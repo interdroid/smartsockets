@@ -8,6 +8,7 @@ import ibis.smartsockets.hub.ConnectionProtocol;
 import ibis.smartsockets.hub.connections.MessageForwarderProtocol;
 import ibis.smartsockets.hub.connections.VirtualConnectionIndex;
 import ibis.smartsockets.util.TypedProperties;
+import ibis.util.ThreadPool;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -15,9 +16,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.log4j.Logger;
-
 
 public class ServiceLink implements Runnable {
 
@@ -39,15 +40,15 @@ public class ServiceLink implements Runnable {
     private final DirectSocketFactory factory;
 
     private final DirectSocketAddress myAddress;
-
-    private boolean connected = false;
-
-    private DirectSocketAddress userSuppliedAddress;
-
+    
+    private final List<DirectSocketAddress> hubs;
+    
     private DirectSocketAddress hubAddress;
 
+    private boolean connected = false;
+    
     private DirectSocket hub;
-
+    
     private DataOutputStream out;
 
     private DataInputStream in;
@@ -60,14 +61,6 @@ public class ServiceLink implements Runnable {
             true);
 
     private VirtualConnectionCallBack vcCallBack = null;
-
-    //  private final int maxCredits;
-
-    //   private final Map<Long, Credits> credits = 
-    //       Collections.synchronizedMap(new HashMap<Long, Credits>());
-
-    //   private final HashMap<Long, Byte> connectionACKs = 
-    //       new HashMap<Long, Byte>();
 
     private int sendBuffer = -1;
 
@@ -104,24 +97,20 @@ public class ServiceLink implements Runnable {
 
     private final int virtualHubPort;
 
-    private ServiceLink(DirectSocketAddress hubAddress,
+    private ServiceLink(List<DirectSocketAddress> hubs,
             DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer, 
             int virtualHubPort) throws IOException {
 
-        factory = DirectSocketFactory.getSocketFactory();
-
-        //     this.maxCredits = credits;
+        this.hubs = hubs;
         this.sendBuffer = sendBuffer;
         this.receiveBuffer = receiveBuffer;
-
-        this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;
 
         this.virtualHubPort = virtualHubPort;
 
-        Thread t = new Thread(this, "ServiceLink Message Reader");
-        t.setDaemon(true);
-        t.start();
+        factory = DirectSocketFactory.getSocketFactory();
+        
+        ThreadPool.createNew(this, "ServiceLink Message Reader");
     }
 
     public synchronized void registerVCCallBack(VirtualConnectionCallBack cb) {
@@ -1005,6 +994,10 @@ public class ServiceLink implements Runnable {
         }
     }
 
+    public void addHubs(DirectSocketAddress[] hubs) {
+        // TODO: implement!
+    }
+    
     public HubInfo[] hubDetails() throws IOException {
 
         if (logger.isInfoEnabled()) {
@@ -1549,20 +1542,39 @@ public class ServiceLink implements Runnable {
 
         while (true) {
             do {
-                try {
-                    if (hubAddress == null) {
-                        connectToHub(userSuppliedAddress);
-                    } else {
-                        connectToHub(hubAddress);
+                if (hubAddress == null) { 
+                    // We haven't found a working hub yet....
+                    for (DirectSocketAddress a : hubs) { 
+                        try {
+                            connectToHub(a);
+                            hubAddress = a;
+                            break;
+                        } catch (IOException e) {
+                            // Connection setup failed..
+                            logger.info("Failed to connect to hub: " + a);
+                        }
                     }
-                } catch (IOException e) {
+                
+                    if (!connected) { 
+                        try {
+                            Thread.sleep(sleep);
+                        } catch (InterruptedException ie) {
+                            // ignore
+                        }
+                    }                
+                } else { 
+                    // We have found a working hub (and stick to it!)
                     try {
-                        Thread.sleep(sleep);
-                    } catch (InterruptedException ie) {
-                        // ignore
+                        connectToHub(hubAddress);
+                    } catch (IOException e) {
+                        try {
+                            Thread.sleep(sleep);
+                        } catch (InterruptedException ie) {
+                            // ignore
+                        }
                     }
                 }
-
+                
                 if (sleep < 16000) {
                     sleep *= 2;
                 }
@@ -1575,12 +1587,12 @@ public class ServiceLink implements Runnable {
     }
 
     public static ServiceLink getServiceLink(TypedProperties p,
-            DirectSocketAddress address, DirectSocketAddress myAddress) {
+            List<DirectSocketAddress> hubs, DirectSocketAddress myAddress) {
 
         // TODO: cache service linkes here ? Shared a link between multiple 
         // clients that use the same hub ?  
 
-        if (address == null) {
+        if (hubs == null || hubs.size() == 0) {
             throw new NullPointerException("Hub address is null!");
         }
 
@@ -1599,7 +1611,7 @@ public class ServiceLink implements Runnable {
         }
 
         try {
-            return new ServiceLink(address, myAddress, sendBuffer,
+            return new ServiceLink(hubs, myAddress, sendBuffer,
                     receiveBuffer, virtualHubPort);
 
         } catch (Exception e) {

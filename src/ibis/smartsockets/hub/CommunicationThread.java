@@ -6,16 +6,18 @@ import ibis.smartsockets.hub.connections.BaseConnection;
 import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.StateCounter;
+import ibis.util.ThreadPool;
 
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
 
-abstract class CommunicationThread extends Thread {
+abstract class CommunicationThread implements Runnable {
 
-    protected static final int DEFAULT_TIMEOUT = 10000;
+    protected static final int DEFAULT_TIMEOUT = 5000;
        
+    protected final String name;
     protected final StateCounter state;         
     
     protected static final Logger hublogger = 
@@ -29,13 +31,16 @@ abstract class CommunicationThread extends Thread {
     
     protected DirectSocketAddress local;
     protected String localAsString;
+    protected Thread thread;
+    
+    private boolean end = false;
     
     protected CommunicationThread(String name, StateCounter state, 
             Map<DirectSocketAddress, BaseConnection> connections, 
             HubList knownHubs, VirtualConnections vcs, 
             DirectSocketFactory factory) {
-        
-        super(name);        
+
+        this.name = name;
         this.state = state;
         this.connections = connections;
         this.knownHubs = knownHubs;
@@ -54,5 +59,26 @@ abstract class CommunicationThread extends Thread {
     
     protected String getLocalAsString() {
         return localAsString;
+    }
+    
+    protected synchronized boolean getDone() { 
+        return end;
+    }
+    
+    public synchronized void end() { 
+        end = true;
+    
+        try { 
+            thread.interrupt();
+        } catch (Exception e) {
+            // ignore ? 
+        }
+    }
+    
+    public void activate() {        
+        // thread = ThreadPool.createNew(this, name);        
+        thread = new Thread(this, name);
+        thread.setDaemon(true);
+        thread.start();        
     }
 }

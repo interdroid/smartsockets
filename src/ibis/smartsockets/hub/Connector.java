@@ -28,7 +28,7 @@ class Connector extends CommunicationThread {
     private static final Logger hconlogger = 
         Logger.getLogger("ibis.smartsockets.hub.connections.hub"); 
     
-    private boolean done = false;
+   
     
   //  private final HashMap<String, Object> map = new HashMap<String, Object>(2);
     
@@ -91,8 +91,10 @@ class Connector extends CommunicationThread {
         }
                 
         try { 
-            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, null);
-            
+            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, null);           
+            s.setTcpNoDelay(true);
+            s.setSoTimeout(DEFAULT_TIMEOUT);
+
             out = new DataOutputStream(
                     new BufferedOutputStream(s.getOutputStream()));
             
@@ -149,9 +151,9 @@ class Connector extends CommunicationThread {
         
         try { 
             s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0, 
-                    sendBuffer, receiveBuffer, null, false, 0);
-            
+                    sendBuffer, receiveBuffer, null, false, 0);            
             s.setTcpNoDelay(true);
+            s.setSoTimeout(DEFAULT_TIMEOUT);
             
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Send buffer = " + s.getSendBufferSize());
@@ -255,6 +257,11 @@ class Connector extends CommunicationThread {
         // Handles the connection setup to newly discovered proxies.
         HubDescription d = knownHubs.nextHubToCheck();
         
+        if (d == null) {
+            // This may happen if the hub is shutting down... 
+            return;
+        }
+        
         if (d.haveConnection()) {
             // The connection was already created by the other side. Create a 
             // test connection to see if the proxy is reachable from here. 
@@ -268,7 +275,7 @@ class Connector extends CommunicationThread {
    
     public void run() {
     
-        while (!done) {            
+        while (!getDone()) {            
             handleNewHub();
         }
     }    

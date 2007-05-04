@@ -15,6 +15,7 @@ import ibis.smartsockets.hub.state.HubDescription;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.StateCounter;
 import ibis.smartsockets.util.TypedProperties;
+import ibis.util.ThreadPool;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -43,7 +44,6 @@ public class Acceptor extends CommunicationThread {
         Logger.getLogger("ibis.smartsockets.hub.request"); 
         
     private DirectServerSocket server;
-    private boolean done = false;
         
     private int sendBuffer = -1;
     private int receiveBuffer = -1;
@@ -67,18 +67,10 @@ public class Acceptor extends CommunicationThread {
             server = factory.createServerSocket(port, 50, receiveBuffer, null);        
             setLocal(server.getAddressSet());
             
-            new AcceptThread().start();
+            ThreadPool.createNew(new AcceptThread(), "Acceptor");                
         } else { 
             setLocal(delegationAddress);            
         }
-    }
-    
-    public synchronized void done() {
-        done = true;
-    }
-    
-    private synchronized boolean getDone() {
-        return done;
     }
     
     private boolean handleIncomingHubConnect(DirectSocket s, 
@@ -275,8 +267,9 @@ public class Acceptor extends CommunicationThread {
             while (incoming.size() == 0) {
                 try { 
                     incoming.wait();
-                } catch (Exception e) {
-                    // ignore
+                } catch (InterruptedException e) {
+                    // Hub shutting down ?
+                    return null;
                 }
             }
         
@@ -286,11 +279,16 @@ public class Acceptor extends CommunicationThread {
     
     public void run() { 
         while (!getDone()) { 
-            doAccept(getIncoming());
+            
+            DirectSocket tmp = getIncoming();
+            
+            if (tmp != null) {             
+                doAccept(tmp);
+            }
         }
     }
 
-    private class AcceptThread extends Thread {
+    private class AcceptThread implements Runnable {
         
         public void run() { 
 
