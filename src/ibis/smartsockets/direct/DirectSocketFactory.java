@@ -1,6 +1,6 @@
 package ibis.smartsockets.direct;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.STUN;
 import ibis.smartsockets.util.TypedProperties;
@@ -97,11 +97,11 @@ public class DirectSocketFactory {
         
         //properties = p;
     
-        DEFAULT_BACKLOG = p.getIntProperty(Properties.DIRECT_BACKLOG, 100);
-        DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT, 5000);
-        DEFAULT_LOCAL_TIMEOUT = p.getIntProperty(Properties.LOCAL_TIMEOUT, 100);
+        DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
+        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT, 5000);
+        DEFAULT_LOCAL_TIMEOUT = p.getIntProperty(SmartSocketsProperties.LOCAL_TIMEOUT, 100);
           
-        boolean allowSSHIn = p.booleanProperty(Properties.SSH_IN, false);
+        boolean allowSSHIn = p.booleanProperty(SmartSocketsProperties.SSH_IN, false);
 
         if (allowSSHIn) { 
             user = System.getProperty("user.name");
@@ -109,8 +109,8 @@ public class DirectSocketFactory {
             user = null;
         }
         
-        boolean allowSSHOut = p.booleanProperty(Properties.SSH_OUT, false);
-        FORCE_SSH_OUT = p.booleanProperty(Properties.FORCE_SSH_OUT, false);
+        boolean allowSSHOut = p.booleanProperty(SmartSocketsProperties.SSH_OUT, false);
+        FORCE_SSH_OUT = p.booleanProperty(SmartSocketsProperties.FORCE_SSH_OUT, false);
         
         if (allowSSHOut) {
             privateKey = getPrivateSSHKey();
@@ -120,19 +120,19 @@ public class DirectSocketFactory {
         
         ALLOW_SSH_OUT = (privateKey != null);
         
-        ALLOW_UPNP = p.booleanProperty(Properties.UPNP, false);
+        ALLOW_UPNP = p.booleanProperty(SmartSocketsProperties.UPNP, false);
 
         if (!ALLOW_UPNP) {             
             ALLOW_UPNP_PORT_FORWARDING = false;
         } else { 
             ALLOW_UPNP_PORT_FORWARDING = 
-                p.booleanProperty(Properties.UPNP_PORT_FORWARDING, false);
+                p.booleanProperty(SmartSocketsProperties.UPNP_PORT_FORWARDING, false);
         }
         
-        USE_NIO = p.booleanProperty(Properties.DIRECT_NIO, false);
+        USE_NIO = p.booleanProperty(SmartSocketsProperties.DIRECT_NIO, false);
         
-        defaultReceiveBuffer = p.getIntProperty(Properties.DIRECT_SEND_BUFFER, 0);
-        defaultSendBuffer = p.getIntProperty(Properties.DIRECT_RECEIVE_BUFFER, 0);
+        defaultReceiveBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_SEND_BUFFER, 0);
+        defaultSendBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, 0);
                         
         localAddress = IPAddressSet.getLocalHost();            
                 
@@ -365,7 +365,7 @@ public class DirectSocketFactory {
         externalNATAddress = getExternalAddressProperty(p);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Properties lookup result: " + externalNATAddress);
+            logger.debug("SmartSocketsProperties lookup result: " + externalNATAddress);
         }
 
         if (externalNATAddress != null) {
@@ -373,13 +373,13 @@ public class DirectSocketFactory {
             return;
         }
 
-        if (p.booleanProperty(Properties.STUN, false)) {
+        if (p.booleanProperty(SmartSocketsProperties.STUN, false)) {
             
             if (logger.isDebugEnabled()) {
                 logger.debug("Using STUN to find external address...");
             }
    
-            String [] servers = p.getStringList(Properties.STUN_SERVERS, ",", null); 
+            String [] servers = p.getStringList(SmartSocketsProperties.STUN_SERVERS, ",", null); 
             
             externalNATAddress = STUN.getExternalAddress(servers);
             
@@ -423,14 +423,14 @@ public class DirectSocketFactory {
 
         InetAddress result = null;
 
-        String tmp = p.getProperty(Properties.EXTERNAL_MANUAL);
+        String tmp = p.getProperty(SmartSocketsProperties.EXTERNAL_MANUAL);
 
         if (tmp != null) {
             try {
                 result = InetAddress.getByName(tmp);
             } catch (UnknownHostException e) {
                 logger.warn("Failed to parse property \""
-                        + Properties.EXTERNAL_MANUAL + "\"");
+                        + SmartSocketsProperties.EXTERNAL_MANUAL + "\"");
             }
         }
 
@@ -1705,7 +1705,7 @@ public class DirectSocketFactory {
         
         if (defaultFactory == null) {             
             defaultFactory = 
-                new DirectSocketFactory(Properties.getDefaultProperties());                         
+                new DirectSocketFactory(SmartSocketsProperties.getDefaultProperties());                         
         }
 
         return defaultFactory;

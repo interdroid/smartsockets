@@ -96,13 +96,8 @@ public class VirtualServerSocket {
     private synchronized VirtualSocket getConnection() 
         throws SocketTimeoutException { 
      
-    //    long time = System.currentTimeMillis();
-        
         while (incoming.size() == 0 && !closed) { 
             try { 
-                // TODO: this is wrong! USE DEADLINE
-            //    System.out.println("Queue empty in accept, waiting for "
-            //            + timeout + " ms.");
                 wait(timeout);                
             } catch (Exception e) {
                 // ignore
@@ -115,18 +110,8 @@ public class VirtualServerSocket {
         }
      
         if (incoming.size() > 0) { 
-            
-           // System.out.println("Accept succesfull after " 
-            //        + (System.currentTimeMillis() - time) + " ms. (" 
-            //        + incoming.size() + " connections left)");
-            
             return incoming.removeFirst();
         } else { 
-            
-            //System.out.println("Accept failed after " 
-             //       + (System.currentTimeMillis() - time) + " ms. (" 
-              //      + incoming.size() + " connections left)");
-            
             return null;
         }        
     }
@@ -134,8 +119,6 @@ public class VirtualServerSocket {
     public VirtualSocket accept() throws IOException {
         
         VirtualSocket result = null;
-        
-      //  System.out.println("Starting accept (time = " + System.currentTimeMillis() + ")");
        
         while (result == null) { 
             result = getConnection();
@@ -148,13 +131,8 @@ public class VirtualServerSocket {
                 result = null;
             } else { 
                 // See if the other side is still willing to connect ...     
-              //  long time = 0;
                 
                 try { 
-        //            System.out.println("Starting accepting handshake (timeout = " + timeout + ")");
-                    
-             //       time = System.currentTimeMillis();
-                    
                     int t = timeout;
                     
                     if (timeout <= 0) { 
@@ -162,13 +140,7 @@ public class VirtualServerSocket {
                     }
                     
                     result.connectionAccepted(t);
-                    
-          //          time = System.currentTimeMillis() - time;
-           //         System.out.println("Accepting handshake took " + time + " ms.");
                 } catch (IOException e) {
-                //    time = System.currentTimeMillis() - time;
-                 //   System.out.println("Accepting handshake failed after " + time + " ms.");
-                    
                     VirtualSocketFactory.logger.info("VirtualServerPort( " 
                             + port + ") got exception during accept!", e);
                     result = null;                    

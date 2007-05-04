@@ -9,9 +9,10 @@ import ibis.smartsockets.virtual.VirtualSocketAddress;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.util.HashMap;
 
 
-public abstract class AbstractDirectModule extends MessagingModule {
+public abstract class AbstractDirectModule extends MessagingModule implements AcceptHandler {
     
     public static final byte ACCEPT              = 1;
     public static final byte PORT_NOT_FOUND      = 2;
@@ -20,42 +21,51 @@ public abstract class AbstractDirectModule extends MessagingModule {
     
     protected DirectSocketFactory direct;  
     
+    private HashMap<Integer, AcceptHandler> handlers = null;
+    
     protected AbstractDirectModule(String name, boolean requiresServiceLink) { 
         super(name, requiresServiceLink);
     }
         
+    public synchronized void installAcceptHandler(int port, AcceptHandler h) { 
+        
+        if (handlers == null) { 
+            handlers = new HashMap<Integer, AcceptHandler>(1);
+        }
+        
+        handlers.put(port, h);
+    }
+     
+    // Find the accept handler for the given port. If no handler is found, 
+    // the default handler (this object) will be returned. 
+    private synchronized AcceptHandler findAcceptHandler(int targetPort) {
+        
+        if (handlers == null) { 
+            return this;
+        }
+        
+        AcceptHandler tmp = handlers.get(targetPort);
+            
+        if (tmp == null) { 
+            return this;
+        }
+            
+        return tmp;
+    }
+    
     protected abstract VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
             DirectSocket s, DataOutputStream out, DataInputStream in); 
     
-    protected void handleAccept(DirectSocket ds) {
-        
+    
+    public void accept(DirectSocket ds, int targetPort) { 
+       
         DataInputStream in = null;
         DataOutputStream out = null;
         
-        incomingConnections++;
-         
-        if (logger.isDebugEnabled()) { 
-            logger.debug(module + ": Got incoming connection on " + ds);
-        }
-           
         try {
-            ds.setTcpNoDelay(true);
-            
-            in = new DataInputStream(ds.getInputStream());
             out = new DataOutputStream(ds.getOutputStream());
-           
             
-            
-         //   String remote = in.readUTF();
-            // int targetPort = in.readInt();
-    
-            int targetPort = ds.getUserData();
-            
-            if (logger.isDebugEnabled()) { 
-                logger.debug(module + ": Target port " + targetPort);
-            }
-         
-            // Next check if the port exists locally
+            // Check if the port exists locally
             VirtualServerSocket vss = parent.getServerSocket(targetPort);
             
             if (vss == null) { 
@@ -71,6 +81,8 @@ public abstract class AbstractDirectModule extends MessagingModule {
                 
                 return;
             }
+            
+            in = new DataInputStream(ds.getInputStream());
             
             if (logger.isDebugEnabled()) { 
                 logger.debug(module + ": Connection seems OK, checking is " +
@@ -114,37 +126,27 @@ public abstract class AbstractDirectModule extends MessagingModule {
         }
     }
     
-    /*
-    protected VirtualSocket handleConnect(VirtualSocketAddress target, 
-            DirectSocket s, int timeout, Map<String, Object> properties) throws IOException {
-        
-        VirtualSocket tmp = null;
-        DataInputStream in = null;
-        DataOutputStream out = null;
-        
-        try {
-            in = new DataInputStream(s.getInputStream());
-            out = new DataOutputStream(s.getOutputStream());
-            
-            tmp = createVirtualSocket(target, s, out, in); 
-            
-        } catch (IOException e) {
-            // This module worked fine, but we got a 'normal' exception while 
-            // connecting (i.e., because the other side refused to connection). 
-            // There is no use trying other modules.          
-            failedOutgoingConnections++;
-            DirectSocketFactory.close(s, out, in);
-            throw e;
+    protected void handleAccept(DirectSocket ds) {
+        incomingConnections++;
+         
+        if (logger.isDebugEnabled()) { 
+            logger.debug(module + ": Got incoming connection on " + ds);
         }
-                
-        // Now wait until the other side agrees to the connection (may throw an
-        // exception and close the socket if something is wrong) 
-        tmp.waitForAccept(timeout);
-        
-        acceptedOutgoingConnections++;
-        
-        return tmp;        
-    }*/
-    
-   
+           
+        try {
+            ds.setTcpNoDelay(true);
+            
+            int targetPort = ds.getUserData();
+            
+            if (logger.isDebugEnabled()) { 
+                logger.debug(module + ": Target port " + targetPort);
+            }
+            
+            findAcceptHandler(targetPort).accept(ds, targetPort);
+            
+        } catch (Exception e) {          
+            logger.warn(module + ": Got exception during connection setup!", e);            
+            DirectSocketFactory.close(ds, null, null);
+        }
+    }
 }

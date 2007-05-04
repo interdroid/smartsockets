@@ -1,6 +1,6 @@
 package ibis.smartsockets.virtual.modules.hubrouted;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.ServiceLinkProtocol;
 import ibis.smartsockets.hub.servicelink.VirtualConnectionCallBack;
@@ -37,14 +37,14 @@ public class Hubrouted extends ConnectModule
     }
 
     public void initModule(TypedProperties properties) throws Exception {
-        localFragmentation = properties.getIntProperty(Properties.ROUTED_FRAGMENT, 
+        localFragmentation = properties.getIntProperty(SmartSocketsProperties.ROUTED_FRAGMENT, 
                 localFragmentation);
         
-        localBufferSize = properties.getIntProperty(Properties.ROUTED_BUFFER, 
+        localBufferSize = properties.getIntProperty(SmartSocketsProperties.ROUTED_BUFFER, 
                 localBufferSize);
         
         localMinimalACKSize = properties.getIntProperty(
-                Properties.ROUTED_MIN_ACK, localBufferSize/4);
+                SmartSocketsProperties.ROUTED_MIN_ACK, localBufferSize/4);
         
         if (localFragmentation > localBufferSize) { 
             

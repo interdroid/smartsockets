@@ -1,6 +1,6 @@
 package ibis.smartsockets.virtual;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.util.TypedProperties;
 import ibis.smartsockets.virtual.modules.ConnectModule;
 
@@ -66,8 +66,8 @@ public class VirtualClusters {
     VirtualClusters(VirtualSocketFactory parent, 
             TypedProperties properties, ConnectModule [] order) {
 
-        reorder = properties.booleanProperty(Properties.CLUSTER_REORDER, true); 
-        String myc = properties.getProperty(Properties.CLUSTER_MEMBER, null); 
+        reorder = properties.booleanProperty(SmartSocketsProperties.CLUSTER_REORDER, true); 
+        String myc = properties.getProperty(SmartSocketsProperties.CLUSTER_MEMBER, null); 
         
         if (myc == null || myc.length() == 0) {            
             // We don't belong to any cluster, so it's no use parsing the rest 
@@ -81,7 +81,7 @@ public class VirtualClusters {
         localCluster = myc;
         
         String [] clusters = properties.getStringList(
-                Properties.CLUSTER_DEFINE, ",",
+                SmartSocketsProperties.CLUSTER_DEFINE, ",",
                 new String [] { localCluster });
         
         logger.info("Clusters defined: " + Arrays.deepToString(clusters));        
@@ -105,10 +105,10 @@ public class VirtualClusters {
         logger.info("Processing cluster definitions:");
         logger.info("  - my cluster: " + localCluster);
 
-        String prefix = Properties.CLUSTER_PREFIX + localCluster + ".";
+        String prefix = SmartSocketsProperties.CLUSTER_PREFIX + localCluster + ".";
                 
         // First get the 'default' connect rule
-        String p = prefix + Properties.CLUSTER_DEFAULT;                 
+        String p = prefix + SmartSocketsProperties.CLUSTER_DEFAULT;                 
         String [] tmp = properties.getStringList(p, ",", null);
         
         if (tmp != null && tmp.length > 0) {
@@ -122,7 +122,7 @@ public class VirtualClusters {
         
         // Next, get the rule for how we are supposed to connect inside our own 
         // cluster...                
-        p = prefix + Properties.CLUSTER_INSIDE;                
+        p = prefix + SmartSocketsProperties.CLUSTER_INSIDE;                
         tmp = properties.getStringList(p, ",", null);
         
         if (tmp != null && tmp.length > 0) { 
@@ -132,7 +132,7 @@ public class VirtualClusters {
         // Finally, extract the connect rules for any of the other clusters...
         for (int i=0;i<clusters.length;i++) {
             if (i != myCluster) { 
-                p = prefix + Properties.CLUSTER_PREFERENCE + clusters[i];
+                p = prefix + SmartSocketsProperties.CLUSTER_PREFERENCE + clusters[i];
                 
                 tmp = properties.getStringList(p, ",", null);
                 

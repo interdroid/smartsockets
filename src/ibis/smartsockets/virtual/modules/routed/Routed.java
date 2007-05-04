@@ -1,6 +1,6 @@
 package ibis.smartsockets.virtual.modules.routed;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.router.simple.RouterClient;
@@ -117,8 +117,8 @@ public class Routed extends ConnectModule {
     public void initModule(TypedProperties properties) throws Exception {
         
         // TODO: This only reads the default ???
-        TypedProperties p = Properties.getDefaultProperties();
-        parseRouters(p.getStringList(Properties.ROUTERS));
+        TypedProperties p = SmartSocketsProperties.getDefaultProperties();
+        parseRouters(p.getStringList(SmartSocketsProperties.ROUTERS));
     }
 
     public void startModule() throws Exception {

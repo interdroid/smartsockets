@@ -1,6 +1,6 @@
 package ibis.smartsockets.direct;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.util.TypedProperties;
 
 import java.util.StringTokenizer;
@@ -38,7 +38,7 @@ class PortRange {
      */
     PortRange(TypedProperties p) { 
 
-        String range = p.getProperty(Properties.DIRECT_PORT_RANGE);
+        String range = p.getProperty(SmartSocketsProperties.DIRECT_PORT_RANGE);
         
         if (range == null || range.length() == 0) { 
             return;

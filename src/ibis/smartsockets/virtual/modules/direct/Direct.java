@@ -1,6 +1,6 @@
 package ibis.smartsockets.virtual.modules.direct;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectServerSocket;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
@@ -52,19 +52,19 @@ public class Direct extends AbstractDirectModule {
         int port = 0;
         
         if (properties != null) { 
-            port = properties.getIntProperty(Properties.DIRECT_PORT, 0);
+            port = properties.getIntProperty(SmartSocketsProperties.DIRECT_PORT, 0);
         }
         
         // Create a direct socket factory.
         direct = DirectSocketFactory.getSocketFactory();
         
         // TODO: why the default ??
-        TypedProperties p = Properties.getDefaultProperties();
+        TypedProperties p = SmartSocketsProperties.getDefaultProperties();
         
-        int backlog = p.getIntProperty(Properties.DIRECT_BACKLOG);
+        int backlog = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG);
         
-        defaultReceiveBuffer = p.getIntProperty(Properties.DIRECT_RECEIVE_BUFFER, -1);
-        defaultSendBuffer = p.getIntProperty(Properties.DIRECT_SEND_BUFFER, -1);
+        defaultReceiveBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, -1);
+        defaultSendBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_SEND_BUFFER, -1);
                 
         // Create a server socket to accept incoming connections. 
         HashMap <String, String> prop = new HashMap<String, String>(3);

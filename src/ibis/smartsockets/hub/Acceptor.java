@@ -1,7 +1,7 @@
 package ibis.smartsockets.hub;
 
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectServerSocket;
 import ibis.smartsockets.direct.DirectSimpleSocket;
 import ibis.smartsockets.direct.DirectSocket;
@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -47,22 +48,39 @@ public class Acceptor extends CommunicationThread {
     private int sendBuffer = -1;
     private int receiveBuffer = -1;
     
+    private LinkedList<DirectSocket> incoming = new LinkedList<DirectSocket>();
+    
     Acceptor(TypedProperties p, int port, StateCounter state, 
             Map<DirectSocketAddress, BaseConnection> connections, 
             HubList knownProxies, VirtualConnections vcs,
-            DirectSocketFactory factory) throws IOException {
+            DirectSocketFactory factory, DirectSocketAddress delegationAddress) 
+            throws IOException {
 
         super("HubAcceptor", state, connections, knownProxies, vcs, factory);        
 
-        sendBuffer = p.getIntProperty(Properties.HUB_SEND_BUFFER, -1);
-        receiveBuffer = p.getIntProperty(Properties.HUB_RECEIVE_BUFFER, -1);
+        if (delegationAddress == null) { 
+            sendBuffer = p.getIntProperty(SmartSocketsProperties.HUB_SEND_BUFFER, -1);
+            receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);
         
-        // NOTE: the receivebuffer must be passed to the serversocket to have 
-        // any effect on the sockets that are accepted later...
-        server = factory.createServerSocket(port, 50, receiveBuffer, null);        
-        setLocal(server.getAddressSet());              
+            // NOTE: the receivebuffer must be passed to the serversocket to have 
+            // any effect on the sockets that are accepted later...
+            server = factory.createServerSocket(port, 50, receiveBuffer, null);        
+            setLocal(server.getAddressSet());
+            
+            new AcceptThread().start();
+        } else { 
+            setLocal(delegationAddress);            
+        }
     }
-
+    
+    public synchronized void done() {
+        done = true;
+    }
+    
+    private synchronized boolean getDone() {
+        return done;
+    }
+    
     private boolean handleIncomingHubConnect(DirectSocket s, 
             DataInputStream in, DataOutputStream out) throws IOException { 
 
@@ -139,7 +157,7 @@ public class Acceptor extends CommunicationThread {
             } 
 
             out.write(ConnectionProtocol.CONNECTION_ACCEPTED);
-            out.writeUTF(server.getAddressSet().toString());            
+            out.writeUTF(getLocalAsString());            
             out.flush();
 
             ClientConnection c = new ClientConnection(srcAddr, s, in, out, 
@@ -196,9 +214,8 @@ public class Acceptor extends CommunicationThread {
         return false;
     }
     
-    private void doAccept() {
+    private void doAccept(DirectSocket s) {
 
-        DirectSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
         boolean result = false;
@@ -206,22 +223,6 @@ public class Acceptor extends CommunicationThread {
         hublogger.debug("Waiting for connection...");
         
         try {
-            s = server.accept();     
-            s.setTcpNoDelay(true);
-            
-            if (sendBuffer > 0) { 
-                s.setSendBufferSize(sendBuffer);
-            }
-            
-            if (receiveBuffer > 0) { 
-                s.setReceiveBufferSize(receiveBuffer);
-            }
-            
-            if (hconlogger.isInfoEnabled()) {
-                hconlogger.info("Acceptor send buffer = " + s.getSendBufferSize());
-                hconlogger.info("Acceptor recv buffer = " + s.getReceiveBufferSize());
-            }       
-             
             in = new DataInputStream(
                     new BufferedInputStream(s.getInputStream()));
 
@@ -259,11 +260,69 @@ public class Acceptor extends CommunicationThread {
             DirectSocketFactory.close(s, out, in);
         }   
     }
-
-    public void run() { 
-
-        while (!done) {           
-            doAccept();            
+    
+    public void addIncoming(DirectSocket s) { 
+        synchronized (incoming) {
+            incoming.addLast(s);
+            incoming.notifyAll();
         }
-    }       
+    }
+    
+    private DirectSocket getIncoming() { 
+        
+        synchronized (incoming) {
+            
+            while (incoming.size() == 0) {
+                try { 
+                    incoming.wait();
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+        
+            return incoming.removeFirst();
+        }
+    }
+    
+    public void run() { 
+        while (!getDone()) { 
+            doAccept(getIncoming());
+        }
+    }
+
+    private class AcceptThread extends Thread {
+        
+        public void run() { 
+
+            while (!getDone()) { 
+            
+                DirectSocket s = null;
+            
+                try { 
+                    s = server.accept();     
+                    s.setTcpNoDelay(true);
+            
+                    // TODO: This is wrong (too late!)
+                    if (sendBuffer > 0) { 
+                        s.setSendBufferSize(sendBuffer);
+                    }
+            
+                    if (receiveBuffer > 0) { 
+                        s.setReceiveBufferSize(receiveBuffer);
+                    }
+            
+                    if (hconlogger.isInfoEnabled()) {
+                        hconlogger.info("Acceptor send buffer = " + s.getSendBufferSize());
+                        hconlogger.info("Acceptor recv buffer = " + s.getReceiveBufferSize());
+                    }       
+
+                    addIncoming(s);
+
+                } catch (Exception e) {
+                    hublogger.warn("Failed to accept connection!", e);
+                    DirectSocketFactory.close(s, null, null);
+                }    
+            }
+        } 
+    }
 }

@@ -1,7 +1,7 @@
 package ibis.smartsockets.util;
 
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.router.simple.Router;
@@ -27,9 +27,9 @@ public class HubStarter {
 
         // Load the default properties. These include the defaults in the code, 
         // the default property file, and any command line '-D' settings.
-        TypedProperties p = Properties.getDefaultProperties();
+        TypedProperties p = SmartSocketsProperties.getDefaultProperties();
         
-        // Properties can be adjusted further using old-fashioned command 
+        // SmartSocketsProperties can be adjusted further using old-fashioned command 
         // line options.  
         for (int i=0;i<args.length;i++) {                
             

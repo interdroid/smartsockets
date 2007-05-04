@@ -1,7 +1,8 @@
 package ibis.smartsockets.hub;
 
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.discovery.Discovery;
@@ -63,21 +64,21 @@ public class Hub extends Thread {
         super("Hub");
         
         boolean allowDiscovery = 
-            p.booleanProperty(Properties.DISCOVERY_ALLOWED, true);
+            p.booleanProperty(SmartSocketsProperties.DISCOVERY_ALLOWED, true);
         
         String [] clusters = 
-            p.getStringList(Properties.HUB_CLUSTERS, ",", null);
+            p.getStringList(SmartSocketsProperties.HUB_CLUSTERS, ",", null);
         
         if (clusters == null || clusters.length == 0) {
             clusters = new String[] { "*" };
         }
         
         boolean allowSSHForHub = p.booleanProperty(
-                Properties.HUB_SSH_ALLOWED, true);
+                SmartSocketsProperties.HUB_SSH_ALLOWED, true);
         
         if (allowSSHForHub) { 
-            p.setProperty(Properties.SSH_IN, "true");
-            p.setProperty(Properties.SSH_OUT, "true");
+            p.setProperty(SmartSocketsProperties.SSH_IN, "true");
+            p.setProperty(SmartSocketsProperties.SSH_OUT, "true");
         }
         
         if (misclogger.isInfoEnabled()) { 
@@ -95,22 +96,41 @@ public class Hub extends Thread {
         
         virtualConnections = new VirtualConnections();
        
-        int port = p.getIntProperty(Properties.HUB_PORT, DEFAULT_ACCEPT_PORT);
+        int port = p.getIntProperty(SmartSocketsProperties.HUB_PORT, DEFAULT_ACCEPT_PORT);
         
+        boolean delegate = p.booleanProperty(SmartSocketsProperties.HUB_DELEGATE);
+
+        DirectSocketAddress delegationAddress = null;
+        
+        if (delegate) {         
+            String tmp = p.getProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS);
+
+            System.err.println("**** HUB USING DELEGATION TO: " + tmp);
+            
+            try { 
+                delegationAddress = DirectSocketAddress.getByAddress(tmp);
+            } catch (Exception e) { 
+                throw new IOException("Failed to parse delegation address: \""
+                        + tmp + "\"");
+            }
+        }
+                
         // NOTE: These are not started until later. We first need to init the
         // rest of the world!        
-        acceptor = new Acceptor(p, port, state, connections, hubs, virtualConnections, factory);        
-        connector = new Connector(p, state, connections, hubs, virtualConnections, factory);
+        acceptor = new Acceptor(p, port, state, connections, hubs, 
+                virtualConnections, factory, delegationAddress);        
         
-        DirectSocketAddress local = acceptor.getLocal();         
-        
+        connector = new Connector(p, state, connections, hubs, 
+                virtualConnections, factory);
+     
+        DirectSocketAddress local = acceptor.getLocal();    
         connector.setLocal(local);
                 
         if (goslogger.isInfoEnabled()) {
             goslogger.info("GossipAcceptor listning at " + local);
         }
         
-        String name = p.getProperty(Properties.HUB_SIMPLE_NAME); 
+        String name = p.getProperty(SmartSocketsProperties.HUB_SIMPLE_NAME); 
                 
         if (name == null || name.length() == 0) { 
             // If the simple name is not set, we try to use the hostname 
@@ -135,7 +155,7 @@ public class Hub extends Thread {
         
         hubs.addLocalDescription(localDesc);
 
-        String [] knownHubs = p.getStringList(Properties.HUB_KNOWN_HUBS);
+        String [] knownHubs = p.getStringList(SmartSocketsProperties.HUB_KNOWN_HUBS);
         
         addHubs(knownHubs);
         
@@ -169,7 +189,7 @@ public class Hub extends Thread {
                 }
             }
 
-            int dp = p.getIntProperty(Properties.DISCOVERY_PORT, 
+            int dp = p.getIntProperty(SmartSocketsProperties.DISCOVERY_PORT, 
                     DEFAULT_DISCOVERY_PORT); 
 
             discovery = new Discovery(dp, 0, 0);         
@@ -187,8 +207,8 @@ public class Hub extends Thread {
             goslogger.info("Start Gossiping!");
         }
 
-        printStatistics = p.booleanProperty(Properties.HUB_STATISTICS, false); 
-        STAT_FREQ = p.getIntProperty(Properties.HUB_STATS_INTERVAL, 60000);
+        printStatistics = p.booleanProperty(SmartSocketsProperties.HUB_STATISTICS, false); 
+        STAT_FREQ = p.getIntProperty(SmartSocketsProperties.HUB_STATS_INTERVAL, 60000);
         
         nextStats = System.currentTimeMillis() + STAT_FREQ;
         
@@ -257,6 +277,10 @@ public class Hub extends Thread {
                 }
             }
         }                   
+    }
+    
+    public void delegateAccept(DirectSocket s) {        
+        acceptor.addIncoming(s);
     }
     
     public DirectSocketAddress getHubAddress() { 

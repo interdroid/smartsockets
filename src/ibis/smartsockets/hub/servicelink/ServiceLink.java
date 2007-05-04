@@ -1,6 +1,6 @@
 package ibis.smartsockets.hub.servicelink;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
@@ -102,11 +102,11 @@ public class ServiceLink implements Runnable {
 
     private long outgoingMetaMessages;
 
-  //  private long lastStatsPrint = 0;
+    private final int virtualHubPort;
 
     private ServiceLink(DirectSocketAddress hubAddress,
-            DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer)
-            throws IOException {
+            DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer, 
+            int virtualHubPort) throws IOException {
 
         factory = DirectSocketFactory.getSocketFactory();
 
@@ -117,7 +117,7 @@ public class ServiceLink implements Runnable {
         this.userSuppliedAddress = hubAddress;
         this.myAddress = myAddress;
 
-      //  this.lastStatsPrint = System.currentTimeMillis();
+        this.virtualHubPort = virtualHubPort;
 
         Thread t = new Thread(this, "ServiceLink Message Reader");
         t.setDaemon(true);
@@ -256,7 +256,7 @@ public class ServiceLink implements Runnable {
         try {
             // Create a connection to the hub
             hub = factory.createSocket(address, TIMEOUT, 0, sendBuffer,
-                    receiveBuffer, null, false, 0);
+                    receiveBuffer, null, false, virtualHubPort);
 
             hub.setTcpNoDelay(true);
 
@@ -1590,15 +1590,17 @@ public class ServiceLink implements Runnable {
 
         int sendBuffer = -1;
         int receiveBuffer = -1;
-
+        int virtualHubPort = 42;
+                
         if (p != null) {
-            sendBuffer = p.getIntProperty(Properties.SL_SEND_BUFFER, -1);
-            receiveBuffer = p.getIntProperty(Properties.SL_RECEIVE_BUFFER, -1);
+            sendBuffer = p.getIntProperty(SmartSocketsProperties.SL_SEND_BUFFER, -1);
+            receiveBuffer = p.getIntProperty(SmartSocketsProperties.SL_RECEIVE_BUFFER, -1);
+            virtualHubPort = p.getIntProperty(SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);
         }
 
         try {
             return new ServiceLink(address, myAddress, sendBuffer,
-                    receiveBuffer);
+                    receiveBuffer, virtualHubPort);
 
         } catch (Exception e) {
             logger.warn("ServiceLink: Failed to connect to hub!", e);

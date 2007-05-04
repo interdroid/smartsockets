@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 
 
 
-public class Properties {
+public class SmartSocketsProperties {
 
     public static final String DEFAULT_FILE = "smartsockets.properties";
     
@@ -19,6 +19,7 @@ public class Properties {
     
     public static final String FILE                = PREFIX + "file";
     public static final String ROUTERS             = PREFIX + "routers";  
+    public static final String START_HUB           = PREFIX + "startHub";  
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
         
     public static final String BACKLOG       = PREFIX + "backlog";  
@@ -89,7 +90,10 @@ public class Properties {
     public static final String HUB_SEND_BUFFER    = HUB_PREFIX + "sendbuffer";
     public static final String HUB_RECEIVE_BUFFER = HUB_PREFIX + "receivebuffer";
     public static final String HUB_STATISTICS     = HUB_PREFIX + "statistics";                 
-    public static final String HUB_STATS_INTERVAL = HUB_PREFIX + "statistics.interval";                 
+    public static final String HUB_STATS_INTERVAL = HUB_PREFIX + "statistics.interval";  
+    public static final String HUB_DELEGATE       = HUB_PREFIX + "delegate";
+    public static final String HUB_DELEGATE_ADDRESS = HUB_PREFIX + "delegate.address";    
+    public static final String HUB_VIRTUAL_PORT   = HUB_PREFIX + "virtualPort";
         
     public static final String SL_PREFIX         = PREFIX + "servicelink.";        
     public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
@@ -134,6 +138,7 @@ public class Properties {
             HUB_RECEIVE_BUFFER,     "-1",
             HUB_STATISTICS,         "false",
             HUB_STATS_INTERVAL,     "60000",
+            HUB_VIRTUAL_PORT,       "42", 
             
             MODULES_DEFINE,         "direct,reverse,splice,hubrouted", 
             MODULES_ORDER,          "direct,reverse,splice,hubrouted",

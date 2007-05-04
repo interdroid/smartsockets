@@ -1,10 +1,14 @@
 package ibis.smartsockets.virtual;
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.discovery.Discovery;
+import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.util.TypedProperties;
+import ibis.smartsockets.virtual.modules.AbstractDirectModule;
+import ibis.smartsockets.virtual.modules.AcceptHandler;
 import ibis.smartsockets.virtual.modules.ConnectModule;
 import ibis.util.ThreadPool;
 
@@ -102,7 +106,8 @@ public class VirtualSocketFactory {
 
     // private final int DISCOVERY_PORT;
 
-    private final HashMap<Integer, VirtualServerSocket> serverSockets = new HashMap<Integer, VirtualServerSocket>();
+    private final HashMap<Integer, VirtualServerSocket> serverSockets = 
+        new HashMap<Integer, VirtualServerSocket>();
 
     private int nextPort = 3000;
 
@@ -116,7 +121,22 @@ public class VirtualSocketFactory {
 
     private ServiceLink serviceLink;
 
+    private Hub hub;
+    
     private VirtualClusters clusters;
+    
+    private static class HubAcceptor implements AcceptHandler {
+        
+        private final Hub hub;
+        
+        private HubAcceptor(Hub hub) { 
+            this.hub = hub;
+        }
+        
+        public void accept(DirectSocket s, int targetPort) {
+            hub.delegateAccept(s);
+        } 
+    }
 
     private VirtualSocketFactory(TypedProperties p)
             throws InitializationException {
@@ -124,13 +144,12 @@ public class VirtualSocketFactory {
         if (logger.isInfoEnabled()) {
             logger.info("Creating VirtualSocketFactory");
         }
-
+        
         properties = p;
 
-        DEFAULT_BACKLOG = p.getIntProperty(Properties.BACKLOG);
-        DEFAULT_TIMEOUT = p.getIntProperty(Properties.TIMEOUT);
-        // DISCOVERY_PORT =
-
+        DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG);
+        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT);
+        
         // NOTE: order is VERY important here!
         loadModules();
 
@@ -138,10 +157,16 @@ public class VirtualSocketFactory {
             logger.info("Failed to load any modules!");
             throw new InitializationException("Failed to load any modules!");
         }
-
-        String localCluster = p.getProperty(Properties.CLUSTER_MEMBER, null);
-
+        
+        // Start the hub (if required)
+        startHub(p);
+        
+        // We now create the service link. This may connect to the hub that we 
+        // have just started.  
+        String localCluster = p.getProperty(SmartSocketsProperties.CLUSTER_MEMBER, null);
         createServiceLink(localCluster);
+        
+        // Once the servicelink is up and running, we can start the modules.  
         startModules();
 
         if (modules.size() == 0) {
@@ -157,16 +182,114 @@ public class VirtualSocketFactory {
         localVirtualAddressAsString = localVirtualAddress.toString();
     }
 
+    private void startHub(TypedProperties p) throws InitializationException {
+        
+        if (p.booleanProperty(SmartSocketsProperties.START_HUB, false)) {
+
+            AbstractDirectModule d = null;
+
+            // Check if the hub should delegate it's accept call to the direct 
+            // module. This way, only a single server port (and address) is 
+            // needed to reach both this virtual socket factory and the hub. 
+            boolean delegate = p.booleanProperty(
+                    SmartSocketsProperties.HUB_DELEGATE, false);
+
+            if (delegate) { 
+                logger.info("Factory delegating hub accepts to direct module!");
+
+                // We should now add an AcceptHandler to the direct module that
+                // intercepts incoming connections for the hub. Start by finding 
+                // the direct module...
+                for (ConnectModule m : modules) {                     
+                    if (m.module.equals("ConnectModule(Direct)")) { 
+                        d = (AbstractDirectModule) m;
+                        break;
+                    }
+                }
+
+                if (d == null) { 
+                    throw new InitializationException("Cannot start hub: " 
+                            + "Failed to find direct module!");
+                }
+
+                // And add its address to the property set as the 'delegation' 
+                // address. This is needed by the hub (since it needs to know 
+                // its own address).
+                p.setProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS, 
+                        d.getAddresses().toString());
+            }
+
+            // Now we create the hub
+            logger.info("Factory is starting hub");
+
+            try {            
+                hub = new Hub(p);
+                logger.info("Hub running on: " + hub.getHubAddress());
+            } catch (IOException e) {
+                throw new InitializationException("Failed to start hub", e);
+            }   
+
+            // Finally, if delegation is used, we install the accept handler             
+            if (delegate) {
+                
+                // Get the 'virtual port' that the hub pretends to be on.
+                int port = p.getIntProperty(
+                        SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);
+
+                d.installAcceptHandler(port, new HubAcceptor(hub));
+            }            
+        }
+    }
+    
     private void loadClusterDefinitions() {
         clusters = new VirtualClusters(this, properties, getModules());
     }
 
+    private DirectSocketAddress discoverHub(String localCluster) {
+        
+        DirectSocketAddress address = null;
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Attempting to discover proxy using UDP multicast...");
+        }
+
+        int port = properties.getIntProperty(SmartSocketsProperties.DISCOVERY_PORT);
+        int time = properties.getIntProperty(SmartSocketsProperties.DISCOVERY_TIMEOUT);
+
+        Discovery d = new Discovery(port, 0, time);
+
+        String message = "Any Proxies? ";
+
+        message += localCluster;
+
+        String result = d.broadcastWithReply(message);
+
+        if (result != null) {
+            try {
+                address = DirectSocketAddress.getByAddress(result);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Hub found at: " + address.toString());
+                }
+            } catch (Exception e) {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Got unknown reply to hub discovery!");
+                }
+            }
+        } else {
+            if (logger.isInfoEnabled()) {
+                logger.info("No hubs found.");
+            }
+        }
+
+        return address;
+    }
+    
     private void createServiceLink(String localCluster) {
 
         DirectSocketAddress address = null;
 
         // Check if the proxy address was passed as a property.
-        String tmp = properties.getProperty(Properties.HUB_ADDRESS);
+        String tmp = properties.getProperty(SmartSocketsProperties.HUB_ADDRESS);
 
         if (tmp != null) {
             try {
@@ -176,54 +299,28 @@ public class VirtualSocketFactory {
             }
         }
 
-        boolean useDiscovery = properties.booleanProperty(
-                Properties.DISCOVERY_ALLOWED, false);
+        // If we don't have a hub address, we try to find one ourselves
+        if (address == null) {            
+            boolean useDiscovery = properties.booleanProperty(
+                    SmartSocketsProperties.DISCOVERY_ALLOWED, false);
 
-        boolean discoveryPreferred = properties.booleanProperty(
-                Properties.DISCOVERY_PREFERRED, false);
-
-        // Check if we can discover the proxy address using UDP multicast.
-        if (useDiscovery && (discoveryPreferred || address == null)) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Attempting to discover proxy using UDP" +
-                        " multicast...");
-            }
-
-            int port = properties.getIntProperty(Properties.DISCOVERY_PORT);
-            int time = properties.getIntProperty(Properties.DISCOVERY_TIMEOUT);
-
-            Discovery d = new Discovery(port, 0, time);
-
-            String message = "Any Proxies? ";
-
-            message += localCluster;
-
-            String result = d.broadcastWithReply(message);
-
-            if (result != null) {
-                try {
-                    address = DirectSocketAddress.getByAddress(result);
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Hub found at: " + address.toString());
-                    }
-                } catch (Exception e) {
-                    if (logger.isInfoEnabled()) {
-                        logger.info("Got unknown reply to hub discovery!");
-                    }
-                }
-            } else {
-                if (logger.isInfoEnabled()) {
-                    logger.info("No hubs found.");
-                }
-            }
-        }
+            boolean discoveryPreferred = properties.booleanProperty(
+                    SmartSocketsProperties.DISCOVERY_PREFERRED, false);
+            
+            if (useDiscovery && (discoveryPreferred || hub == null)) { 
+                address = discoverHub(localCluster);                    
+            }            
+            
+            if (address == null && hub != null) { 
+                address = hub.getHubAddress();
+            } 
+        } 
 
         // Still no address ? Give up...
         if (address == null) {
             // properties not set, so no central hub is available
             // if (logger.isInfoEnabled()) {
-            // System.out.println("ServiceLink not created: no hub address
-            // available!");
+            System.out.println("ServiceLink not created: no hub address available!");
             logger.info("ServiceLink not created: no hub address available!");
             // }
             return;
@@ -274,7 +371,7 @@ public class VirtualSocketFactory {
             logger.info("Loading module: " + name);
         }
 
-        String classname = properties.getProperty(Properties.MODULES_PREFIX
+        String classname = properties.getProperty(SmartSocketsProperties.MODULES_PREFIX
                 + name, null);
 
         if (classname == null) {
@@ -317,20 +414,23 @@ public class VirtualSocketFactory {
     }
 
     private void loadModules() {
-        // Get the list of modules that we should load...
-        String[] mods = properties.getStringList(Properties.MODULES_DEFINE,
-                ",", new String[0]);
-
-        int count = mods.length;
+        // Get the list of modules that we should load. 
+        String [] mods = properties.getStringList(SmartSocketsProperties.MODULES_DEFINE,
+                ",", new String [0]);
 
         if (mods == null || mods.length == 0) {
+            // Should not happen!
             logger.error("No smartsockets modules defined!");
             return;
         }
 
-        String[] skip = properties.getStringList(Properties.MODULES_SKIP, ",",
+        // Get the list of modules to skip. Note that the direct module cannot 
+        // be skipped. 
+        String [] skip = properties.getStringList(SmartSocketsProperties.MODULES_SKIP, ",",
                 null);
 
+        int count = mods.length;
+        
         // Remove all modules that should be skipped.
         if (skip != null) {
             for (int s = 0; s < skip.length; s++) {
@@ -353,7 +453,7 @@ public class VirtualSocketFactory {
                 t += mods[i] + " ";
             }
         }
-
+        
         if (logger.isInfoEnabled()) {
             logger.info("Loading " + count + " modules: " + t);
         }
@@ -450,9 +550,8 @@ public class VirtualSocketFactory {
             }
 
             for (ConnectModule c : failed) {
-                logger
-                        .info("Module " + c.module
-                                + " removed (no serviceLink)!");
+                logger.info("Module " + c.module
+                        + " removed (no serviceLink)!");
                 modules.remove(c);
             }
 
@@ -967,7 +1066,7 @@ public class VirtualSocketFactory {
         TypedProperties typedProperties = new TypedProperties();
 
         if (addDefaults) {
-            typedProperties.putAll(Properties.getDefaultProperties());
+            typedProperties.putAll(SmartSocketsProperties.getDefaultProperties());
         }
 
         if (properties != null) {
@@ -978,7 +1077,7 @@ public class VirtualSocketFactory {
 
         if (typedProperties.containsKey("smartsockets.factory.statistics")) {
 
-            int tmp = typedProperties.getIntProperty(Properties.STATISTICS_INTERVAL,
+            int tmp = typedProperties.getIntProperty(SmartSocketsProperties.STATISTICS_INTERVAL,
                     0);
 
             if (tmp > 0) {

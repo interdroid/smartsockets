@@ -1,7 +1,7 @@
 package ibis.smartsockets.direct;
 
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.TypedProperties;
 
@@ -96,7 +96,7 @@ public class NetworkPreference {
 
         //TypedProperties tp = new TypedProperties
         
-        String file = Properties
+        String file = SmartSocketsProperties
                 .stringProperty(smartsockets.direct.Properties.CONNECT_FILE);
         
         //System.err.println("GETTING FILE: "  + file);
@@ -140,7 +140,7 @@ public class NetworkPreference {
 
         try {
 
-            Properties p = new Properties();
+            SmartSocketsProperties p = new SmartSocketsProperties();
             p.load(in);
 
             return p;
@@ -319,7 +319,7 @@ public class NetworkPreference {
     private void handleProperties(IPAddressSet myAddress, TypedProperties p) {
 
         // Start by getting the default network setting
-        String [] def = p.getStringList(Properties.NETWORKS_DEFAULT);
+        String [] def = p.getStringList(SmartSocketsProperties.NETWORKS_DEFAULT);
 
         if (def == null || def.length == 0) {
             if (logger.isInfoEnabled()) { 
@@ -338,10 +338,10 @@ public class NetworkPreference {
         // Get the name of the local network (if available). This will normally 
         // not be available, and a range will be used instead. However, in some
         // simulated scenario's this approach comes in handy
-        String name = p.getProperty(Properties.NETWORKS_MEMBER);
+        String name = p.getProperty(SmartSocketsProperties.NETWORKS_MEMBER);
 
         // Get a list of all the networks defined in the properties.
-        String [] networks = p.getStringList(Properties.NETWORKS_DEFINE, ",");
+        String [] networks = p.getStringList(SmartSocketsProperties.NETWORKS_DEFINE, ",");
 
         if (networks == null || networks.length == 0) {
             // No further rules, so just remember the local network name...
@@ -409,8 +409,8 @@ public class NetworkPreference {
 
         boolean myNetwork = false;
 
-        String prefix = Properties.NETWORKS_PREFIX + currentNetwork + ".";
-        String [] range = p.getStringList(prefix + Properties.NW_RANGE); 
+        String prefix = SmartSocketsProperties.NETWORKS_PREFIX + currentNetwork + ".";
+        String [] range = p.getStringList(prefix + SmartSocketsProperties.NW_RANGE); 
        
         NetworkSet nws = null;
         
@@ -443,7 +443,7 @@ public class NetworkPreference {
         
         // Check for any rules that specify how we should connect inside
         // our own network.
-        String [] inside = p.getStringList(prefix + Properties.NW_PREFERENCE_INSIDE);
+        String [] inside = p.getStringList(prefix + SmartSocketsProperties.NW_PREFERENCE_INSIDE);
 
         if (inside.length > 0) {
 
@@ -456,7 +456,7 @@ public class NetworkPreference {
         }
 
         // Check for any rules that specify how to connect to other networks
-        String [] def = p.getStringList(prefix + Properties.NW_PREFERENCE_DEFAULT);
+        String [] def = p.getStringList(prefix + SmartSocketsProperties.NW_PREFERENCE_DEFAULT);
 
         if (def.length > 0) {
 
@@ -469,7 +469,7 @@ public class NetworkPreference {
         }
         
         // Check for any 'firewall' rule that specifies who we should accept.
-        firewall[0] = p.getStringList(prefix + Properties.NW_FIREWALL_ACCEPT);
+        firewall[0] = p.getStringList(prefix + SmartSocketsProperties.NW_FIREWALL_ACCEPT);
 
         if (firewall[0].length > 0) { 
             if (logger.isInfoEnabled()) { 
@@ -478,7 +478,7 @@ public class NetworkPreference {
         }
         
         // Check for any 'firewall' rule that specifies who we should deny.
-        firewall[1] = p.getStringList(prefix + Properties.NW_FIREWALL_DENY);
+        firewall[1] = p.getStringList(prefix + SmartSocketsProperties.NW_FIREWALL_DENY);
 
         if (firewall[1].length > 0) { 
             if (logger.isInfoEnabled()) { 
@@ -487,7 +487,7 @@ public class NetworkPreference {
         }
         
         // Check for any 'firewall' rule that specifies the 'default'.
-        firewall[2] = p.getStringList(prefix + Properties.NW_FIREWALL_DEFAULT);
+        firewall[2] = p.getStringList(prefix + SmartSocketsProperties.NW_FIREWALL_DEFAULT);
 
         if (firewall[2].length > 0) { 
             if (logger.isInfoEnabled()) { 

@@ -1,7 +1,7 @@
 package ibis.smartsockets.hub;
 
 
-import ibis.smartsockets.Properties;
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
@@ -42,8 +42,8 @@ class Connector extends CommunicationThread {
         
         super("HubConnector", state, connections, knownProxies, vcs, factory);
     
-        sendBuffer = p.getIntProperty(Properties.HUB_SEND_BUFFER, -1);
-        receiveBuffer = p.getIntProperty(Properties.HUB_RECEIVE_BUFFER, -1);
+        sendBuffer = p.getIntProperty(SmartSocketsProperties.HUB_SEND_BUFFER, -1);
+        receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
