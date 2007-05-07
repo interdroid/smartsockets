@@ -35,6 +35,8 @@ class Connector extends CommunicationThread {
     private int sendBuffer = -1;
     private int receiveBuffer = -1;
 
+    private final int usercode;
+    
     Connector(TypedProperties p, StateCounter state, 
             Map<DirectSocketAddress, BaseConnection> connections,
             HubList knownProxies, VirtualConnections vcs, 
@@ -43,7 +45,8 @@ class Connector extends CommunicationThread {
         super("HubConnector", state, connections, knownProxies, vcs, factory);
     
         sendBuffer = p.getIntProperty(SmartSocketsProperties.HUB_SEND_BUFFER, -1);
-        receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);
+        receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);        
+        usercode = p.getIntProperty(SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);        
     }
 
     private boolean sendConnect(DataOutputStream out, DataInputStream in) 
@@ -84,14 +87,15 @@ class Connector extends CommunicationThread {
         DataInputStream in = null;
         DataOutputStream out = null;
         
-        // Creates a connection to a proxy to check if it is reachable. If so, 
+        // Creates a connection to a hub to check if it is reachable. If so, 
         // it will send a ping. 
         if (hconlogger.isDebugEnabled()) {
             hconlogger.info("Creating test connection to " + d.hubAddress);
         }
                 
         try { 
-            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, null);           
+	        s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0, 
+                    sendBuffer, receiveBuffer, null, false, usercode);            
             s.setTcpNoDelay(true);
             s.setSoTimeout(DEFAULT_TIMEOUT);
 
@@ -150,8 +154,8 @@ class Connector extends CommunicationThread {
         }
         
         try { 
-            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0, 
-                    sendBuffer, receiveBuffer, null, false, 0);            
+	        s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0, 
+                    sendBuffer, receiveBuffer, null, false, usercode);            
             s.setTcpNoDelay(true);
             s.setSoTimeout(DEFAULT_TIMEOUT);
             

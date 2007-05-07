@@ -6,7 +6,6 @@ import ibis.smartsockets.hub.connections.BaseConnection;
 import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.StateCounter;
-import ibis.util.ThreadPool;
 
 import java.util.Map;
 

@@ -22,19 +22,20 @@ public class LocalHubTest {
             
             System.out.println("Created socket factory");
             
-            DirectSocketAddress [] hubs = factory.getKnownHubs();
+            int count = 0;
+
+	    do { 
+            	DirectSocketAddress [] hubs = factory.getKnownHubs();
             
-            System.out.println("Known hubs: " + Arrays.deepToString(hubs)); 
-            
-            VirtualServerSocket ss = factory.createServerSocket(5000, 1, null);
-            
-            System.out.println("Created server socket: " 
-                    + ss.getLocalSocketAddress());
-            
-            hubs = factory.getKnownHubs();
-            
-            System.out.println("Known hubs: " + Arrays.deepToString(hubs)); 
-            
+        	System.out.println("Known hubs: " + Arrays.deepToString(hubs)); 
+	
+		try { 
+			Thread.sleep(1000);
+                } catch (InterruptedException e) { 
+			// ignore
+		}
+	    } while (count++ < 25);
+
             factory.end();
             
             System.out.println("Done!");
