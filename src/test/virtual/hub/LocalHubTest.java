@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import ibis.smartsockets.direct.DirectSocketAddress;
-import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
