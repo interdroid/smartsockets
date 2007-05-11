@@ -114,8 +114,8 @@ public class SmartSocketsProperties {
     
     private static final String [] defaults = new String [] {
             DIRECT_BACKLOG,         "255", 
-            BACKLOG,                "100", 
-            TIMEOUT,                "120000", 
+            BACKLOG,                "50", 
+            TIMEOUT,                "10000", 
             LOCAL_TIMEOUT,          "100", 
             
             STATISTICS_INTERVAL,    "60000",

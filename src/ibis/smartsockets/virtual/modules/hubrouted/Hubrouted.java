@@ -300,15 +300,8 @@ public class Hubrouted extends ConnectModule
 
         if (s == null) { 
             // This can happen if we have just been closed by the other side...
-          /*  if (!closedSockets.contains(vc)) { 
-                logger.warn("BAD!! Got close for an unknown local socket!: " 
-                        + vc + " (" + closedSockets.size() + ")");
-            }
-*/
             return;
         } 
-
-  //      closedSockets.add(vc);
         
         try {
             serviceLink.closeVirtualConnection(vc);

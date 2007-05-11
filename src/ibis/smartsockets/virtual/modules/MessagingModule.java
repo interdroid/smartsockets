@@ -10,7 +10,14 @@ public abstract class MessagingModule extends ConnectModule {
     protected MessagingModule(String name, boolean requiresServiceLink) {
         super(name, requiresServiceLink);
     }
-
+    
+    protected void fromInt(byte [] target, int v) {
+        target[0] = (byte)(0xff & (v >> 24));
+        target[1] = (byte)(0xff & (v >> 16));
+        target[2] = (byte)(0xff & (v >> 8));
+        target[3] = (byte)(0xff & v);
+    }
+        
     protected int toInt(byte [] m) { 
         return (((m[0] & 0xff) << 24) | 
                 ((m[1] & 0xff) << 16) |

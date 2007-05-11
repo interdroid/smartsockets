@@ -149,8 +149,8 @@ public class VirtualSocketFactory {
         
         properties = p;
 
-        DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG);
-        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT);
+        DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG, 50);
+        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT, 10000);
         
         // NOTE: order is VERY important here!
         loadModules();
@@ -293,8 +293,8 @@ public class VirtualSocketFactory {
         // Check if the hub address was passed as a property.
         String [] tmp = properties.getStringList(
                 SmartSocketsProperties.HUB_ADDRESSES);
-
-        if (tmp != null && tmp.length == 0) {
+        
+        if (tmp != null && tmp.length > 0) {
             for (String a : tmp) {             
                 try {
                     hubs.add(DirectSocketAddress.getByAddress(a));
@@ -701,9 +701,9 @@ public class VirtualSocketFactory {
 
                 // Just print and try the next module...
                 if (conlogger.isInfoEnabled()) {
-                    conlogger.info(getVirtualAddressAsString() + ": Failed "
-                            + m.module + " not suitable (time = "
-                            + (end - start) + " ms.)");
+                    conlogger.info("Module " + m.module + " failed to connect " 
+                            + "to " + target + " after " + (end - start) 
+                            + " ms.): " + e.getMessage());
                 }
 
                 m.failed(end - start);
@@ -809,7 +809,7 @@ public class VirtualSocketFactory {
                     + ", " + prop + ")");
         }
         
-        long[] timing = null;
+        long [] timing = null;
 
         if (prop != null) {
             timing = (long[]) prop.get("virtual.detailed.timing");
@@ -827,7 +827,7 @@ public class VirtualSocketFactory {
                 timeout = DEFAULT_TIMEOUT;
             }
 
-            ConnectModule[] order = clusters.getOrder(target);
+            ConnectModule [] order = clusters.getOrder(target);
 
             int timeLeft = timeout;
             int partialTimeout;
@@ -1138,12 +1138,7 @@ public class VirtualSocketFactory {
 
         return factory;
     }
-
-    public VirtualSocket createBrokeredSocket(InputStream brokered_in,
-            OutputStream brokered_out, boolean b, Map p) {
-        throw new RuntimeException("createBrokeredSocket not implemented");
-    }
-
+  
     public VirtualSocketAddress getLocalVirtual() {
         return localVirtualAddress;
     }

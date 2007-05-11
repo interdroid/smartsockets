@@ -691,7 +691,7 @@ public class DirectSocketFactory {
                 s.bind(new InetSocketAddress(localPort));
             }
 
-            // Must be done here to hava any effect!
+            // Must be done here to have any effect!
             tuneSocket(s, sndbuf, rcvbuf);
             
             s.connect(target, timeout);
@@ -787,7 +787,7 @@ public class DirectSocketFactory {
             // Start by sending our socket type and address. NOTE this is 
             // dangerous, since it may deadlock if the buffersize is smaller
             // than (1+completeAddressInBytes.length). 
-            // TODO: Potential deadlock ? Should fix this
+            // TODO: Potential deadlock ? Should fix this ?
             
             synchronized (altCompleteAddressInBytes) {
                 

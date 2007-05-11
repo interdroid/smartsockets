@@ -107,7 +107,7 @@ public class Hub extends Thread {
         if (delegate) {         
             String tmp = p.getProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS);
 
-            System.err.println("**** HUB USING DELEGATION TO: " + tmp);
+           // System.err.println("**** HUB USING DELEGATION TO: " + tmp);
             
             try { 
                 delegationAddress = DirectSocketAddress.getByAddress(tmp);

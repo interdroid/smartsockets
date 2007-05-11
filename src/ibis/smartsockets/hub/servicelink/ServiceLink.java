@@ -434,7 +434,7 @@ public class ServiceLink implements Runnable {
             }
 
             // Send a close back...
-            sendClose(index);
+            closeVirtualConnection(index);
             return;
         }
 
@@ -451,8 +451,6 @@ public class ServiceLink implements Runnable {
         long index = in.readLong();
         boolean succes = in.readBoolean();
 
-        //      System.err.println("** ACK ACK IN " + index);
-
         if (vcCallBack == null) {
 
             if (logger.isInfoEnabled()) {
@@ -462,7 +460,7 @@ public class ServiceLink implements Runnable {
 
             // Send a close back if someone is waiting for us...
             if (succes) {
-                sendClose(index);
+                closeVirtualConnection(index);
             }
 
             return;
@@ -641,7 +639,7 @@ public class ServiceLink implements Runnable {
 
             // Remove the message from the stream!
             skip(len);
-            sendClose(index);
+            closeVirtualConnection(index);
             return;
         }
 
@@ -673,7 +671,7 @@ public class ServiceLink implements Runnable {
                         + " connection: " + index);
             }
 
-            sendClose(index);
+            closeVirtualConnection(index);
             return;
         }
 
@@ -1318,40 +1316,27 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    private void sendClose(long index) throws IOException {
-
-        if (!getConnected()) {
-            throw new IOException("No connection to hub");
-        }
-
-        synchronized (out) {
-            out.write(MessageForwarderProtocol.CLOSE_VIRTUAL);
-            out.writeLong(index);
-            out.flush();
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Closed: " + index);
-        }
-    }
-
     public void closeVirtualConnection(long index) throws IOException {
 
         if (logger.isInfoEnabled()) {
             logger.debug("Closing virtual connection: " + index);
         }
-
-        //   System.err.println("##### CLOSE " + index);
+        
+        if (!getConnected()) {
+            throw new IOException("No connection to hub");
+        }
 
         try {
-            sendClose(index);
+            synchronized (out) {
+                out.write(MessageForwarderProtocol.CLOSE_VIRTUAL);
+                out.writeLong(index);
+                out.flush();
+            }
         } catch (IOException e) {
             logger.warn("ServiceLink: Exception while writing to hub!", e);
             closeConnectionToHub();
             throw new IOException("Connection to hub lost!");
-        }/* finally {
-         credits.remove(index);
-         }*/
+        }
 
         if (logger.isDebugEnabled()) {
             logger.warn("Virtual connection " + index + " closed!");
