@@ -4,7 +4,6 @@ package ibis.smartsockets.util;
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.Hub;
-import ibis.smartsockets.router.simple.Router;
 
 import java.io.IOException;
 
@@ -14,7 +13,6 @@ public class HubStarter {
     private static final int DEFAULT_ACCEPT_PORT = 17878;    
 
     private static Hub h;
-    private static Router r;
         
     public static void main(String [] args) { 
         
@@ -126,16 +124,6 @@ public class HubStarter {
             
             if (adr == null) {
                 System.err.println("Router requires hub address!");
-                System.exit(1);
-            }
-                                        
-            try {         
-                r = new Router();
-                System.out.println("Router running on: " + r.getAddress());
-                r.start();                                
-            } catch (IOException e) {
-                System.err.println("Oops: failed to start router");
-                e.printStackTrace(System.err);
                 System.exit(1);
             }
         } 

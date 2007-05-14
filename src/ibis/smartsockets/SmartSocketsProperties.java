@@ -26,13 +26,13 @@ public class SmartSocketsProperties {
     public static final String TIMEOUT       = PREFIX + "timeout";  
     public static final String LOCAL_TIMEOUT = PREFIX + "timeout.local";  
     
-    public static final String DIRECT_PREFIX         = PREFIX + "direct.";  
-    public static final String DIRECT_BACKLOG        = DIRECT_PREFIX + "backlog";  
-    public static final String DIRECT_PORT           = DIRECT_PREFIX + "port";  
-    public static final String DIRECT_NIO            = DIRECT_PREFIX + "nio";
-    public static final String DIRECT_PORT_RANGE     = DIRECT_PREFIX + "port_range";    
-    public static final String DIRECT_SEND_BUFFER    = DIRECT_PREFIX + "sendbuffer";
-    public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
+    public static final String DIRECT_PREFIX          = PREFIX + "direct.";  
+    public static final String DIRECT_BACKLOG         = DIRECT_PREFIX + "backlog";  
+    public static final String DIRECT_PORT            = DIRECT_PREFIX + "port";  
+    public static final String DIRECT_NIO             = DIRECT_PREFIX + "nio";
+    public static final String DIRECT_PORT_RANGE      = DIRECT_PREFIX + "port.range";    
+    public static final String DIRECT_SEND_BUFFER     = DIRECT_PREFIX + "sendbuffer";
+    public static final String DIRECT_RECEIVE_BUFFER  = DIRECT_PREFIX + "receivebuffer";
     
     //public static final String IN_BUF_SIZE  = DIRECT_PREFIX + "input_buffer";
     //public static final String OUT_BUF_SIZE = DIRECT_PREFIX + "output_buffer";

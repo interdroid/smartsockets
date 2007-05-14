@@ -79,7 +79,8 @@ public class VirtualSocketFactory {
         }
     }
 
-    private static final Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
+    private static final Map<String, VirtualSocketFactory> factories = 
+        new HashMap<String, VirtualSocketFactory>();
 
     private static VirtualSocketFactory defaultFactory = null;
 
@@ -98,7 +99,8 @@ public class VirtualSocketFactory {
         statslogger = Logger.getLogger("ibis.smartsockets.statistics");
     }
     
-    private final ArrayList<ConnectModule> modules = new ArrayList<ConnectModule>();
+    private final ArrayList<ConnectModule> modules = 
+        new ArrayList<ConnectModule>();
 
     private final TypedProperties properties;
 
@@ -165,7 +167,9 @@ public class VirtualSocketFactory {
         
         // We now create the service link. This may connect to the hub that we 
         // have just started.  
-        String localCluster = p.getProperty(SmartSocketsProperties.CLUSTER_MEMBER, null);
+        String localCluster = p.getProperty(
+                SmartSocketsProperties.CLUSTER_MEMBER, null);
+        
         createServiceLink(localCluster);
         
         // Once the servicelink is up and running, we can start the modules.  
@@ -255,8 +259,11 @@ public class VirtualSocketFactory {
             logger.info("Attempting to discover hub using UDP multicast...");
         }
 
-        int port = properties.getIntProperty(SmartSocketsProperties.DISCOVERY_PORT);
-        int time = properties.getIntProperty(SmartSocketsProperties.DISCOVERY_TIMEOUT);
+        int port = properties.getIntProperty(
+                SmartSocketsProperties.DISCOVERY_PORT);
+        
+        int time = properties.getIntProperty(
+                SmartSocketsProperties.DISCOVERY_TIMEOUT);
 
         Discovery d = new Discovery(port, 0, time);
 
@@ -382,8 +389,8 @@ public class VirtualSocketFactory {
             logger.info("Loading module: " + name);
         }
 
-        String classname = properties.getProperty(SmartSocketsProperties.MODULES_PREFIX
-                + name, null);
+        String classname = properties.getProperty(
+                SmartSocketsProperties.MODULES_PREFIX + name, null);
 
         if (classname == null) {
             // The class implementing the module is not explicitly defined, so
@@ -426,8 +433,8 @@ public class VirtualSocketFactory {
 
     private void loadModules() {
         // Get the list of modules that we should load. 
-        String [] mods = properties.getStringList(SmartSocketsProperties.MODULES_DEFINE,
-                ",", new String [0]);
+        String [] mods = properties.getStringList(
+                SmartSocketsProperties.MODULES_DEFINE, ",", new String [0]);
 
         if (mods == null || mods.length == 0) {
             // Should not happen!
@@ -437,8 +444,8 @@ public class VirtualSocketFactory {
 
         // Get the list of modules to skip. Note that the direct module cannot 
         // be skipped. 
-        String [] skip = properties.getStringList(SmartSocketsProperties.MODULES_SKIP, ",",
-                null);
+        String [] skip = properties.getStringList(
+                SmartSocketsProperties.MODULES_SKIP, ",", null);
 
         int count = mods.length;
         
@@ -606,7 +613,8 @@ public class VirtualSocketFactory {
         return null;
     }
 
-    public static void close(VirtualSocket s, OutputStream out, InputStream in) {
+    public static void close(VirtualSocket s, OutputStream out, 
+            InputStream in) {
 
         try {
             if (out != null) {
@@ -679,8 +687,9 @@ public class VirtualSocketFactory {
                 if (conlogger.isDebugEnabled()) {
                     conlogger.debug("Timeout while using module " + m.module 
                             + " to set up "
-                            + "connection to " + target + " timeout = " + timeout 
-                            + " timeleft = " + timeLeft + " t = " + t);
+                            + "connection to " + target + " timeout = " 
+                            + timeout + " timeleft = " + timeLeft + " t = " 
+                            + t);
                 }
                     
                 if (overloaded > 0) { 
@@ -756,8 +765,8 @@ public class VirtualSocketFactory {
                 } catch (TargetOverloadedException e) { 
                     if (conlogger.isDebugEnabled()) {
                         conlogger.debug("Connection failed, target " + target 
-                                + " overloaded (" + overloaded + ") while using " 
-                                + " module " + m.module);
+                                + " overloaded (" + overloaded 
+                                + ") while using " + " module " + m.module);
                     }
 
                     overloaded++;
@@ -1052,7 +1061,9 @@ public class VirtualSocketFactory {
         }
     }
 
-    public static synchronized VirtualSocketFactory getSocketFactory(String name) {
+    public static synchronized VirtualSocketFactory getSocketFactory(
+            String name) {
+        
         return factories.get(name);
     }
 
@@ -1065,8 +1076,8 @@ public class VirtualSocketFactory {
             result = createSocketFactory(p, addDefaults);
             factories.put(name, result);
         } else if (!p.equals(result.properties)) {
-            throw new InitializationException(
-                    "could not retrieve existing factory, properties are not equal");
+            throw new InitializationException("could not retrieve existing" 
+                    + " factory, properties are not equal");
 
         }
 
@@ -1106,7 +1117,8 @@ public class VirtualSocketFactory {
         TypedProperties typedProperties = new TypedProperties();
 
         if (addDefaults) {
-            typedProperties.putAll(SmartSocketsProperties.getDefaultProperties());
+            typedProperties.putAll(
+                    SmartSocketsProperties.getDefaultProperties());
         }
 
         if (properties != null) {
@@ -1117,8 +1129,8 @@ public class VirtualSocketFactory {
 
         if (typedProperties.containsKey("smartsockets.factory.statistics")) {
 
-            int tmp = typedProperties.getIntProperty(SmartSocketsProperties.STATISTICS_INTERVAL,
-                    0);
+            int tmp = typedProperties.getIntProperty(
+                    SmartSocketsProperties.STATISTICS_INTERVAL, 0);
 
             if (tmp > 0) {
 

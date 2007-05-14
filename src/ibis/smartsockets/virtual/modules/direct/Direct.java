@@ -17,8 +17,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class Direct extends AbstractDirectModule {
+    
+    private static int DEFAULT_CONNECT_TIMEOUT = 3000;
     
     private DirectSocketFactory direct;   
     private AcceptThread acceptThread;
@@ -45,14 +46,15 @@ public class Direct extends AbstractDirectModule {
         super("ConnectModule(Direct)", false);
     } 
     
-    public void initModule(TypedProperties properties) throws Exception {     
-
+    public void initModule(TypedProperties properties) throws Exception {
+        
         // Retrieve the value of the port property (if set). Default value 
         // is '0' (any available port).
         int port = 0;
         
         if (properties != null) { 
-            port = properties.getIntProperty(SmartSocketsProperties.DIRECT_PORT, 0);
+            port = properties.getIntProperty(
+                    SmartSocketsProperties.DIRECT_PORT, 0);        
         }
         
         // Create a direct socket factory.
@@ -63,8 +65,11 @@ public class Direct extends AbstractDirectModule {
         
         int backlog = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG);
         
-        defaultReceiveBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, -1);
-        defaultSendBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_SEND_BUFFER, -1);
+        defaultReceiveBuffer = p.getIntProperty(
+                SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, -1);
+        
+        defaultSendBuffer = p.getIntProperty(
+                SmartSocketsProperties.DIRECT_SEND_BUFFER, -1);
                 
         // Create a server socket to accept incoming connections. 
         HashMap <String, String> prop = new HashMap<String, String>(3);
@@ -270,5 +275,10 @@ public class Direct extends AbstractDirectModule {
             DirectSocketFactory.close(s, out, in);
             throw e;
         }
+    }
+
+    @Override
+    public int getDefaultTimeout() {
+        return DEFAULT_CONNECT_TIMEOUT;
     }   
 }

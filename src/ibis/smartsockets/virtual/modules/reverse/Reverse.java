@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class Reverse extends MessagingModule {
     
-    private static final int DEFAULT_TIMEOUT = 4000;            
+    private static final int DEFAULT_CONNECT_TIMEOUT = 3500;            
     private static final boolean USE_THREAD = true; 
     
     private static final int PLEASE_CONNECT = 1; 
@@ -127,7 +127,7 @@ public class Reverse extends MessagingModule {
         }
                 
         if (timeout <= 0) { 
-            timeout = DEFAULT_TIMEOUT; 
+            timeout = DEFAULT_CONNECT_TIMEOUT; 
         }
         
         VirtualServerSocket ss = null;
@@ -328,7 +328,7 @@ public class Reverse extends MessagingModule {
         }
     
         if (timeout <= 0) { 
-            timeout = DEFAULT_TIMEOUT;
+            timeout = DEFAULT_CONNECT_TIMEOUT;
         }
         
         if (USE_THREAD) { 
@@ -364,5 +364,9 @@ public class Reverse extends MessagingModule {
     public boolean matchAdditionalRuntimeRequirements(Map requirements) {
         // Nothing to check here ? 
         return true;
+    }
+
+    public int getDefaultTimeout() {
+        return DEFAULT_CONNECT_TIMEOUT;
     }
 }

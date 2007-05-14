@@ -22,7 +22,7 @@ import java.util.Map;
 public class Hubrouted extends ConnectModule 
     implements VirtualConnectionCallBack {
     
-    private static final int DEFAULT_TIMEOUT = 5000;   
+    private static final int DEFAULT_CONNECT_TIMEOUT = 2000;   
    // private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 10000;   
      
     private final Map<Long, HubRoutedVirtualSocket> sockets = 
@@ -110,7 +110,7 @@ public class Hubrouted extends ConnectModule
         */
         
         if (timeout == 0) { 
-            timeout = DEFAULT_TIMEOUT; 
+            timeout = DEFAULT_CONNECT_TIMEOUT; 
         }
        
         final long deadline = System.currentTimeMillis() + timeout;
@@ -397,6 +397,10 @@ public class Hubrouted extends ConnectModule
         }
             
         s.messageACK(data);
+    }
+
+    public int getDefaultTimeout() {
+        return DEFAULT_CONNECT_TIMEOUT;
     }
 
     

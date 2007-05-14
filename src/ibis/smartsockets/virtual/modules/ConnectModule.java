@@ -2,6 +2,7 @@ package ibis.smartsockets.virtual.modules;
 
 
 
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.CallBack;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
@@ -47,6 +48,8 @@ public abstract class ConnectModule implements CallBack {
     protected long failedTime;
     protected long notAllowed;
     
+    protected int timeout; 
+    
     protected ConnectModule(String name, boolean requiresServiceLink) { 
         this(name, requiresServiceLink, null);
     }
@@ -69,15 +72,17 @@ public abstract class ConnectModule implements CallBack {
         
         if (!properties.containsKey("connect.module.type")) {            
             if (!requiresServiceLink) { 
-                properties.put("connect.module.type", new String [] {"direct"});
+                properties.put("connect.module.type", 
+                        new String [] {"direct"});
             } else { 
-                properties.put("connect.module.type", new String [] {"indirect"});
+                properties.put("connect.module.type", 
+                        new String [] {"indirect"});
             }
         } 
     }
         
-    public void init(VirtualSocketFactory p, String name, TypedProperties properties, 
-            Logger l) throws Exception {
+    public void init(VirtualSocketFactory p, String name, 
+            TypedProperties properties, Logger l) throws Exception {
         
         this.name = name;
         parent = p;        
@@ -89,6 +94,14 @@ public abstract class ConnectModule implements CallBack {
                         
         // Now perform the implementation-specific initialization.
         initModule(properties);
+        
+        if (properties != null) {         
+            timeout = properties.getIntProperty(
+                    SmartSocketsProperties.MODULES_PREFIX + "." + name, 
+                    getDefaultTimeout());
+        } else { 
+            timeout = getDefaultTimeout();
+        }
     }
     
     public String getName() { 
@@ -261,6 +274,8 @@ public abstract class ConnectModule implements CallBack {
     public void notAllowed() { 
         notAllowed++;
     }
+    
+    public abstract int getDefaultTimeout();
     
     public abstract void initModule(TypedProperties prop) throws Exception; 
 

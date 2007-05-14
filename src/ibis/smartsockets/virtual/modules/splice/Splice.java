@@ -41,7 +41,7 @@ public class Splice extends AbstractDirectModule {
     private static final byte NO_EXTERNAL_HUB = 22;
     
     private static final int MAX_ATTEMPTS = 3;
-    private static final int DEFAULT_TIMEOUT = 1000;
+    private static final int DEFAULT_CONNECT_TIMEOUT = 3000;
     private static final int PORT_RANGE = 5;
     
     private boolean behindNAT = false;
@@ -214,7 +214,7 @@ public class Splice extends AbstractDirectModule {
             DirectSocketAddress [] a = getTargetRange(otherBehindNAT, tmp);
       
             // Try to connect to the target
-            DirectSocket s = connect(a, localPort[0], DEFAULT_TIMEOUT, target.port());
+            DirectSocket s = connect(a, localPort[0], DEFAULT_CONNECT_TIMEOUT, target.port());
                   
             if (s == null) { 
                 throw new ModuleNotSuitableException(module + ": Failed to connect "
@@ -741,6 +741,10 @@ public class Splice extends AbstractDirectModule {
                 logger.info(module + ": Incoming connection setup failed!", e);            
             }
         }    
+    }
+
+    public int getDefaultTimeout() {
+        return DEFAULT_CONNECT_TIMEOUT;
     }
     
 }
