@@ -1,13 +1,11 @@
 package ibis.smartsockets.hub;
 
-
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectServerSocket;
 import ibis.smartsockets.direct.DirectSimpleSocket;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
-import ibis.smartsockets.hub.connections.BaseConnection;
 import ibis.smartsockets.hub.connections.ClientConnection;
 import ibis.smartsockets.hub.connections.HubConnection;
 import ibis.smartsockets.hub.connections.VirtualConnections;
@@ -24,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -51,10 +48,9 @@ public class Acceptor extends CommunicationThread {
     private LinkedList<DirectSocket> incoming = new LinkedList<DirectSocket>();
     
     Acceptor(TypedProperties p, int port, StateCounter state, 
-            Map<DirectSocketAddress, BaseConnection> connections, 
-            HubList knownProxies, VirtualConnections vcs,
-            DirectSocketFactory factory, DirectSocketAddress delegationAddress) 
-            throws IOException {
+            Connections connections, HubList knownProxies, 
+            VirtualConnections vcs, DirectSocketFactory factory, 
+            DirectSocketAddress delegationAddress) throws IOException {
 
         super("HubAcceptor", state, connections, knownProxies, vcs, factory);        
 
@@ -100,10 +96,12 @@ public class Acceptor extends CommunicationThread {
             return false;
         } else {                                     
             // We just created a connection to this hub.
-            if (hconlogger.isInfoEnabled()) {
-                hconlogger.info("Connection accepted from hub " + addr);
-            }
-
+            if (hconlogger.isInfoEnabled()) { 
+                hconlogger.info("Incoming connection from hub " + addr 
+                       + " accepted (hubs = " + connections.numberOfHubs() 
+                       + ", clients = " + connections.numberOfClients() + ")"); 
+            } 
+            
             out.write(ConnectionProtocol.CONNECTION_ACCEPTED);            
             out.flush();
 
@@ -131,7 +129,7 @@ public class Acceptor extends CommunicationThread {
             
             DirectSocketAddress srcAddr = DirectSocketAddress.getByAddress(src);
                         
-            if (connections.get(srcAddr) != null) { 
+            if (connections.getClient(srcAddr) != null) { 
                 if (cconlogger.isDebugEnabled()) { 
                     cconlogger.debug("Incoming connection from " + src + 
                     " refused, since it already exists!"); 
@@ -144,8 +142,9 @@ public class Acceptor extends CommunicationThread {
             }
 
             if (cconlogger.isInfoEnabled()) { 
-                 cconlogger.info("Incoming connection from " + src 
-                        + " accepted (" + connections.size() + ")"); 
+                 cconlogger.info("Incoming connection from client " + src 
+                         + " accepted (hubs = " + connections.numberOfHubs() 
+                         + ", clients = " + connections.numberOfClients() + ")");
             } 
 
             out.write(ConnectionProtocol.CONNECTION_ACCEPTED);

@@ -243,16 +243,21 @@ public class ServiceLink implements Runnable {
 
     private void connectToHub(DirectSocketAddress address) throws IOException {
         try {
+            if (logger.isInfoEnabled()) {
+                logger.info("Service link attempting to connect to hub: " + address);
+            }
+            
+            
             // Create a connection to the hub
             hub = factory.createSocket(address, TIMEOUT, 0, sendBuffer,
                     receiveBuffer, null, false, virtualHubPort);
 
             hub.setTcpNoDelay(true);
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Service link send buffer = "
+            if (logger.isDebugEnabled()) {
+                logger.debug("Service link send buffer = "
                             + hub.getSendBufferSize());
-                logger.info("Service link recv buffer = "
+                logger.debug("Service link recv buffer = "
                     + hub.getReceiveBufferSize());
             }
 

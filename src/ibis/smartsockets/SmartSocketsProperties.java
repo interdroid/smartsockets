@@ -81,12 +81,11 @@ public class SmartSocketsProperties {
     public static final String DISCOVERY_TIMEOUT   = DISCOVERY_PREFIX + "timeout";
     
     public static final String HUB_PREFIX           = PREFIX + "hub.";
-    public static final String HUB_ADDRESSES        = HUB_PREFIX + "addresses";
+    public static final String HUB_ADDRESSES        = HUB_PREFIX + "addresses";    
     public static final String HUB_SIMPLE_NAME      = HUB_PREFIX + "simple_name";
     public static final String HUB_CLUSTERS         = HUB_PREFIX + "clusters";       
     public static final String HUB_PORT             = HUB_PREFIX + "port";                 
     public static final String HUB_SSH_ALLOWED      = HUB_PREFIX + "ssh";     
-    public static final String HUB_KNOWN_HUBS       = HUB_PREFIX + "known";
     public static final String HUB_SEND_BUFFER      = HUB_PREFIX + "sendbuffer";
     public static final String HUB_RECEIVE_BUFFER   = HUB_PREFIX + "receivebuffer";
     public static final String HUB_STATISTICS       = HUB_PREFIX + "statistics";                 

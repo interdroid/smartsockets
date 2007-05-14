@@ -1,11 +1,8 @@
 package ibis.smartsockets.hub;
 
-
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocket;
-import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
-import ibis.smartsockets.hub.connections.BaseConnection;
 import ibis.smartsockets.hub.connections.HubConnection;
 import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.HubDescription;
@@ -18,31 +15,24 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
-
 
 class Connector extends CommunicationThread {
     
     private static final Logger hconlogger = 
         Logger.getLogger("ibis.smartsockets.hub.connections.hub"); 
     
-   
-    
-  //  private final HashMap<String, Object> map = new HashMap<String, Object>(2);
-    
     private int sendBuffer = -1;
     private int receiveBuffer = -1;
 
     private final int usercode;
     
-    Connector(TypedProperties p, StateCounter state, 
-            Map<DirectSocketAddress, BaseConnection> connections,
-            HubList knownProxies, VirtualConnections vcs, 
+    Connector(TypedProperties p, StateCounter state, Connections connections,
+            HubList knownHubs, VirtualConnections vcs,
             DirectSocketFactory factory) {
         
-        super("HubConnector", state, connections, knownProxies, vcs, factory);
+        super("HubConnector", state, connections, knownHubs, vcs, factory);
     
         sendBuffer = p.getIntProperty(SmartSocketsProperties.HUB_SEND_BUFFER, -1);
         receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);        

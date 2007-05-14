@@ -6,7 +6,7 @@ import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.discovery.Discovery;
-import ibis.smartsockets.hub.connections.BaseConnection;
+import ibis.smartsockets.hub.connections.ClientConnection;
 import ibis.smartsockets.hub.connections.HubConnection;
 import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.ConnectionsSelector;
@@ -18,9 +18,6 @@ import ibis.smartsockets.util.TypedProperties;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -46,8 +43,10 @@ public class Hub extends Thread {
     private static long STAT_FREQ = 60000;
     
     private final HubList hubs;    
-    private final Map<DirectSocketAddress, BaseConnection> connections;
-    
+    // private final Map<DirectSocketAddress, BaseConnection> connections;
+   
+    private final Connections connections;
+        
     private final Acceptor acceptor;
     private final Connector connector;
             
@@ -93,8 +92,7 @@ public class Hub extends Thread {
         // Create the hub list
         hubs = new HubList(state);
                 
-        connections = Collections.synchronizedMap(
-                new HashMap<DirectSocketAddress, BaseConnection>());
+        connections = new Connections();
         
         virtualConnections = new VirtualConnections();
        
@@ -157,9 +155,7 @@ public class Hub extends Thread {
         
         hubs.addLocalDescription(localDesc);
 
-        String [] knownHubs = p.getStringList(SmartSocketsProperties.HUB_KNOWN_HUBS);
-        
-        addHubs(knownHubs);
+        addHubs(p.getStringList(SmartSocketsProperties.HUB_ADDRESSES));        
         
         if (goslogger.isInfoEnabled()) {
             goslogger.info("Starting Gossip connector/acceptor");
@@ -326,18 +322,27 @@ public class Hub extends Thread {
             return;
         }
         
-        DirectSocketAddress [] cons = connections.keySet().toArray(
-                new DirectSocketAddress[0]);
+        DirectSocketAddress [] hubs = connections.hubs();
         
-        for (DirectSocketAddress s : cons) { 
+        for (DirectSocketAddress a : hubs) { 
             
-            BaseConnection b = connections.get(s);
+            HubConnection h = connections.getHub(a);
             
-            if (b != null) { 
-               b.printStatistics();
+            if (h != null) { 
+               h.printStatistics();
             }
         }
         
+        DirectSocketAddress [] clients = connections.clients();
+        
+        for (DirectSocketAddress a : clients) { 
+            
+            ClientConnection c = connections.getClient(a);
+            
+            if (c != null) { 
+               c.printStatistics();
+            }
+        }
         
         nextStats = now + STAT_FREQ; 
     }

@@ -203,12 +203,13 @@ public class Hubrouted extends ConnectModule
                 case ServiceLinkProtocol.ERROR_CONNECTION_REFUSED:
                     // User error
                     failedOutgoingConnections++;
-                    throw new ConnectException("Connection refused!");
+                    throw new ConnectException("Connection refused by server!");
                     
                 case ServiceLinkProtocol.ERROR_ILLEGAL_TARGET:
                     // User error
                     failedOutgoingConnections++;
-                    throw new ConnectException("Connection refused!");
+                    throw new ConnectException("Attempting to connect to " +
+                            "illegal target!");
                 }
             }   
         } 
@@ -218,9 +219,9 @@ public class Hubrouted extends ConnectModule
         return true;
     }
 
-    public void connect(DirectSocketAddress src, DirectSocketAddress srcHub, int port,
-            int remoteFragmentation, int remoteBufferSize, int timeout, 
-            long index) {
+    public void connect(DirectSocketAddress src, DirectSocketAddress srcHub, 
+            int port, int remoteFragmentation, int remoteBufferSize, 
+            int timeout, long index) {
 
         // Incoming connection...        
         incomingConnections++;

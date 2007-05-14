@@ -2,12 +2,9 @@ package ibis.smartsockets.hub;
 
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
-import ibis.smartsockets.hub.connections.BaseConnection;
 import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.StateCounter;
-
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -22,7 +19,7 @@ abstract class CommunicationThread implements Runnable {
     protected static final Logger hublogger = 
         Logger.getLogger("ibis.smartsockets.hub"); 
         
-    protected final Map<DirectSocketAddress, BaseConnection> connections;     
+    protected final Connections connections;     
     
     protected final HubList knownHubs;
     protected final VirtualConnections virtualConnections;
@@ -35,8 +32,7 @@ abstract class CommunicationThread implements Runnable {
     private boolean end = false;
     
     protected CommunicationThread(String name, StateCounter state, 
-            Map<DirectSocketAddress, BaseConnection> connections, 
-            HubList knownHubs, VirtualConnections vcs, 
+            Connections connections, HubList knownHubs, VirtualConnections vcs, 
             DirectSocketFactory factory) {
 
         this.name = name;

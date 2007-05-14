@@ -3,6 +3,7 @@ package ibis.smartsockets.hub.connections;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
+import ibis.smartsockets.hub.Connections;
 import ibis.smartsockets.hub.servicelink.ServiceLinkProtocol;
 import ibis.smartsockets.hub.state.AddressAsStringSelector;
 import ibis.smartsockets.hub.state.ClientsByTagAsStringSelector;
@@ -16,10 +17,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
-
 
 public class ClientConnection extends MessageForwardingConnection {
 
@@ -40,16 +39,14 @@ public class ClientConnection extends MessageForwardingConnection {
     private final String uniquePrefix;
     
     public ClientConnection(DirectSocketAddress clientAddress, DirectSocket s, 
-            DataInputStream in, DataOutputStream out, 
-            Map<DirectSocketAddress, BaseConnection> connections,
+            DataInputStream in, DataOutputStream out, Connections connections,
             HubList hubs, VirtualConnections vcs) {
      
-        super(s, in, out, connections, hubs, vcs, false, "Client(" + clientAddress.toString() + ")");        
+        super(s, in, out, connections, hubs, vcs, false, 
+                "Client(" + clientAddress.toString() + ")");        
      
         this.clientAddress = clientAddress;        
         this.clientAddressAsString = clientAddress.toString();
-        
-    //    this.hubAddress = knownHubs.getLocalDescription().hubAddress;
         
         this.uniquePrefix = clientAddressAsString + "__";
         
@@ -73,27 +70,12 @@ public class ClientConnection extends MessageForwardingConnection {
                         + clientAddress + "!");
         }
    
-        connections.remove(clientAddress);
+        connections.removeClient(clientAddress);
         DirectSocketFactory.close(s, out, in);      
         
         // Close all connections that have an endpoint at our side
         closeAllVirtualConnections(uniquePrefix);
     } 
-    
-/*    protected synchronized boolean sendMessage(ClientMessage m) {  
-        
-        try { 
-            out.write(ServiceLinkProtocol.MESSAGE);            
-            m.writePartially(out);
-            out.flush();
-            return true;
-        } catch (IOException e) {            
-            meslogger.warn("Connection " + clientAddress + " is broken!", e);
-            DirectSocketFactory.close(s, out, in);
-            return false;                
-        }
-    }
-  */
     
     private void handleListHubs() throws IOException { 
         

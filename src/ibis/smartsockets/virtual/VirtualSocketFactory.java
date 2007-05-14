@@ -290,6 +290,10 @@ public class VirtualSocketFactory {
 
         List<DirectSocketAddress> hubs = new LinkedList<DirectSocketAddress>();
         
+        if (hub != null) { 
+            hubs.add(hub.getHubAddress());
+        } 
+        
         // Check if the hub address was passed as a property.
         String [] tmp = properties.getStringList(
                 SmartSocketsProperties.HUB_ADDRESSES);
@@ -303,7 +307,7 @@ public class VirtualSocketFactory {
                 }
             }
         }
-
+    
         // If we don't have a hub address, we try to find one ourselves
         if (hubs.size() == 0) {            
             boolean useDiscovery = properties.booleanProperty(
@@ -317,11 +321,7 @@ public class VirtualSocketFactory {
             if (useDiscovery && (discoveryPreferred || hub == null)) { 
                 address = discoverHub(localCluster);                    
             }            
-            
-            if (address == null && hub != null) { 
-                address = hub.getHubAddress();
-            } 
-            
+
             if (address != null) { 
                 hubs.add(address);
             }

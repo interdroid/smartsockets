@@ -3,6 +3,7 @@ package ibis.smartsockets.hub.connections;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.ConnectionProtocol;
+import ibis.smartsockets.hub.Connections;
 import ibis.smartsockets.hub.servicelink.ServiceLinkProtocol;
 import ibis.smartsockets.hub.state.DirectionsSelector;
 import ibis.smartsockets.hub.state.HubDescription;
@@ -13,7 +14,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.LinkedList;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -56,12 +56,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     private final String name; 
     
     protected MessageForwardingConnection(DirectSocket s, DataInputStream in, 
-            DataOutputStream out, 
-            Map<DirectSocketAddress, BaseConnection> connections, 
-            HubList proxies, VirtualConnections vcs, boolean master, 
-            String name) {
+            DataOutputStream out, Connections connections, HubList hubs, 
+            VirtualConnections vcs, boolean master, String name) {
        
-        super(s, in, out, connections, proxies);
+        super(s, in, out, connections, hubs);
         
         this.name = name;
         
@@ -72,11 +70,10 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     // Directly sends a message to a hub.
     private boolean directlyToHub(DirectSocketAddress hub, ClientMessage cm) {
 
-        BaseConnection c = connections.get(hub); 
+        HubConnection c = connections.getHub(hub); 
         
-        if (c != null && c instanceof HubConnection) {             
-            HubConnection tmp = (HubConnection) c;            
-            return tmp.forwardClientMessage(cm);
+        if (c != null) {             
+            return c.forwardClientMessage(cm);
         }   
 
         return false;
@@ -143,9 +140,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     private boolean deliverLocally(ClientMessage cm) {
 
         // First check if we can find the target locally             
-        BaseConnection c = connections.get(cm.target);
+        ClientConnection c = connections.getClient(cm.target);
         
-        if (c == null || !(c instanceof ClientConnection)) {
+        if (c == null) {
             meslogger.debug("Cannot find client address locally: " + cm.target);                        
             return false;
         } 
@@ -156,7 +153,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         }
            
         // We found the target, so lets forward the message
-        boolean result = ((ClientConnection) c).forwardClientMessage(cm);
+        boolean result = c.forwardClientMessage(cm);
          
         if (meslogger.isDebugEnabled()) {
             meslogger.debug("Directly forwarding message to client " 
@@ -675,21 +672,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         MessageForwardingConnection mf = null;
         
         // Check if the client is connected to the local hub...
-        BaseConnection tmp = connections.get(target);
+        ClientConnection tmp = connections.getClient(target);
         
-       // vclogger.warn("Local lookup of " + target + " result = " + tmp);
-        
-        if (tmp != null) {
-            
-            if (!(tmp instanceof ClientConnection)) { 
-                // apparently, the user is trying to connect to a hub here, 
-                // which is not allowed! Send a NACK back!
-                forwardVirtualConnectNACK(index, 
-                        ServiceLinkProtocol.ERROR_ILLEGAL_TARGET);                
-                connectionsFailed++;
-                
-                return;
-            }
+        if (tmp != null) { 
             
             if (tmp == this) {
                 // connecting to oneself over a hub is generally not a good idea 
@@ -701,20 +686,14 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 return;
             }
         
-            mf = (MessageForwardingConnection) tmp;
-           
+            mf = (MessageForwardingConnection) tmp;           
         } 
         
         if (mf == null && targetHub != null) { 
             
-            //   vclogger.warn("trying to connect via hub: " + targetHub);
-            
-            mf = (MessageForwardingConnection) connections.get(targetHub);        
+            mf = connections.getHub(targetHub);        
             
             if (mf == null) {
-                
-             //   vclogger.warn("failed, trying to connect via indirection");
-                
                 // Failed to get a connection to the specified hub. Maybe there 
                 // is an indirection ? 
                 HubDescription d = knownHubs.get(targetHub);
@@ -723,11 +702,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                     HubDescription indirect = d.getIndirection();
                     
                     if (indirect != null && indirect.haveConnection()) { 
-                        mf = (MessageForwardingConnection) 
-                            connections.get(indirect.hubAddress);
-                        
-                       // vclogger.warn("GOT indirection!");
-                        
+                        mf = connections.getHub(indirect.hubAddress);
                     } else { 
                         vclogger.info("Failed to find indirection for hub: " 
                                 + targetHub 
@@ -751,7 +726,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
             if (result.size() > 0) {
                 // TODO: send in Multiple directions.... ?
-                mf = (MessageForwardingConnection) connections.get(result.get(0));
+                mf = connections.getHub(result.get(0));
             }
             
             // NOTE: we may not be able to find the client here, since we don't 

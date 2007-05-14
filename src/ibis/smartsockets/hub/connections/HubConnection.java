@@ -3,6 +3,7 @@ package ibis.smartsockets.hub.connections;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
+import ibis.smartsockets.hub.Connections;
 import ibis.smartsockets.hub.HubProtocol;
 import ibis.smartsockets.hub.state.ClientDescription;
 import ibis.smartsockets.hub.state.HubDescription;
@@ -14,7 +15,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -40,12 +40,11 @@ public class HubConnection extends MessageForwardingConnection {
     private final String uniquePrefix;
     
     public HubConnection(DirectSocket s, DataInputStream in, 
-            DataOutputStream out, HubDescription peer, 
-            Map<DirectSocketAddress, BaseConnection> connections, 
-            HubList proxies, StateCounter state, VirtualConnections vcs, 
+            DataOutputStream out, HubDescription peer, Connections connections, 
+            HubList hubs, StateCounter state, VirtualConnections vcs, 
             boolean master) {
         
-        super(s, in, out, connections, proxies, vcs, master, "Hub(" 
+        super(s, in, out, connections, hubs, vcs, master, "Hub(" 
                 + peer.hubAddressAsString + ")");
         
         this.peer = peer;        
@@ -53,7 +52,7 @@ public class HubConnection extends MessageForwardingConnection {
         
         this.uniquePrefix = peer.hubAddressAsString + "__";
         
-        local = proxies.getLocalDescription();
+        local = hubs.getLocalDescription();
     }
          
     protected String getUniqueID(long index) { 
@@ -255,7 +254,7 @@ public class HubConnection extends MessageForwardingConnection {
     private void disconnect() {
                 
         // Update the administration
-        connections.remove(peer.hubAddress);
+        connections.removeHub(peer.hubAddress);
         
         local.removeConnectedTo(peer.hubAddressAsString);
         peer.removeConnection();

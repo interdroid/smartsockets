@@ -1,15 +1,47 @@
-Todo:
+TODO:
 
-Clean up IPAddressSets to understand external/public/site/link ? 
-Add link to SocektAddressSets ?
+User friendlyness!!
 
-NIELS: check if timeout are ok (after the conenction succeeds)
-NIELS: add 'default' timeout setting which uses sane timeout for each option. 
-NIELS: add 'getHostName' ? 
+Fix shared direct socket factory (Hub+Virtual+No ssh)
 
+Add extra call to create address with retry, backoff, etc. 
+
+Change current connect call to use 'sane' timeouts for each module
+
+Fix hub to only reply to 'named' lookup mcasts
+
+Reduce 'INFO' output to something which is human-readable
+
+MATHIJS: Add easy shutdown for hubs
 MATHIJS: extend viz to show network name 
 MATHIJS: extend viz to show routing throughput
 
+  Cache info in servicelink instances ? 
+
+  Web interface to proxies to make it easier to add addresses ? 
+
+- - - - - - - - - - - - -
+
+Don't remember context/reason; 
+
+? When only a partial address is known, direct connections are no problem. 
+  Sending messages through the proxies fails, however, since the complete 
+  address is required to find the machine... 
+
+? Clean up IPAddressSets to understand external/public/site/link ? 
+
+? Check 'winner' cache 
+	- add cluster based caching
+        - check how the connection properties interact with serversockets 
+          (e.g., what happens to reverse setups when I turn winner cache on) 
+
+? Check if client info is propagated correctly in proxies ...
+
+? Allow STUN on a specific network instead of automatically using all.
+
+- - - - - - - - - - - - - - - - - - 
+
+Done: 
 
 X CHECK: hub administration !!! Gossip sometimes fails if hub crashes and is 
 X directy restarted: seems the administration of the receiver is confused...
@@ -27,8 +59,6 @@ X CHECK: with Ibis it very freqently occurs that the initial TCP ibis setup
    - Fix for virtualsocketfactory ? Bit harder... maybe create new 
         servicelink and new SocketAddressSet for each ?? 
 
-User friendlyness!!
-
 X Create single app to start proxy + router
 
 X Use UDP mcast to find local routers
@@ -44,25 +74,13 @@ X Support multiple servers for STUN
 
 X Make sure STUN doesn't take too long ...
 
-  Allow STUN on a specific network instead of automatically using all.
-
 X Add TCP splicing to Virtual  
 
 X Add cache to Virtual which remembers best connection setup order 
 
 X Add user readable name to proxy to make visualization easier to read
 
-  Add hierarchical clustering 
-        -- eg. 'das2.vu' or 'grid5000.orsay'
-
-  Fix 'winner' cache 
-	- add cluster based caching
-        - check how the connection properties interact with serversockets 
-          (e.g., what happens to reverse setups when I turn winner cache on) 
-   
 X Reuses inter router links ? 
-
-  Add parallel streams to routers ?  
 
 X Fix hub to only accept connections from the 'right' virtual clusters 
      (currently it only replies to the right cluster with UDP mcast, but accepts
@@ -70,52 +88,47 @@ X Fix hub to only accept connections from the 'right' virtual clusters
  
   Create Factory for service links 
 
-  Check if timeouts make any sense....
-  
-  Icing on cake: have the VirtualSocket transparently move from Routed 
-                  to splice/stun type connection....
-
 X NIO support
 
 X Routing for Mathijs...
 
-  UDP support for Niels
-
 X Check if the UDP mcast discovery works on DAS3.. 
 
-? Check if client info is propagated correctly in proxies ...
-
-Think about: 
-
 X Find a way to get MAC addresses...
-
-  When only a partial address is known, direct connections are no problem. 
-  Sending messages through the proxies fails, however, since the complete 
-  address is required to find the machine... 
 
   Smart idea: (IS THIS TRUE) ????    
       If there is no shared third point between two machines, then splicing 
       will never work because the networks are not directly connected.
 
-  Machine may have multiple external addresses (multiple networks, each with NAT) ?
-
-  Add ssh tunneling to DirectSocketFactory ? 
+X Add ssh tunneling to DirectSocketFactory ? 
     - How do you known where to tunnel to ? 
 
 X Think of smart way to use bouncers ? -> replaced by STUN
 
 X Add UDP/STUN like module to Virtual ? -> using STUN directly  
 
-  Cache info in servicelink instances ? 
-
 X  Have multiple instances of VirtualSocketFactory based on properties ?
      
-  Web interface to proxies to make it easier to add addresses ? 
+X Make up unique ID for machines that only have local IP's (UUID ?)
 
-  Make up unique ID for machines that only have local IP's (UUID ?)
+--------------------------------------------------------------------------------
+
+Version 2.0
+
+  Add hierarchical clustering 
+        -- eg. 'das2.vu' or 'grid5000.orsay'
+
+  UDP support ? 
+
+  Add support for multiple proxy addresses to VirtualSocketFactory ?
 
   Add parallel streams (where ? Direct or Virtual or just Routers ?) 
 
-  Add support for multiple proxy addresses to VirtualSocketFactory ?
+  Machine may have multiple external addresses (multiple networks, each with NAT) ?
+
+  Icing on cake: have the VirtualSocket transparently move from Routed 
+                  to splice/stun type connection....
+  
+  Add parallel streams to routers ?  
 
   
