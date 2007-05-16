@@ -152,17 +152,18 @@ public class VirtualSocketFactory {
         properties = p;
 
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG, 50);
-        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT, 10000);
         
         // NOTE: order is VERY important here!
         loadModules();
-
+        
         if (modules.size() == 0) {
             logger.info("Failed to load any modules!");
             throw new InitializationException("Failed to load any modules!");
         }
+
+        // -- this depends on the modules being loaded
+        DEFAULT_TIMEOUT = determineDefaultTimeout(p);
         
-        // Start the hub (if required)
         startHub(p);
         
         // We now create the service link. This may connect to the hub that we 
@@ -523,6 +524,41 @@ public class VirtualSocketFactory {
         }
     }
 
+    private int determineDefaultTimeout(TypedProperties p) {
+        
+        int [] tmp = new int[modules.size()];
+        int totalTimeout = 0;
+        
+        for (int i=0;i<modules.size();i++) {
+            // Get the module defined timeout
+            tmp[i] = modules.get(i).getDefaultTimeout();
+            totalTimeout += tmp[i];
+        }
+        
+        int timeout = p.getIntProperty(SmartSocketsProperties.TIMEOUT, -1);
+        
+        if (timeout <= 0) { 
+            // It's up to the modules to determine their own timeout            
+            timeout = totalTimeout;
+        } else { 
+            // A user-defined timeout should be distributed over the modules
+            for (int i=0;i<modules.size();i++) { 
+                double t = (((double) tmp[i]) / totalTimeout) * timeout;   
+                modules.get(i).setTimeout((int) t);
+            }
+        }
+        
+        if (logger.isInfoEnabled()) {            
+            logger.info("Total timeout set to: " + timeout);
+
+            for (ConnectModule m : modules) { 
+                logger.info("  " + m.getName() + ": " + m.getTimeout());
+            }
+        }
+        
+        return timeout;
+    }
+    
     protected ConnectModule[] getModules() {
         return modules.toArray(new ConnectModule[modules.size()]);
     }
@@ -641,6 +677,24 @@ public class VirtualSocketFactory {
         }
     }
 
+    // This method implements a connect using a specific module. This method 
+    // will return null when: 
+    //
+    //  - runtime requirements do not match
+    //  - the module throws a ModuleNotSuitableException 
+    //
+    // When a connection is succesfully establed, we wait for a accept from the 
+    // remote. There are three possible outcomes: 
+    //
+    //  - the connection is accepted in time 
+    //  - the connection is not accepted in time or the connection is lost
+    //  - the remote side is overloaded and closes the connection
+    //
+    // In the first case the newly created socket is returned and in the second 
+    // case an exception is thrown. In the last case the connection will be 
+    // retried using a backoff mechanism until 'timeleft' (the total timeout  
+    // specified by the user) is spend. Each new try behaves exactly the same as 
+    // the previous attempts.    
     private VirtualSocket createClientSocket(ConnectModule m,
             VirtualSocketAddress target, int timeout, int timeLeft, 
             Map<String, Object> properties) throws IOException {
@@ -698,8 +752,8 @@ public class VirtualSocketFactory {
                             + timeLeft + " ms. (Target overloaded " 
                             + overloaded + " times)");
                 } else { 
-                    throw new SocketTimeoutException("Timeout while waiting for"
-                            + " accept on virtual connection to " + target);
+                    throw new SocketTimeoutException("Timeout while creating"
+                            + " connection to " + target);
                 }
             }
             
@@ -718,7 +772,9 @@ public class VirtualSocketFactory {
                 m.failed(end - start);
                 return null;
                 
-                // NOTE: all IOExceptions are forwarded to the user! 
+                // NOTE: The modules may also throw IOExceptions for  
+                // non-transient errors (i.e., port not found). These are 
+                // forwarded to the user. 
             } 
 
             t = System.currentTimeMillis() - start;
@@ -763,6 +819,10 @@ public class VirtualSocketFactory {
                     m.success(end - start);
                     return vs;
                 } catch (TargetOverloadedException e) { 
+                    // The target has refused our connection because it is 
+                    // overloaded. Since we have obviously found a working 
+                    // module, we will not return. Instead we will retry using 
+                    // a backoff algorithm until we run out of time...
                     if (conlogger.isDebugEnabled()) {
                         conlogger.debug("Connection failed, target " + target 
                                 + " overloaded (" + overloaded 
@@ -807,15 +867,23 @@ public class VirtualSocketFactory {
         }
     }
 
+    /*
     public VirtualSocket createClientSocket(VirtualSocketAddress target,
             int timeout, Map<String, Object> prop) throws IOException {
+        return createClientSocket(target, timeout, true, prop);        
+    }*/
+
+    /*
+    
+    public VirtualSocket createClientSocket(VirtualSocketAddress target,
+            int timeout, Map<String, Object> prop) 
+        throws IOException {
 
         // Note: it's up to the user to ensure that this thing is large enough!
-        // i.e., it should be of size 1+modules.length
-        
+        // i.e., it should be of size 1+modules.length        
         if (conlogger.isDebugEnabled()) { 
             conlogger.debug("createClientSocket(" + target + ", " + timeout 
-                    + ", " + prop + ")");
+                     + ", " + prop + ")");
         }
         
         long [] timing = null;
@@ -829,7 +897,6 @@ public class VirtualSocketFactory {
         }
 
         try {
-
             int notSuitableCount = 0;
 
             if (timeout <= 0) {
@@ -839,6 +906,14 @@ public class VirtualSocketFactory {
             ConnectModule [] order = clusters.getOrder(target);
 
             int timeLeft = timeout;
+            
+            if (timeout < DEFAULT_TIMEOUT) { 
+                // we should re-distribute the timeout here! 
+                
+            } else {
+                // we stick to the initial timeout values, but optionally 
+            }
+            
             int partialTimeout;
 
             if (order.length > 1) {
@@ -925,7 +1000,171 @@ public class VirtualSocketFactory {
             }
         }
     }
+*/
+    
+    // This method loops over and array of connection modules, trying to setup 
+    // a connection with each of them each in turn. Returns when:
+    //   - a connection is established
+    //   - a non-transient error occurs (i.e. remote port not found)
+    //   - all modules have failed
+    //   - a timeout occurred    
+    //
+    private VirtualSocket createClientSocket(VirtualSocketAddress target,
+            ConnectModule [] order, int [] timeouts, int totalTimeout,            
+            long [] timing, Map<String, Object> prop) 
+        throws IOException, NoSuitableModuleException {
 
+        try {
+            int timeLeft = totalTimeout;
+            
+            // Now try the remaining modules (or all of them if we weren't
+            // using the cache in the first place...)
+            for (int i = 0; i < order.length; i++) {
+                
+                ConnectModule m = order[i];                
+                int timeout = (timeouts != null ? timeouts[i] : m.getTimeout());
+                
+                long start = System.currentTimeMillis();
+
+                if (timing != null) {
+                    timing[1 + i] = System.nanoTime();
+
+                    if (i > 0) {
+                        prop.put("direct.detailed.timing.ignore", null);
+                    }
+                }
+
+                VirtualSocket vs = createClientSocket(m, target, timeout, 
+                        timeLeft, prop);
+
+                if (timing != null) {
+                    timing[1 + i] = System.nanoTime() - timing[1 + i];
+                }
+
+                if (vs != null) {
+                    if (i > 0) {
+                        // We managed to connect, but not with the first module,
+                        // so we remember this to speed up later connections.
+                        clusters.succes(target, m);
+                    }
+                    return vs;
+                }
+
+                if (order.length > 1 && i < order.length - 1) {
+                    
+                    timeLeft -= System.currentTimeMillis() - start;
+
+                    if (timeLeft <= 0) {
+                        // NOTE: This can only happen when a module breaks 
+                        // the rules (defensive programming).  
+                        throw new SocketTimeoutException("Timeout during " +
+                                "connect to " + target);
+                    } 
+                }
+            }
+            
+            if (logger.isInfoEnabled()) {
+                logger.info("No suitable module found to connect to " + target);
+            }
+
+            // No suitable modules found...
+            throw new NoSuitableModuleException("No suitable module found to"
+                    + " connect to " + target);
+            
+        } finally {
+            if (timing != null) {
+                timing[0] = System.nanoTime() - timing[0];
+                prop.remove("direct.detailed.timing.ignore");
+            }
+        }
+    }    
+
+    // Distribute a given timeout over a number of modules, taking the relative 
+    // sizes of the default module timeouts into account.
+    private int [] distributesTimeout(int timeout, int [] timeouts, 
+            ConnectModule [] modules) {
+
+        if (timeouts == null) { 
+            timeouts = new int[modules.length];
+        }
+        
+        for (int i=0;i<modules.length;i++) { 
+            double t = (((double) modules[i].getTimeout()) / DEFAULT_TIMEOUT);
+            timeouts[i] = (int) (t * timeout); 
+        }
+        
+        return timeouts;
+    }
+
+    public VirtualSocket createClientSocket(VirtualSocketAddress target,
+            int timeout, Map<String, Object> prop) throws IOException {
+        return createClientSocket(target, timeout, false, prop);
+    }
+    
+    public VirtualSocket createClientSocket(VirtualSocketAddress target,
+            int timeout, boolean fillTimeout, Map<String, Object> prop) 
+        throws IOException {
+
+        // Note: it's up to the user to ensure that this thing is large enough!
+        // i.e., it should be of size 1+modules.length        
+        if (conlogger.isDebugEnabled()) { 
+            conlogger.debug("createClientSocket(" + target + ", " + timeout 
+                     + ", " + prop + ")");
+        }
+        
+        long [] timing = null;
+
+        if (prop != null) {
+            // Note: it's up to the user to ensure that this thing is large 
+            // enough! i.e., it should be of size 1+modules.length                
+            timing = (long[]) prop.get("virtual.detailed.timing");
+
+            if (timing != null) {
+                timing[0] = System.nanoTime();
+            }
+        }
+        
+        // Check the timeout here. If it is not set, we will use the default
+        if (timeout <= 0) { 
+            timeout = DEFAULT_TIMEOUT;
+        }
+        
+        ConnectModule [] order = clusters.getOrder(target);
+        
+        int timeLeft = timeout;
+        int [] timeouts = null;
+        
+        do {
+            if (timeLeft <= DEFAULT_TIMEOUT) { 
+                // determine timeout for each module. We assume that this time 
+                // is used completely and therefore only do this once.
+                timeouts = distributesTimeout(timeLeft, timeouts, order);
+                fillTimeout = false;
+            }
+
+            long start = System.currentTimeMillis();
+        
+            try { 
+                return createClientSocket(target, order, timeouts, timeLeft, 
+                        timing, prop);
+            } catch (NoSuitableModuleException e) { 
+                // All modules where tried and failed. It now depends on the 
+                // user if he would like to try another round or give up. 
+            } 
+       
+            timeLeft -= System.currentTimeMillis() - start;
+                
+            if (timeLeft <= 0) { 
+                fillTimeout = false;
+            }
+            
+        } while (fillTimeout);
+        
+        throw new ConnectException("No suitable method was found to connect to "
+                + target);
+    }
+    
+    
     private int getPort() {
 
         // TODO: should this be random ?

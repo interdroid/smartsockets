@@ -1,8 +1,5 @@
 package ibis.smartsockets.virtual.modules;
 
-
-
-import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.CallBack;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
@@ -93,15 +90,8 @@ public abstract class ConnectModule implements CallBack {
         }
                         
         // Now perform the implementation-specific initialization.
-        initModule(properties);
-        
-        if (properties != null) {         
-            timeout = properties.getIntProperty(
-                    SmartSocketsProperties.MODULES_PREFIX + "." + name, 
-                    getDefaultTimeout());
-        } else { 
-            timeout = getDefaultTimeout();
-        }
+        initModule(properties);        
+        timeout = getDefaultTimeout();
     }
     
     public String getName() { 
@@ -303,5 +293,12 @@ public abstract class ConnectModule implements CallBack {
                       + failedIncomingConnections + "]");
           }        
     }
-        
+    
+    public int getTimeout() {
+        return timeout;
+    }
+    
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }       
 }
