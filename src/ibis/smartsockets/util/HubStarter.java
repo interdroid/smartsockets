@@ -73,8 +73,6 @@ public class HubStarter {
                 try { 
                     hubs[i] = DirectSocketAddress.getByAddress(args[i]);
                     numHubs++;
-                    
-                    System.out.println("Got hub address: " + hubs[i].toString());
                 } catch (Exception e) {
                     System.err.println("Skipping hub address: " + args[i]);
                     e.printStackTrace(System.err);

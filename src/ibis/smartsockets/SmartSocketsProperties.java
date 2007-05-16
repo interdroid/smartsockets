@@ -138,8 +138,8 @@ public class SmartSocketsProperties {
             HUB_STATS_INTERVAL,     "60000",
             HUB_VIRTUAL_PORT,       "42", 
             
-            MODULES_DEFINE,         "direct,reverse,splice,hubrouted", 
-            MODULES_ORDER,          "direct,reverse,splice,hubrouted",
+            MODULES_DEFINE,         "direct,reverse,hubrouted", 
+            MODULES_ORDER,          "direct,reverse,hubrouted",
             
             DISCOVERY_PREFERRED,    "false",
             DISCOVERY_ALLOWED,      "true",

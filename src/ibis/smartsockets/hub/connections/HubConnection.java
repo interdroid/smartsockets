@@ -208,13 +208,13 @@ public class HubConnection extends MessageForwardingConnection {
             // We got information about a 'third party'.               
             if (hops+1 < tmp.getHops()) {
                 // We seem to have found a shorter route to the target
-                if (tmp.addIndirection(peer, hops+1)) { 
-                    
-                    vclogger.warn("Found shortcut to hub: " 
-                            + tmp.hubAddressAsString + " via "
-                            + peer.hubAddressAsString + " in " + (hops+1) 
-                            + " hops");
-                    
+                if (tmp.addIndirection(peer, hops+1)) {                     
+                    if (vclogger.isDebugEnabled()) {                     
+                        vclogger.debug("Found shortcut to hub: " 
+                                + tmp.hubAddressAsString + " via "
+                                + peer.hubAddressAsString + " in " + (hops+1) 
+                                + " hops");
+                    }
                 }
             } 
             

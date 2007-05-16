@@ -1,6 +1,7 @@
 package ibis.smartsockets.virtual;
 
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.util.TypedProperties;
 import ibis.smartsockets.virtual.modules.ConnectModule;
 
@@ -175,43 +176,6 @@ public class VirtualClusters {
         
         return d.order;
     }
-        
-        
-        
-        
-        
-        // TODO Auto-generated method stub
-        
-        // TODO Auto-generated method stub
-//      First check if we remember which module was succesfull the last time
-        // we connected to this machine...
-        
-        /* TODO: repair this...
-        boolean cache = false;
-        String winner = null;
-               
-        // Check if the user wants us to use the cache...
-        if (prop != null && prop.containsKey("cache.winner")) { 
-            cache = true;            
-            winner = (String) connectionSetupCache.get(target);
-        }
-
-        // Check if we can reuse the same module...
-        if (winner != null) {             
-            ConnectModule m = getModule(winner);
-            
-            if (m != null) { 
-                VirtualSocket vs = createClientSocket(m, target, timeout, 
-                        prop);
-            
-                if (vs != null) { 
-                    return vs;
-                }
-                
-                notSuitableCount++;
-            }
-        }
-        */
     
     public ConnectModule[] getOrder(VirtualSocketAddress target) {
                 
@@ -219,7 +183,16 @@ public class VirtualClusters {
         String c = target.cluster();
                
         if (c == null || c.length() == 0) {
-            // Handle 'orphan' nodes seperately...
+            // No cluster defined... let's use the hub address as a cluster.
+            DirectSocketAddress hub = target.hub();
+            
+            if (hub != null) {             
+                c = hub.toString();
+            }
+        }
+        
+        if (c == null || c.length() == 0) {
+            // Handle 'orphan' nodes (without cluster or hub) seperately...
             ConnectModule[] result = getSingleNodeOrder(target);
         
             if (result == null) { 
@@ -236,9 +209,6 @@ public class VirtualClusters {
                 
         if (d == null) { 
             // No definition is found!
-        
-            // TODO: hierarchical clustering here ? 
-            
             if (!reorder) {
                 // We are not allowed to create new clusters, so we just return 
                 // the default order 
@@ -273,6 +243,15 @@ public class VirtualClusters {
         String c = target.cluster();
         
         ClusterDefinition d = null;
+        
+        if (c == null || c.length() == 0) {
+            // If no order is defined we use the hub. 
+            DirectSocketAddress hub = target.hub();
+            
+            if (hub != null) { 
+                c = hub.toString();
+            }
+        } 
         
         if (c == null || c.length() == 0) {
             // Handle 'orphan' nodes seperately...

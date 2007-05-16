@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 
@@ -108,8 +109,8 @@ public class VirtualSocketFactory {
 
     private final int DEFAULT_TIMEOUT;
 
-    // private final int DISCOVERY_PORT;
-
+    private final Random random;
+    
     private final HashMap<Integer, VirtualServerSocket> serverSockets = 
         new HashMap<Integer, VirtualServerSocket>();
 
@@ -148,6 +149,8 @@ public class VirtualSocketFactory {
         if (logger.isInfoEnabled()) {
             logger.info("Creating VirtualSocketFactory");
         }
+
+        random = new Random();
         
         properties = p;
 
@@ -838,19 +841,31 @@ public class VirtualSocketFactory {
                     if (leftover < 0) { 
                         leftover = 0;
                     } 
-                        
+                    
                     int sleeptime = Math.min(backoff, leftover);
                     
-                    if (leftover > 500 && sleeptime == leftover) {
+                    // Use a randomized sleep value to ensure the attempts are
+                    // distributed.
+                    sleeptime = random.nextInt(sleeptime);
+                    
+                    if (sleeptime >= leftover) {                        
                         // In the last attempt we sleep half a second shorter. 
-                        // This allows us to attempt a connection setup.
-                        sleeptime -= 500;
+                        // This allows us to attempt a final connection setup.
+                        if (sleeptime > 500) { 
+                            sleeptime -= 500;
+                        } else {
+                            // We're done!
+                            sleeptime = 0;
+                            timeLeft = 0;
+                        }
                     }
-                
-                    try { 
-                        Thread.sleep(sleeptime);
-                    } catch (Exception x) {
-                        // ignored
+
+                    if (sleeptime > 0) {
+                        try { 
+                            Thread.sleep(sleeptime);
+                        } catch (Exception x) {
+                            // ignored
+                        }
                     }
                     
                     backoff *= 2;
@@ -1134,6 +1149,8 @@ public class VirtualSocketFactory {
         int timeLeft = timeout;
         int [] timeouts = null;
         
+        int backoff = 250;
+        
         do {
             if (timeLeft <= DEFAULT_TIMEOUT) { 
                 // determine timeout for each module. We assume that this time 
@@ -1154,7 +1171,35 @@ public class VirtualSocketFactory {
        
             timeLeft -= System.currentTimeMillis() - start;
                 
-            if (timeLeft <= 0) { 
+            if (timeLeft > 0) { 
+                int sleeptime = Math.min(backoff, timeLeft);
+            
+                // Use a randomized sleep value to ensure the attempts are
+                // distributed.
+                sleeptime = random.nextInt(sleeptime);
+            
+                if (sleeptime >= timeLeft) {
+                    // In the last attempt we sleep half a second shorter. 
+                    // This allows us to attempt a connection setup.
+                    if (sleeptime > 500) { 
+                        sleeptime -= 500;
+                    } else {
+                        // We're done!
+                        sleeptime = 0;
+                        fillTimeout = false;
+                    }
+                }
+
+                if (sleeptime > 0) { 
+                    try { 
+                        Thread.sleep(sleeptime);
+                    } catch (Exception x) {
+                        // ignored
+                    }
+                }
+                
+                backoff *= 2;
+            } else { 
                 fillTimeout = false;
             }
             
