@@ -38,17 +38,19 @@ public class DirectVirtualSocket extends VirtualSocket {
       
         int ack = -1;
         
-        try {
+        try {            
             s.setSoTimeout(timeout);
+            s.setTcpNoDelay(true);
             
             out.write(AbstractDirectModule.ACCEPT);
             out.flush();        
-
+            
             // We should do a three way handshake here to ensure both side agree
             // that we have a connection...
-            ack = in.read();
-            
+            ack = in.read();                        
+            s.setTcpNoDelay(false);            
             s.setSoTimeout(0);
+            
         } catch (IOException e) { 
             DirectSocketFactory.close(s, out, in);  
             throw e;
@@ -99,7 +101,8 @@ public class DirectVirtualSocket extends VirtualSocket {
                 throw new SocketException("Connection rejected");            
                 
             default:
-                throw new SocketException("Got unknown reply during connect!");
+                throw new SocketException("Got unknown reply (" + result 
+                        + ") during connect!");
             }
         } catch (IOException e) {
             // This module worked fine, but we got a 'normal' exception while 

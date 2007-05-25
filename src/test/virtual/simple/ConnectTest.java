@@ -69,7 +69,12 @@ public class ConnectTest {
                     out.flush();
 
                     in = s.getInputStream();
-                    in.read();
+                    int tmp = in.read();
+                    
+                    if (tmp != 42) { 
+                        System.err.println("EEP: got " + tmp + " instead of 42");
+                    }
+                    
                 }
 
             } catch (Exception e) {
@@ -124,8 +129,12 @@ public class ConnectTest {
                     s.setTcpNoDelay(true);
                     
                     in = s.getInputStream();
-                    in.read();
+                    int tmp = in.read();
 
+                    if (tmp != 42) { 
+                        System.err.println("EEP: got " + tmp + " instead of 42");
+                    }
+                    
                     out = s.getOutputStream();
                     out.write(42);
                     out.flush();

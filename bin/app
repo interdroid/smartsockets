@@ -10,4 +10,23 @@ do
     CP=$CP:$i
 done
 
-$JAVA_HOME/bin/java -cp $CP $@
+NORMAL=
+SPECIAL=
+
+while [ $# -gt 0 ]
+do
+
+        HEADER=`echo $1 | sed 's/\(..\).*/\1/'`
+
+        case "$HEADER" in
+        -D)
+                SPECIAL="$SPECIAL $1"
+                ;;
+        *)
+                NORMAL="$NORMAL $1"
+                ;;
+        esac
+        shift
+done
+
+java -cp $CP $SPECIAL $NORMAL

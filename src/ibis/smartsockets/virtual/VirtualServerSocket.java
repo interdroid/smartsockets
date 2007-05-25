@@ -131,7 +131,6 @@ public class VirtualServerSocket {
                 result = null;
             } else { 
                 // See if the other side is still willing to connect ...     
-                
                 try { 
                     int t = timeout;
                     

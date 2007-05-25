@@ -19,7 +19,10 @@ public abstract class VirtualSocket {
     protected int remotePort;       
     
     protected Map<String, Object> props;
-        
+    
+    protected VirtualSocket() {         
+    }
+    
     protected VirtualSocket(VirtualSocketAddress target) {         
         this.remote = target.machine();
         this.remotePort = target.port();                
@@ -283,25 +286,7 @@ public abstract class VirtualSocket {
      * 
      * @exception IOException configuration failed for some reason.
      */
-    /*
-    public void tuneSocket() throws IOException {
-        if (props != null) {
-            String a = (String) props.get(ConnectionProperties.ISIZE);
-            if (a != null) {
-                logger.debug("set recv buffer size to " + a);
-                setReceiveBufferSize(Integer.parseInt(a));
-            }
-            a = (String) props.get(ConnectionProperties.OSIZE);
-            if (a != null) {
-                logger.debug("set send buffer size to " + a);
-                setSendBufferSize(Integer.parseInt(a));
-            }
-        }
-        logger.debug("TCP_NO_DELAY enabled");
-        setTcpNoDelay(true);
-    }
-      */
-
+    
     public abstract void waitForAccept(int timeout) throws IOException;
     protected abstract void connectionAccepted(int timeout) throws IOException;
     protected abstract void connectionRejected(int timeout);

@@ -77,7 +77,10 @@ public class Reverse extends MessagingModule {
         return null;
     }
     
-    private void storeReply(int requestID, String reply) {         
+    private void storeReply(int requestID, String reply) {   
+        
+        logger.debug("Storing reply: [" + requestID + "] " + reply);
+        
         synchronized (replies) {
             if (replies.containsKey(requestID)) { 
                 replies.put(requestID, reply);
@@ -86,22 +89,39 @@ public class Reverse extends MessagingModule {
         }
     }
     
-    private void storeRequest(int requestID) {         
+    private void storeRequest(int requestID) {
+        
+        logger.debug("Storing request: [" + requestID + "]");
+        
         synchronized (replies) {
             replies.put(requestID, null);
         }
     }
     
-    private String removeRequest(int requestID) {         
+    private String removeRequest(int requestID) {
+        
+        String result = null;
+        
         synchronized (replies) {
-            return replies.remove(requestID);
+            result = replies.remove(requestID);
         }
+        
+        logger.debug("Removing request: [" + requestID + "] " + result);
+
+        return result;
     }
     
-    private boolean haveReply(int requestID) {         
+    private boolean haveReply(int requestID) {
+        
+        String result = null;
+        
         synchronized (replies) {
-            return replies.containsKey(requestID);
+            result = replies.get(requestID);
         }
+        
+        logger.debug("Check request: [" + requestID + "] " + result);
+        
+        return (result != null);
     }
 
     private synchronized int nextRequestID() { 
@@ -121,11 +141,13 @@ public class Reverse extends MessagingModule {
             
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
-        if (target.machine().sameMachine(parent.getLocalHost())) { 
+    
+        /*    if (target.machine().sameMachine(parent.getLocalHost())) { 
             throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
-                
+      */
+        
         if (timeout <= 0) { 
             timeout = DEFAULT_CONNECT_TIMEOUT; 
         }
@@ -142,7 +164,7 @@ public class Reverse extends MessagingModule {
         } 
         
         int id = nextRequestID();
-        String reply = null;
+        String reply = "reason unknown";
         boolean failed = false;
         DirectVirtualSocket s = null;
         
@@ -185,12 +207,13 @@ public class Reverse extends MessagingModule {
                     try { 
                         ss.setSoTimeout(waittime);            
                         s = (DirectVirtualSocket) ss.accept();
+                        stop = true;
                     } catch (SocketTimeoutException e) { 
                         total += waittime;
                     }
                 }
                 
-                if (haveReply(id)) { 
+                if (!stop && haveReply(id)) { 
                     stop = true;
                     reply = removeRequest(id);
                     failed = true;
@@ -253,20 +276,35 @@ public class Reverse extends MessagingModule {
             // we created on the other side. Now we must check if the server 
             // socket on our side is also willing to accept it.
                         
-            int accept = ss.incomingConnection(s);
+            ReverseVirtualSocket rvs = new ReverseVirtualSocket(s);
+            
+            int accept = ss.incomingConnection(rvs);
             
             if (accept != 0) {
                 
-                if (accept == -1) { 
+                if (accept == -1) {
+                    
+                    if (logger.isInfoEnabled()) {
+                        logger.info(module + ": Serversocket is NOT willing " +
+                                "to accept (REJECTED)");                
+                    }
+                    
                     s.connectionRejected(AbstractDirectModule.CONNECTION_REJECTED);
                 } else { 
+
+                    if (logger.isInfoEnabled()) {
+                        logger.info(module + ": Serversocket is NOT willing " +
+                                "to accept (OVERLOAD)");                
+                    }
+                    
                     s.connectionRejected(AbstractDirectModule.SERVER_OVERLOAD);
                 }
-                
-                if (logger.isInfoEnabled()) {
-                    logger.info(module + ": ServerSocket refused " + target);
-                }
             }
+
+            if (logger.isInfoEnabled()) {
+                logger.info(module + ": Socket queued at serversocket");                
+            }
+
         } catch (Exception e) {
 
             sendReply(target, requestID, e.getMessage());
