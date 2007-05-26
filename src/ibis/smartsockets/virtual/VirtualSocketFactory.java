@@ -1048,7 +1048,7 @@ public class VirtualSocketFactory {
                         prop.put("direct.detailed.timing.ignore", null);
                     }
                 }
-
+                
                 VirtualSocket vs = createClientSocket(m, target, timeout, 
                         timeLeft, prop);
 
@@ -1124,7 +1124,7 @@ public class VirtualSocketFactory {
         // i.e., it should be of size 1+modules.length        
         if (conlogger.isDebugEnabled()) { 
             conlogger.debug("createClientSocket(" + target + ", " + timeout 
-                     + ", " + prop + ")");
+                     + ", " + fillTimeout + ", " + prop + ")");
         }
         
         long [] timing = null;
@@ -1167,6 +1167,10 @@ public class VirtualSocketFactory {
             } catch (NoSuitableModuleException e) { 
                 // All modules where tried and failed. It now depends on the 
                 // user if he would like to try another round or give up. 
+                if (conlogger.isDebugEnabled()) { 
+                    conlogger.debug("createClientSocket failed. Will " 
+                            + (fillTimeout ? "" : "NOT ") + "retry");
+                }
             } 
        
             timeLeft -= System.currentTimeMillis() - start;

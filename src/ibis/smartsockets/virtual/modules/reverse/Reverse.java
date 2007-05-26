@@ -142,11 +142,11 @@ public class Reverse extends MessagingModule {
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
     
-        /*    if (target.machine().sameMachine(parent.getLocalHost())) { 
+        if (target.machine().sameMachine(parent.getLocalHost())) { 
             throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
-      */
+      
         
         if (timeout <= 0) { 
             timeout = DEFAULT_CONNECT_TIMEOUT; 
@@ -164,8 +164,7 @@ public class Reverse extends MessagingModule {
         } 
         
         int id = nextRequestID();
-        String reply = "reason unknown";
-        boolean failed = false;
+        String reply = "Attempt timed out";
         DirectVirtualSocket s = null;
         
         try { 
@@ -189,19 +188,20 @@ public class Reverse extends MessagingModule {
             // Now wait for an incoming connection, while also checking for 
             // a reply message to come in...
             int waittime = 100;
-            int total = 0;
             boolean stop = false;
+            
+            long deadline = System.currentTimeMillis() + timeout;
             
             while (!stop) {
                 
-                int left = timeout - total;
+                long left = deadline - System.currentTimeMillis();
                 
                 if (left <= 0) { 
                     stop = true;
                 } else { 
                     
                     if (left < waittime) { 
-                        waittime = left;
+                        waittime = (int) left;
                     }
                 
                     try { 
@@ -209,14 +209,13 @@ public class Reverse extends MessagingModule {
                         s = (DirectVirtualSocket) ss.accept();
                         stop = true;
                     } catch (SocketTimeoutException e) { 
-                        total += waittime;
+                        // ignore
                     }
                 }
                 
                 if (!stop && haveReply(id)) { 
                     stop = true;
                     reply = removeRequest(id);
-                    failed = true;
                 }
             }
         } catch (Exception e) {
@@ -236,7 +235,7 @@ public class Reverse extends MessagingModule {
             }
         }
         
-        if (failed) { 
+        if (s == null) { 
             throw new ModuleNotSuitableException(module + ": Target failed to " 
                     + "set up reverse connection (" + reply + ")");             
         }
@@ -328,6 +327,11 @@ public class Reverse extends MessagingModule {
             return;
         }
         
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": connection reply (" + requestID + "): "  
+                    + reply); 
+        }
+        
         storeReply(requestID, reply);
     }
     
@@ -353,6 +357,12 @@ public class Reverse extends MessagingModule {
             return;
         }
     
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": connection request (" + requestID + "): "  
+                    + " local port: " + localport + ", target " + target 
+                    + ", timeout " + timeout);  
+        }
+        
         VirtualServerSocket ss = parent.getServerSocket(localport);
     
         if (ss == null) {
