@@ -1,0 +1,467 @@
+package ibis.smartsockets.virtual.modules.reverse;
+
+import ibis.smartsockets.virtual.VirtualSocket;
+import ibis.smartsockets.virtual.modules.AbstractDirectModule;
+import ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.nio.channels.SocketChannel;
+import java.util.Map;
+
+public class ReverseVirtualSocket extends VirtualSocket {
+
+    private final DirectVirtualSocket s;
+
+    protected ReverseVirtualSocket(DirectVirtualSocket s) { 
+        this.s = s;
+    }
+    
+    protected void connectionAccepted(int timeout) throws IOException { 
+        
+        int ack = -1;
+        
+        try {
+            s.setSoTimeout(timeout);
+            s.setTcpNoDelay(true);
+            
+            OutputStream out = s.getOutputStream();
+            InputStream in = s.getInputStream();
+            
+            // This is a bit nasty... We need to send the accept twice, and 
+            // read the reply twice, simply because the connection setup is 
+            // 'doubled' by first doing a reverse setup followed by a 'normal'
+            // setup
+            out.write(AbstractDirectModule.ACCEPT);
+            out.write(AbstractDirectModule.ACCEPT);
+            out.flush();        
+
+            // We should do a three way handshake here to ensure both side agree
+            // that we have a connection...
+            ack = in.read();            
+            ack = in.read();            
+            
+            s.setSoTimeout(0);
+            s.setTcpNoDelay(false);
+        } catch (IOException e) { 
+            s.close();  
+            throw e;
+        } 
+
+        if (ack != AbstractDirectModule.ACCEPT) { 
+            throw new ConnectException("Client disconnected");
+        }
+    }
+        
+    /**
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#close()
+     */
+    public void close() throws IOException {
+        s.close();
+    }
+
+    /**
+     * @param timeout
+     * @param opcode
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#connectionRejected(int, byte)
+     */
+    public void connectionRejected(int timeout, byte opcode) {
+        s.connectionRejected(timeout, opcode);
+    }
+
+    /**
+     * @param timeout
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#connectionRejected(int)
+     */
+    public void connectionRejected(int timeout) {
+        s.connectionRejected(timeout);
+    }
+
+    /**
+     * @param obj
+     * @return
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    public boolean equals(Object obj) {
+        return s.equals(obj);
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getChannel()
+     */
+    public SocketChannel getChannel() {
+        return s.getChannel();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getInetAddress()
+     */
+    public InetAddress getInetAddress() {
+        return s.getInetAddress();
+    }
+
+    /**
+     * @return
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getInputStream()
+     */
+    public InputStream getInputStream() throws IOException {
+        return s.getInputStream();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.VirtualSocket#getKeepAlive()
+     */
+    public boolean getKeepAlive() throws SocketException {
+        return s.getKeepAlive();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getLocalAddress()
+     */
+    public InetAddress getLocalAddress() {
+        return s.getLocalAddress();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getLocalPort()
+     */
+    public int getLocalPort() {
+        return s.getLocalPort();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getLocalSocketAddress()
+     */
+    public SocketAddress getLocalSocketAddress() {
+        return s.getLocalSocketAddress();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.VirtualSocket#getOOBInline()
+     */
+    public boolean getOOBInline() throws SocketException {
+        return s.getOOBInline();
+    }
+
+    /**
+     * @return
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getOutputStream()
+     */
+    public OutputStream getOutputStream() throws IOException {
+        return s.getOutputStream();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getPort()
+     */
+    public int getPort() {
+        return s.getPort();
+    }
+
+    /**
+     * @param key
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getProperty(java.lang.String)
+     */
+    public Object getProperty(String key) {
+        return s.getProperty(key);
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getReceiveBufferSize()
+     */
+    public int getReceiveBufferSize() throws SocketException {
+        return s.getReceiveBufferSize();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#getRemoteSocketAddress()
+     */
+    public SocketAddress getRemoteSocketAddress() {
+        return s.getRemoteSocketAddress();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getReuseAddress()
+     */
+    public boolean getReuseAddress() throws SocketException {
+        return s.getReuseAddress();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getSendBufferSize()
+     */
+    public int getSendBufferSize() throws SocketException {
+        return s.getSendBufferSize();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getSoLinger()
+     */
+    public int getSoLinger() throws SocketException {
+        return s.getSoLinger();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getSoTimeout()
+     */
+    public int getSoTimeout() throws SocketException {
+        return s.getSoTimeout();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getTcpNoDelay()
+     */
+    public boolean getTcpNoDelay() throws SocketException {
+        return s.getTcpNoDelay();
+    }
+
+    /**
+     * @return
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.VirtualSocket#getTrafficClass()
+     */
+    public int getTrafficClass() throws SocketException {
+        return s.getTrafficClass();
+    }
+
+    /**
+     * @return
+     * @see java.lang.Object#hashCode()
+     */
+    public int hashCode() {
+        return s.hashCode();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isBound()
+     */
+    public boolean isBound() {
+        return s.isBound();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isClosed()
+     */
+    public boolean isClosed() {
+        return s.isClosed();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isConnected()
+     */
+    public boolean isConnected() {
+        return s.isConnected();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isInputShutdown()
+     */
+    public boolean isInputShutdown() {
+        return s.isInputShutdown();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isOutputShutdown()
+     */
+    public boolean isOutputShutdown() {
+        return s.isOutputShutdown();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.VirtualSocket#properties()
+     */
+    public Map<String, Object> properties() {
+        return s.properties();
+    }
+
+    /**
+     * @param data
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.VirtualSocket#sendUrgentData(int)
+     */
+    public void sendUrgentData(int data) throws IOException {
+        s.sendUrgentData(data);
+    }
+
+    /**
+     * @param on
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.VirtualSocket#setKeepAlive(boolean)
+     */
+    public void setKeepAlive(boolean on) throws SocketException {
+        s.setKeepAlive(on);
+    }
+
+    /**
+     * @param on
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.VirtualSocket#setOOBInline(boolean)
+     */
+    public void setOOBInline(boolean on) throws SocketException {
+        s.setOOBInline(on);
+    }
+
+    /**
+     * @param connectionTime
+     * @param latency
+     * @param bandwidth
+     * @see ibis.smartsockets.virtual.VirtualSocket#setPerformancePreferences(int, int, int)
+     */
+    public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
+        s.setPerformancePreferences(connectionTime, latency, bandwidth);
+    }
+
+    /**
+     * @param properties
+     * @see ibis.smartsockets.virtual.VirtualSocket#setProperties(java.util.Map)
+     */
+    public void setProperties(Map<String, Object> properties) {
+        s.setProperties(properties);
+    }
+
+    /**
+     * @param key
+     * @param val
+     * @see ibis.smartsockets.virtual.VirtualSocket#setProperty(java.lang.String, java.lang.Object)
+     */
+    public void setProperty(String key, Object val) {
+        s.setProperty(key, val);
+    }
+
+    /**
+     * @param sz
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#setReceiveBufferSize(int)
+     */
+    public void setReceiveBufferSize(int sz) throws SocketException {
+        s.setReceiveBufferSize(sz);
+    }
+
+    /**
+     * @param on
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#setReuseAddress(boolean)
+     */
+    public void setReuseAddress(boolean on) throws SocketException {
+        s.setReuseAddress(on);
+    }
+
+    /**
+     * @param sz
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#setSendBufferSize(int)
+     */
+    public void setSendBufferSize(int sz) throws SocketException {
+        s.setSendBufferSize(sz);
+    }
+
+    /**
+     * @param on
+     * @param linger
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#setSoLinger(boolean, int)
+     */
+    public void setSoLinger(boolean on, int linger) throws SocketException {
+        s.setSoLinger(on, linger);
+    }
+
+    /**
+     * @param t
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#setSoTimeout(int)
+     */
+    public void setSoTimeout(int t) throws SocketException {
+        s.setSoTimeout(t);
+    }
+
+    /**
+     * @param on
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#setTcpNoDelay(boolean)
+     */
+    public void setTcpNoDelay(boolean on) throws SocketException {
+        s.setTcpNoDelay(on);
+    }
+
+    /**
+     * @param tc
+     * @throws SocketException
+     * @see ibis.smartsockets.virtual.VirtualSocket#setTrafficClass(int)
+     */
+    public void setTrafficClass(int tc) throws SocketException {
+        s.setTrafficClass(tc);
+    }
+
+    /**
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#shutdownInput()
+     */
+    public void shutdownInput() throws IOException {
+        s.shutdownInput();
+    }
+
+    /**
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#shutdownOutput()
+     */
+    public void shutdownOutput() throws IOException {
+        s.shutdownOutput();
+    }
+
+    /**
+     * @return
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#toString()
+     */
+    public String toString() {
+        return s.toString();
+    }
+
+    /**
+     * @param timeout
+     * @throws IOException
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#waitForAccept(int)
+     */
+    public void waitForAccept(int timeout) throws IOException {
+        s.waitForAccept(timeout);
+    }
+
+  
+}
