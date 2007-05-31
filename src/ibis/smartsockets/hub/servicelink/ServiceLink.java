@@ -315,7 +315,9 @@ public class ServiceLink implements Runnable {
         // since we have reached our destination, the hop count and 
         // target addresses are not used anymore..
         skip(4);
-
+        
+        boolean returnedToSender = in.readBoolean();
+        
         DirectSocketAddress.skip(in);
         DirectSocketAddress.skip(in);
 
@@ -325,7 +327,8 @@ public class ServiceLink implements Runnable {
         byte[][] message = readMessageBlob();
 
         if (logger.isInfoEnabled()) {
-            logger.info("ServiceLink: Received message for " + targetModule);
+            logger.info("ServiceLink: Received message for " + targetModule 
+                    + " (returnToSender: " + returnedToSender + ")");
         }
 
         CallBack cb = (CallBack) findCallback(targetModule);
@@ -333,7 +336,7 @@ public class ServiceLink implements Runnable {
         if (cb == null) {
             logger.warn("ServiceLink: Callback " + targetModule + " not found");
         } else {
-            cb.gotMessage(source, sourceHub, opcode, message);
+            cb.gotMessage(source, sourceHub, opcode, returnedToSender, message);
         }
 
         incomingMetaMessages++;
@@ -834,7 +837,10 @@ public class ServiceLink implements Runnable {
 
                 // hops left is not used here...
                 out.writeInt(-1);
-
+                
+                // return to sender is set to false bu default
+                out.writeBoolean(false);
+                
                 DirectSocketAddress.write(target, out);
                 DirectSocketAddress.write(targetHub, out); // may be null
 

@@ -6,23 +6,27 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-
 public class ClientMessage {
 
-    DirectSocketAddress source;
-    DirectSocketAddress sourceHub;                      
-    DirectSocketAddress target; 
-    DirectSocketAddress targetHub;               
+    private DirectSocketAddress source;
+    private DirectSocketAddress sourceHub;                      
+    private DirectSocketAddress target; 
+    private DirectSocketAddress targetHub;            
+    
+    int hopsLeft;
+    boolean returnToSender;
+    
     String module; 
     int code; 
     byte [] message;    
-    int hopsLeft;
     
-    ClientMessage(DirectSocketAddress source, DirectSocketAddress sourceHub, 
-            int hopsLeft, DataInputStream in) throws IOException {
+    ClientMessage(DataInputStream in) throws IOException {
         
-        this.source = source;
-        this.sourceHub = sourceHub;
+        source = DirectSocketAddress.read(in);
+        sourceHub = DirectSocketAddress.read(in);       
+        
+        hopsLeft = in.readInt();
+        returnToSender = in.readBoolean(); 
         
         target = DirectSocketAddress.read(in);
         targetHub = DirectSocketAddress.read(in);
@@ -38,17 +42,13 @@ public class ClientMessage {
         }
     }
     
-    ClientMessage(DataInputStream in) throws IOException {
-        this(DirectSocketAddress.read(in), DirectSocketAddress.read(in), in.readInt(),
-                in);
-    }
-    
     void write(DataOutputStream out) throws IOException { 
     
         DirectSocketAddress.write(source, out);
         DirectSocketAddress.write(sourceHub, out);
 
         out.writeInt(hopsLeft);       
+        out.writeBoolean(returnToSender);
         
         DirectSocketAddress.write(target, out);
         DirectSocketAddress.write(targetHub, out);
@@ -64,23 +64,40 @@ public class ClientMessage {
         }
     }
     
-    void writePartially(DataOutputStream out) throws IOException { 
-
-        DirectSocketAddress.write(source, out);
-        DirectSocketAddress.write(sourceHub, out);
-           
-        out.writeUTF(module);
-        out.writeInt(code);
-        
-        if (message == null || message.length == 0) { 
-            out.writeInt(0);
+    DirectSocketAddress getSource() { 
+        if (returnToSender) { 
+            return target;
         } else { 
-            out.writeInt(message.length);
-            out.write(message);
+            return source;
         }
-    }       
-
-    String target() {        
+    }
+    
+    DirectSocketAddress getSourceHub() { 
+        if (returnToSender) { 
+            return targetHub;
+        } else { 
+            return sourceHub;
+        }
+    }
+    
+    DirectSocketAddress getTarget() { 
+        if (returnToSender) { 
+            return source;
+        } else { 
+            return target;
+        }
+    }
+    
+    DirectSocketAddress getTargetHub() { 
+        if (returnToSender) { 
+            return sourceHub;
+        } else { 
+            return targetHub;
+        }
+    }
+    
+    
+    String targetAsString() {        
         if (targetHub != null) { 
             return target + "@" + targetHub;
         } else { 
@@ -88,7 +105,7 @@ public class ClientMessage {
         }
     }
     
-    String source() { 
+    String sourceAsString() { 
         return source + "@" + sourceHub;
     }
     
@@ -97,5 +114,11 @@ public class ClientMessage {
             + target + "@" + targetHub + "] [module " + module + " code " 
             + code + "] message: [" + (message == null ? 0 : message.length) 
             + "]";        
+    }
+
+    public void setSourceHub(DirectSocketAddress hub) {
+        if (sourceHub == null) { 
+            sourceHub = hub;
+        }
     }    
 }

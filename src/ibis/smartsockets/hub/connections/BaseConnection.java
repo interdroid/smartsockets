@@ -1,6 +1,7 @@
 package ibis.smartsockets.hub.connections;
 
 import ibis.smartsockets.direct.DirectSocket;
+import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.Connections;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.util.ThreadPool;
@@ -32,6 +33,14 @@ public abstract class BaseConnection implements Runnable {
         ThreadPool.createNew(this, getName());
     }
         
+    public DirectSocketAddress getLocalHub() {  
+        return knownHubs.getLocalDescription().hubAddress;
+    } 
+
+    public boolean isLocalHub(DirectSocketAddress sa) {        
+        return getLocalHub().equals(sa);
+    } 
+    
     public void run() { 
 
         boolean cont = true; 

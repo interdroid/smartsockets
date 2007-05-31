@@ -32,7 +32,6 @@ public class ClientConnection extends MessageForwardingConnection {
         Logger.getLogger("ibis.smartsockets.hub.registration"); 
     
     private final DirectSocketAddress clientAddress;
-  //  private final DirectSocketAddress hubAddress;
     
     private final String clientAddressAsString;
     

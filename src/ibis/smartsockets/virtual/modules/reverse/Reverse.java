@@ -1,5 +1,6 @@
 package ibis.smartsockets.virtual.modules.reverse;
 
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.util.TypedProperties;
 import ibis.smartsockets.virtual.ModuleNotSuitableException;
@@ -26,6 +27,8 @@ public class Reverse extends MessagingModule {
         
     private Direct direct;    
     private int requestID = 0;
+    
+    private boolean denyConnectionsToSelf = true; 
     
     private HashMap<Integer, String> replies = new HashMap<Integer, String>();
     
@@ -56,7 +59,11 @@ public class Reverse extends MessagingModule {
     }
 
     public void initModule(TypedProperties properties) throws Exception {
-        // nothing do do here.
+        
+        // This property is a bit backwards, but it is easier to understand 
+        // for the user in this way.
+        denyConnectionsToSelf = !properties.booleanProperty(
+                SmartSocketsProperties.REVERSE_CONNECT_SELF, false);
     }
 
     public void startModule() throws Exception {
@@ -142,7 +149,9 @@ public class Reverse extends MessagingModule {
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
     
-        if (target.machine().sameMachine(parent.getLocalHost())) { 
+        if (denyConnectionsToSelf && 
+                target.machine().sameMachine(parent.getLocalHost())) { 
+            
             throw new ModuleNotSuitableException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
@@ -335,6 +344,24 @@ public class Reverse extends MessagingModule {
         storeReply(requestID, reply);
     }
     
+    private void handleConnectMessageFailed(byte [][] message) { 
+        
+        int requestID = 0;
+    
+        try {
+            requestID = toInt(message[6]);
+        } catch (Exception e) {
+            logger.warn(module + ": failed to parse connect message!", e);
+            return;
+        }
+    
+        if (logger.isInfoEnabled()) {
+            logger.info(module + ": connection request failed (" + requestID + ")");  
+        }
+        
+        storeReply(requestID, "Target not reachable");
+    }
+    
     private void handleConnectMessage(byte [][] message) { 
  
         int timeout = 0;
@@ -387,7 +414,7 @@ public class Reverse extends MessagingModule {
     }
     
     public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcProxy, 
-            int opcode, byte [][] message) {
+            int opcode, boolean returnToSender, byte [][] message) {
         
         if (logger.isInfoEnabled()) {
             logger.info(module + ": handling connection request from " + src + "@" + 
@@ -396,11 +423,19 @@ public class Reverse extends MessagingModule {
         
         switch (opcode) { 
         case PLEASE_CONNECT:
-            handleConnectMessage(message);
+            if (returnToSender) { 
+                handleConnectMessageFailed(message);
+            } else { 
+                handleConnectMessage(message);
+            }
             break;
         
         case CANNOT_CONNECT:
-            handleCannotConnectMessage(message);            
+            if (returnToSender) { 
+                // ignore
+            } else {
+                handleCannotConnectMessage(message);            
+            }
             break;
             
         default: 

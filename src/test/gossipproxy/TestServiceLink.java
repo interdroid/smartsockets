@@ -54,7 +54,7 @@ public class TestServiceLink implements CallBack {
     }
     
     public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcProxy, 
-            int opcode, byte [][] message) {
+            int opcode, boolean returnToSender, byte [][] message) {
     
         System.out.println("Got message from: " + src + "@" + srcProxy 
                 + "\n   [" + opcode + "] - " + message);            

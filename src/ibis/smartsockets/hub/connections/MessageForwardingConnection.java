@@ -140,16 +140,16 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     private boolean deliverLocally(ClientMessage cm) {
 
         // First check if we can find the target locally             
-        ClientConnection c = connections.getClient(cm.target);
+        ClientConnection c = connections.getClient(cm.getTarget());
         
         if (c == null) {
-            meslogger.debug("Cannot find client address locally: " + cm.target);                        
+            meslogger.debug("Cannot find client address locally: " + cm.getTarget());                        
             return false;
         } 
 
         if (meslogger.isDebugEnabled()) {
             meslogger.debug("Attempting to directly forward message to client " 
-                    + cm.target());
+                    + cm.targetAsString());
         }
            
         // We found the target, so lets forward the message
@@ -157,7 +157,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
          
         if (meslogger.isDebugEnabled()) {
             meslogger.debug("Directly forwarding message to client " 
-                        + cm.target() + (result ? " succeeded!" : "failed!"));
+                        + cm.targetAsString() + (result ? " succeeded!" : "failed!"));
         }
         
         return result;        
@@ -165,20 +165,22 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     private boolean forwardToHub(ClientMessage cm, boolean setHops) {
         
+        DirectSocketAddress hub = cm.getTargetHub();
+        
         // Lets see if we directly know the targetHub and if it knows the target         
-        if (cm.targetHub == null) {
+        if (hub == null) {
             if (meslogger.isDebugEnabled()) {
                 meslogger.debug("Target hub not set!");
             }
             return false;
         }
         
-        HubDescription p = knownHubs.get(cm.targetHub);
+        HubDescription p = knownHubs.get(cm.getTarget());
            
         if (p == null) {
             if (meslogger.isDebugEnabled()) {
-                meslogger.debug("Target hub " + cm.targetHub 
-                        + " does not known " + "client " + cm.target);
+                meslogger.debug("Target hub " + hub + " does not known client " 
+                        + cm.getTarget());
             }
             return false;
         }
@@ -191,43 +193,106 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         forwardMessageToHub(p, cm);                
                 
         if (meslogger.isDebugEnabled()) {
-            meslogger.debug("Directly forwarded message to hub: " 
-                    + cm.targetHub);                
+            meslogger.debug("Directly forwarded message to hub: " + hub);                
         }
         
         return true;
     }
     
     
-    protected void forward(ClientMessage m, boolean setHops) {     
-     
-        // Try to deliver the message directly to the client.
-        if (deliverLocally(m)) { 
-            return;
+    protected void forward(ClientMessage m, boolean setHops) {   
+        
+        if (m.getSourceHub() == null) { 
+            // should never happen, but we like to programm defensively
+            m.setSourceHub(getLocalHub());
         }
         
-        // Else, try to forward the message to the right hub.   
-        if (forwardToHub(m, setHops)) { 
-            return;
-        }
-                
-        // Else, try to find the right hub and then forward the message...
-        // TODO: reimplement this with a bcast to all hubs instead of relying 
-        //       on client info to be gossiped in advance ?         
-        HubsForClientSelector hss = new HubsForClientSelector(m.target, false);
+        DirectSocketAddress hub = m.getTargetHub();
         
-        knownHubs.select(hss);
-        
-        for (HubDescription h : hss.getResult()) {
-            
-            if (setHops) {             
-                m.hopsLeft = h.getHops();
+        if (hub == null) { 
+       
+            // Try to deliver the message to a local client.
+            if (deliverLocally(m)) { 
+                return;
             }
             
-            forwardMessageToHub(h, m);
-        }
+            // If this fails, we try to find the right hub and forward the 
+            // message... 
+            //
+            // TODO: reimplement this with a bcast to all hubs instead of  
+            //       relying on client info to be gossiped in advance ?         
+            HubsForClientSelector hss = new HubsForClientSelector(
+                    m.getTarget(), false);
+            
+            knownHubs.select(hss);
+            
+            LinkedList<HubDescription> result = hss.getResult();
+            
+            if (result.size() == 0) {
+                // No hubs were found that known the client, so lets return the 
+                // message to the sender...
+                if (m.returnToSender) {
+                    if (meslogger.isDebugEnabled()) {
+                        meslogger.debug("Cannot return message to sender, since it " 
+                                + " has disappeared! (source= " + m.targetAsString() 
+                                + " target=" + m.sourceAsString());                
+                    }
+                } else { 
+                    if (meslogger.isDebugEnabled()) {
+                        meslogger.debug("Return message to sender, since target is " 
+                                + " not known! (source= " + m.sourceAsString()
+                                + " target=" + m.targetAsString());                
+                    }
+                    returnToSender(m);
+                }
+                return;
+            }
+            
+            for (HubDescription h : result) {
+                
+                if (setHops) {             
+                    m.hopsLeft = h.getHops();
+                }
+                
+                forwardMessageToHub(h, m);
+            }    
+            
+        } else {
+            
+            if (isLocalHub(hub)) { 
+                
+                if (deliverLocally(m)) { 
+                    return;
+                } else { 
+                    returnToSender(m);
+                }
+                
+            } else { 
+                if (forwardToHub(m, setHops)) { 
+                    return;
+                } else { 
+                    returnToSender(m);    
+                }
+            }
+        } 
     }    
     
+    private void returnToSender(ClientMessage m) {
+        
+      //  System.out.println("**** Returning to sender....");
+        
+        if (m.returnToSender) {
+            // should never happen!
+     //       System.out.println("**** Returning to sender says EEK");
+            return;
+        }
+        
+   //     System.out.println("**** Returning to sender says her I go!");
+      
+        m.returnToSender = true;
+        forward(m, true);
+    }
+
     protected final boolean forwardClientMessage(ClientMessage m) { 
         
         try {

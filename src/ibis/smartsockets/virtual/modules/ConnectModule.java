@@ -115,11 +115,12 @@ public abstract class ConnectModule implements CallBack {
     }
     
     public void gotMessage(DirectSocketAddress src, DirectSocketAddress proxy, 
-            int opcode, byte [][] message) {
+            int opcode, boolean returnToSender, byte [][] message) {
         // Note: Default implementation. Should be extended by any module 
         // which requires use of service links         
         logger.warn("Module: "+ module + " got unexpected message from " + src 
-                + "@" + proxy + ", " + opcode + ", " + message);
+                + "@" + proxy + ", " + returnToSender + ", " + opcode 
+                + ", " + message);
     }
     
     // Checks if the string "target" is found in the string "csv". The string 

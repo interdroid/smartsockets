@@ -621,11 +621,18 @@ public class Splice extends AbstractDirectModule {
     }
     
     public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcHub, 
-            int opcode, byte [][] message) {
+            int opcode, boolean returnToSender, byte [][] message) {
 
         if (logger.isInfoEnabled()) {
             logger.info(module + ": got message " + src + "@" + srcHub + " " 
                     + opcode + " \"" +  message + "\"");
+        }
+        
+        if (returnToSender) { 
+            // TODO: implement!
+            System.out.println("***SPLICE ignoring returnToSender");
+            
+            return;
         }
                        
         switch (opcode) { 

@@ -74,6 +74,9 @@ public class SmartSocketsProperties {
     public static final String ROUTED_FRAGMENT  = ROUTED_PREFIX + "fragment";
     public static final String ROUTED_MIN_ACK   = ROUTED_PREFIX + "min_ack_size";
         
+    public static final String REVERSE_PREFIX       = MODULES_PREFIX + "reverse.";
+    public static final String REVERSE_CONNECT_SELF = REVERSE_PREFIX + "allowConnectSelf";
+    
     public static final String DISCOVERY_PREFIX    = PREFIX + "discovery.";
     public static final String DISCOVERY_PREFERRED = DISCOVERY_PREFIX + "preferred"; 
     public static final String DISCOVERY_ALLOWED   = DISCOVERY_PREFIX + "allowed"; 
