@@ -130,95 +130,7 @@ public class DirectServerSocket {
             InputStream in = null;
             OutputStream out = null;
 
-/* BELOW IS THE 'MATHIJS/NIELS VERSION                
-             
-            try { 
-                s.setSoTimeout(10000);
-                s.setTcpNoDelay(true);
-                
-                // Start by sending our address to the client. It will check for
-                // itself if we are the expected target machine.
-                out = s.getOutputStream();
-                out.write(handShake);
-                out.flush();
-                
-                // Next, read the address of the client (no port numbers, just 
-                // addresses. We use this to check if the machine is allowed to 
-                // connected to us according to the firewall rules.
-                in = s.getInputStream();
-              
-                // Read the size of the machines address blob
-                int size = (in.read() & 0xFF);
-                size |= ((in.read() & 0xFF) << 8); 
-                     
-                // Read the bytes....
-                byte [] tmp = new byte[size];
-                
-                int off = 0; 
-                
-                while (off < size) { 
-                    off += in.read(tmp, off, size-off);
-                }
-                
-                // If available, read the network name of the client
-                size = (in.read() & 0xFF);
-                size |= ((in.read() & 0xFF) << 8); 
-               
-                String name = null;
-                
-                if (size > 0) { 
-                    byte [] tmp2 = new byte[size];
-                    
-                    int off2 = 0; 
-                    
-                    while (off2 < size) { 
-                        off2 += in.read(tmp2, off2, size-off2);
-                    }     
-                    
-                    name = new String(tmp2);
-                }
-                
-                // Translate into an address
-                IPAddressSet ads = IPAddressSet.getByAddress(tmp);
-                
-                // Check if the connection is acceptable and write the 
-                // appropriate opcode into the stream.
-             
-                if (preference.accept(ads.addresses, name)) { 
-                    out.write(ACCEPT);
-                    out.flush();       
-    
-                    // Very unfortunate that this is synchronous.....   
-                    int opcode = in.read();
-                    
-                    if (opcode == ACCEPT) { 
-                        s.setSoTimeout(0);
-                        
-                        // TODO: fix to get 'real' port numbers here... 
-                        result = new DirectSimpleSocket(local, 
-                                SocketAddressSet.getByAddress(ads, 1, null), 
-                                in, out, s);
-                    } else { 
-                         doClose(s, in, out);
-                    }     
-                    
-                } else { 
-                    out.write(FIREWALL_REFUSED);
-                    out.flush();
-                    
-                    // TODO: do we really need to wait for incoming byte here ??
-                    in.read();
-                    doClose(s, in, out);
-                }
-           } catch (IOException ie) { 
-                doClose(s, in, out);
-            }
-        }
-        
-        return result;        
-*/
-                // THIS IS THE HPDC VERSION
-                
+            // THIS IS THE HPDC VERSION    
             try { 
                 s.setSoTimeout(10000);
                 s.setTcpNoDelay(true);
@@ -233,40 +145,24 @@ public class DirectServerSocket {
                 in = s.getInputStream();
                 
                 // Read the type of the client (should always be TYPE_CLIENT_*)
-                int type = in.read();
+                int type = DirectSocketFactory.readByte(in);
                 
                 // Read the user data
-                int off = 0; 
-                    
-                while (off < 4) { 
-                    off += in.read(userIn, off, 4-off);
-                }
+                DirectSocketFactory.readFully(in, userIn);
                 
                 // Read the size of the machines address blob
-                int size = (in.read() & 0xFF);
-                size |= ((in.read() & 0xFF) << 8); 
+                int size = (DirectSocketFactory.readByte(in) & 0xFF);
+                size |= ((DirectSocketFactory.readByte(in) & 0xFF) << 8); 
                      
                 // Read the bytes....
-                byte [] tmp = new byte[size];
-                
-                off = 0; 
-                
-                while (off < size) { 
-                    off += in.read(tmp, off, size-off);
-                }
+                byte [] tmp = DirectSocketFactory.readFully(in, new byte[size]);
                 
                 // Read the size of the network name
-                size = (in.read() & 0xFF);
-                size |= ((in.read() & 0xFF) << 8); 
+                size = (DirectSocketFactory.readByte(in) & 0xFF);
+                size |= ((DirectSocketFactory.readByte(in) & 0xFF) << 8); 
 
                 // Read the address itself....
-                byte [] name = new byte[size];
-
-                off = 0; 
-
-                while (off < size) { 
-                    off += in.read(name, off, size-off);
-                }                
+                byte [] name = DirectSocketFactory.readFully(in, new byte[size]);
             
                 IPAddressSet a = IPAddressSet.getByAddress(tmp);
                 DirectSocketAddress sa = DirectSocketAddress.getByAddress(a, 1, null); 
@@ -295,7 +191,7 @@ public class DirectServerSocket {
                         out.flush();
                         
                         // TODO: do we really need to wait for incoming byte here ??
-                        in.read();
+                        DirectSocketFactory.readByte(in);
                         doClose(s, in, out);
                         result = null;
                         continue; // TODO: refactor!!!
@@ -305,8 +201,8 @@ public class DirectServerSocket {
                 if (type == TYPE_CLIENT_CHECK) { 
                     
                     // Read if the client accept us. 
-                    int opcode = in.read();
-                
+                    int opcode = DirectSocketFactory.readByte(in);
+               
                     if (opcode != ACCEPT) { 
                         doClose(s, in, out);
                         result = null;

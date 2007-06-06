@@ -2,25 +2,27 @@ TODO:
 
 User friendlyness!!
 
-Fix shared direct socket factory (Hub+Virtual+No ssh)
+X Create 'shared' directsocketfactory 
+   Otherwise init gets screwed up when direct isn't loaded!
 
-Add extra call to create address with retry, backoff, etc. 
-
-Change current connect call to use 'sane' timeouts for each module
+X Decent error when direct port is in use
 
 Fix hub to only reply to 'named' lookup mcasts
 
 Reduce 'INFO' output to something which is human-readable
+   Reduce output of hub when servicelink cannot be found
 
+Fix example property/log4j files
+   
 MATHIJS: Add easy shutdown for hubs
 MATHIJS: extend viz to show network name 
 MATHIJS: extend viz to show routing throughput
 
-  Cache info in servicelink instances ? 
+Cache info in servicelink instances ? 
 
-  Web interface to proxies to make it easier to add addresses ? 
+Web interface to proxies to make it easier to add addresses ? 
 
-- - - - - - - - - - - - -
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Don't remember context/reason; 
 
@@ -42,6 +44,14 @@ Don't remember context/reason;
 - - - - - - - - - - - - - - - - - - 
 
 Done: 
+
+X Fix shared direct socket factory (Hub+Virtual+No ssh)
+
+X Add extra call to create address with retry, backoff, etc. 
+
+X Change current connect call to use 'sane' timeouts for each module
+
+X Add return to sender to hub and use this to reduce 'fail' time for modules
 
 X CHECK: hub administration !!! Gossip sometimes fails if hub crashes and is 
 X directy restarted: seems the administration of the receiver is confused...

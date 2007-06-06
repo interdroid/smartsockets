@@ -6,6 +6,7 @@ import ibis.smartsockets.util.STUN;
 import ibis.smartsockets.util.TypedProperties;
 import ibis.smartsockets.util.UPNP;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -773,6 +774,35 @@ public class DirectSocketFactory {
         }
     }
     
+    static int readByte(InputStream in) throws IOException { 
+        
+        int value = in.read();
+        
+        if (value == -1) { 
+            throw new EOFException("Unexpected EOF");
+        }
+        
+        return value;
+    }
+    
+    static byte [] readFully(InputStream in, byte [] out) throws IOException { 
+        int off = 0; 
+        
+        while (off < out.length) {
+            
+            int tmp = in.read(out, off, out.length-off);
+        
+            if (tmp == -1) { 
+                throw new EOFException("Unexpected EOF");
+            }
+           
+            off += tmp;
+        }
+        
+        return out;
+    }
+    
+    
     private DirectSocketAddress handShake(DirectSocketAddress sas, 
             InetSocketAddress target, InputStream in, 
             OutputStream out, byte [] userOut, byte [] userIn, 
@@ -808,40 +838,24 @@ public class DirectSocketFactory {
             }
             
             // Read the other sides type...
-            int type = in.read();
+            int type = readByte(in);
             
             // Read the other sides user data 
-            int off = 0; 
-                
-            while (off < 4) { 
-                off += in.read(userIn, off, 4-off);
-            }
+            readFully(in, userIn);
             
             // Read the size of the machines address
-            int size = (in.read() & 0xFF);
-            size |= ((in.read() & 0xFF) << 8); 
+            int size = (readByte(in) & 0xFF);
+            size |= ((readByte(in) & 0xFF) << 8); 
 
             // Read the address itself....
-            byte [] tmp = new byte[size];
-
-            off = 0; 
-
-            while (off < size) { 
-                off += in.read(tmp, off, size-off);
-            }
+            byte [] tmp = readFully(in, new byte[size]);
             
             // Read the size of the network name
-            size = (in.read() & 0xFF);
-            size |= ((in.read() & 0xFF) << 8); 
+            size = (readByte(in) & 0xFF);
+            size |= ((readByte(in) & 0xFF) << 8); 
 
             // Read the name itself....
-            byte [] name = new byte[size];
-
-            off = 0; 
-
-            while (off < size) { 
-                off += in.read(name, off, size-off);
-            }
+            byte [] name = readFully(in, new byte[size]);
             
            // System.out.println("Read address: " + Arrays.toString(tmp));
             
@@ -909,7 +923,7 @@ public class DirectSocketFactory {
                     type == DirectServerSocket.TYPE_CLIENT_CHECK) { 
                 // If the other side is a server with deny rules, or also a 
                 // client, we need to read if other accepts the connection.
-                opcode = in.read();
+                opcode = readByte(in);
                 
                 if (opcode == DirectServerSocket.FIREWALL_REFUSED) { 
                     if (logger.isInfoEnabled()) { 
@@ -1692,7 +1706,9 @@ public class DirectSocketFactory {
      * 
      * @return PlainSocketFactory
      */
-    public static DirectSocketFactory getSocketFactory(TypedProperties p) {                
+    public static DirectSocketFactory getSocketFactory(TypedProperties p) {
+        
+        // TODO: cache based on propertties ?         
         return new DirectSocketFactory(p);
     }
     

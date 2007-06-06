@@ -4,6 +4,7 @@ import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 import ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -24,7 +25,8 @@ public class ReverseVirtualSocket extends VirtualSocket {
     
     protected void connectionAccepted(int timeout) throws IOException { 
         
-        int ack = -1;
+        int ack1 = -1;
+        int ack2 = -1;
         
         try {
             s.setSoTimeout(timeout);
@@ -43,8 +45,13 @@ public class ReverseVirtualSocket extends VirtualSocket {
 
             // We should do a three way handshake here to ensure both side agree
             // that we have a connection...
-            ack = in.read();            
-            ack = in.read();            
+            ack1 = in.read();
+            ack2 = in.read();
+            
+            if (ack1 == -1 || ack2 == -1) { 
+                throw new EOFException("Reverse connection handshake failed: "
+                        + " Unexpected EOF");
+            }
             
             s.setSoTimeout(0);
             s.setTcpNoDelay(false);
@@ -53,7 +60,8 @@ public class ReverseVirtualSocket extends VirtualSocket {
             throw e;
         } 
 
-        if (ack != AbstractDirectModule.ACCEPT) { 
+        if (ack1 != AbstractDirectModule.ACCEPT || 
+                ack2 != AbstractDirectModule.ACCEPT) { 
             throw new ConnectException("Client disconnected");
         }
     }

@@ -21,7 +21,7 @@ public class Direct extends AbstractDirectModule {
     
     private static int DEFAULT_CONNECT_TIMEOUT = 3000;
     
-    private DirectSocketFactory direct;   
+    private final DirectSocketFactory direct;   
     private AcceptThread acceptThread;
     private DirectServerSocket server; 
     
@@ -42,8 +42,11 @@ public class Direct extends AbstractDirectModule {
         }
     }
         
-    public Direct() {
+    public Direct(DirectSocketFactory direct) {
         super("ConnectModule(Direct)", false);
+        
+        // Store the direct socket factory for later use
+        this.direct = direct;
     } 
     
     public void initModule(TypedProperties properties) throws Exception {
@@ -56,9 +59,6 @@ public class Direct extends AbstractDirectModule {
             port = properties.getIntProperty(
                     SmartSocketsProperties.DIRECT_PORT, 0);        
         }
-        
-        // Create a direct socket factory.
-        direct = DirectSocketFactory.getSocketFactory();
         
         // TODO: why the default ??
         TypedProperties p = SmartSocketsProperties.getDefaultProperties();
@@ -93,7 +93,9 @@ public class Direct extends AbstractDirectModule {
         } catch (IOException e) {            
             logger.info(module + ": Failed to create ServerSocket on port " 
                     + port, e);
-            throw e;
+            
+            throw new Exception("Failed to create ServerSocket on port "  
+                    + port + " (" + e.getMessage() + ")", e);            
         }
         
         if (logger.isInfoEnabled()) {

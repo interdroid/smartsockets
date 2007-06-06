@@ -207,16 +207,37 @@ public class ServiceLink implements Runnable {
 
     public synchronized void waitConnected(int time) throws IOException {
 
+        if (time < 0) {
+            
+            if (!connected) { 
+                throw new IOException("No connection to hub!");
+            }
+        
+            return;
+        }
+        
+        long deadline = System.currentTimeMillis() + time;
+        long timeleft = time;
+        
         while (!connected) {
+            
             try {
-                wait(time);
+                if (time > 0) { 
+                    wait(timeleft);
+                } else { 
+                    wait();
+                }
             } catch (InterruptedException e) {
                 // ignore
             }
-        }
-
-        if (!connected) {
-            throw new IOException("No connection to hub!");
+            
+            if (!connected && time > 0) { 
+                timeleft = deadline - System.currentTimeMillis();
+                
+                if (timeleft <= 0) { 
+                    throw new IOException("No connection to hub!");
+                }
+            }
         }
     }
 
@@ -246,7 +267,6 @@ public class ServiceLink implements Runnable {
             if (logger.isInfoEnabled()) {
                 logger.info("Service link attempting to connect to hub: " + address);
             }
-            
             
             // Create a connection to the hub
             hub = factory.createSocket(address, TIMEOUT, 0, sendBuffer,
@@ -294,7 +314,7 @@ public class ServiceLink implements Runnable {
 
             setConnected(true);
         } catch (IOException e) {
-            logger.warn("Connection setup to hub at " + address + " failed: ",
+            logger.info("Connection setup to hub at " + address + " failed: ",
                     e);
             closeConnectionToHub();
             throw e;

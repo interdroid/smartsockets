@@ -65,7 +65,8 @@ class Connector extends CommunicationThread {
             return false;
         default:
             if (hconlogger.isDebugEnabled()) {
-                hconlogger.warn("Got unknown reply from proxy!");
+                hconlogger.warn("Got unknown reply from proxy! (" 
+                        + opcode + ")");
             }
             return false;
         }

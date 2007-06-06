@@ -8,6 +8,7 @@ import ibis.smartsockets.virtual.VirtualSocketAddress;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -85,6 +86,9 @@ public class SplicedVirtualSocket extends VirtualSocket {
                 
             case Splice.CONNECTION_REJECTED:
                 throw new SocketException("Connection rejected");
+
+            case -1:
+                throw new EOFException("Unexpected EOF while waiting for accept");
                 
             default:
                 throw new SocketException("Got unknown reply during connect!");
