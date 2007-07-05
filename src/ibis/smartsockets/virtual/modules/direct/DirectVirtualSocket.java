@@ -46,12 +46,14 @@ public class DirectVirtualSocket extends VirtualSocket {
             out.write(AbstractDirectModule.ACCEPT);
             out.flush();        
             
-            // We should do a three way handshake here to ensure both side agree
-            // that we have a connection...
+            // We should do a three way handshake here to ensure both sides 
+            // agree that we have a connection...
             ack = in.read();                        
 
             if (ack == -1) { 
                 throw new EOFException("Unexpected EOF during handshake");
+            } else if (ack != AbstractDirectModule.ACCEPT) { 
+                throw new ConnectException("Client disconnected");
             }
             
             s.setTcpNoDelay(false);            
@@ -61,10 +63,6 @@ public class DirectVirtualSocket extends VirtualSocket {
             DirectSocketFactory.close(s, out, in);  
             throw e;
         } 
-
-        if (ack != AbstractDirectModule.ACCEPT) { 
-            throw new ConnectException("Client disconnected");
-        }
     }
 
     public void connectionRejected(int timeout, byte opcode) { 

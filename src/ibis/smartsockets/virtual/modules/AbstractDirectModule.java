@@ -110,7 +110,8 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
                 DirectSocketFactory.close(ds, out, in);
                 
                 //if (logger.isDebugEnabled()) {
-                    logger.warn(module + ": Connection failed: " 
+                    logger.warn(module + ": Connection failed for port " 
+                            + targetPort + ": " 
                             + (accept < 0 ? "REFUSED" : "OVERLOAD")) ;
                // }
                 

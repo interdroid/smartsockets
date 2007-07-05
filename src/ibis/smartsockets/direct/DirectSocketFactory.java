@@ -100,7 +100,7 @@ public class DirectSocketFactory {
     
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
         DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT, 5000);
-        DEFAULT_LOCAL_TIMEOUT = p.getIntProperty(SmartSocketsProperties.LOCAL_TIMEOUT, 100);
+        DEFAULT_LOCAL_TIMEOUT = p.getIntProperty(SmartSocketsProperties.LOCAL_TIMEOUT, 1000);
           
         boolean allowSSHIn = p.booleanProperty(SmartSocketsProperties.SSH_IN, false);
 
@@ -747,6 +747,8 @@ public class DirectSocketFactory {
             return r; 
         
         } catch (FirewallException e) {
+     
+            System.err.println("Failed to connect (FW) " + e);
             
             // allowed
             close(s, out, in);
@@ -754,6 +756,8 @@ public class DirectSocketFactory {
             throw e;
             
         } catch (IOException e) {
+            
+            System.err.println("Failed to connect (" + timeout + ")" + e);
             
             close(s, out, in);
             
@@ -1422,11 +1426,6 @@ public class DirectSocketFactory {
         
         
         try { 
-        
-        /*
-         * OLD IMPLEMENTATION BELOW!!!!
-         */
-
         // First check if the number of connect options is doubled by the fact 
         // that we can also use SSH tunnels to connect to the machine...
         boolean mayUseSSH = mayUseSSH(target, properties);

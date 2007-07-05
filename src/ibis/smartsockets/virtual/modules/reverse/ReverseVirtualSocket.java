@@ -51,6 +51,9 @@ public class ReverseVirtualSocket extends VirtualSocket {
             if (ack1 == -1 || ack2 == -1) { 
                 throw new EOFException("Reverse connection handshake failed: "
                         + " Unexpected EOF");
+            } else if (ack1 != AbstractDirectModule.ACCEPT || 
+                    ack2 != AbstractDirectModule.ACCEPT) { 
+                throw new ConnectException("Client disconnected");
             }
             
             s.setSoTimeout(0);
@@ -59,11 +62,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
             s.close();  
             throw e;
         } 
-
-        if (ack1 != AbstractDirectModule.ACCEPT || 
-                ack2 != AbstractDirectModule.ACCEPT) { 
-            throw new ConnectException("Client disconnected");
-        }
     }
         
     /**

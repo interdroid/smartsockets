@@ -49,6 +49,8 @@ public class DirectServerSocket {
     private final NetworkPreference preference;
     private final boolean haveFirewallRules;
     
+    private long acceptCount = 0;
+    
     protected DirectServerSocket(DirectSocketAddress local, ServerSocket ss, 
             NetworkPreference preference) {
         
@@ -126,6 +128,8 @@ public class DirectServerSocket {
             
             // Note: may result in timeout, which is OK.
             Socket s = serverSocket.accept();
+            
+           // long t = System.nanoTime();
             
             InputStream in = null;
             OutputStream out = null;
@@ -212,9 +216,20 @@ public class DirectServerSocket {
                 s.setSoTimeout(0);
                
             } catch (IOException ie) {
+          /*      
+                System.err.println("EEK: exception during direct socket handshake!" + ie.getMessage());
+                ie.printStackTrace(System.err);
+            */    
                 doClose(s, in, out);
                 result = null;
             }
+            
+         //   long t2 = System.nanoTime();
+            
+      /*      System.err.println("Accept " + acceptCount++ +  " took: " 
+                    + ((t2-t)/1000) + " usec. " 
+                    + (result == null ? "(failed)" : "(succes)"));
+        */    
         }
         
         return result;        

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. ~/.bashrc
+
 for i in external/*.jar
 do
     CP=$CP:$i
