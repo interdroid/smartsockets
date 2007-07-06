@@ -125,7 +125,7 @@ public class SmartSocketsProperties {
             SSH_OUT,                "false", 
             SSH_IN,                 "false",
             
-            DIRECT_NIO,             "true",
+            DIRECT_NIO,             "false",
             DIRECT_SEND_BUFFER,     "-1",
             DIRECT_RECEIVE_BUFFER,  "-1",
             
