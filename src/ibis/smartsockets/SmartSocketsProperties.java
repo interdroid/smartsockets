@@ -22,9 +22,10 @@ public class SmartSocketsProperties {
     public static final String START_HUB           = PREFIX + "start.hub";  
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
         
-    public static final String BACKLOG       = PREFIX + "backlog";  
-    public static final String TIMEOUT       = PREFIX + "timeout";  
-    public static final String LOCAL_TIMEOUT = PREFIX + "timeout.local";  
+    public static final String BACKLOG        = PREFIX + "backlog";  
+    public static final String TIMEOUT        = PREFIX + "timeout";  
+    public static final String ACCEPT_TIMEOUT = PREFIX + "timeout.accept";      
+    public static final String LOCAL_TIMEOUT  = PREFIX + "timeout.local";  
     
     public static final String DIRECT_PREFIX          = PREFIX + "direct.";  
     public static final String DIRECT_BACKLOG         = DIRECT_PREFIX + "backlog";  
@@ -124,7 +125,7 @@ public class SmartSocketsProperties {
             SSH_OUT,                "false", 
             SSH_IN,                 "false",
             
-            DIRECT_NIO,             "false",
+            DIRECT_NIO,             "true",
             DIRECT_SEND_BUFFER,     "-1",
             DIRECT_RECEIVE_BUFFER,  "-1",
             

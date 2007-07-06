@@ -23,6 +23,7 @@ public class VirtualServerSocket {
     
     private int backlog; 
         
+    private final int defaultTimeout;
     private int timeout = 0;
     private boolean reuseAddress = true;
     private boolean closed = false;
@@ -36,16 +37,17 @@ public class VirtualServerSocket {
     
     // Create unbound port
     protected VirtualServerSocket(VirtualSocketFactory parent, 
-            Map<String, Object> p) {
+            int defaultTimeout, Map<String, Object> p) {
         this.parent = parent;
         this.properties = p;        
         this.bound = false;
+        this.defaultTimeout = defaultTimeout;
     }
     
     // Create bound port
     protected VirtualServerSocket(VirtualSocketFactory parent, 
             VirtualSocketAddress address, int port, int backlog, 
-            Map<String, Object> p) {
+            int defaultTimeout, Map<String, Object> p) {
         
         this.parent = parent;
         this.port = port;
@@ -53,6 +55,7 @@ public class VirtualServerSocket {
         this.localAddress = address;
         this.properties = p;        
         this.bound = true;
+        this.defaultTimeout = defaultTimeout;
     }
 
     public synchronized int incomingConnection(VirtualSocket s) {  
@@ -135,7 +138,7 @@ public class VirtualServerSocket {
                     int t = timeout;
                     
                     if (timeout <= 0) { 
-                        t = 1000;
+                        t = defaultTimeout;
                     }
                     
                     result.connectionAccepted(t);

@@ -85,6 +85,7 @@ public class DirectVirtualSocket extends VirtualSocket {
         
         try { 
             s.setSoTimeout(timeout);
+            s.setTcpNoDelay(true);
             
             int result = in.read();
             
@@ -93,6 +94,7 @@ public class DirectVirtualSocket extends VirtualSocket {
                 out.write(AbstractDirectModule.ACCEPT);
                 out.flush();
                 s.setSoTimeout(0);
+                s.setTcpNoDelay(false);
                 return;
                 
             case AbstractDirectModule.PORT_NOT_FOUND:

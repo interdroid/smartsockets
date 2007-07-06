@@ -1,4 +1,4 @@
-package test.virtual.simple;
+package test.virtual.throughput.mtnio;
 
 import ibis.smartsockets.virtual.InitializationException;
 import ibis.smartsockets.virtual.VirtualServerSocket;
@@ -10,10 +10,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
-import java.util.Arrays;
 import java.util.HashMap;
 
-public class MTThroughput {
+public class MTNIOThroughput {
     
     private static int OPCODE_META = 42;    
     private static int OPCODE_DATA = 24;    
@@ -32,210 +31,6 @@ public class MTThroughput {
    
     private static VirtualSocketFactory sf;    
     private static HashMap<String, Object> connectProperties;
-    
-    private static class DataSource { 
-
-        private int count = 0;
-        private boolean done = false;
-        
-        private synchronized void set(int count) { 
-            this.count = count; 
-            notifyAll();
-        } 
-        
-        private synchronized void done() { 
-            done = true;
-            notifyAll();
-        }
-       
-        private synchronized void waitUntilCountDone() { 
-            while (count > 0) { 
-                try { 
-                    wait();
-                } catch (Exception e) {
-                    // ignore
-                }
-            }
-        } 
-       
-        
-        private synchronized boolean waitForStartOrDone() { 
-            while (!done && count == 0) { 
-                try { 
-                    wait();
-                } catch (Exception e) {
-                    // ignore
-                }
-            }
-            
-            return done;
-        } 
-            
-        private synchronized int getBlock() { 
-       
-            if (count == 0) { 
-                return -1;
-            }
-
-            count--;
-            
-            if (count == 0) { 
-                notifyAll();
-            }
-            
-            return count;
-        }
-    }
-    
-    private static class DataSink { 
-
-        private int count = 0;
-        
-        public synchronized void waitForCount(int count) { 
-
-            while (this.count < count) { 
-                try { 
-                    wait();
-                } catch (Exception e) {
-                    // ignore
-                }
-            }
-            
-            this.count -= count;
-        } 
-            
-        public synchronized void done() { 
-            count++;
-            notifyAll();
-        }
-    }
-    
-    private static class Sender extends Thread { 
-    
-        private final DataSource d;
-        private final VirtualSocket s;
-        private final DataInputStream in;
-        private final DataOutputStream out;
-        private final byte [] data;
-        
-        private Sender(DataSource d, VirtualSocket s, DataOutputStream out, 
-                DataInputStream in, int size) { 
-            
-            this.d = d;
-            this.s = s;
-            this.out = out;
-            this.in = in;
-            this.data = new byte[size];
-        }
-  
-        private void sendData() { 
-            
-            long time = System.currentTimeMillis();           
-            
-            int count = 0; 
-            int block = d.getBlock();
-
-            while (block != -1) { 
-                count++;
-
-                try { 
-                    out.writeInt(block);
-                    out.write(data);
-                    out.flush();
-                } catch (Exception e) {
-                    System.out.println("Failed to write data!" + e); 
-                }
-                
-                block = d.getBlock();
-            }
-
-            try { 
-                out.writeInt(-1);
-                out.flush();
-            } catch (Exception e) {
-                System.out.println("Failed to write data!" + e); 
-            }   
-            
-            time = System.currentTimeMillis() - time;
-
-            // TODO: do something with stats!
-        }
-        
-        public void run() { 
-            
-            boolean done = d.waitForStartOrDone();
-        
-            while (!done) { 
-                sendData();    
-                done = d.waitForStartOrDone();
-            }
-            
-            try { 
-                out.writeInt(-2);
-                out.flush();
-            } catch (Exception e) {
-                System.out.println("Failed to write data!" + e); 
-            }   
-        
-            VirtualSocketFactory.close(s, out, in);
-        }
-    }
-    
-    private static class Receiver extends Thread { 
-
-        private final DataSink d;
-        private final VirtualSocket s;
-        private final DataInputStream in;
-        private final DataOutputStream out;
-
-        private final byte [] data;
-        
-        private Receiver(DataSink d, VirtualSocket s, DataOutputStream out, 
-                DataInputStream in, int size) { 
-            
-            this.d = d;
-            this.s = s;
-            this.out = out;
-            this.in = in;
-            data = new byte[size];
-        }
-        
-        private boolean receiveData() { 
-            
-            int block = -2;
-            
-            try { 
-                do { 
-                    block = in.readInt();
-                
-                    if (block >= 0) { 
-                        in.readFully(data);
-                    }   
-                } while (block >= 0);
-            } catch (Exception e) { 
-                System.out.println("Failed to read data!" + e); 
-            }
-
-            // TODO: do something with stats ?
-            d.done();
-            
-            return (block == -2);
-        }
-        
-        public void run() { 
-
-            boolean stop = false;
-            
-            while (!stop) { 
-                stop = receiveData();
-            }
-            
-            VirtualSocketFactory.close(s, out, in);
-        }
-    }
-    
-    
-    
     
     private static void configure(VirtualSocket s) throws SocketException { 
  
@@ -268,6 +63,21 @@ public class MTThroughput {
             
         } catch (Exception e) {
             System.out.println("Failed to create connection to " + target); 
+        }
+    }
+    
+    private static void printPerformance(long time, long size) { 
+      
+        double tp = (1000.0 * size) / (1024.0*1024.0*time);  
+        double mbit = (8000.0 * size) / (1024.0*1024.0*time);  
+           
+        if (mbit > 1000) { 
+            mbit = mbit / 1024.0;
+            System.out.printf("Test took %d ms. Througput = %4.1f " +
+                    "MByte/s (%3.1f GBit/s)\n", time, tp, mbit);
+        } else { 
+            System.out.printf("Test took %d ms. Througput = %4.1f " +
+                    "MByte/s (%3.1f MBit/s)\n", time, tp, mbit);
         }
     }
     
@@ -305,11 +115,21 @@ public class MTThroughput {
 
             for (int r=0;r<repeat;r++) {
                 
+                long start = System.currentTimeMillis();
+                
                 d.set(count);
-                in.read();
+                in.readInt();
+                
+                long end = System.currentTimeMillis();
+                
+                printPerformance(end-start, count*size);
+                
+                // System.out.println("Send " + count + " (" + tmp + ")");
                 
                 // TODO: print some stats here!
             } 
+            
+            d.done();
            
             VirtualSocketFactory.close(s, out, in);
 
@@ -319,7 +139,8 @@ public class MTThroughput {
     }
 
 
-    private static void createStreamIn(VirtualServerSocket ss, DataSink d, int id, int size) { 
+    private static void createStreamIn(VirtualServerSocket ss, DataSink d, 
+            int id, int size) { 
 
         try { 
             VirtualSocket s = ss.accept();
@@ -346,10 +167,11 @@ public class MTThroughput {
                 System.exit(1);
             }
 
-            
-            
+            new Receiver(d, s, out, in, size).start();
+                        
         } catch (Exception e) { 
-            
+            System.err.println("EEK: got exception while accepting! " + e);
+            System.exit(1);
         }
     }
     
@@ -395,22 +217,13 @@ public class MTThroughput {
                     createStreamIn(ss, d, id, size);
                 }
      
-                
-                
-                byte [] data = new byte[size];
-                
-                System.out.println("Starting test byte[" + size + "] x " 
-                        + count + " repeated " + repeat + " times."); 
-                
-                for (int r=0;r<repeat;r++) {                 
-                    for (int i=0;i<count;i++) {
-                        in.readFully(data);
-                    }
-                
-                    out.write((byte) 42); 
+                for (int r=0;r<repeat;r++) {
+                    
+                    d.waitForCount(streams);
+                    out.writeInt(streams);
                     out.flush();
-                }
-
+                } 
+                
                 System.out.println("done!"); 
                 
                 VirtualSocketFactory.close(s, out, in);
@@ -418,32 +231,6 @@ public class MTThroughput {
                 System.out.println("Server got exception " + e); 
             }
         }
-    }
-
-      
-    private static void read(VirtualSocket s, DataInputStream in, DataOutputStream out) { 
-
-        try {
-            byte [] data = new byte[size];
-
-            System.out.println("Starting test byte[" + size + "] x " 
-                    + count + " repeated " + repeat + " times."); 
-
-            for (int r=0;r<repeat;r++) {                 
-                for (int i=0;i<count;i++) {
-                    in.readFully(data);
-                }
-
-                out.write((byte) 42); 
-                out.flush();
-            }
-
-            System.out.println("done!"); 
-
-            VirtualSocketFactory.close(s, out, in);
-        } catch (Exception e) {
-            System.out.println("Server got exception " + e); 
-        }       
     }
     
     public static void main(String [] args) throws IOException { 

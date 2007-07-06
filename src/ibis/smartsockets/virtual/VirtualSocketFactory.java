@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.net.BindException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -115,6 +116,8 @@ public class VirtualSocketFactory {
 
     private final int DEFAULT_TIMEOUT;
 
+    private final int DEFAULT_ACCEPT_TIMEOUT;
+    
     private final Random random;
     
     private final HashMap<Integer, VirtualServerSocket> serverSockets = 
@@ -163,6 +166,9 @@ public class VirtualSocketFactory {
         properties = p;
 
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG, 50);
+
+        DEFAULT_ACCEPT_TIMEOUT = p.getIntProperty(
+                SmartSocketsProperties.ACCEPT_TIMEOUT, 1000);
         
         // NOTE: order is VERY important here!
         try { 
@@ -179,6 +185,8 @@ public class VirtualSocketFactory {
 
         // -- this depends on the modules being loaded
         DEFAULT_TIMEOUT = determineDefaultTimeout(p);
+        
+        
         
         startHub(p);
         
@@ -725,6 +733,26 @@ public class VirtualSocketFactory {
             // ignore
         }
     }
+    
+    public static void close(VirtualSocket s, SocketChannel channel) {
+
+        if (channel != null) {
+            try { 
+                channel.close();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        
+        if (s != null) {
+            try { 
+                s.close();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+    }
+
 
     // This method implements a connect using a specific module. This method 
     // will return null when: 
@@ -1167,7 +1195,7 @@ public class VirtualSocketFactory {
 
     public VirtualServerSocket createServerSocket(
             Map<String, Object> properties) throws IOException {
-        return new VirtualServerSocket(this, properties);
+        return new VirtualServerSocket(this, DEFAULT_ACCEPT_TIMEOUT, properties);
     }
 
     protected void bindServerSocket(VirtualServerSocket vss, int port) 
@@ -1207,7 +1235,7 @@ public class VirtualSocketFactory {
                     port, hubAddress, clusters.localCluster());
 
             VirtualServerSocket vss = new VirtualServerSocket(this, a, port,
-                    backlog, properties);
+                    backlog, DEFAULT_ACCEPT_TIMEOUT, properties);
 
             serverSockets.put(port, vss);
             return vss;
