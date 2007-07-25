@@ -127,13 +127,17 @@ public class DirectSocketFactory {
             ALLOW_UPNP_PORT_FORWARDING = false;
         } else { 
             ALLOW_UPNP_PORT_FORWARDING = 
-                p.booleanProperty(SmartSocketsProperties.UPNP_PORT_FORWARDING, false);
+                p.booleanProperty(SmartSocketsProperties.UPNP_PORT_FORWARDING, 
+                        false);
         }
         
         USE_NIO = p.booleanProperty(SmartSocketsProperties.DIRECT_NIO, false);
         
-        defaultReceiveBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_SEND_BUFFER, 0);
-        defaultSendBuffer = p.getIntProperty(SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, 0);
+        defaultReceiveBuffer = 
+            p.getIntProperty(SmartSocketsProperties.DIRECT_SEND_BUFFER, 0);
+        
+        defaultSendBuffer = 
+            p.getIntProperty(SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, 0);
                         
         localAddress = IPAddressSet.getLocalHost();            
                 
@@ -748,7 +752,13 @@ public class DirectSocketFactory {
         
         } catch (FirewallException e) {
      
-            System.err.println("Failed to connect (FW) " + e);
+            if (logger.isDebugEnabled()) { 
+                logger.debug("Failed to connect to "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort() + " after " 
+                        + (System.currentTimeMillis()-start) + " ms. (" 
+                        + timeout + ") due to simulated firewall. ", e);
+            }
             
             // allowed
             close(s, out, in);
@@ -757,11 +767,17 @@ public class DirectSocketFactory {
             
         } catch (IOException e) {
             
-            System.err.println("Failed to connect (" + timeout + ")" + e);
+            // FIXME: move back 'to debug' later
+           // if (logger.isDebugEnabled()) { 
+                logger.warn("Failed to connect to "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort() + " after " 
+                        + (System.currentTimeMillis()-start) + " ms. (" 
+                        + timeout + "): ", e);
+           // }
             
             close(s, out, in);
-            
-            
+                        
             if (logger.isDebugEnabled()) {
                 logger.debug("Failed to directly connect to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"

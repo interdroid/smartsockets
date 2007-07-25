@@ -8,7 +8,6 @@ import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -84,9 +83,6 @@ class Sender extends Thread {
                 int written = 0;
                 
                 while (written < (size + 4)) {
-                    
- //                   System.out.println("Writing " + buffer.remaining() + " bytes");
-                    
                     written += channel.write(message);
                 }
                 
