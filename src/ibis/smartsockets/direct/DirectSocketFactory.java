@@ -676,10 +676,11 @@ public class DirectSocketFactory {
         
         long start = 0;
         
-        if (logger.isInfoEnabled()) {
-            
-            start = System.currentTimeMillis();
+        // TODO: may move this into the 'if' below once the 'warn' in the catch 
+        // of the IOException has move to a info/debug. 
+        start = System.currentTimeMillis();
         
+        if (logger.isInfoEnabled()) {
             if (logger.isDebugEnabled()) {                 
                 logger.debug("Attempting connection to " + sas.toString()
                         + " using network "
