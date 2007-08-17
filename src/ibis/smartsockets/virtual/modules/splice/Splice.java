@@ -6,7 +6,7 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.direct.IPAddressSet;
 import ibis.smartsockets.hub.ConnectionProtocol;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.smartsockets.virtual.ModuleNotSuitableException;
+import ibis.smartsockets.virtual.NonFatalIOException;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
@@ -119,14 +119,14 @@ public class Splice extends AbstractDirectModule {
     }
         
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map<String, Object> properties) throws ModuleNotSuitableException,
+            Map<String, Object> properties) throws NonFatalIOException,
             IOException {
 
         // First check if we are trying to connect to ourselves (which makes no 
         // sense for this module... 
         if (target.machine().sameMachine(parent.getLocalHost())) { 
-            throw new ModuleNotSuitableException(module + ": Cannot set up " +
-                "a connection to myself!"); 
+            throw new NonFatalIOException("Cannot setup a connection to " +
+                    "myself!"); 
         }
         
         if (logger.isInfoEnabled()) {
@@ -176,8 +176,8 @@ public class Splice extends AbstractDirectModule {
                         "splice request in time!");                    
             }
 
-            throw new ModuleNotSuitableException(module + ": Target machine " +
-                    "failed to reply to splice request in time!");
+            throw new NonFatalIOException("Target machine did not reply to " +
+                    "splice request within " + timeout + " ms.");
             
         } else if (message[1] == null || message[1].length != 1) {
             
@@ -186,8 +186,8 @@ public class Splice extends AbstractDirectModule {
                         "expected reply to splice request!");
             }
             
-            throw new ModuleNotSuitableException(module + ": Target machine " +
-                    "failed to produce expected reply to splice request!");
+            throw new NonFatalIOException("Target machine did not produce " +
+                    "expected reply to splice request!");
             
         } else if (message[1][0] != OK) {
 
@@ -201,8 +201,8 @@ public class Splice extends AbstractDirectModule {
                         "in splicing");
             }
             
-            throw new ModuleNotSuitableException(module + ": Target machine " +
-                    target + " failed to participate in splicing");
+            throw new NonFatalIOException("Target machine " + target 
+                    + " failed to participate in splicing");
         }
         
         
@@ -214,18 +214,17 @@ public class Splice extends AbstractDirectModule {
             DirectSocketAddress [] a = getTargetRange(otherBehindNAT, tmp);
       
             // Try to connect to the target
-            DirectSocket s = connect(a, localPort[0], DEFAULT_CONNECT_TIMEOUT, target.port());
+            DirectSocket s = connect(a, localPort[0], DEFAULT_CONNECT_TIMEOUT, 
+                    target.port());
                   
             if (s == null) { 
-                throw new ModuleNotSuitableException(module + ": Failed to connect "
-                        + " to " + target);                         
+                throw new NonFatalIOException("Failed to connect to " + target);                         
             }  
             
             return createVirtualSocket(target, s);
                
         } catch (IOException e) { 
-            throw new ModuleNotSuitableException(module + ": Failed to connect "
-                    + " to " + target, e);
+            throw new NonFatalIOException("Failed to connect to " + target, e);
         }    
         
         // If the connection was succesfull, we hand over the socket to the 
@@ -332,7 +331,7 @@ public class Splice extends AbstractDirectModule {
     }
     
     private int getInfo(int timeout, DirectSocketAddress [] result, 
-            int [] localPort) throws ModuleNotSuitableException {
+            int [] localPort) throws NonFatalIOException {
         
         int local = -1;        
         
@@ -347,8 +346,8 @@ public class Splice extends AbstractDirectModule {
                 result[0] = DirectSocketAddress.getByAddress(externalAddress, 
                         localPort[0]);
             } catch (IOException e) { 
-                throw new ModuleNotSuitableException("Failed to create local" 
-                        + " port");
+                throw new NonFatalIOException("Failed to create local" 
+                        + " port", e);
             }
                 
             return timeout;
@@ -377,7 +376,7 @@ public class Splice extends AbstractDirectModule {
         
                 // Failed to get list of hubs!
                 if (hub == null) {
-                    throw new ModuleNotSuitableException("Failed to find " +
+                    throw new NonFatalIOException("Failed to find " +
                             "external hub");            
                 }
             }
@@ -424,7 +423,7 @@ public class Splice extends AbstractDirectModule {
                 timeleft = deadline - System.currentTimeMillis();
 
                 if (timeleft <= 0) { 
-                    throw new ModuleNotSuitableException("Timeout while looking"
+                    throw new NonFatalIOException("Timeout while looking"
                             + " for external hub");        
                 }
             }            
@@ -481,7 +480,7 @@ public class Splice extends AbstractDirectModule {
     }
     
     private DirectSocket connect(DirectSocketAddress [] target, int localPort, 
-            int timeout, int userdata) throws ModuleNotSuitableException {
+            int timeout, int userdata) throws IOException {
         
         // TODO: This will give you very long waiting time before the setup 
         // fails! Better to fail fast and retry the entire setup ? Or maybe 
@@ -497,22 +496,13 @@ public class Splice extends AbstractDirectModule {
         
                 
         if (target.length == 1) { 
-            logger.debug(module + ": Single splice attempt!");
-        
-            try { 
-                return factory.createSocket(target[0], 5000, localPort, -1, -1,
-                        null, true, userdata);
-            } catch (IOException e) {
-                logger.info(module + ": Connection failed " 
-                        + target.toString(), e);
-                
-                
-              //  System.out.println(module + ": Connection failed " 
-              //          + target.toString() + " ");
-               // e.printStackTrace();
-            }   
-            
+            logger.debug(module + ": Single splice attempt!");        
+            return factory.createSocket(target[0], 5000, localPort, -1, -1,
+                    null, true, userdata);            
         } else { 
+            
+            IOException cause = null;
+            
             for (int i=0;i<MAX_ATTEMPTS;i++) {
                 for (int t=0;t<target.length;t++) {             
     
@@ -524,17 +514,19 @@ public class Splice extends AbstractDirectModule {
                     } catch (IOException e) {
                         logger.info(module + ": Connection failed " 
                                 + target.toString(), e);
-                        
-                        //System.out.println(module + ": Connection2 failed " 
-                        //        + target.toString() + " " + e);
+                        cause = e;
                     }           
                 }    
             }
+        
+            logger.debug(module + ": Splice failed.");
+            
+            if (cause != null) { 
+                throw cause;
+            }               
         }
-        
-        
-        logger.debug(module + ": Splice failed.");
-        
+
+        // Should not happen. 
         return null;
     }
     

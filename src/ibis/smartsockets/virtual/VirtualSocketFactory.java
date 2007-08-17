@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.BindException;
-import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -118,6 +117,8 @@ public class VirtualSocketFactory {
 
     private final int DEFAULT_ACCEPT_TIMEOUT;
     
+    private final boolean DETAILED_EXCEPTIONS; 
+    
     private final Random random;
     
     private final HashMap<Integer, VirtualServerSocket> serverSockets = 
@@ -165,6 +166,9 @@ public class VirtualSocketFactory {
         
         properties = p;
 
+        DETAILED_EXCEPTIONS = p.booleanProperty(
+                SmartSocketsProperties.DETAILED_EXCEPTIONS, false);
+        
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG, 50);
 
         DEFAULT_ACCEPT_TIMEOUT = p.getIntProperty(
@@ -758,7 +762,7 @@ public class VirtualSocketFactory {
     // will return null when: 
     //
     //  - runtime requirements do not match
-    //  - the module throws a ModuleNotSuitableException 
+    //  - the module throws a NonFatalIOException 
     //
     // When a connection is succesfully establed, we wait for a accept from the 
     // remote. There are three possible outcomes: 
@@ -775,7 +779,7 @@ public class VirtualSocketFactory {
     private VirtualSocket createClientSocket(ConnectModule m,
             VirtualSocketAddress target, int timeout, int timeLeft, 
             boolean fillTimeout, Map<String, Object> properties)         
-        throws IOException {
+        throws IOException, NonFatalIOException {
 
         int backoff = 1000;
         
@@ -807,6 +811,8 @@ public class VirtualSocketFactory {
         
         long start = System.currentTimeMillis();
         
+        boolean lastAttempt = false;
+        
         while (true) {         
             
             long t = System.currentTimeMillis() - start;
@@ -837,7 +843,7 @@ public class VirtualSocketFactory {
             
             try {
                 vs = m.connect(target, timeout, properties);
-            } catch (ModuleNotSuitableException e) {
+            } catch (NonFatalIOException e) {
                 long end = System.currentTimeMillis();
 
                 // Just print and try the next module...
@@ -848,7 +854,8 @@ public class VirtualSocketFactory {
                 }
 
                 m.failed(end - start);
-                return null;
+                
+                throw e;
                 
                 // NOTE: The modules may also throw IOExceptions for  
                 // non-transient errors (i.e., port not found). These are 
@@ -929,13 +936,18 @@ public class VirtualSocketFactory {
 
                 int leftover = (int) (timeLeft-t);
 
-                if (leftover > 0) {
-
-                    int sleeptime = Math.min(backoff, leftover);
-
-                    // Use a randomized sleep value to ensure the attempts are
-                    // distributed.
-                    sleeptime = random.nextInt(sleeptime);
+                if (!lastAttempt && leftover > 0) {
+                    
+                    int sleeptime = 0;
+                    
+                    if (backoff < leftover) { 
+                        // Use a randomized sleep value to ensure the attempts 
+                        // are distributed.
+                        sleeptime = random.nextInt(backoff);
+                    } else { 
+                        sleeptime = leftover; 
+                        lastAttempt = true;
+                    }
 
                     // System.err.println("Backoff = " + backoff + " Leftover = " + leftover + " Sleep time = " + sleeptime);
 
@@ -961,6 +973,16 @@ public class VirtualSocketFactory {
             } 
         }
     }
+
+    private String [] getNames(ConnectModule [] modules) { 
+        String [] names = new String[modules.length];
+        
+        for (int n=0;n<modules.length;n++) { 
+            names[n] = modules[n].getName();
+        }
+        
+        return names;
+    }
     
     // This method loops over and array of connection modules, trying to setup 
     // a connection with each of them each in turn. Returns when:
@@ -974,8 +996,12 @@ public class VirtualSocketFactory {
             long [] timing, boolean fillTimeout, Map<String, Object> prop) 
         throws IOException, NoSuitableModuleException {
 
+        Throwable [] exceptions = new Throwable[order.length];
+        
         try {
             int timeLeft = totalTimeout;
+            
+            VirtualSocket vs = null; 
             
             // Now try the remaining modules (or all of them if we weren't
             // using the cache in the first place...)
@@ -986,20 +1012,27 @@ public class VirtualSocketFactory {
                 
                 long start = System.currentTimeMillis();
 
+                /*
                 if (timing != null) {
                     timing[1 + i] = System.nanoTime();
 
                     if (i > 0) {
                         prop.put("direct.detailed.timing.ignore", null);
                     }
-                }
+                }*/
                 
-                VirtualSocket vs = createClientSocket(m, target, timeout, 
-                        timeLeft, fillTimeout, prop);
+                try { 
+                    vs = createClientSocket(m, target, timeout, 
+                            timeLeft, fillTimeout, prop);
+                } catch (NonFatalIOException e) {
+                    // Store the exeception and continue with the next module
+                    exceptions[i] = e; 
+                }
 
+                /*
                 if (timing != null) {
                     timing[1 + i] = System.nanoTime() - timing[1 + i];
-                }
+                }*/
 
                 if (vs != null) {
                     if (i > 0) {
@@ -1016,9 +1049,10 @@ public class VirtualSocketFactory {
 
                     if (timeLeft <= 0) {
                         // NOTE: This can only happen when a module breaks 
-                        // the rules (defensive programming).  
-                        throw new SocketTimeoutException("Timeout during " +
-                                "connect to " + target);
+                        // the rules (defensive programming).
+                        throw new NoSuitableModuleException("Timeout during "
+                                + " connect to " + target, getNames(order), 
+                                exceptions);
                     } 
                 }
             }
@@ -1029,7 +1063,7 @@ public class VirtualSocketFactory {
 
             // No suitable modules found...
             throw new NoSuitableModuleException("No suitable module found to"
-                    + " connect to " + target);
+                    + " connect to " + target, getNames(order), exceptions);
             
         } finally {
             if (timing != null) {
@@ -1072,6 +1106,7 @@ public class VirtualSocketFactory {
                      + ", " + fillTimeout + ", " + prop + ")");
         }
         
+        /*
         long [] timing = null;
 
         if (prop != null) {
@@ -1083,6 +1118,7 @@ public class VirtualSocketFactory {
                 timing[0] = System.nanoTime();
             }
         }
+        */
         
         // Check the timeout here. If it is not set, we will use the default
         if (timeout <= 0) { 
@@ -1094,7 +1130,15 @@ public class VirtualSocketFactory {
         int timeLeft = timeout;
         int [] timeouts = null;
         
+        boolean lastAttempt = false;
         int backoff = 250;
+        
+        NoSuitableModuleException exception = null;
+        LinkedList<NoSuitableModuleException> exceptions = null;
+        
+        if (DETAILED_EXCEPTIONS) { 
+            exceptions = new LinkedList<NoSuitableModuleException>();
+        }
         
         do {
             if (timeLeft <= DEFAULT_TIMEOUT) { 
@@ -1108,7 +1152,7 @@ public class VirtualSocketFactory {
         
             try { 
                 return createClientSocket(target, order, timeouts, timeLeft, 
-                        timing, fillTimeout, prop);
+                        /*timing*/ null, fillTimeout, prop);
             } catch (NoSuitableModuleException e) { 
                 // All modules where tried and failed. It now depends on the 
                 // user if he would like to try another round or give up. 
@@ -1116,16 +1160,26 @@ public class VirtualSocketFactory {
                     conlogger.debug("createClientSocket failed. Will " 
                             + (fillTimeout ? "" : "NOT ") + "retry");
                 }
+                
+                if (DETAILED_EXCEPTIONS) { 
+                    exceptions.add(e);
+                } else { 
+                    exception = e;
+                }
             } 
        
             timeLeft -= System.currentTimeMillis() - start;
                 
-            if (timeLeft > 0) { 
-                int sleeptime = Math.min(backoff, timeLeft);
-            
-                // Use a randomized sleep value to ensure the attempts are
-                // distributed.
-                sleeptime = random.nextInt(sleeptime);
+            if (!lastAttempt && fillTimeout && timeLeft > 0) { 
+                
+                int sleeptime = 0;
+                
+                if (backoff < timeLeft) { 
+                    sleeptime = random.nextInt(backoff);
+                } else { 
+                    sleeptime = timeLeft; 
+                    lastAttempt = true;
+                }
             
                 if (sleeptime >= timeLeft) {
                     // In the last attempt we sleep half a second shorter. 
@@ -1154,8 +1208,12 @@ public class VirtualSocketFactory {
             
         } while (fillTimeout);
         
-        throw new ConnectException("No suitable method was found to connect to "
-                + target);
+        if (DETAILED_EXCEPTIONS) {
+            throw new NoSuitableModuleException("No suitable module found to " +
+                    "connect to " + target, exceptions);
+        } else { 
+            throw exception;
+        }
     }
     
     

@@ -6,7 +6,7 @@ import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.smartsockets.virtual.ModuleNotSuitableException;
+import ibis.smartsockets.virtual.NonFatalIOException;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
@@ -63,7 +63,7 @@ public class Direct extends AbstractDirectModule {
         // TODO: why the default ??
         TypedProperties p = SmartSocketsProperties.getDefaultProperties();
         
-        int backlog = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG);
+        int backlog = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
         
         defaultReceiveBuffer = p.getIntProperty(
                 SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, -1);
@@ -209,7 +209,7 @@ public class Direct extends AbstractDirectModule {
     }
                 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map<String, Object> properties) throws ModuleNotSuitableException {
+            Map<String, Object> properties) throws NonFatalIOException {
 
         outgoingConnectionAttempts++;
         
@@ -244,8 +244,7 @@ public class Direct extends AbstractDirectModule {
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            
-            throw new ModuleNotSuitableException(module + ": Failed to " +
-                    "connect to " + target + " " + e);           
+            throw new NonFatalIOException("Failed to connect to " + target, e);           
         }
     }
     

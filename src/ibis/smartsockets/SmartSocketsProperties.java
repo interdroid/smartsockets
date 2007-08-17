@@ -21,11 +21,12 @@ public class SmartSocketsProperties {
     public static final String ROUTERS             = PREFIX + "routers";  
     public static final String START_HUB           = PREFIX + "start.hub";  
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
-        
-    public static final String BACKLOG        = PREFIX + "backlog";  
+    public static final String DETAILED_EXCEPTIONS = PREFIX + "detailed.exceptions";
+    
+    public static final String BACKLOG        = PREFIX + "backlog";        
     public static final String TIMEOUT        = PREFIX + "timeout";  
     public static final String ACCEPT_TIMEOUT = PREFIX + "timeout.accept";      
-    public static final String LOCAL_TIMEOUT  = PREFIX + "timeout.local";  
+    public static final String LOCAL_TIMEOUT  = PREFIX + "timeout.local";      
     
     public static final String DIRECT_PREFIX          = PREFIX + "direct.";  
     public static final String DIRECT_BACKLOG         = DIRECT_PREFIX + "backlog";  

@@ -768,15 +768,14 @@ public class DirectSocketFactory {
             
         } catch (IOException e) {
             
-            // FIXME: move back 'to debug' later
-           // if (logger.isDebugEnabled()) { 
-                logger.warn("Failed to connect to "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " after " 
-                        + (System.currentTimeMillis()-start) + " ms. (" 
-                        + timeout + "): ", e);
-           // }
-            
+            /*
+            logger.warn("Failed to connect to "
+                    + NetworkUtils.ipToString(target.getAddress()) + ":"
+                    + target.getPort() + " after " 
+                    + (System.currentTimeMillis()-start) + " ms. (" 
+                    + timeout + ") ", e);
+             */
+
             close(s, out, in);
                         
             if (logger.isDebugEnabled()) {
@@ -997,7 +996,7 @@ public class DirectSocketFactory {
             port = portRange.getPort();
         }
         
-        if (backlog == 0) { 
+        if (backlog < 1) { 
             backlog = DEFAULT_BACKLOG;
         }
 

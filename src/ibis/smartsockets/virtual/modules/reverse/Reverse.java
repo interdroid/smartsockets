@@ -3,7 +3,7 @@ package ibis.smartsockets.virtual.modules.reverse;
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.smartsockets.virtual.ModuleNotSuitableException;
+import ibis.smartsockets.virtual.NonFatalIOException;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
@@ -136,7 +136,7 @@ public class Reverse extends MessagingModule {
     }
     
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
-            Map<String, Object> properties) throws ModuleNotSuitableException {
+            Map<String, Object> properties) throws NonFatalIOException {
        
         // When the reverse module is asked for a connection to a remote 
         // address, it simply creates a local serversocket and send a message 
@@ -152,8 +152,8 @@ public class Reverse extends MessagingModule {
         if (denyConnectionsToSelf && 
                 target.machine().sameMachine(parent.getLocalHost())) { 
             
-            throw new ModuleNotSuitableException(module + ": Cannot set up " +
-                "a connection to myself!"); 
+            throw new NonFatalIOException("Cannot set up a connection " +
+                    "to myself!"); 
         }
       
         
@@ -168,7 +168,7 @@ public class Reverse extends MessagingModule {
         } catch (Exception e) {
             // All exceptions are converted into a module not suitable 
             // exception. 
-            throw new ModuleNotSuitableException(module + ": Failed to set up " +
+            throw new NonFatalIOException("Failed to set up " +
                     "reverse connection", e); 
         } 
         
@@ -230,8 +230,8 @@ public class Reverse extends MessagingModule {
         } catch (Exception e) {
             // All exceptions are converted into a module not suitable 
             // exception. 
-            throw new ModuleNotSuitableException(module + ": Failed to set up " +
-                    "reverse connection", e); 
+            throw new NonFatalIOException("Failed to set up reverse connection", 
+                    e); 
         } finally {             
             // Always remove the request from the map and close the 
             // serversocket!
@@ -245,7 +245,7 @@ public class Reverse extends MessagingModule {
         }
         
         if (s == null) { 
-            throw new ModuleNotSuitableException(module + ": Target failed to " 
+            throw new NonFatalIOException("Target failed to " 
                     + "set up reverse connection (" + reply + ")");             
         }
         

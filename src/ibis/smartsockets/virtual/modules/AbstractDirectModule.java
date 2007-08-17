@@ -109,11 +109,11 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
                 out.flush();                
                 DirectSocketFactory.close(ds, out, in);
                 
-                //if (logger.isDebugEnabled()) {
-                    logger.warn(module + ": Connection failed for port " 
+                if (logger.isInfoEnabled()) {
+                    logger.info(module + ": Connection failed for port " 
                             + targetPort + ": " 
                             + (accept < 0 ? "REFUSED" : "OVERLOAD")) ;
-               // }
+                }
                 
                 return;                
             } 

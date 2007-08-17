@@ -58,6 +58,7 @@ class Sender extends Thread {
             } 
         } catch (Exception e) {
             System.out.println("Failed to write opcode!" + e); 
+            e.printStackTrace();
             System.exit(1);
         }   
         
@@ -90,6 +91,8 @@ class Sender extends Thread {
                 buffer.position(0);
             } catch (Exception e) {
                 System.out.println("Failed to write data!" + e); 
+                e.printStackTrace();
+                System.exit(1);
             }
             
             block = d.getBlock();

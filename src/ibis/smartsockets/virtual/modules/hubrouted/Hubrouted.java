@@ -5,7 +5,7 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.ServiceLinkProtocol;
 import ibis.smartsockets.hub.servicelink.VirtualConnectionCallBack;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.smartsockets.virtual.ModuleNotSuitableException;
+import ibis.smartsockets.virtual.NonFatalIOException;
 import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
@@ -14,6 +14,8 @@ import ibis.smartsockets.virtual.modules.ConnectModule;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -94,7 +96,7 @@ public class Hubrouted extends ConnectModule
     }
 
     public VirtualSocket connect(VirtualSocketAddress target, int timeout, 
-            Map<String, Object> properties) throws ModuleNotSuitableException, 
+            Map<String, Object> properties) throws NonFatalIOException, 
             IOException {
         
         // First check if we are trying to connect to ourselves (which makes no 
@@ -104,7 +106,7 @@ public class Hubrouted extends ConnectModule
            
         /*
         if (tm.sameMachine(parent.getLocalHost())) { 
-            throw new ModuleNotSuitableException(module + ": Cannot set up " +
+            throw new NonFatalIOException(module + ": Cannot set up " +
                 "a connection to myself!"); 
         }
         */
@@ -157,9 +159,10 @@ public class Hubrouted extends ConnectModule
                 timeleft = (int) (deadline - System.currentTimeMillis()); 
                 
                 if (timeleft <= 0)  {
-                    throw new ModuleNotSuitableException("Failed to create "
+                    throw new NonFatalIOException(
+                            new SocketTimeoutException("Failed to create "
                             + "virtual connection to " + target + " within "
-                            + timeout + " ms.");         
+                            + timeout + " ms. (" + e + ")"));         
                 }
 
                 index = -1;
@@ -183,17 +186,17 @@ public class Hubrouted extends ConnectModule
                 case -1: 
                     // Timeout. Assume it is this module's fault
                     failedOutgoingConnections++;
-                    throw new ModuleNotSuitableException("Failed to create "
+                    throw new NonFatalIOException(
+                            new SocketTimeoutException("Failed to create "
                             + "virtual connection to " + target + " within "
-                            + timeout + " ms.");      
-                    // throw new SocketTimeoutException("ACK timed out!");
+                            + timeout + " ms."));      
                 
                 case ServiceLinkProtocol.ERROR_UNKNOWN_HOST:
                     // We couldn't find the machine. Assume its our own fault.
                     failedOutgoingConnections++;
-                    throw new ModuleNotSuitableException("Failed to find "
-                            + target + " within " + timeout + " ms.");      
-                    // throw new UnknownHostException("Unknown host " + target);
+                    throw new NonFatalIOException(
+                            new UnknownHostException("Failed to find host "
+                            + target + " within " + timeout + " ms."));      
                 
                 case ServiceLinkProtocol.ERROR_PORT_NOT_FOUND:
                     // User error
@@ -358,7 +361,8 @@ public class Hubrouted extends ConnectModule
         }
     }
     
-    public boolean gotMessage(long index, int len, DataInputStream in) throws IOException {
+    public boolean gotMessage(long index, int len, DataInputStream in) 
+        throws IOException {
 
         HubRoutedVirtualSocket s = sockets.get(index);
         

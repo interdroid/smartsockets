@@ -4,7 +4,7 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.CallBack;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.smartsockets.virtual.ModuleNotSuitableException;
+import ibis.smartsockets.virtual.NonFatalIOException;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
@@ -278,7 +278,7 @@ public abstract class ConnectModule implements CallBack {
     
     public abstract VirtualSocket connect(VirtualSocketAddress target, 
             int timeout, Map<String, Object> properties) 
-        throws ModuleNotSuitableException, IOException;
+        throws NonFatalIOException, IOException;
 
     public void printStatistics(String prefix) {
         

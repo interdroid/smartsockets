@@ -89,9 +89,11 @@ public class VirtualServerSocket {
         }
         
         // If not, print an error.....
-        System.out.println("Incoming connection on port " 
-                + port + " refused: QUEUE FULL (" + incoming.size() + ", " 
-                + System.currentTimeMillis() + ")");
+        if (VirtualSocketFactory.conlogger.isInfoEnabled()) { 
+            VirtualSocketFactory.conlogger.info("Incoming connection on port " 
+                    + port + " refused: QUEUE FULL (" + incoming.size() + ", " 
+                    + System.currentTimeMillis() + ")");
+        }
         
         return 1;
     }
