@@ -172,7 +172,7 @@ public class VirtualSocketFactory {
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG, 50);
 
         DEFAULT_ACCEPT_TIMEOUT = p.getIntProperty(
-                SmartSocketsProperties.ACCEPT_TIMEOUT, 1000);
+                SmartSocketsProperties.ACCEPT_TIMEOUT, 5000);
         
         // NOTE: order is VERY important here!
         try { 

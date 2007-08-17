@@ -65,7 +65,7 @@ public class Hub extends Thread {
         super("Hub");
         
         boolean allowDiscovery = 
-            p.booleanProperty(SmartSocketsProperties.DISCOVERY_ALLOWED, true);
+            p.booleanProperty(SmartSocketsProperties.DISCOVERY_ALLOWED, false);
         
         String [] clusters = 
             p.getStringList(SmartSocketsProperties.HUB_CLUSTERS, ",", null);

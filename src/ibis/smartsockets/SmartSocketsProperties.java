@@ -147,7 +147,7 @@ public class SmartSocketsProperties {
             MODULES_ORDER,          "direct,reverse,hubrouted",
             
             DISCOVERY_PREFERRED,    "false",
-            DISCOVERY_ALLOWED,      "true",
+            DISCOVERY_ALLOWED,      "false",
             DISCOVERY_PORT,         "24545", 
             DISCOVERY_TIMEOUT,      "5000",    
             

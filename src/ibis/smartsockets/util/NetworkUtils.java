@@ -8,6 +8,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -312,6 +313,17 @@ public class NetworkUtils {
     public static String ipToString(InetAddress ad) {         
         return ad.getHostAddress();                
     }
+    
+    /**
+     * Converts a socket address to a String. 
+     * 
+     * @param ad the address to convert
+     * @return the String representation of the address.
+     */
+    public static String saToString(InetSocketAddress ad) {         
+        return ipToString(ad.getAddress()) + ":" + ad.getPort();                
+    }
+    
     
     /**
      * Converts an array of IP addresses to a String. 

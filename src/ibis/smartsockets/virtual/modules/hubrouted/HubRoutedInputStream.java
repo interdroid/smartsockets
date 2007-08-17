@@ -59,7 +59,7 @@ public class HubRoutedInputStream extends InputStream {
         
         decreaseAvailableAndACK(1);
         
-        return result;    
+        return result & 255;    
     }
 
     public int read(byte[] b) throws IOException { 

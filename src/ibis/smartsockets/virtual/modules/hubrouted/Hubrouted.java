@@ -161,7 +161,7 @@ public class Hubrouted extends ConnectModule
                 if (timeleft <= 0)  {
                     throw new NonFatalIOException(
                             new SocketTimeoutException("Failed to create "
-                            + "virtual connection to " + target + " within "
+                            + "virtual connection within "
                             + timeout + " ms. (" + e + ")"));         
                 }
 

@@ -22,6 +22,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -557,7 +558,7 @@ public class DirectSocketFactory {
     private DirectSocket attemptSSHConnection(DirectSocketAddress sas,
             InetSocketAddress target, int timeout, int localPort, 
             boolean mayBlock, String user, byte [] userOut, byte [] userIn, 
-            boolean check) {
+            boolean check) throws IOException {
         
         DirectSocket result = null;
         long start = 0;
@@ -575,7 +576,7 @@ public class DirectSocketFactory {
             }
         }
         
-        try {
+        //try {
             String host = target.getAddress().toString();
             
             if (host.startsWith("/")) { 
@@ -596,7 +597,7 @@ public class DirectSocketFactory {
                             + (System.currentTimeMillis()-start) + " ms.");
                 }                  
                 
-                throw new IOException("Authentication failed.");
+                throw new IOException("SSH authentication failed.");
             }
             
             if (logger.isDebugEnabled()) {               
@@ -633,29 +634,27 @@ public class DirectSocketFactory {
                 }
                 
             }
-            
+           
             if (result == null && logger.isInfoEnabled()) {               
                 logger.info("Failed to forward to target machine during SSH " +
                         "connection setup to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort() + " after " 
                         + (System.currentTimeMillis()-start) + " ms.");
+            
+                throw new ConnectException("SSH forwarding failed.");
             }  
 
+            /*
         } catch (IOException e) {
             
-            if (logger.isDebugEnabled()) {
-                logger.debug("Failed to create SSH connection to "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " after " 
-                        + (System.currentTimeMillis()-start) + " ms.", e);
-            } else if (logger.isInfoEnabled()) {
+            if (logger.isInfoEnabled()) {
                 logger.info("Failed to create SSH connection to "
                         + NetworkUtils.ipToString(target.getAddress()) + ":"
                         + target.getPort() + " after " 
-                        + (System.currentTimeMillis()-start) + " ms.");
+                        + (System.currentTimeMillis()-start) + " ms.", e);
             }
-        }
+        }*/
 
         return result; 
     }
@@ -663,7 +662,7 @@ public class DirectSocketFactory {
     private DirectSocket attemptConnection(DirectSocketAddress sas,
             InetSocketAddress target, int timeout, int sndbuf, int rcvbuf, 
             int localPort, boolean mayBlock, byte [] userOut, byte [] userIn, 
-            boolean check) throws FirewallException {
+            boolean check) throws IOException {
 
         // We never want to block, so ensure that timeout > 0
         if (timeout == 0 && !mayBlock) {
@@ -790,7 +789,7 @@ public class DirectSocketFactory {
                         + (System.currentTimeMillis()-start) + " ms.");
             }
 
-            return null;
+            throw e;
         }
     }
     
@@ -1423,11 +1422,11 @@ public class DirectSocketFactory {
         
         // Note: it's up to the user to ensure that this thing is large enough!
         // i.e., it should be of size 1+2*target.length
-        long [] timing = null;
+     //   long [] timing = null;
         boolean forceGlobalFirst = false;
         
         if (properties != null) { 
-            
+        /*    
             if (!properties.containsKey("direct.detailed.timing.ignore")) { 
                 
                 timing = (long []) properties.get("direct.detailed.timing");
@@ -1436,157 +1435,164 @@ public class DirectSocketFactory {
                     timing[0] = System.nanoTime();
                 }
             }
-            
+          */  
             forceGlobalFirst = properties.containsKey("direct.forcePublic");
         }
         
         
-        try { 
+       // try { 
         // First check if the number of connect options is doubled by the fact 
         // that we can also use SSH tunnels to connect to the machine...
         boolean mayUseSSH = mayUseSSH(target, properties);
-        
+
         if (logger.isDebugEnabled()) { 
             logger.debug("Can use SSH for connection setup: " + mayUseSSH);
         }
-        
+
         // Next, get the addresses of the target machine.         
         InetSocketAddress[] sas = target.getSocketAddresses();
-        
+
         if (sas.length == 0) { 
-  //          System.err.println("EEK: sas.length == 0!!!");
+            //          System.err.println("EEK: sas.length == 0!!!");
             return null;
         }
-        
+
         byte [] userIn = new byte[4];
         byte [] userOut = new byte[4];
-        
+
         userOut[0] = (byte)(0xff & (userData >> 24));
         userOut[1] = (byte)(0xff & (userData >> 16));
         userOut[2] = (byte)(0xff & (userData >> 8));
         userOut[3] = (byte)(0xff & userData);
-        
+
         // If there is only one address, and no SSH we can do a blocking call...        
         if (sas.length == 1 && !mayUseSSH && !FORCE_SSH_OUT) {
 
-            if (timing != null) { 
-                timing[1] = System.nanoTime();
-            }
-            
-            try { 
-                return createSingleSocket(target, sas[0], timeout, localPort, 
-                        sendBuffer, receiveBuffer, userOut, userIn, 
-                        fillTimeout);
-            } finally { 
-                if (timing != null) { 
-                    timing[1] = System.nanoTime() - timing[1];
-                }
-            }
+            // if (timing != null) { 
+            //     timing[1] = System.nanoTime();
+            // }
+
+            // try { 
+            return createSingleSocket(target, sas[0], timeout, localPort, 
+                    sendBuffer, receiveBuffer, userOut, userIn, 
+                    fillTimeout);
+            //  } finally { 
+            //     if (timing != null) { 
+            //        timing[1] = System.nanoTime() - timing[1];
+            //    }
+            // }
         }
 
         // Select the addresses we want from the target set. Some may be removed
         // thanks to the cluster configuration.
-        
+
         // TODO: shouldn't this be done first ?  
         if (forceGlobalFirst) { 
             sas = publicFirst.sort(sas, false);
         } else { 
             sas = preference.sort(sas, false);
         }
-        
+
         if (sas.length == 0) { 
             return null;
         }        
-        
+
         // else, we must try them all, so the connection attempt must return at 
         // some point, even if timeout == 0
-        
+
         int timeLeft = timeout;
 
         if (timeLeft == 0) { 
             timeLeft = DEFAULT_TIMEOUT;
         }
-        
+
         DirectSocket result = null;
-        
+
+        LinkedList<NestedIOExceptionData> exceptions = 
+            new LinkedList<NestedIOExceptionData>();
+
         do {
-            
+
             int partialTime = timeLeft;
-            
+
             if (mayUseSSH && !FORCE_SSH_OUT) { 
                 partialTime = timeLeft / 2;
             }
-            
+
             long starttime = System.currentTimeMillis();
-            
+
             if (!FORCE_SSH_OUT) { 
                 result = loopOverOptions(target, sas, localPort, partialTime, 
                         sendBuffer, receiveBuffer, null, userOut, userIn, 
-                        timing);
+                        /*timing*/ null, exceptions);
             }
 
             int time = (int) (System.currentTimeMillis() - starttime);
-        
+
             // If we don't have a connection yet we try to use SSH
             if (result == null && mayUseSSH) { 
-                
+
                 partialTime = timeLeft - time;
-                
+
                 if (partialTime <= 0) { 
                     if (timeout > 0) { 
                         // Enough tries so, throw exception
-                        throw new SocketTimeoutException("Connection setup timed out!");
+                        throw new NestedIOException("Connection setup timed out!", 
+                                exceptions); 
                     } else { 
                         // TODO: HACK
                         partialTime = DEFAULT_TIMEOUT;
                     }
-                } 
-            
+                }
+               
                 result = loopOverOptions(target, sas, localPort, partialTime, 
                         sendBuffer, receiveBuffer, target.getUser(), userOut, 
-                        userIn, timing);
-            
+                        userIn, /*timing*/ null, exceptions);
+
                 time = (int) (System.currentTimeMillis() - starttime);
             }
-            
+
             if (result != null) { 
-                
+
                 int ud = (((userIn[0] & 0xff) << 24) | 
                         ((userIn[1] & 0xff) << 16) |
                         ((userIn[2] & 0xff) << 8) | 
                         (userIn[3] & 0xff));
-                
+
                 result.setUserData(ud);
                 return result;
             }
-            
+
             timeLeft -= time;
-            
+
             if (timeout == 0) { 
                 // the user wants us to keep trying for ever!
                 timeLeft = DEFAULT_TIMEOUT;
             } else if (timeLeft <= 0 && timeout > 0) {
                 // deadline expired so throw exception
-                throw new SocketTimeoutException("Connection setup timed out!");
+                throw new NestedIOException("Connection setup timed out!", 
+                        exceptions);
             } 
-        
+            
         } while (fillTimeout);
-        
-        throw new ConnectException("Connection setup failed!");
-        
-        
-        } finally { 
-            if (timing != null) { 
-                timing[0] = System.nanoTime() - timing[0];
-            }
-        }
-        
+
+        throw new NestedIOException("Connection setup failed (single attempt)!", 
+                exceptions);
+
+
+        //} finally { 
+        //    if (timing != null) { 
+        //        timing[0] = System.nanoTime() - timing[0];
+        //    }
+        //}
+
     }
 
     private DirectSocket loopOverOptions(DirectSocketAddress target, 
             InetSocketAddress [] sas, int localPort, int timeout, int sendBuffer, 
             int receiveBuffer, String user, byte [] userOut, byte [] userIn, 
-            long [] timing) throws FirewallException {
+            long [] timing, LinkedList<NestedIOExceptionData> exceptions) 
+        throws FirewallException {
         
         //System.out.println("loopOverOptions " + timeout);
         
@@ -1596,6 +1602,7 @@ public class DirectSocketFactory {
         
         for (int i = 0; i < sas.length; i++) {
         
+            /*
             if (timing != null) { 
                 
                 if (user == null) { 
@@ -1604,6 +1611,7 @@ public class DirectSocketFactory {
                     timing[1+sas.length+i] = System.nanoTime();
                 }
             }
+            */
             
             long time = System.currentTimeMillis();
             
@@ -1619,16 +1627,23 @@ public class DirectSocketFactory {
                 local = true;
             }
 
-            if (user != null) { 
-                result = attemptSSHConnection(target, sa, partialTime, 
-                        localPort, false, user, userOut, userIn, local);                
-            } else { 
-                result = attemptConnection(target, sa, partialTime, sendBuffer, 
-                        receiveBuffer, localPort, false, userOut, userIn, local);
+            try { 
+                if (user != null) { 
+                    result = attemptSSHConnection(target, sa, partialTime, 
+                            localPort, false, user, userOut, userIn, local);                
+                } else { 
+                    result = attemptConnection(target, sa, partialTime, sendBuffer, 
+                            receiveBuffer, localPort, false, userOut, userIn, local);
+                }                
+            } catch (IOException e) {
+                exceptions.add(new NestedIOExceptionData("Connection setup to " 
+                        + NetworkUtils.saToString(sa) + " failed after " 
+                        + (System.currentTimeMillis() - time) + " ms." , e));
             }
-            
+                
             timeLeft -= (System.currentTimeMillis() - time);
             
+            /*
             if (timing != null) { 
                 
                 if (user == null) { 
@@ -1636,7 +1651,7 @@ public class DirectSocketFactory {
                 } else { 
                     timing[1+sas.length+i] = System.nanoTime() - timing[1+sas.length+i];
                 }
-            }
+            }*/
             
             if (result != null || timeLeft <= 0) {
                 break;
