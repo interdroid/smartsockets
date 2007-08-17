@@ -244,7 +244,7 @@ public class Direct extends AbstractDirectModule {
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
             // succesful.            
-            throw new NonFatalIOException("Failed to connect to " + target, e);           
+            throw new NonFatalIOException(e);           
         }
     }
     

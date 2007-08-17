@@ -43,25 +43,21 @@ public class NoSuitableModuleException extends IOException {
             builder.append(message);
         } 
         
-        builder.append("\n");
-        
-        if (exceptions == null) { 
+        if (exceptions != null) { 
 
             int attempt = 0;
             
             for (NoSuitableModuleException e : exceptions) { 
-
-                builder.append(" Attempt: ");
+                builder.append("\n Attempt: ");
                 builder.append(attempt++);
                 builder.append("\n");
                 
                 builder.append("  " + e.toString());                
-                builder.append("\n");
             }        
         } else {
             for (int i=0;i<causes.length;i++) { 
 
-                builder.append("   ");
+                builder.append("\n   ");
                 builder.append(names[i]);
                 builder.append(": ");
 
@@ -70,8 +66,6 @@ public class NoSuitableModuleException extends IOException {
                 } else { 
                     builder.append("<unknown cause>");
                 }
-
-                builder.append("\n");
             }
         }
         

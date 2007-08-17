@@ -9,10 +9,24 @@ public class NonFatalIOException extends Exception {
     }
     
     public NonFatalIOException(Throwable cause) { 
-        super("<no info>", cause);
+        super(null, cause);
     }
     
     public NonFatalIOException(String message, Throwable cause) { 
         super(message, cause);
+    }
+    
+    public String toString() {        
+        
+        if (getCause() == null) { 
+            return getClass().getName() + ": " + getLocalizedMessage();
+        }
+        
+        if (getLocalizedMessage() == null) { 
+            return getCause().toString();
+        }
+     
+        return getClass().getName() + ": " + getLocalizedMessage() + " -> " 
+            + getCause().toString();
     }
 }

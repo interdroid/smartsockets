@@ -188,15 +188,14 @@ public class Hubrouted extends ConnectModule
                     failedOutgoingConnections++;
                     throw new NonFatalIOException(
                             new SocketTimeoutException("Failed to create "
-                            + "virtual connection to " + target + " within "
-                            + timeout + " ms."));      
+                            + "virtual connection within " + timeout + " ms."));      
                 
                 case ServiceLinkProtocol.ERROR_UNKNOWN_HOST:
                     // We couldn't find the machine. Assume its our own fault.
                     failedOutgoingConnections++;
                     throw new NonFatalIOException(
-                            new UnknownHostException("Failed to find host "
-                            + target + " within " + timeout + " ms."));      
+                            new UnknownHostException("Failed to find host"
+                                    + " within " + timeout + " ms."));      
                 
                 case ServiceLinkProtocol.ERROR_PORT_NOT_FOUND:
                     // User error

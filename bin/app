@@ -31,4 +31,6 @@ do
         shift
 done
 
-java  -XX:+PrintCompilation -XX:+CITime -cp $CP $SPECIAL $NORMAL
+# -XX:+PrintCompilation -XX:+CITime
+
+java -cp $CP $SPECIAL $NORMAL
