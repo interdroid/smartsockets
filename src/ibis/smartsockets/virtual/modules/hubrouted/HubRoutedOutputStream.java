@@ -87,7 +87,7 @@ public class HubRoutedOutputStream extends OutputStream {
             
             if (deadline > 0) { 
                 // Still no room, and we are on a tight schedule!
-                timeleft = System.currentTimeMillis() - deadline;
+                timeleft = deadline - System.currentTimeMillis();
                 
                 if (timeleft <= 0) { 
                     throw new SocketTimeoutException("Timeout while waiting " +
