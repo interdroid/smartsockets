@@ -184,7 +184,7 @@ public class HubRoutedInputStream extends InputStream {
         // If the flow control is working correctly, we can alway write the 
         // data here!!!!
         
-        // Sanity check -- remote ASAP
+        // Sanity check -- remove ASAP
         if (len > (buffer.length - available)) { 
             System.err.println("EEK: buffer overflow!!");
         }

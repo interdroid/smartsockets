@@ -127,6 +127,12 @@ public class Hubrouted extends ConnectModule
         while (true) { 
         
             long index = serviceLink.getConnectionNumber();
+
+            // Fix: check that the number is not used. --Ceriel
+            while (sockets.get(index) != null) {
+                // System.err.println("EEK: index used!!!");
+                index = serviceLink.getConnectionNumber();
+            }
           
             s.reset(index);
             sockets.put(index, s);
