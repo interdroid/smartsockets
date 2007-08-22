@@ -4,8 +4,6 @@ public class VirtualConnectionIndex {
 
     private long nextIndex = 0;
     
-    
-    
     public VirtualConnectionIndex(boolean even) { 
     
         int rnd = (int) Math.round(Math.random() * (Integer.MAX_VALUE-1)); 
@@ -25,7 +23,8 @@ public class VirtualConnectionIndex {
         }
     }
     
-    public long nextIndex() { 
+    // Made synchronized --Ceriel
+    public synchronized long nextIndex() { 
         long result = nextIndex;
         nextIndex = (nextIndex + 2) % Integer.MAX_VALUE;
         return result;
