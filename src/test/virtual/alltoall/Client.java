@@ -55,7 +55,7 @@ public class Client {
                         
             boolean stop = false;
             
-            while (!stop && count < others.length-1) {             
+            while (!stop && !done()) {             
                 try {
                     server.setSoTimeout(5000);
                     s = server.accept();

@@ -49,7 +49,7 @@ public class DirectServerSocket {
     private final NetworkPreference preference;
     private final boolean haveFirewallRules;
     
-    private long acceptCount = 0;
+    // private long acceptCount = 0;
     
     protected DirectServerSocket(DirectSocketAddress local, ServerSocket ss, 
             NetworkPreference preference) {

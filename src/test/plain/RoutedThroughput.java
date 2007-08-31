@@ -184,8 +184,7 @@ public class RoutedThroughput {
     private static void router() throws IOException { 
         
         if (target == null) { 
-            System.err.println("Router requires target!");
-            System.exit(1);
+            throw new Error("Router requires target!");
         }
        
         // Connect to receiver (or next router)

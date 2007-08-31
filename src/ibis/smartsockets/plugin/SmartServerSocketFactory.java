@@ -1,4 +1,4 @@
-package ibis.smartsockets;
+package ibis.smartsockets.plugin;
 
 import ibis.smartsockets.virtual.InitializationException;
 import ibis.smartsockets.virtual.VirtualSocketFactory;

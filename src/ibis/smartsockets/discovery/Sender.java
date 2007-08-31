@@ -125,9 +125,8 @@ public class Sender extends Thread {
                                 + packet.getSocketAddress() + " " 
                                 + packet);
                 }                
-                if (packet != null) {                         
-                    sockets[i].send(packet);
-                }
+                sockets[i].send(packet);
+                
             } catch (Exception e) {
                 if (logger.isInfoEnabled()) {
                     logger.info("MulticastSender got exception ", e);

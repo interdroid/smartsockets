@@ -3,8 +3,8 @@ package test.virtual.hub;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 public class LocalHubTest {

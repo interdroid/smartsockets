@@ -51,7 +51,7 @@ public class Forwarder implements Runnable {
         
         System.out.println("Forwarder " + label + " running!");
         
-        while (!done) {            
+        while (!isDone()) {            
             try {           
                 int n = in.read(buffer);
                 

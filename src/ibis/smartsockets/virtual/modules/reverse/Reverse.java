@@ -13,6 +13,7 @@ import ibis.smartsockets.virtual.modules.direct.Direct;
 import ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket;
 
 import java.net.SocketTimeoutException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -325,7 +326,7 @@ public class Reverse extends MessagingModule {
     
     private void handleCannotConnectMessage(byte [][] message) { 
     
-        int requestID = 0;
+        int requestID;
         String reply = null;
         
         try {
@@ -346,7 +347,7 @@ public class Reverse extends MessagingModule {
     
     private void handleConnectMessageFailed(byte [][] message) { 
         
-        int requestID = 0;
+        int requestID;
     
         try {
             requestID = toInt(message[6]);
@@ -367,7 +368,7 @@ public class Reverse extends MessagingModule {
         int timeout = 0;
         int localport = 0;
         VirtualSocketAddress target = null;
-        int requestID = 0;
+        int requestID;
     
         try {
             localport                   = toInt(message[0]);                        
@@ -418,7 +419,7 @@ public class Reverse extends MessagingModule {
         
         if (logger.isInfoEnabled()) {
             logger.info(module + ": handling connection request from " + src + "@" + 
-                    srcProxy + " message = \"" + message + "\"");
+                    srcProxy + " message = \"" + Arrays.toString(message) + "\"");
         }
         
         switch (opcode) { 
@@ -439,8 +440,9 @@ public class Reverse extends MessagingModule {
             break;
             
         default: 
-            logger.warn(module + " got unexpected message from " + src + "@" + 
-                        srcProxy + " message = \"" + message + "\"");
+            logger.warn(module + " got unexpected message from " + src + "@"  
+                        + srcProxy + " message = \"" 
+                        + Arrays.deepToString(message) + "\"");
         }
     }
                 

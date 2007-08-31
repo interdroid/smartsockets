@@ -263,7 +263,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             }
         }
         
-        return codedForm;
+        return codedForm.clone();
     }
     
     /**
@@ -356,7 +356,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             index += externalAds.length;
             
             System.arraycopy(privateAds, 0, allAddressesCache, index, privateAds.length);
-            index += privateAds.length;   
+            // index += privateAds.length;   
         }
         
         return allAddressesCache;
@@ -369,7 +369,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      *         DirectSocketAddress
      */
     public InetSocketAddress [] getExternalAddresses() {
-        return externalAds;
+        return externalAds.clone();
     }
     
     /**
@@ -379,7 +379,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      *         DirectSocketAddress
      */
     public InetSocketAddress [] getPublicAddresses() {
-        return publicAds;
+        return publicAds.clone();
     }
     
     /**
@@ -389,7 +389,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      *         DirectSocketAddress
      */
     public InetSocketAddress [] getPrivateAddresses() {
-        return privateAds;
+        return privateAds.clone();
     }
     
     /**
@@ -399,7 +399,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * addresses, <code>false</code> otherwise.
      */
     public boolean hasPublicAddress() {
-        return publicAds != null & publicAds.length > 0;
+        return publicAds != null && publicAds.length > 0;
     }    
     
     /**
@@ -1194,7 +1194,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 
             } else if (readingUUID) { 
                 
-                UUID = NetworkUtils.StringToUUID(s);
+                UUID = NetworkUtils.stringToUUID(s);
 
                 readingUUID = false;
                 

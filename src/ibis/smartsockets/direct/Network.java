@@ -43,9 +43,8 @@ public final class Network {
         case NONE:
             return false;
         case SITE:
-            return addr.isSiteLocalAddress();
         case LINK:
-            return addr.isLinkLocalAddress();
+            return addr.isSiteLocalAddress();
         case GLOBAL:
             return (!(addr.isSiteLocalAddress() || addr.isLinkLocalAddress() || 
                     addr.isLoopbackAddress() || addr.isAnyLocalAddress() ||

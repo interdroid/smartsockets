@@ -18,7 +18,7 @@ public class VirtualConnectionIndex {
                 rnd++;
             }
         } else { 
-            if (rnd % 2 != 1) { 
+            if (!(rnd % 2 != 0)) { 
                 rnd++;
             }
         }

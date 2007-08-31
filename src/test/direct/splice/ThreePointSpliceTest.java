@@ -59,7 +59,7 @@ public class ThreePointSpliceTest {
                     s = (DirectSimpleSocket) sf.createSocket(target[i], 0, 
                             LOCAL_PORT, properties);
             
-                    System.out.println("Created connection to " + target + 
+                    System.out.println("Created connection to " + target[i] + 
                             " on local address " + s.getLocalSocketAddress() 
                             + " remote address " + s.getRemoteSocketAddress());
 
@@ -75,7 +75,7 @@ public class ThreePointSpliceTest {
                     return;                
                 } catch (Exception e) {
                     System.out.println("Failed to created connection to " 
-                            + target);
+                            + target[i]);
                 } finally { 
                     DirectSocketFactory.close(s, out, in);
                 }

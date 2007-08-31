@@ -18,9 +18,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
-
  
-public class Test extends Thread {
+public final class Test extends Thread {
     
     private static int TIMEOUT = 10000;
     
@@ -105,12 +104,8 @@ public class Test extends Thread {
             
             switch (opcode) { 
             case -1:
-                // unexpected close                        
-                done();
-                break;
-
             case 0:
-                // expected close
+                // (un)expected close                        
                 done();
                 break;
                 
@@ -136,7 +131,7 @@ public class Test extends Thread {
                 
                 gotMessage("[" + number + "] Received " + chunks + " chunks of " + size 
                         + "bytes in " + (end-start) + " ms. (" 
-                        + (((8L*size*chunks)/(1024L*1024L)) / ((end-start)/1000.0)) 
+                        + (((8L*size*chunks)/(1024.0*1024.0)) / ((end-start)/1000.0)) 
                         + " MBit/sec)");
                 
                 break;                    
@@ -258,7 +253,7 @@ public class Test extends Thread {
                                                 
                 System.out.println("Send " + chunks + " chunks of " + size 
                         + "bytes in " + (end-start) + " ms. (" 
-                        + (((8L*size*chunks)/(1024L*1024L)) / ((end-start)/1000.0)) 
+                        + (((8L*size*chunks)/(1024.0*1024.0)) / ((end-start)/1000.0)) 
                         + " MBit/sec)");
                 
             } catch (Exception e) {
@@ -285,7 +280,7 @@ public class Test extends Thread {
 
     }
         
-    private class Acceptor extends Thread { 
+    private static class Acceptor extends Thread { 
         
         private final VirtualServerSocket ss;
         
@@ -758,37 +753,41 @@ public class Test extends Thread {
                 System.out.print("> ");
                 System.out.flush(); 
                 
-                String line = clin.readLine().trim();
+                String line = clin.readLine();
                 
                 if (line == null) { 
                     // probably a control-c ?
                     exit();
                     done = true;
-                } else if (line.length() == 0) { 
-                    // ignore empty lines....
-                } else if (line.startsWith("help")) {
-                    usage();
-                } else if (line.startsWith("send ")) {
-                    send(line.substring(5).trim());
-                } else if (line.startsWith("hubs")) {
-                    listhubs();
-                } else if (line.startsWith("clients")) {
-                    listclients(line.substring(7).trim());
-                } else if (line.startsWith("connections")) {
-                    connections();
-                } else if (line.startsWith("connect")) {
-                    connect(line.substring(7).trim());
-                } else if (line.startsWith("repeat connect")) {
-                    connectRepeat(line.substring(14).trim());                    
-                } else if (line.startsWith("close")) {
-                    close(line.substring(5).trim());
-                } else if (line.startsWith("ping")) {
-                    ping(line.substring(4).trim());
-                } else if (line.startsWith("exit")) {
-                    exit();
-                    done = true;
-                } else {
-                    System.out.println("Unknown command, try help");
+                } else { 
+                    line = line.trim();
+
+                    if (line.length() == 0) { 
+                        // ignore empty lines....
+                    } else if (line.startsWith("help")) {
+                        usage();
+                    } else if (line.startsWith("send ")) {
+                        send(line.substring(5).trim());
+                    } else if (line.startsWith("hubs")) {
+                        listhubs();
+                    } else if (line.startsWith("clients")) {
+                        listclients(line.substring(7).trim());
+                    } else if (line.startsWith("connections")) {
+                        connections();
+                    } else if (line.startsWith("connect")) {
+                        connect(line.substring(7).trim());
+                    } else if (line.startsWith("repeat connect")) {
+                        connectRepeat(line.substring(14).trim());                    
+                    } else if (line.startsWith("close")) {
+                        close(line.substring(5).trim());
+                    } else if (line.startsWith("ping")) {
+                        ping(line.substring(4).trim());
+                    } else if (line.startsWith("exit")) {
+                        exit();
+                        done = true;
+                    } else {
+                        System.out.println("Unknown command, try help");
+                    }
                 }
                 
                 printMessages();

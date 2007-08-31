@@ -43,17 +43,21 @@ public class MTThroughput {
     }
     
     private static void createStreamOut(VirtualSocketAddress target, DataSource d, int id, int size) { 
-
+        
+        VirtualSocket s = null;
+        DataInputStream in = null;
+        DataOutputStream out = null;
+        
         try { 
-            VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
+            s = sf.createClientSocket(target, TIMEOUT, 
                     connectProperties);
 
             System.out.println("Created DATA connection to " + target);
 
             configure(s);
 
-            DataInputStream in = new DataInputStream(s.getInputStream());
-            DataOutputStream out = new DataOutputStream(s.getOutputStream());
+            in = new DataInputStream(s.getInputStream());
+            out = new DataOutputStream(s.getOutputStream());
 
             out.writeInt(OPCODE_DATA);            
             out.writeInt(id);
@@ -61,8 +65,9 @@ public class MTThroughput {
 
             new Sender(d, s, out, in, size).start();
             
-        } catch (Exception e) {
-            System.out.println("Failed to create connection to " + target); 
+        } catch (IOException e) {
+            VirtualSocketFactory.close(s, out, in);
+            System.out.println("Failed to create connection to " + target);
         }
     }
     
@@ -83,16 +88,20 @@ public class MTThroughput {
     
     public static void client(VirtualSocketAddress target) { 
         
+        VirtualSocket s = null;
+        DataInputStream in = null;
+        DataOutputStream out = null;
+        
         try { 
-            VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
+            s = sf.createClientSocket(target, TIMEOUT, 
                     connectProperties);
 
             System.out.println("Created META connection to " + target);
 
             configure(s);
 
-            DataInputStream in = new DataInputStream(s.getInputStream());
-            DataOutputStream out = new DataOutputStream(s.getOutputStream());
+            in = new DataInputStream(s.getInputStream());
+            out = new DataOutputStream(s.getOutputStream());
 
             // TODO: draw random ID here!
             int id = 42;
@@ -130,11 +139,11 @@ public class MTThroughput {
             } 
             
             d.done();
-           
-            VirtualSocketFactory.close(s, out, in);
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("Failed to create connection to " + target); 
+        } finally { 
+            VirtualSocketFactory.close(s, out, in);
         }
     }
 
@@ -156,22 +165,19 @@ public class MTThroughput {
             int opcode = in.readInt();
 
             if (opcode != OPCODE_DATA) { 
-                System.err.println("EEK: sender out of sync (2)!");
-                System.exit(1);
+                throw new Error("EEK: sender out of sync (2)!");
             }
             
             int tmp = in.readInt();
             
-            if (tmp != id) { 
-                System.err.println("EEK: sender out of sync (3)!");
-                System.exit(1);
+            if (tmp != id) {
+                throw new Error("EEK: sender out of sync (3)!");
             }
 
             new Receiver(d, s, out, in, size).start();
                         
         } catch (Exception e) { 
-            System.err.println("EEK: got exception while accepting! " + e);
-            System.exit(1);
+            throw new Error("EEK: got exception while accepting! ", e);
         }
     }
     
@@ -186,22 +192,25 @@ public class MTThroughput {
         while (true) {
             System.out.println("Server waiting for connections"); 
             
+            VirtualSocket s = null;
+            DataInputStream in = null;
+            DataOutputStream out = null;
+            
             try { 
-                VirtualSocket s = ss.accept();
+                s = ss.accept();
                             
                 System.out.println("Incoming connection from " 
                         + s.getRemoteSocketAddress());
             
                 configure(s);
                 
-                DataInputStream in = new DataInputStream(s.getInputStream());
-                DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                in = new DataInputStream(s.getInputStream());
+                out = new DataOutputStream(s.getOutputStream());
                 
                 int opcode = in.readInt();
                 
                 if (opcode != OPCODE_META) { 
-                    System.err.println("EEK: sender out of sync!");
-                    System.exit(1);
+                    throw new Error("EEK: sender out of sync!");
                 }
                 
                 size = in.readInt();
@@ -225,10 +234,11 @@ public class MTThroughput {
                 } 
                 
                 System.out.println("done!"); 
-                
+
+            } catch (IOException e) {
+                throw new Error("Server got exception!", e); 
+            } finally { 
                 VirtualSocketFactory.close(s, out, in);
-            } catch (Exception e) {
-                System.out.println("Server got exception " + e); 
             }
         }
     }

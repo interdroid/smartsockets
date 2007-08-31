@@ -62,17 +62,20 @@ public class STUN {
                         + ":" + port);
                 
                 DiscoveryTest test = new DiscoveryTest(iaddress, server, port);
-                result = test.test();
+
+                synchronized (this) {
+                    result = test.test();
+
+                    logger.info("STUN discovery done on: " + iaddress + ":" + port 
+                            + "\n" + result);
+                    
+                    done = true;
+                    notifyAll();
+                }
+            
+            
             } catch (Exception e) {
                 logger.warn("STUN discovery on " + iaddress + " failed!", e);
-            }
-
-            synchronized (this) {
-                logger.info("STUN discovery done on: " + iaddress + ":" + port 
-                        + "\n" + result);
-                
-                done = true;
-                notifyAll();
             }
         }            
     }

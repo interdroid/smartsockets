@@ -1,6 +1,5 @@
 package ibis.smartsockets.hub;
 
-
 import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
@@ -21,8 +20,7 @@ import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 
-
-public class Hub extends Thread {
+public final class Hub extends Thread {
     
     private static int GOSSIP_SLEEP = 3000;
     
@@ -39,8 +37,8 @@ public class Hub extends Thread {
         goslogger = Logger.getLogger("ibis.smartsockets.hub.gossip");
     }
     
-    private static boolean printStatistics = false;
-    private static long STAT_FREQ = 60000;
+    private final boolean printStatistics;
+    private final long STAT_FREQ;
     
     private final HubList hubs;    
     // private final Map<DirectSocketAddress, BaseConnection> connections;
@@ -264,15 +262,9 @@ public class Hub extends Thread {
         hubs.select(selector);
         
         for (HubConnection c : selector.getResult()) {
-            
             if (c != null) {
                 c.gossip();
-            } else { 
-                if (goslogger.isDebugEnabled()) {
-                    goslogger.debug("Cannot gossip with " + c
-                            + ": NO CONNECTION!");
-                }
-            }
+            } 
         }                   
     }
     

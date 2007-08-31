@@ -111,7 +111,7 @@ public class MultiplexTest2 {
 
             time = System.currentTimeMillis() - time;
             
-            long size = TOTAL_SIZE*senders;
+            long size = ((long) TOTAL_SIZE)*senders;
             double sec = time/1000.0;
             double TP = (size / (1024.0*1024.0))/sec;
             

@@ -13,9 +13,14 @@ import org.apache.log4j.Logger;
 
 public class VirtualClusters {
     
-    protected static Logger logger =         
-        Logger.getLogger("ibis.smartsockets.virtual.clustering");
+    protected static final Logger logger;         
         
+    static {
+        ibis.util.Log.initLog4J("ibis.smartsockets");
+        logger = Logger.getLogger("ibis.smartsockets.virtual.clustering"); 
+    }
+    
+    
     private static class ClusterDefinition {         
         final String name;        
         final ConnectModule [] order;

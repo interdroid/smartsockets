@@ -31,7 +31,7 @@ class Sender extends Thread {
         
         //System.out.println("Sending data!");
         
-        long time = System.currentTimeMillis();           
+       // long time = System.currentTimeMillis();           
         
         int count = 0; 
         int block = d.getBlock();
@@ -57,7 +57,7 @@ class Sender extends Thread {
             System.out.println("Failed to write data!" + e); 
         }   
         
-        time = System.currentTimeMillis() - time;
+        // time = System.currentTimeMillis() - time;
 
         // TODO: do something with stats!
     }

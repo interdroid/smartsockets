@@ -229,7 +229,7 @@ public class VirtualSocketAddress extends SocketAddress implements Serializable 
              System.arraycopy(c, 0, codedForm, off, c.length);
         }
         
-        return codedForm;
+        return codedForm.clone();
     }
 
     
@@ -285,21 +285,21 @@ public class VirtualSocketAddress extends SocketAddress implements Serializable 
         DirectSocketAddress machine = DirectSocketAddress.fromBytes(source, off);        
         off += mlen;
         
-        int port = TransferUtils.readInt(source, offset+6+mlen);
+        int port = TransferUtils.readInt(source, off);
         off += 4;
                 
         DirectSocketAddress hub = null;
         
         if (hlen > 0) { 
-            hub = DirectSocketAddress.fromBytes(source, offset+6+mlen+4);
+            hub = DirectSocketAddress.fromBytes(source, off);
             off += hlen;            
         }
         
         String cluster = null;
         
         if (clen > 0) { 
-            cluster = new String(source, offset+6+mlen+4+hlen, clen);
-            off += clen;
+            cluster = new String(source, off, clen);
+            // off += clen;
         }
         
         return new VirtualSocketAddress(machine, port, hub, cluster);

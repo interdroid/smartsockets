@@ -198,10 +198,9 @@ public class NetworkPreference {
                 
                 byte [] ab = a.getAddress();
                 byte [] sub = new byte[ab.length];
-                byte [] mask = null; 
                 
                 try { 
-                    mask = NetworkUtils.getNetmask(a);
+                    byte [] mask = NetworkUtils.getNetmask(a);
                     
                     for (int b=0;b<sub.length;b++) {
                         sub[b] = (byte) (ab[b] & mask[b]);                    
@@ -216,7 +215,7 @@ public class NetworkPreference {
                                 + ", usin predefined value instead!");
                     }                
                 
-                    mask = new byte[ab.length];
+                    byte [] mask = new byte[ab.length];
                 
                     if (NetworkUtils.getSubnetMask(ab, sub, mask)) {
                         target.addNetwork(new Network(sub, mask));

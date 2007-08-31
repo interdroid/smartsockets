@@ -62,9 +62,7 @@ class Receiver extends Thread {
             
             opcode.clear();
         } catch (Exception e) {
-            System.err.println("Failed to read opcode! " + e);
-            e.printStackTrace();
-            System.exit(1);
+            throw new Error("Failed to read opcode! " + e);
         }
             
         //System.out.println("Read opcode "  + block);
@@ -103,9 +101,7 @@ class Receiver extends Thread {
                 }   
             } while (block >= 0);
         } catch (Exception e) { 
-            System.out.println("Failed to read data!" + e);
-            e.printStackTrace();
-            System.exit(1);
+            throw new Error("Failed to read data!", e);
         }
 
         // TODO: do something with stats ?

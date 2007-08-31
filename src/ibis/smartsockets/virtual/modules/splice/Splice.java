@@ -93,7 +93,7 @@ public class Splice extends AbstractDirectModule {
     private synchronized DirectSocketAddress getHubToTest() {
         
         // TODO: Remember which hub we have tried already ? 
-        if (hubsToTest.size() == 0) {
+        if (hubsToTest != null && hubsToTest.size() == 0) {
             
             try { 
                 DirectSocketAddress [] tmp = serviceLink.hubs();            
@@ -235,7 +235,7 @@ public class Splice extends AbstractDirectModule {
     private DirectSocketAddress [] getTargetRange(boolean behindNAT,  
             DirectSocketAddress realTarget) throws UnknownHostException { 
         
-        DirectSocketAddress [] a = null;
+        DirectSocketAddress [] a;
         
         if (!behindNAT) { 
             // the machine is likely to be behind a firewall, so no port range 
@@ -513,7 +513,7 @@ public class Splice extends AbstractDirectModule {
                                 localPort, -1, -1, null, false, userdata);
                     } catch (IOException e) {
                         logger.info(module + ": Connection failed " 
-                                + target.toString(), e);
+                                + Arrays.deepToString(target), e);
                         cause = e;
                     }           
                 }    
@@ -587,7 +587,7 @@ public class Splice extends AbstractDirectModule {
             r.otherBehindNAT = (message[4][0] == 1);
         } catch (Exception e) {
             logger.warn(module + ": failed to parse connect message " + src 
-                    + "@" + srcHub + "\"" +  message + "\"", e);
+                    + "@" + srcHub + "\"" +  Arrays.deepToString(message) + "\"", e);
             return;
         }
 
@@ -609,7 +609,7 @@ public class Splice extends AbstractDirectModule {
             return;
         }
         
-        storeReply(new Integer(toInt(message[0])), message);
+        storeReply(Integer.valueOf(toInt(message[0])), message);
     }
     
     public void gotMessage(DirectSocketAddress src, DirectSocketAddress srcHub, 
@@ -617,7 +617,7 @@ public class Splice extends AbstractDirectModule {
 
         if (logger.isInfoEnabled()) {
             logger.info(module + ": got message " + src + "@" + srcHub + " " 
-                    + opcode + " \"" +  message + "\"");
+                    + opcode + " \"" +  Arrays.deepToString(message) + "\"");
         }
         
         if (returnToSender) { 
@@ -638,7 +638,8 @@ public class Splice extends AbstractDirectModule {
             
         default:
             logger.warn(module + ": ignoring message " + src + "@" + srcHub 
-                    + " " + opcode + "\"" +  message + "\"");
+                    + " " + opcode + "\"" +  Arrays.deepToString(message)
+                    + "\"");
         }
     }
 

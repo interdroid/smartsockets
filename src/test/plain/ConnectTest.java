@@ -3,6 +3,7 @@ package test.plain;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.NoRouteToHostException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -16,6 +17,10 @@ public class ConnectTest {
         int targets = args.length;
         int repeat = REPEAT;        
         int count = COUNT;
+        
+        int sport = 0;         
+        int cport = 0;
+        int delay = 0;
         
         boolean pingpong = false;
         
@@ -38,6 +43,27 @@ public class ConnectTest {
                 pingpong = true;
                 args[i] = null;
                 targets--;
+            
+            } else if (args[i].equals("-serverport")) {                
+                sport = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
+                
+            } else if (args[i].equals("-clientport")) {                
+                cport = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
+                
+            } else if (args[i].equals("-delay")) {                
+                delay = Integer.parseInt(args[i+1]);
+                args[i+1] = null;
+                args[i] = null;
+                targets -= 2;
+                i++;
             }
         }
         
@@ -61,6 +87,8 @@ public class ConnectTest {
                     }
                     
                     System.out.println("Creating connection to " + a);
+
+                    int backoff = 100;
                     
                     for (int r = 0; r < repeat; r++) {
                     
@@ -68,8 +96,32 @@ public class ConnectTest {
                     
                         for (int c = 0; c < count; c++) {
                             Socket s = new Socket();
-                            s.setReuseAddress(true);
-                            s.connect(a);
+                            
+                            if (cport > 0) { 
+                                s.setReuseAddress(true);                            
+                                s.bind(new InetSocketAddress(cport));
+                            }
+                        
+                            try { 
+                                s.connect(a);
+                                
+                                backoff = 100;
+                            } catch (NoRouteToHostException e) {
+                                
+                                System.err.println("Connect failed: " + e.getMessage());                                
+
+                                if (e.getMessage().trim().equals("Cannot assign requested address")) { 
+                                    
+                                    System.err.println("Sleep: " + backoff);
+                                    
+                                    try {                                        
+                                        Thread.sleep(backoff);
+                                        backoff *= 2;                                        
+                                    } catch (Exception x) { 
+                                        // ignore;
+                                    }
+                                }
+                            }
                             
                             if (pingpong) { 
                                 s.setTcpNoDelay(true);
@@ -87,6 +139,14 @@ public class ConnectTest {
                             }
                             
                             s.close();
+                            
+                            if (delay > 0) { 
+                                try { 
+                                    Thread.sleep(delay);
+                                } catch (Exception x) { 
+                                    // ignore;
+                                }
+                            }                            
                         }
                      
                         time = System.currentTimeMillis() - time;
@@ -101,8 +161,15 @@ public class ConnectTest {
 
                 System.out.println("Creating server socket");
 
-                ServerSocket ss = new ServerSocket(0, 100);
-
+                ServerSocket ss = new ServerSocket();
+                ss.setReuseAddress(true);
+                
+                if (sport == 0) { 
+                    sport = 50123;
+                }
+                
+                ss.bind(new InetSocketAddress(sport), 100);
+                
                 System.out.println("Created server on " + ss.toString());
 
                 while (true) {
@@ -127,7 +194,7 @@ public class ConnectTest {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("EEK!");
             e.printStackTrace(System.err);
         }

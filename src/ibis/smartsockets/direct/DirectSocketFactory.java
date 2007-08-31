@@ -46,7 +46,12 @@ import ch.ethz.ssh2.LocalStreamForwarder;
  */
 public class DirectSocketFactory {
 
-    protected static Logger logger = Logger.getLogger("ibis.smartsockets.direct");
+    protected static final Logger logger;
+    
+    static {
+        ibis.util.Log.initLog4J("ibis.smartsockets");
+        logger = Logger.getLogger("ibis.smartsockets.direct");
+    }
     
     private static DirectSocketFactory defaultFactory; 
 
@@ -69,6 +74,8 @@ public class DirectSocketFactory {
     // User for SSH tunneling
     private final String user;
     private final char [] privateKey;
+
+    private final boolean haveFirewallRules;
     
     private IPAddressSet localAddress;
     private IPAddressSet externalAddress;  
@@ -92,9 +99,7 @@ public class DirectSocketFactory {
     private Preference publicFirst;
     
     private String keyFilePass = "";
-
-    private boolean haveFirewallRules;
-
+    
     private DirectSocketFactory(TypedProperties p) {
         
         //properties = p;
@@ -173,13 +178,15 @@ public class DirectSocketFactory {
         
         if (logger.isInfoEnabled()) {
             logger.info("Local address: " + completeAddress);
-            logger.info("Local network: " + 
-                 (preference == null ? "<none>" : preference.getNetworkName()));
+            logger.info("Local network: " + preference.getNetworkName());
         }
         
         altCompleteAddressInBytes = toBytes(5, completeAddress, 
-                preference == null ? null : preference.getNetworkName());
+                preference.getNetworkName());
          
+        
+        haveFirewallRules = preference.haveFirewallRules();
+        
         getNATAddress();
     }
 
@@ -223,11 +230,13 @@ public class DirectSocketFactory {
     }
     
     private char [] readKeyFile(File keyFile) { 
- 
+        
+        FileReader fr = null;
+        
         try {
             char [] result = new char[(int) keyFile.length()];
 
-            FileReader fr = new FileReader(keyFile);
+            fr = new FileReader(keyFile);
 
             int read = fr.read(result);
 
@@ -255,6 +264,15 @@ public class DirectSocketFactory {
             }
             
             return null;
+        
+        } finally { 
+        
+            try { 
+                fr.close();
+            } catch (Exception e) {
+                // ignored
+            }
+            
         }
     }
     
@@ -1330,7 +1348,7 @@ public class DirectSocketFactory {
                         + timeleft + ")");
             }                    
             
-        } while (result == null && fillTimeout);
+        } while (fillTimeout);
         
         throw new ConnectException("Connection setup failed");
     }

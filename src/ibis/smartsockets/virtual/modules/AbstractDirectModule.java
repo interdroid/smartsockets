@@ -71,7 +71,7 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
             if (vss == null) { 
                 out.write(PORT_NOT_FOUND);
                 out.flush();                
-                DirectSocketFactory.close(ds, out, in);
+                DirectSocketFactory.close(ds, out, null);
                 
                 rejectedIncomingConnections++;
                 

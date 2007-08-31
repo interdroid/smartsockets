@@ -1,6 +1,7 @@
 package ibis.smartsockets.util.net;
 
 import java.net.InetAddress;
+import java.util.Arrays;
 
 public class NetworkInfo {
 
@@ -17,7 +18,10 @@ public class NetworkInfo {
     }
     
     public String toString() { 
-        return "MAC = " + mac + " IPv4 = " + ipv4 + " Mask = " + netmask 
-            + " Broadcast = " + broadcast + " IPv6 = " + ipv6; 
+        return "MAC = " + Arrays.toString(mac) 
+            + " IPv4 = " + ipv4 
+            + " Mask = " + Arrays.toString(netmask)  
+            + " Broadcast = " + Arrays.toString(broadcast) 
+            + " IPv6 = " + ipv6; 
     }
 }

@@ -1,7 +1,7 @@
-package ibis.smartsockets;
+package ibis.smartsockets.plugin;
 
 import ibis.smartsockets.virtual.InitializationException;
-import ibis.smartsockets.virtual.VirtualSocketFactory;
+//import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
@@ -12,20 +12,20 @@ import java.util.Map;
 
 public class SmartSocketImplFactory implements SocketImplFactory {
     
-    private VirtualSocketFactory factory;
+   //  private VirtualSocketFactory factory;
     
     public SmartSocketImplFactory() throws InitializationException {   
-        factory = VirtualSocketFactory.createSocketFactory();
+        // factory = VirtualSocketFactory.createSocketFactory();
     }
     
     public SmartSocketImplFactory(Map properties, boolean addDefaults) 
         throws InitializationException {   
-        factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
+      //   factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
     }
     
     public SmartSocketImplFactory(java.util.Properties properties, 
             boolean addDefaults) throws InitializationException {
-        factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
+        // factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
     }
     
     public SocketImpl createSocketImpl() {

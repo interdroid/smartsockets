@@ -12,6 +12,9 @@ import ch.ethz.ssh2.LocalStreamForwarder;
 
 public class Simple {
 
+    private static String filename = "/home/jason/.ssh/id_rsa";
+    // or "~/.ssh/id_dsa"
+    
     /**
      * @param args
      */
@@ -68,7 +71,7 @@ public class Simple {
             conn.connect();
 
             // TODO: quick hack.... fix this!!
-            File keyfile = new File("/home/jason/.ssh/id_rsa"); // or "~/.ssh/id_dsa"
+            File keyfile = new File(filename); 
             String keyfilePass = "joespass"; // will be ignored if not needed
 
             boolean isAuthenticated = conn.authenticateWithPublicKey(user, 

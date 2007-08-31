@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 
-public class MultiplexStreamFactory {
+public final class MultiplexStreamFactory {
 
     private final static int ACK   = 42;
     private final static int DATA  = 43;
@@ -126,10 +126,10 @@ public class MultiplexStreamFactory {
         this.out = out;
         this.bufferSize = bufferSize;
         
-        outputs.put(new Integer(0), new MultiplexOutputStream(this, out, 
+        outputs.put(Integer.valueOf(0), new MultiplexOutputStream(this, out, 
                 0, bufferSize, DEFAULT_CREDITS));
 
-        inputs.put(new Integer(0), new MultiplexInputStream(this, 0));
+        inputs.put(Integer.valueOf(0), new MultiplexInputStream(this, 0));
         
         reader = new InputReader();
         reader.start();
@@ -139,13 +139,13 @@ public class MultiplexStreamFactory {
     
     private final MultiplexInputStream findInput(int target) {
         synchronized (inputs) {
-            return inputs.get(new Integer(target));
+            return inputs.get(Integer.valueOf(target));
         }
     }
     
     private final MultiplexOutputStream findOutput(int target) {
         synchronized (outputs) {
-            return outputs.get(new Integer(target));
+            return outputs.get(Integer.valueOf(target));
         }
     }
         
@@ -238,13 +238,13 @@ public class MultiplexStreamFactory {
         
     final void deleteOutputStream(int number) {        
         synchronized (outputs) {
-            outputs.remove(new Integer(number));
+            outputs.remove(Integer.valueOf(number));
         }   
     }
     
     final void deleteInputStream(int number) {
         synchronized (inputs) {
-            inputs.remove(new Integer(number));
+            inputs.remove(Integer.valueOf(number));
         }
     }
         
@@ -270,7 +270,7 @@ public class MultiplexStreamFactory {
                 new MultiplexOutputStream(this, out, number, bufferSize, 
                         DEFAULT_CREDITS);
             
-            outputs.put(new Integer(number), mos);
+            outputs.put(Integer.valueOf(number), mos);
             return mos;
         }        
     }
@@ -278,7 +278,7 @@ public class MultiplexStreamFactory {
     public MultiplexInputStream createInputStream(int number) {
         synchronized (inputs) {
             MultiplexInputStream mis = new MultiplexInputStream(this, number);            
-            inputs.put(new Integer(number), mis);
+            inputs.put(Integer.valueOf(number), mis);
             return mis;
         }
     }    

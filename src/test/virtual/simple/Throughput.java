@@ -48,14 +48,14 @@ public class Throughput {
 
             connectProperties.put("direct.detailed.timing", detailedDirect);
             connectProperties.put("virtual.detailed.timing", detailedVirtual);
-            
+
             VirtualSocket s = sf.createClientSocket(target, TIMEOUT, 
                     connectProperties);
-            
+
             System.out.println("Created connection to " + target);
-                                              
+
             configure(s);
-                        
+
             DataInputStream in = new DataInputStream(s.getInputStream());
             DataOutputStream out = new DataOutputStream(s.getOutputStream());
 
@@ -63,27 +63,27 @@ public class Throughput {
             out.writeInt(count);
             out.writeInt(repeat);
             out.flush();                
-            
+
             byte [] data = new byte[size];
-            
+
             System.out.println("Starting test");
-                                    
+
             for (int r=0;r<repeat;r++) {
-                
+
                 long time = System.currentTimeMillis();           
-                                
+
                 for (int i=0;i<count;i++) {
                     out.write(data);
                     out.flush();
                 }
-                
+
                 in.read();
-            
+
                 time = System.currentTimeMillis() - time;
-            
+
                 double tp = (1000.0 * size * count) / (1024.0*1024.0*time);  
                 double mbit = (8000.0 * size * count) / (1024.0*1024.0*time);  
-                   
+
                 if (mbit > 1000) { 
                     mbit = mbit / 1024.0;
                     System.out.printf("Test took %d ms. Througput = %4.1f " +
@@ -100,10 +100,10 @@ public class Throughput {
                 Arrays.fill(detailedVirtual, 0);
 
             }
-            
+
             VirtualSocketFactory.close(s, out, in);
-            
-                    } catch (Exception e) {
+
+        } catch (IOException e) {
             System.out.println("Failed to create connection to " + target); 
         }
     }

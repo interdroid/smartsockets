@@ -49,7 +49,7 @@ public class SimpleCallback implements Callback {
             return !quitAfterMessage;                    
         } else {
             if (logger.isInfoEnabled()) {
-                logger.info("Discarding message: \"" + message + "\"");
+                logger.info("Discarding message: <null>");
             }
             return true;
         }

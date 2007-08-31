@@ -78,7 +78,7 @@ public class Latency {
             }
             
             VirtualSocketFactory.close(s, out, in);
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("Failed to create connection to " + target); 
         }
     }
@@ -122,7 +122,7 @@ public class Latency {
                 System.out.println("done!"); 
                 
                 VirtualSocketFactory.close(s, out, in);
-            } catch (Exception e) {
+            } catch (IOException e) {
                 System.out.println("Server got exception " + e); 
             }
         }

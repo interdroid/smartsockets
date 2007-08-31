@@ -1,10 +1,13 @@
 package ibis.smartsockets.util;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Comparator;
  
-public class AddressSorter implements Comparator<InetAddress> {
+public class AddressSorter implements Serializable, Comparator<InetAddress> {
     
+    private static final long serialVersionUID = -2003381888113229585L;
+
     /** 
      * Orders two addresses based on their length. If both addresses have 
      * the same length, the addresses are ordered based on comparing their raw 

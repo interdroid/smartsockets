@@ -1,10 +1,11 @@
 package test.plain;
 
-import ibis.smartsockets.SmartServerSocketFactory;
-import ibis.smartsockets.SmartSocketAddress;
-import ibis.smartsockets.SmartSocketFactory;
+import ibis.smartsockets.plugin.SmartServerSocketFactory;
+import ibis.smartsockets.plugin.SmartSocketAddress;
+import ibis.smartsockets.plugin.SmartSocketFactory;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -42,6 +43,9 @@ public class SocketTest {
         }
 
         if (type.equalsIgnoreCase("SSL")) { 
+
+            FileInputStream f = null;
+            
             try {
                 // set up key manager to do server authentication
                 char[] passphrase = "passphrase".toCharArray();
@@ -50,23 +54,25 @@ public class SocketTest {
                 KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
                 KeyStore ks = KeyStore.getInstance("JKS");
 
-                ks.load(new FileInputStream("testkeys"), passphrase);
+                f = new FileInputStream("testkeys");
+                
+                ks.load(f, passphrase);
                 kmf.init(ks, passphrase);
                 ctx.init(kmf.getKeyManagers(), null, null);
 
                 return ctx.getServerSocketFactory();
             } catch (Exception e) {
-                System.err.println("Failed to create SSLServerSocketFactory");
-                e.printStackTrace(System.err);
-                System.exit(1);
+                throw new Error("Failed to create SSLServerSocketFactory", e);
+            } finally { 
+                try { 
+                    f.close();
+                } catch (Exception e) {
+                    // ignore
+                }
             }
         }            
        
-        System.err.println("Unknown ServerSocketFactory type: " + type);
-        System.exit(1);
-
-        // Stupid compiler;-)
-        return null;
+        throw new Error("Unknown ServerSocketFactory type: " + type);
     }
     
     private static SocketFactory createSocketFactory(String type) { 
@@ -103,9 +109,7 @@ public class SocketTest {
                 
                 return SSLSocketFactory.getDefault();
             } catch (Exception e) {
-                System.err.println("Failed to create SSLSocketFactory");
-                e.printStackTrace(System.err);
-                System.exit(1);
+                throw new Error("Failed to create SSLSocketFactory", e);
             }
         }            
         
@@ -223,7 +227,7 @@ public class SocketTest {
                                 
                                 s.close();
                                 s = null;
-                            } catch (Exception e) {
+                            } catch (IOException e) {
                                 System.err.println("" + e);
                                 failed++;                                
                             }
@@ -267,7 +271,7 @@ public class SocketTest {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("EEK!");
             e.printStackTrace(System.err);
         }

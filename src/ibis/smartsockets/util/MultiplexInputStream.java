@@ -28,7 +28,7 @@ public class MultiplexInputStream extends InputStream {
         this.stream = stream;
     }
     
-    public void setTimeout(int timeout) { 
+    public synchronized void setTimeout(int timeout) { 
         this.timeout = timeout;
     }
     

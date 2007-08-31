@@ -143,7 +143,7 @@ public class IPAddressSet implements Serializable {
             }
         }
         
-        return codedForm;
+        return codedForm.clone();
     }
         
     /**
@@ -152,7 +152,7 @@ public class IPAddressSet implements Serializable {
      * @return array of InetAddresses.
      */
     public InetAddress [] getAddresses() { 
-        return addresses;
+        return addresses.clone();
     }
         
     /**
@@ -342,7 +342,7 @@ public class IPAddressSet implements Serializable {
     public static IPAddressSet getByAddress(byte [] bytes, int off, int len) 
         throws UnknownHostException {  
   
-        InetAddress [] addresses = null;
+        InetAddress [] addresses;
         byte [] uuid = null;
                 
         if (len == LENGTH_IPv4 || len == LENGTH_IPv6) {
@@ -421,7 +421,7 @@ public class IPAddressSet implements Serializable {
         byte [] uuid = null;
         
         if (hasUUID) { 
-            uuid = NetworkUtils.StringToUUID(st.nextToken());
+            uuid = NetworkUtils.stringToUUID(st.nextToken());
         }
         
         return new IPAddressSet(sort(addresses), uuid);

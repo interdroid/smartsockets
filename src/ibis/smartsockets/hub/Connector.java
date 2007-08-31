@@ -106,7 +106,7 @@ class Connector extends CommunicationThread {
             
             d.setReachable();
            
-        } catch (Exception e) {
+        } catch (IOException e) {
             
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.info("Failed to set up connection!");
@@ -220,13 +220,15 @@ class Connector extends CommunicationThread {
             }
         
             d.setReachable();       
-        } catch (Exception e) {
+        } catch (IOException e) {
             // This happens a lot, so it's not worth a warning...
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.debug("Got exception!", e);
             }
             
             d.setUnreachable();
+            
+            DirectSocketFactory.close(s, out, in);
        }
         
         if (result) {

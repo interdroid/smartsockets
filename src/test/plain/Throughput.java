@@ -259,7 +259,7 @@ public class Throughput {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("EEK!");
             e.printStackTrace(System.err);
         }

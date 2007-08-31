@@ -1,7 +1,5 @@
 package ibis.smartsockets.direct;
 
-import ibis.smartsockets.virtual.NoSuitableModuleException;
-
 import java.io.IOException;
 import java.util.LinkedList;
 
@@ -27,8 +25,8 @@ public class NestedIOException extends IOException {
             Throwable [] causes) { 
 
         super(message);
-        this.names = names;
-        this.causes = causes;
+        this.names = names.clone();
+        this.causes = causes.clone();
         this.exceptions = null;
     }    
 

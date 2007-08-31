@@ -13,6 +13,7 @@ import ibis.smartsockets.hub.servicelink.ServiceLink;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.LinkedList;
 
 
@@ -46,8 +47,7 @@ public class TestServiceLink implements CallBack {
         }
         
         if (serviceLink == null) { 
-            System.err.println("Failed to connect ot any proxy!UnknownHostException");
-            System.exit(1);
+            throw new Error("Failed to connect to any proxy!");
         }
         
         serviceLink.register("TEST", this);
@@ -57,7 +57,7 @@ public class TestServiceLink implements CallBack {
             int opcode, boolean returnToSender, byte [][] message) {
     
         System.out.println("Got message from: " + src + "@" + srcProxy 
-                + "\n   [" + opcode + "] - " + message);            
+                + "\n   [" + opcode + "] - " + Arrays.deepToString(message));            
         
         if (!interactive) {
             // bounce the message back to the sender.
@@ -67,7 +67,7 @@ public class TestServiceLink implements CallBack {
     
     private void send(String line) { 
         
-        if (line == null && line.length() == 0) {
+        if (line == null || line.length() == 0) {
             System.out.println("Nothing to send!");
             return;
         } 
@@ -170,24 +170,30 @@ public class TestServiceLink implements CallBack {
                 System.out.print("> ");
                 System.out.flush(); 
                 
-                String line = clin.readLine().trim();
+                String line = clin.readLine();
                 
-                if (line.length() == 0) { 
-                    // ignore empty lines....
-                } else if (line.startsWith("help")) {
-                    usage();
-                } else if (line.startsWith("send ")) {
-                    send(line.substring(5).trim());
-                } else if (line.startsWith("proxies")) {
-                    proxies();
-                } else if (line.startsWith("clients")) {
-                    allClients();                
-                } else if (line.startsWith("local clients")) {
-                    localClients();                                
-                } else if (line.startsWith("exit")) {                    
+                if (line != null) { 
+                    line = line.trim();
+                
+                    if (line.length() == 0) { 
+                        // ignore empty lines....
+                    } else if (line.startsWith("help")) {
+                        usage();
+                    } else if (line.startsWith("send ")) {
+                        send(line.substring(5).trim());
+                    } else if (line.startsWith("proxies")) {
+                        proxies();
+                    } else if (line.startsWith("clients")) {
+                        allClients();                
+                    } else if (line.startsWith("local clients")) {
+                        localClients();                                
+                    } else if (line.startsWith("exit")) {                    
+                        done = true;
+                    } else {
+                        System.out.println("Unknown command, try help");
+                    }
+                } else { 
                     done = true;
-                } else {
-                    System.out.println("Unknown command, try help");
                 }
             }
         } catch (Exception e) {

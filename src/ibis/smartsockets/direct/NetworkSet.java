@@ -22,13 +22,13 @@ public class NetworkSet {
         this.name = name;
         
         if (include != null && include.length > 0) {
-            this.include = include;
+            this.include = include.clone();
         } else { 
             this.include = null;
         }
         
         if (exclude != null && exclude.length > 0) { 
-            this.exclude = exclude;
+            this.exclude = exclude.clone();
         } else { 
             this.exclude = null;
         }

@@ -34,7 +34,7 @@ import com.touchgraph.graphlayout.TGException;
  * @author   Alexander Shapiro
  * @version  1.22-jre1.1  $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch Exp $
  */
-public class SmartsocketsViz extends GLPanel implements Runnable {
+public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     private static final long serialVersionUID = -3629362794531051537L;
 
@@ -63,9 +63,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
             sl = ServiceLink.getServiceLink(null, hub, ss.getAddressSet());
             sl.registerProperty("visualization", "");                        
         } catch (Exception e) {
-            System.err.println("Failed to connect to Hub: " + e);
-            e.printStackTrace(System.err);
-            System.exit(1);
+            throw new Error("Failed to connect to Hub: ", e);
         }
 
         new Thread(this).start();
@@ -223,7 +221,7 @@ public class SmartsocketsViz extends GLPanel implements Runnable {
 
             try {
                 Thread.sleep(5000);
-            } catch (Exception e) {
+            } catch (InterruptedException e) {
                 // ignore
             }
         }

@@ -25,7 +25,7 @@ public class RouterClientNode extends ClientNode {
     private HashMap<String, ConnectionInfo> oldCons = 
         new HashMap<String, ConnectionInfo>();
         
-    private class ConnectionInfo {        
+    private static class ConnectionInfo {        
         String id;         
         
         DirectSocketAddress from;
@@ -41,6 +41,14 @@ public class RouterClientNode extends ClientNode {
             this.to = to;
             this.id = id;
             this.tp = tp;
+        }        
+        
+        String getID() {
+            return id; 
+        }
+        
+        long getTP() { 
+            return tp;
         }        
     }
             

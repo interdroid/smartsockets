@@ -8,7 +8,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -24,7 +23,7 @@ import org.apache.log4j.Logger;
  */
 public class NetworkUtils {
 
-    protected static Logger logger;
+    protected static final Logger logger;
     
     static {
         ibis.util.Log.initLog4J("ibis.smartsockets");
@@ -472,7 +471,7 @@ public class NetworkUtils {
      * @return the byte array representation of the UUID.
      */            
     
-    public static byte [] StringToUUID(String UUID) { 
+    public static byte [] stringToUUID(String UUID) { 
         return stringToBytes(UUID, true, '.');
     }
     
@@ -640,11 +639,9 @@ public class NetworkUtils {
 
     public static byte [] getAnyMACAddress(InetAddress [] ips) {
         
-        byte [] mac = null;
-        
         for (InetAddress ip : ips) {
             try { 
-                mac = NativeNetworkConfig.getMACAddress(ip);
+                byte [] mac = NativeNetworkConfig.getMACAddress(ip);
 
                 if (mac != null) { 
                     return mac;

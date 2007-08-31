@@ -571,7 +571,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 out.write(MessageForwarderProtocol.CLOSE_VIRTUAL);           
                 out.writeLong(index);            
                 out.flush();
-            }
+            }            
         } catch (Exception e) {
             handleDisconnect(e);
         }

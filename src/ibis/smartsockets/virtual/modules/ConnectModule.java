@@ -10,6 +10,7 @@ import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.VirtualSocketFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -120,7 +121,7 @@ public abstract class ConnectModule implements CallBack {
         // which requires use of service links         
         logger.warn("Module: "+ module + " got unexpected message from " + src 
                 + "@" + proxy + ", " + returnToSender + ", " + opcode 
-                + ", " + message);
+                + ", " + Arrays.deepToString(message));
     }
     
     // Checks if the string "target" is found in the string "csv". The string 

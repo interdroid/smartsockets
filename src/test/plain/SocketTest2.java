@@ -1,8 +1,9 @@
 package test.plain;
 
-import ibis.smartsockets.SmartSocketAddress;
-import ibis.smartsockets.SmartSocketImplFactory;
+import ibis.smartsockets.plugin.SmartSocketAddress;
+import ibis.smartsockets.plugin.SmartSocketImplFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
@@ -34,9 +35,7 @@ public class SocketTest2 {
                 Socket.setSocketImplFactory(f);
                 ServerSocket.setSocketFactory(f);
             } catch (Exception e) {
-                System.err.println("Failed to install SocketFactory type: " + type);
-                e.printStackTrace(System.err);
-                System.exit(1);
+                throw new Error("Failed to install SocketFactory type: " + type, e);
             }
             return;
         }
@@ -146,7 +145,7 @@ public class SocketTest2 {
                                 
                                 s.close();
                                 s = null;
-                            } catch (Exception e) {
+                            } catch (IOException e) {
                                 System.err.println("" + e);
                                 failed++;                                
                             }
@@ -190,7 +189,7 @@ public class SocketTest2 {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("EEK!");
             e.printStackTrace(System.err);
         }

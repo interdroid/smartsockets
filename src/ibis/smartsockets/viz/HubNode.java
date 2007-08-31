@@ -188,18 +188,20 @@ public class HubNode extends Node {
             }
         }
         
-        // delete clients
-        if (clients.size() > 0) { 
-            Iterator itt = clients.values().iterator();
+        synchronized (this) {
+            // delete clients
+            if (clients.size() > 0) { 
+                Iterator itt = clients.values().iterator();
 
-            while (itt.hasNext()) {
-                ClientNode n = (ClientNode) itt.next();
-                
-                if (n.getEdge() != null) {                 
-                    parent.deleteEdge(n.getEdge());
-                } 
-                
-                parent.deleteNode(n);
+                while (itt.hasNext()) {
+                    ClientNode n = (ClientNode) itt.next();
+
+                    if (n.getEdge() != null) {                 
+                        parent.deleteEdge(n.getEdge());
+                    } 
+
+                    parent.deleteNode(n);
+                }
             }
         }
         
@@ -246,7 +248,7 @@ public class HubNode extends Node {
         }
     }    
     
-    public void getClients(HashMap<Object, ClientNode> target) {        
+    public synchronized void getClients(HashMap<Object, ClientNode> target) {        
         target.putAll(clients);        
     }   
 }

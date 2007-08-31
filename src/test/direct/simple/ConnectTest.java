@@ -5,6 +5,7 @@ import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -25,7 +26,6 @@ public class ConnectTest {
     public static void main(String[] args) {
 
         try {
-
             DirectSocketFactory sf = DirectSocketFactory.getSocketFactory();
 
             Random rand = new Random();
@@ -80,13 +80,15 @@ public class ConnectTest {
             }
 
             if (targetCount > 0) { 
-                DirectSocketAddress[] targets = new DirectSocketAddress[targetCount];
+                DirectSocketAddress[] targets 
+                    = new DirectSocketAddress[targetCount];
+                
                 int index = 0;
 
                 for (int i = 0; i < args.length; i++) {
                     if (args[i] != null) {
-                        targets[index++] = DirectSocketAddress
-                        .getByAddress(args[i]);
+                        targets[index++] 
+                                = DirectSocketAddress.getByAddress(args[i]);
                     }
                 }
 
@@ -97,6 +99,8 @@ public class ConnectTest {
                     prop.put("allowSSH", "true");
                 }
 
+                int total = 0;
+                
                 for (DirectSocketAddress t : targets) {
 
                     if (sleep) {
@@ -114,8 +118,8 @@ public class ConnectTest {
 
                         for (int c = 0; c < count; c++) {
 
-                            DirectSocket s = sf.createSocket(t, timeout, 0,
-                                    prop);
+                            DirectSocket s 
+                                = sf.createSocket(t, timeout, 0, prop);
 
                             if (pingpong) { 
                                 s.setTcpNoDelay(true);
@@ -137,9 +141,11 @@ public class ConnectTest {
 
                         time = System.currentTimeMillis() - time;
 
+                        total += count;
+                        
                         System.out.println(count + " connections in " + time
                                 + " ms. -> " + (((double) time) / count)
-                                + "ms/conn");
+                                + "ms/conn (total: " + total + ")");
                     }
                 }
             } else {
@@ -167,11 +173,12 @@ public class ConnectTest {
                         in.close();
                         out.close();
                     }
+                    
                     s.close();
                 }
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println("EEK!");
             e.printStackTrace(System.err);
         }

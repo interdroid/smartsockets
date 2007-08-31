@@ -160,7 +160,7 @@ public class SmartSocketsProperties {
 
     private static TypedProperties defaultProperties;
 
-    protected static Logger logger;
+    protected static final Logger logger;
     
     static {
         ibis.util.Log.initLog4J("ibis.smartsockets");

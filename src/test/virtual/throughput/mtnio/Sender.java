@@ -57,9 +57,7 @@ class Sender extends Thread {
                 written += channel.write(opcode);
             } 
         } catch (Exception e) {
-            System.out.println("Failed to write opcode!" + e); 
-            e.printStackTrace();
-            System.exit(1);
+            throw new Error("Failed to write opcode!", e); 
         }   
         
         opcode.clear();
@@ -69,7 +67,7 @@ class Sender extends Thread {
         
         //System.out.println("Sending data!");
         
-        long time = System.currentTimeMillis();           
+        // long time = System.currentTimeMillis();           
         
         int count = 0; 
         int block = d.getBlock();
@@ -90,9 +88,7 @@ class Sender extends Thread {
                 opcode.clear();
                 buffer.position(0);
             } catch (Exception e) {
-                System.out.println("Failed to write data!" + e); 
-                e.printStackTrace();
-                System.exit(1);
+                throw new Error("Failed to write data!", e); 
             }
             
             block = d.getBlock();
@@ -100,8 +96,8 @@ class Sender extends Thread {
       
         sendOpcode(-1);
         
-        time = System.currentTimeMillis() - time;
-
+        // time = System.currentTimeMillis() - time;
+        
         // TODO: do something with stats!
     }
     

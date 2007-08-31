@@ -21,6 +21,7 @@ import java.net.BindException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -89,9 +90,9 @@ public class VirtualSocketFactory {
 
     private static StatisticsPrinter printer = null;
 
-    protected static Logger logger;
+    protected static final Logger logger;
 
-    protected static Logger conlogger;
+    protected static final Logger conlogger;
 
     private static final Logger statslogger;
 
@@ -339,7 +340,8 @@ public class VirtualSocketFactory {
                 try {
                     hubs.add(DirectSocketAddress.getByAddress(a));
                 } catch (Exception e) {
-                    logger.warn("Failed to understand hub address: " + tmp, e);
+                    logger.warn("Failed to understand hub address: " 
+                            + Arrays.deepToString(tmp), e);
                 }
             }
         }
@@ -717,7 +719,7 @@ public class VirtualSocketFactory {
             if (out != null) {
                 out.close();
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // ignore
         }
 
@@ -725,7 +727,7 @@ public class VirtualSocketFactory {
             if (in != null) {
                 in.close();
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // ignore
         }
 
@@ -733,7 +735,7 @@ public class VirtualSocketFactory {
             if (s != null) {
                 s.close();
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // ignore
         }
     }
@@ -1348,7 +1350,7 @@ public class VirtualSocketFactory {
     
     protected void closed(int port) {
         synchronized (serverSockets) {
-            serverSockets.remove(new Integer(port));
+            serverSockets.remove(Integer.valueOf(port));
         }
     }
 

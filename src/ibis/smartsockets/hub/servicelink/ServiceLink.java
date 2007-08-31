@@ -15,6 +15,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -33,9 +34,11 @@ public class ServiceLink implements Runnable {
 
     private static final int DEFAULT_WAIT_TIME = 10000;
 
-    private final HashMap<String, Object> callbacks = new HashMap<String, Object>();
+    private final HashMap<String, Object> callbacks 
+        = new HashMap<String, Object>();
 
-    private final HashMap<Integer, Object> infoRequests = new HashMap<Integer, Object>();
+    private final HashMap<Integer, Object> infoRequests 
+        = new HashMap<Integer, Object>();
 
     private final DirectSocketFactory factory;
 
@@ -116,73 +119,91 @@ public class ServiceLink implements Runnable {
     public synchronized void registerVCCallBack(VirtualConnectionCallBack cb) {
         vcCallBack = cb;
     }
+    
+    public synchronized VirtualConnectionCallBack getVCCallBack() {
+        return vcCallBack;
+    }
+    
+    public void register(String identifier, CallBack callback) {
 
-    public synchronized void register(String identifier, CallBack callback) {
+        synchronized (callbacks) { 
+            if (callbacks.containsKey(identifier)) {
+                logger.warn("ServiceLink: refusing to override callback "
+                        + identifier, new Exception());
+                
+                return;
+            }
 
-        if (callbacks.containsKey(identifier)) {
-            logger.warn("ServiceLink: refusing to override callback "
-                    + identifier, new Exception());
-
-            return;
+            callbacks.put(identifier, callback);
         }
-
-        callbacks.put(identifier, callback);
     }
 
-    protected synchronized Object findCallback(String identifier) {
-        return callbacks.get(identifier);
-    }
-
-    protected synchronized void removeCallback(String identifier) {
-        callbacks.remove(identifier);
-    }
-
-    protected synchronized void registerInfoRequest(Integer identifier) {
-
-        if (callbacks.containsKey(identifier)) {
-            logger.warn("ServiceLink: refusing to override simple callback "
-                    + identifier, new Exception());
-
-            return;
+    protected Object findCallback(String identifier) {        
+        synchronized (callbacks) {         
+            return callbacks.get(identifier);
         }
-
-        infoRequests.put(identifier, null);
     }
 
-    protected synchronized void removeInfoRequest(Integer identifier) {
-        infoRequests.remove(identifier);
+    protected void removeCallback(String identifier) {
+        synchronized (callbacks) {
+            callbacks.remove(identifier);
+        }
     }
 
-    protected synchronized void storeInfoReply(Integer identifier, Object value) {
+    protected void registerInfoRequest(Integer identifier) {
 
-        if (infoRequests.containsKey(identifier)) {
-            infoRequests.put(identifier, value);
-            notifyAll();
-        } else {
-            if (logger.isInfoEnabled()) {
-                logger.info("Dropped info reply for: " + identifier + " ("
+        synchronized (infoRequests) {
+            if (infoRequests.containsKey(identifier)) {
+                logger.warn("ServiceLink: refusing to override simple callback "
+                        + identifier, new Exception());
+
+                return;
+            }
+
+            infoRequests.put(identifier, null);
+        }
+    }
+
+    protected void removeInfoRequest(Integer identifier) {
+        synchronized (infoRequests) {
+            infoRequests.remove(identifier);
+        }
+    }
+
+    protected void storeInfoReply(Integer identifier, Object value) {
+        synchronized (infoRequests) {
+            if (infoRequests.containsKey(identifier)) {
+                infoRequests.put(identifier, value);
+                infoRequests.notifyAll();
+            } else {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Dropped info reply for: " + identifier + " ("
                         + value + ")");
+                }
             }
         }
     }
 
-    protected synchronized Object getInfoReply(Integer identifier) {
+    protected Object getInfoReply(Integer identifier) {
 
-        Object result = infoRequests.get(identifier);
+        synchronized (infoRequests) {
 
-        while (result == null) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                // ignore
+            Object result = infoRequests.get(identifier);
+
+            while (result == null) {
+                try {
+                    infoRequests.wait();
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+
+                result = infoRequests.get(identifier);
             }
 
-            result = infoRequests.get(identifier);
+            infoRequests.remove(identifier);
+
+            return result;
         }
-
-        infoRequests.remove(identifier);
-
-        return result;
     }
 
     protected boolean getInfoReply(Integer identifier, int value) {
@@ -265,7 +286,8 @@ public class ServiceLink implements Runnable {
     private void connectToHub(DirectSocketAddress address) throws IOException {
         try {
             if (logger.isInfoEnabled()) {
-                logger.info("Service link attempting to connect to hub: " + address);
+                logger.info("Service link attempting to connect to hub: " 
+                        + address);
             }
             
             // Create a connection to the hub
@@ -424,7 +446,9 @@ public class ServiceLink implements Runnable {
                             + "from " + source + " (" + index + ")");
         }
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
                 logger.info("DENIED connection: " + index + ": no callback!");
@@ -436,8 +460,7 @@ public class ServiceLink implements Runnable {
 
         // Forward the connect call to the module responsible. This call will 
         // result in an invocation of (n)ackVirtualConnection. 
-        vcCallBack.connect(source, sourceHub, port, fragment, buffer, timeout,
-                index);
+        vcb.connect(source, sourceHub, port, fragment, buffer, timeout, index);
 
         // Connection is now pending in the backlog of a serversocket somewhere.
         // It may be accepted or rejected at any time.
@@ -455,7 +478,9 @@ public class ServiceLink implements Runnable {
 
         //      System.err.println("***** ACK IN " + index);
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot deliver ACK: " + index + ": no callback!");
@@ -471,7 +496,7 @@ public class ServiceLink implements Runnable {
                     + buffer + ")");
         }
 
-        vcCallBack.connectACK(index, fragment, buffer);
+        vcb.connectACK(index, fragment, buffer);
     }
 
     private void handleIncomingConnectionACKACK() throws IOException {
@@ -479,7 +504,9 @@ public class ServiceLink implements Runnable {
         long index = in.readLong();
         boolean succes = in.readBoolean();
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot deliver ACK ACK: " + index
@@ -498,7 +525,7 @@ public class ServiceLink implements Runnable {
             logger.info("Delivering ACK ACK: " + index);
         }
 
-        vcCallBack.connectACKACK(index, succes);
+        vcb.connectACKACK(index, succes);
     }
 
     private void handleIncomingConnectionNACK() throws IOException {
@@ -506,7 +533,9 @@ public class ServiceLink implements Runnable {
         long index = in.readLong();
         byte reason = in.readByte();
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot deliver NACK: " + index + ": no callback!");
@@ -520,7 +549,7 @@ public class ServiceLink implements Runnable {
             logger.info("Delivering NACK: " + index);
         }
 
-        vcCallBack.connectNACK(index, reason);
+        vcb.connectNACK(index, reason);
     }
 
     /*    
@@ -559,16 +588,17 @@ public class ServiceLink implements Runnable {
      }
      */
 
-    private synchronized void disconnectCallback(long index) {
+    private void disconnectCallback(long index) {
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
             logger.warn("Cannot forward disconnect(" + index
                     + "): no callback!");
             return;
         }
 
-        vcCallBack.disconnect(index);
-
+        vcb.disconnect(index);
     }
 
     /*
@@ -661,7 +691,9 @@ public class ServiceLink implements Runnable {
         incomingDataMessages++;
         incomingBytes += len;
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
             logger.warn("Received virtual message(" + len
                     + ") for connection: " + index + " which doesn't exist!!");
 
@@ -676,7 +708,7 @@ public class ServiceLink implements Runnable {
                     + " connection: " + index);
         }
 
-        if (!vcCallBack.gotMessage(index, len, in)) {
+        if (!vcb.gotMessage(index, len, in)) {
             if (logger.isInfoEnabled()) {
                 logger.debug("Message for " + index + " not read!");
             }
@@ -693,7 +725,9 @@ public class ServiceLink implements Runnable {
             logger.debug("Got Message ACK for connection: " + index);
         }
 
-        if (vcCallBack == null) {
+        VirtualConnectionCallBack vcb = getVCCallBack();
+        
+        if (vcb == null) {
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot delivering virtual message ACK for"
                         + " connection: " + index);
@@ -703,7 +737,7 @@ public class ServiceLink implements Runnable {
             return;
         }
 
-        vcCallBack.gotMessageACK(index, data);
+        vcb.gotMessageACK(index, data);
     }
 
     void receiveMessages() {
@@ -836,7 +870,7 @@ public class ServiceLink implements Runnable {
     public void send(DirectSocketAddress target, DirectSocketAddress targetHub,
             String targetModule, int opcode, byte[][] message) {
 
-        if (!connected) {
+        if (!getConnected()) {
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot send message: not connected to hub");
             }
@@ -845,7 +879,8 @@ public class ServiceLink implements Runnable {
 
         if (logger.isInfoEnabled()) {
             logger.info("Sending message to hub: [" + target.toString() + ", "
-                    + targetModule + ", " + opcode + ", " + message + "]");
+                    + targetModule + ", " + opcode + ", " 
+                    + Arrays.deepToString(message) + "]");
         }
 
         try {
@@ -1571,7 +1606,7 @@ public class ServiceLink implements Runnable {
                         }
                     }
                 
-                    if (!connected) { 
+                    if (!getConnected()) { 
                         try {
                             Thread.sleep(sleep);
                         } catch (InterruptedException ie) {
@@ -1594,7 +1629,7 @@ public class ServiceLink implements Runnable {
                 if (sleep < 16000) {
                     sleep *= 2;
                 }
-            } while (!connected);
+            } while (!getConnected());
 
             sleep = 1000;
             receiveMessages();

@@ -1,28 +1,31 @@
-package ibis.smartsockets;
+package ibis.smartsockets.plugin;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Constructor;
 import java.net.InetAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketImpl;
+
+/*
+import java.lang.reflect.Constructor;
+import java.net.Socket;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
+*/
 
 // INITIAL IMPLEMENTATION -- DO NOT USE!!
 
 public class SmartSocketImpl extends SocketImpl {
-
-    private Socket socket;
+   
+    //private Socket socket;
     
-    private SmartSocketImplFactory factory;
+    //private SmartSocketImplFactory factory;
     
     protected SmartSocketImpl(SmartSocketImplFactory factory) { 
-        this.factory = factory;
+        /* this.factory = factory;
         
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction() {
@@ -57,7 +60,7 @@ public class SmartSocketImpl extends SocketImpl {
             System.out.println("Oops!");
             e.printStackTrace();
         }
-        
+        */
     }
     
     @Override
@@ -152,5 +155,4 @@ public class SmartSocketImpl extends SocketImpl {
         // TODO Auto-generated method stub
 
     }
-
 }

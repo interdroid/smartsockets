@@ -4,7 +4,7 @@ public class TransferUtils {
 
     public static void storeShort(short v, byte [] target, int off) { 
         target[off++] = (byte)(0xff & (v >> 8));
-        target[off++] = (byte)(0xff & v);
+        target[off]   = (byte)(0xff & v);
     }    
     
     public static short readShort(byte [] source, int off) {         
@@ -15,7 +15,7 @@ public class TransferUtils {
         target[off++] = (byte)(0xff & (v >> 24));
         target[off++] = (byte)(0xff & (v >> 16));
         target[off++] = (byte)(0xff & (v >> 8));
-        target[off++] = (byte)(0xff & v);
+        target[off]   = (byte)(0xff & v);
     }
     
     

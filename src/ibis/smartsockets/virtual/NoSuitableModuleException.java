@@ -16,8 +16,8 @@ public class NoSuitableModuleException extends IOException {
             Throwable [] causes) { 
         
         super(message);
-        this.names = names;
-        this.causes = causes;
+        this.names = names.clone();
+        this.causes = causes.clone();
         this.exceptions = null;
     }    
     
