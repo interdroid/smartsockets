@@ -1132,11 +1132,11 @@ public class DirectSocketFactory {
         }
                 
         if (send > 0) {
-            s.setReceiveBufferSize(send);
+            s.setSendBufferSize(send);
         }
         
         if (receive > 0) {
-            s.setSendBufferSize(receive);
+            s.setReceiveBufferSize(receive);
         }
         
         s.setTcpNoDelay(true);
