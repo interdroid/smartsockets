@@ -252,14 +252,16 @@ public class SmartSocketsProperties {
             String file = system.getProperty(FILE, DEFAULT_FILE); 
 
             // If the file is not explicitly set to null, we try to load it.
+            // First try the filename as is, if this fails try with the
+            // user home directory prepended.
             if (file != null) {
-                String fn = System.getProperty("user.home")
-                    + System.getProperty("file.separator") + file;
-                TypedProperties fromFile = getPropertyFile(fn);
+                TypedProperties fromFile = getPropertyFile(file);
                 if (fromFile != null) {
                     defaultProperties.putAll(fromFile);
                 } else {
-                    fromFile = getPropertyFile(file);
+                    String homeFn = System.getProperty("user.home")
+                        + System.getProperty("file.separator") + file;
+                    fromFile = getPropertyFile(homeFn);
                     
                     if (fromFile == null) { 
                         if (!file.equals(DEFAULT_FILE)) { 
