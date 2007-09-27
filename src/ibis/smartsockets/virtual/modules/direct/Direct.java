@@ -237,9 +237,9 @@ public class Direct extends AbstractDirectModule {
                     target.port());
             
             // Next, we wrap the direct socket in a virtual socket and return it.
-            // Any exceptions thrown here are forwarded to the user. Note that the 
-            // connection setup is not complete yet, but the rest of it is in 
-            // generic code.
+            // Any exceptions thrown here are forwarded to the user. Note that  
+            // the connection setup is not complete yet, but the rest of it is  
+            // in generic code.
             return createVirtualSocket(target, s);  
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 

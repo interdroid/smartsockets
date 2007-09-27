@@ -1368,79 +1368,10 @@ public class DirectSocketFactory {
         if (timeout < 0) {
             timeout = DEFAULT_TIMEOUT;
         }
-/*
-        AddressIterator itt = preference.determineOrder(target);
-     
-        // TODO: count options here (after applying the preference!)
-        int options = itt.size();
-        
-        if (options == 1) { 
-            long time = System.currentTimeMillis();
-            
-            // only one option, so allow sleeping for ever...
-            DirectSocket result = attemptConnection(target, itt.next(), timeout,
-                    localPort, true);
-
-            time = System.currentTimeMillis() -time;
-            
-            if (logger.isInfoEnabled()) {              
-                logger.info("Connection setup took: "  + time + " ms.");                
-            }
-            
-            if (result != null) {
-                return result;
-            }
-
-            throw new ConnectException("Connection setup failed");
-        }
-        
-        int current = 0;
-        
-        while (true) { 
-        
-            while (itt.hasNext()) { 
-
-                long time = System.currentTimeMillis();
-
-                InetSocketAddress sa = itt.next();
-
-                int partialTimeout;
-
-                if (sa.getAddress().isLinkLocalAddress() && timeout > 2000) { 
-                    partialTimeout = 2000;
-                } else { 
-                    partialTimeout = timeout / (options-current);
-                }
-
-                DirectSocket result = attemptConnection(target, sa, partialTimeout,
-                        localPort, false);
-
-                time = System.currentTimeMillis() - time;
-
-                if (result != null) {
-                    if (logger.isInfoEnabled()) {      
-                        logger.info("Direct connection setup took: "  + time + " ms.");
-                    }
-                    return result;
-                }
-
-                if (logger.isInfoEnabled()) {      
-                    logger.info("Direct connection failed: "  + time + " ms.");
-                }
-            }
-
-            if (timeout > 0) {
-                // Enough tries so, throw exception
-                throw new SocketTimeoutException("Connection setup timed out!");
-            } // else, the user wants us to keep trying!
-            
-            itt.reset();
-        }
-  */      
         
         // Note: it's up to the user to ensure that this thing is large enough!
         // i.e., it should be of size 1+2*target.length
-     //   long [] timing = null;
+        // long [] timing = null;
         boolean forceGlobalFirst = false;
         
         if (properties != null) { 
@@ -1530,7 +1461,6 @@ public class DirectSocketFactory {
             new LinkedList<NestedIOExceptionData>();
 
         do {
-
             int partialTime = timeLeft;
 
             if (mayUseSSH && !FORCE_SSH_OUT) { 
@@ -1555,8 +1485,8 @@ public class DirectSocketFactory {
                 if (partialTime <= 0) { 
                     if (timeout > 0) { 
                         // Enough tries so, throw exception
-                        throw new NestedIOException("Connection setup timed out!", 
-                                exceptions); 
+                        throw new NestedIOException("Connection setup timed " 
+                                + "out!", exceptions); 
                     } else { 
                         // TODO: HACK
                         partialTime = DEFAULT_TIMEOUT;
@@ -1634,15 +1564,14 @@ public class DirectSocketFactory {
             long time = System.currentTimeMillis();
             
             InetSocketAddress sa = sas[i];
-            boolean local = false;
             
             int partialTime = timeLeft / (sas.length-i);
             
-            if (NetworkUtils.isLocalAddress(sa.getAddress()) 
-                    && partialTime > DEFAULT_LOCAL_TIMEOUT) {
+            boolean local = NetworkUtils.isLocalAddress(sa.getAddress());
+            
+            if (local && partialTime > DEFAULT_LOCAL_TIMEOUT) {
                 // local networks get limited time!
                 partialTime = DEFAULT_LOCAL_TIMEOUT;
-                local = true;
             }
 
             try { 
@@ -1650,13 +1579,16 @@ public class DirectSocketFactory {
                     result = attemptSSHConnection(target, sa, partialTime, 
                             localPort, false, user, userOut, userIn, local);                
                 } else { 
-                    result = attemptConnection(target, sa, partialTime, sendBuffer, 
-                            receiveBuffer, localPort, false, userOut, userIn, local);
+                    result = attemptConnection(target, sa, partialTime, 
+                            sendBuffer, receiveBuffer, localPort, false, 
+                            userOut, userIn, local);
                 }                
             } catch (IOException e) {
                 exceptions.add(new NestedIOExceptionData("Connection setup to " 
                         + NetworkUtils.saToString(sa) + " failed after " 
-                        + (System.currentTimeMillis() - time) + " ms." , e));
+                        + (System.currentTimeMillis() - time) + " ms. (address "
+                        + i + " of " + sas.length + ", local=" + local 
+                        + ", patialTimeout=" + partialTime + ")", e));
             }
                 
             timeLeft -= (System.currentTimeMillis() - time);

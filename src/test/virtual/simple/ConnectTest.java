@@ -34,11 +34,11 @@ public class ConnectTest {
     private static int count = COUNT;
     private static int timeout = TIMEOUT;
     
+    private static boolean fillTimeout = false;
+    
     private static Random rand = new Random();
     
     public static void connect(VirtualSocketAddress target) { 
-        
-       
         
         long [] detailedDirect = new long[1+2*target.machine().numberOfAddresses()];
         long [] detailedVirtual = new long[5];
@@ -58,7 +58,8 @@ public class ConnectTest {
             
             try { 
                             
-                s = sf.createClientSocket(target, timeout, connectProperties);
+                s = sf.createClientSocket(target, timeout, fillTimeout, 
+                        connectProperties);
 
                 if (pingpong) { 
                     s.setTcpNoDelay(true);
@@ -188,6 +189,11 @@ public class ConnectTest {
                 args[i] = null;
                 targets -= 2;
                 i++;
+            
+            } else if (args[i].equals("-fill")) { 
+                fillTimeout = true;
+                args[i] = null;
+                targets--;
                     
             } else if (args[i].equals("-sleep")) { 
                 sleep = true;

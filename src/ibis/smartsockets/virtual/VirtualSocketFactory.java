@@ -1024,8 +1024,8 @@ public class VirtualSocketFactory {
                 }*/
                 
                 try { 
-                    vs = createClientSocket(m, target, timeout, 
-                            timeLeft, fillTimeout, prop);
+                    vs = createClientSocket(m, target, timeout, timeLeft, 
+                            fillTimeout, prop);
                 } catch (NonFatalIOException e) {
                     // Store the exeception and continue with the next module
                     exceptions[i] = e; 
@@ -1065,7 +1065,8 @@ public class VirtualSocketFactory {
 
             // No suitable modules found...
             throw new NoSuitableModuleException("No suitable module found to"
-                    + " connect to " + target, getNames(order), exceptions);
+                    + " connect to " + target + " (timeouts=" + Arrays.toString(timeouts)  
+                    + ", fillTimeout=" + fillTimeout + ")", getNames(order), exceptions);
             
         } finally {
             if (timing != null) {
@@ -1212,7 +1213,8 @@ public class VirtualSocketFactory {
         
         if (DETAILED_EXCEPTIONS) {
             throw new NoSuitableModuleException("No suitable module found to " +
-                    "connect to " + target, exceptions);
+                    "connect to " + target + "(timeout=" + timeout 
+                    + ", fillTimeout=" + fillTimeout + ")", exceptions);
         } else { 
             throw exception;
         }

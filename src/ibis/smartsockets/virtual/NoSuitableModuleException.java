@@ -31,12 +31,12 @@ public class NoSuitableModuleException extends IOException {
     }    
         
     public String toString() {        
-        String s = getClass().getName();
+        String name = getClass().getName();
         String message = getLocalizedMessage();
         
         StringBuilder builder = new StringBuilder();
 
-        builder.append(s);
+        builder.append(name);
         builder.append(": ");
         
         if (message != null) { 

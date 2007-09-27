@@ -30,29 +30,20 @@ public class NestedIOException extends IOException {
         this.exceptions = null;
     }    
 
-    /*
-    public NestedIOException(String message, 
-            LinkedList<NoSuitableModuleException> exceptions) { 
-
-        super(message);
-        this.names = null;
-        this.causes = null;
-        this.exceptions = exceptions;
-    } */   
-
     public String toString() {        
         return toString("       ");
     }
     
     public String toString(String pre) {        
-        String s = getClass().getName();
+        String name = getClass().getName();
         String message = getLocalizedMessage();
 
         StringBuilder builder = new StringBuilder();
 
-        builder.append(s);
+        builder.append(name);
         
-        if (message != null) { 
+        if (message != null) {
+            builder.append(": ");
             builder.append(message);
         } 
 
