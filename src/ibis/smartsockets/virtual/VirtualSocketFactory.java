@@ -90,19 +90,12 @@ public class VirtualSocketFactory {
 
     private static StatisticsPrinter printer = null;
 
-    protected static final Logger logger;
+    protected static final Logger logger = Logger.getLogger("ibis.smartsockets.virtual.misc");
 
-    protected static final Logger conlogger;
+    protected static final Logger conlogger = Logger.getLogger("ibis.smartsockets.virtual.connect");
 
-    private static final Logger statslogger;
+    private static final Logger statslogger = Logger.getLogger("ibis.smartsockets.statistics");
 
-    static {
-        ibis.util.Log.initLog4J("ibis.smartsockets");
-        conlogger = Logger.getLogger("ibis.smartsockets.virtual.connect");
-        logger = Logger.getLogger("ibis.smartsockets.virtual.misc");
-        statslogger = Logger.getLogger("ibis.smartsockets.statistics");
-    }
-        
     private final DirectSocketFactory directSocketFactory; 
     
     private final ArrayList<ConnectModule> modules = 

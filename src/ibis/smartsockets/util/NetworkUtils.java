@@ -23,12 +23,7 @@ import org.apache.log4j.Logger;
  */
 public class NetworkUtils {
 
-    protected static final Logger logger;
-    
-    static {
-        ibis.util.Log.initLog4J("ibis.smartsockets");
-        logger = Logger.getLogger("ibis.smartsockets.network.util");
-    }
+    protected static final Logger logger = Logger.getLogger("ibis.smartsockets.network.util");
     
     // The number of milliseconds between October 15th 1582 (the start of the 
     // Gregorian calendar) and January 1st 1970 (the start of Unix time). This
