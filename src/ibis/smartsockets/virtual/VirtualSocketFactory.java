@@ -30,7 +30,6 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
-
 /**
  * This class implements a 'virtual' socket factory.
  * 
@@ -83,24 +82,25 @@ public class VirtualSocketFactory {
         }
     }
 
-    private static final Map<String, VirtualSocketFactory> factories = 
-        new HashMap<String, VirtualSocketFactory>();
+    private static final Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
 
     private static VirtualSocketFactory defaultFactory = null;
 
     private static StatisticsPrinter printer = null;
 
-    protected static final Logger logger = Logger.getLogger("ibis.smartsockets.virtual.misc");
+    protected static final Logger logger = Logger
+            .getLogger("ibis.smartsockets.virtual.misc");
 
-    protected static final Logger conlogger = Logger.getLogger("ibis.smartsockets.virtual.connect");
+    protected static final Logger conlogger = Logger
+            .getLogger("ibis.smartsockets.virtual.connect");
 
-    private static final Logger statslogger = Logger.getLogger("ibis.smartsockets.statistics");
+    private static final Logger statslogger = Logger
+            .getLogger("ibis.smartsockets.statistics");
 
-    private final DirectSocketFactory directSocketFactory; 
-    
-    private final ArrayList<ConnectModule> modules = 
-        new ArrayList<ConnectModule>();
-    
+    private final DirectSocketFactory directSocketFactory;
+
+    private final ArrayList<ConnectModule> modules = new ArrayList<ConnectModule>();
+
     private ConnectModule direct;
 
     private final TypedProperties properties;
@@ -110,13 +110,12 @@ public class VirtualSocketFactory {
     private final int DEFAULT_TIMEOUT;
 
     private final int DEFAULT_ACCEPT_TIMEOUT;
-    
-    private final boolean DETAILED_EXCEPTIONS; 
-    
+
+    private final boolean DETAILED_EXCEPTIONS;
+
     private final Random random;
-    
-    private final HashMap<Integer, VirtualServerSocket> serverSockets = 
-        new HashMap<Integer, VirtualServerSocket>();
+
+    private final HashMap<Integer, VirtualServerSocket> serverSockets = new HashMap<Integer, VirtualServerSocket>();
 
     private int nextPort = 3000;
 
@@ -131,45 +130,45 @@ public class VirtualSocketFactory {
     private ServiceLink serviceLink;
 
     private Hub hub;
-    
+
     private VirtualClusters clusters;
-    
+
     private static class HubAcceptor implements AcceptHandler {
-        
+
         private final Hub hub;
-        
-        private HubAcceptor(Hub hub) { 
+
+        private HubAcceptor(Hub hub) {
             this.hub = hub;
         }
-        
+
         public void accept(DirectSocket s, int targetPort) {
             hub.delegateAccept(s);
-        } 
+        }
     }
 
     private VirtualSocketFactory(DirectSocketFactory df, TypedProperties p)
             throws InitializationException {
 
         directSocketFactory = df;
-        
+
         if (logger.isInfoEnabled()) {
             logger.info("Creating VirtualSocketFactory");
         }
 
         random = new Random();
-        
+
         properties = p;
 
         DETAILED_EXCEPTIONS = p.booleanProperty(
                 SmartSocketsProperties.DETAILED_EXCEPTIONS, false);
-        
+
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.BACKLOG, 50);
 
         DEFAULT_ACCEPT_TIMEOUT = p.getIntProperty(
-                SmartSocketsProperties.ACCEPT_TIMEOUT, 5000);
-        
+                SmartSocketsProperties.ACCEPT_TIMEOUT, 60000);
+
         // NOTE: order is VERY important here!
-        try { 
+        try {
             loadModules();
         } catch (Exception e) {
             logger.info("Failed to load modules!", e);
@@ -183,21 +182,19 @@ public class VirtualSocketFactory {
 
         // -- this depends on the modules being loaded
         DEFAULT_TIMEOUT = determineDefaultTimeout(p);
-        
-        
-        
+
         startHub(p);
-        
+
         // We now create the service link. This may connect to the hub that we 
         // have just started.  
         String localCluster = p.getProperty(
                 SmartSocketsProperties.CLUSTER_MEMBER, null);
-        
+
         createServiceLink(localCluster);
-        
+
         // Once the servicelink is up and running, we can start the modules.  
         startModules();
-        
+
         if (modules.size() == 0) {
             logger.info("Failed to start any modules!");
             throw new InitializationException("Failed to load any modules!");
@@ -212,7 +209,7 @@ public class VirtualSocketFactory {
     }
 
     private void startHub(TypedProperties p) throws InitializationException {
-        
+
         if (p.booleanProperty(SmartSocketsProperties.START_HUB, false)) {
 
             AbstractDirectModule d = null;
@@ -223,70 +220,70 @@ public class VirtualSocketFactory {
             boolean delegate = p.booleanProperty(
                     SmartSocketsProperties.HUB_DELEGATE, false);
 
-            if (delegate) { 
+            if (delegate) {
                 logger.info("Factory delegating hub accepts to direct module!");
 
                 // We should now add an AcceptHandler to the direct module that
                 // intercepts incoming connections for the hub. Start by finding 
                 // the direct module...
-                for (ConnectModule m : modules) {                     
-                    if (m.module.equals("ConnectModule(Direct)")) { 
+                for (ConnectModule m : modules) {
+                    if (m.module.equals("ConnectModule(Direct)")) {
                         d = (AbstractDirectModule) m;
                         break;
                     }
                 }
 
-                if (d == null) { 
-                    throw new InitializationException("Cannot start hub: " 
+                if (d == null) {
+                    throw new InitializationException("Cannot start hub: "
                             + "Failed to find direct module!");
                 }
 
                 // And add its address to the property set as the 'delegation' 
                 // address. This is needed by the hub (since it needs to know 
                 // its own address).
-                p.setProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS, 
-                        d.getAddresses().toString());
+                p.setProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS, d
+                        .getAddresses().toString());
             }
 
             // Now we create the hub
             logger.info("Factory is starting hub");
 
-            try {            
+            try {
                 hub = new Hub(p);
                 logger.info("Hub running on: " + hub.getHubAddress());
             } catch (IOException e) {
                 throw new InitializationException("Failed to start hub", e);
-            }   
+            }
 
             // Finally, if delegation is used, we install the accept handler             
             if (delegate) {
-                
+
                 // Get the 'virtual port' that the hub pretends to be on.
                 int port = p.getIntProperty(
                         SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);
 
                 d.installAcceptHandler(port, new HubAcceptor(hub));
-            }            
+            }
         }
     }
-    
+
     private void loadClusterDefinitions() {
         clusters = new VirtualClusters(this, properties, getModules());
     }
 
     private DirectSocketAddress discoverHub(String localCluster) {
-        
+
         DirectSocketAddress address = null;
 
         if (logger.isInfoEnabled()) {
             logger.info("Attempting to discover hub using UDP multicast...");
         }
 
-        int port = properties.getIntProperty(
-                SmartSocketsProperties.DISCOVERY_PORT);
-        
-        int time = properties.getIntProperty(
-                SmartSocketsProperties.DISCOVERY_TIMEOUT);
+        int port = properties
+                .getIntProperty(SmartSocketsProperties.DISCOVERY_PORT);
+
+        int time = properties
+                .getIntProperty(SmartSocketsProperties.DISCOVERY_TIMEOUT);
 
         Discovery d = new Discovery(port, 0, time);
 
@@ -315,54 +312,55 @@ public class VirtualSocketFactory {
 
         return address;
     }
-    
+
     private void createServiceLink(String localCluster) {
 
         List<DirectSocketAddress> hubs = new LinkedList<DirectSocketAddress>();
-        
-        if (hub != null) { 
+
+        if (hub != null) {
             hubs.add(hub.getHubAddress());
-        } 
-        
+        }
+
         // Check if the hub address was passed as a property.
-        String [] tmp = properties.getStringList(
-                SmartSocketsProperties.HUB_ADDRESSES);
-        
+        String[] tmp = properties
+                .getStringList(SmartSocketsProperties.HUB_ADDRESSES);
+
         if (tmp != null && tmp.length > 0) {
-            for (String a : tmp) {             
+            for (String a : tmp) {
                 try {
                     hubs.add(DirectSocketAddress.getByAddress(a));
                 } catch (Exception e) {
-                    logger.warn("Failed to understand hub address: " 
+                    logger.warn("Failed to understand hub address: "
                             + Arrays.deepToString(tmp), e);
                 }
             }
         }
-    
+
         // If we don't have a hub address, we try to find one ourselves
-        if (hubs.size() == 0) {            
+        if (hubs.size() == 0) {
             boolean useDiscovery = properties.booleanProperty(
                     SmartSocketsProperties.DISCOVERY_ALLOWED, false);
 
             boolean discoveryPreferred = properties.booleanProperty(
                     SmartSocketsProperties.DISCOVERY_PREFERRED, false);
-            
-            DirectSocketAddress address = null;
-            
-            if (useDiscovery && (discoveryPreferred || hub == null)) { 
-                address = discoverHub(localCluster);                    
-            }            
 
-            if (address != null) { 
+            DirectSocketAddress address = null;
+
+            if (useDiscovery && (discoveryPreferred || hub == null)) {
+                address = discoverHub(localCluster);
+            }
+
+            if (address != null) {
                 hubs.add(address);
             }
-        } 
+        }
 
         // Still no address ? Give up...
         if (hubs.size() == 0) {
             // properties not set, so no central hub is available
             // if (logger.isInfoEnabled()) {
-            System.out.println("ServiceLink not created: no hub address available!");
+            System.out
+                    .println("ServiceLink not created: no hub address available!");
             logger.info("ServiceLink not created: no hub address available!");
             // }
             return;
@@ -456,7 +454,7 @@ public class VirtualSocketFactory {
     }
 
     private void loadModule(String name) throws Exception {
-        
+
         ConnectModule m = instantiateModule(name);
         m.init(this, name, properties, logger);
 
@@ -466,36 +464,36 @@ public class VirtualSocketFactory {
             if (myAddresses == null) {
                 myAddresses = tmp;
             } else {
-                myAddresses = DirectSocketAddress.merge(
-                        myAddresses, tmp);
+                myAddresses = DirectSocketAddress.merge(myAddresses, tmp);
             }
         }
 
         modules.add(m);
     }
-    
+
     private void loadModules() throws Exception {
-        
+
         // Get the list of modules that we should load. Note that we should 
         // always load the "direct" module, since it is needed to implement the 
         // others. Note that this doesn't neccesarily mean that the user wants 
         // to use it though...
-        
-        String [] mods = properties.getStringList(
-                SmartSocketsProperties.MODULES_DEFINE, ",", new String [0]);
+
+        String[] mods = properties.getStringList(
+                SmartSocketsProperties.MODULES_DEFINE, ",", new String[0]);
 
         if (mods == null || mods.length == 0) {
             // Should not happen!
-            throw new NoModulesDefinedException("No smartsockets modules defined!");
+            throw new NoModulesDefinedException(
+                    "No smartsockets modules defined!");
         }
-        
+
         // Get the list of modules to skip. Note that the direct module cannot 
         // be skipped completely (it is needed to implement the others). 
-        String [] skip = properties.getStringList(
+        String[] skip = properties.getStringList(
                 SmartSocketsProperties.MODULES_SKIP, ",", null);
 
         int count = mods.length;
-        
+
         // Remove all modules that should be skipped.
         if (skip != null) {
             for (int s = 0; s < skip.length; s++) {
@@ -520,40 +518,41 @@ public class VirtualSocketFactory {
                     t += mods[i] + " ";
                 }
             }
-        
+
             logger.info("Loading " + count + " modules: " + t);
         }
-        
+
         if (count == 0) {
-            throw new NoModulesDefinedException("No smartsockets modules " +
-                    "left after filtering!");
+            throw new NoModulesDefinedException("No smartsockets modules "
+                    + "left after filtering!");
         }
 
         // We start by loading the direct module. This one is always needed to  
         // support the other modules, but not necessarily used by the client.
-        try { 
-            direct = new Direct(directSocketFactory); 
+        try {
+            direct = new Direct(directSocketFactory);
             direct.init(this, "direct", properties, logger);
             myAddresses = direct.getAddresses();
         } catch (Exception e) {
             logger.info("Failed to load direct module!", e);
             throw e;
-        }        
-        
-        if (myAddresses == null) {
-            logger.info("Failed to retrieve my own address!");        
-            throw new NoLocalAddressException("Failed to retrieve local address!"); 
         }
-                
+
+        if (myAddresses == null) {
+            logger.info("Failed to retrieve my own address!");
+            throw new NoLocalAddressException(
+                    "Failed to retrieve local address!");
+        }
+
         for (int i = 0; i < mods.length; i++) {
 
-            if (mods[i] != null) { 
+            if (mods[i] != null) {
                 if (mods[i].equals("direct")) {
-                    modules.add(direct);                    
-                } else { 
+                    modules.add(direct);
+                } else {
                     try {
-                        loadModule(mods[i]);                
-                    } catch (Exception e) {        
+                        loadModule(mods[i]);
+                    } catch (Exception e) {
                         if (logger.isInfoEnabled()) {
                             logger.info("Failed to load module: " + mods[i], e);
                         }
@@ -564,51 +563,51 @@ public class VirtualSocketFactory {
                 }
             }
         }
-            
+
         if (logger.isInfoEnabled()) {
             logger.info(count + " modules loaded.");
         }
-        
+
         if (count == 0) {
             throw new NoModulesDefinedException("Failed to load any modules");
         }
     }
 
     private int determineDefaultTimeout(TypedProperties p) {
-        
-        int [] tmp = new int[modules.size()];
+
+        int[] tmp = new int[modules.size()];
         int totalTimeout = 0;
-        
-        for (int i=0;i<modules.size();i++) {
+
+        for (int i = 0; i < modules.size(); i++) {
             // Get the module defined timeout
             tmp[i] = modules.get(i).getDefaultTimeout();
             totalTimeout += tmp[i];
         }
-        
-        int timeout = p.getIntProperty(SmartSocketsProperties.TIMEOUT, -1);
-        
-        if (timeout <= 0) { 
+
+        int timeout = p.getIntProperty(SmartSocketsProperties.CONNECT_TIMEOUT, -1);
+
+        if (timeout <= 0) {
             // It's up to the modules to determine their own timeout            
             timeout = totalTimeout;
-        } else { 
+        } else {
             // A user-defined timeout should be distributed over the modules
-            for (int i=0;i<modules.size();i++) { 
-                double t = (((double) tmp[i]) / totalTimeout) * timeout;   
+            for (int i = 0; i < modules.size(); i++) {
+                double t = (((double) tmp[i]) / totalTimeout) * timeout;
                 modules.get(i).setTimeout((int) t);
             }
         }
-        
-        if (logger.isInfoEnabled()) {            
+
+        if (logger.isInfoEnabled()) {
             logger.info("Total timeout set to: " + timeout);
 
-            for (ConnectModule m : modules) { 
+            for (ConnectModule m : modules) {
                 logger.info("  " + m.getName() + ": " + m.getTimeout());
             }
         }
-        
+
         return timeout;
     }
-    
+
     protected ConnectModule[] getModules() {
         return modules.toArray(new ConnectModule[modules.size()]);
     }
@@ -654,8 +653,9 @@ public class VirtualSocketFactory {
             }
 
             for (ConnectModule c : failed) {
-                logger.info("Module " + c.module
-                        + " removed (no serviceLink)!");
+                logger
+                        .info("Module " + c.module
+                                + " removed (no serviceLink)!");
                 modules.remove(c);
             }
 
@@ -692,10 +692,10 @@ public class VirtualSocketFactory {
 
         // Direct is special, since it may be loaded without being part of the 
         // modules array. 
-        if (name.equals("direct")) { 
+        if (name.equals("direct")) {
             return direct;
         }
-        
+
         for (ConnectModule m : modules) {
             if (m.module.equals(name)) {
                 return m;
@@ -705,8 +705,7 @@ public class VirtualSocketFactory {
         return null;
     }
 
-    public static void close(VirtualSocket s, OutputStream out, 
-            InputStream in) {
+    public static void close(VirtualSocket s, OutputStream out, InputStream in) {
 
         try {
             if (out != null) {
@@ -732,26 +731,25 @@ public class VirtualSocketFactory {
             // ignore
         }
     }
-    
+
     public static void close(VirtualSocket s, SocketChannel channel) {
 
         if (channel != null) {
-            try { 
+            try {
                 channel.close();
             } catch (Exception e) {
                 // ignore
             }
         }
-        
+
         if (s != null) {
-            try { 
+            try {
                 s.close();
             } catch (Exception e) {
                 // ignore
             }
         }
     }
-
 
     // This method implements a connect using a specific module. This method 
     // will return null when: 
@@ -772,12 +770,12 @@ public class VirtualSocketFactory {
     // specified by the user) is spend. Each new try behaves exactly the same as 
     // the previous attempts.    
     private VirtualSocket createClientSocket(ConnectModule m,
-            VirtualSocketAddress target, int timeout, int timeLeft, 
-            boolean fillTimeout, Map<String, Object> properties)         
-        throws IOException, NonFatalIOException {
+            VirtualSocketAddress target, int timeout, int timeLeft,
+            boolean fillTimeout, Map<String, Object> properties)
+            throws IOException, NonFatalIOException {
 
         int backoff = 1000;
-        
+
         if (!m.matchRuntimeRequirements(properties)) {
             if (conlogger.isInfoEnabled()) {
                 conlogger.warn("Failed: module " + m.module
@@ -788,10 +786,10 @@ public class VirtualSocketFactory {
             m.notAllowed();
             return null;
         }
-            
+
         if (conlogger.isDebugEnabled()) {
             conlogger.debug("Using module " + m.module + " to set up "
-                    + "connection to " + target + " timeout = " + timeout 
+                    + "connection to " + target + " timeout = " + timeout
                     + " timeleft = " + timeLeft);
         }
 
@@ -803,39 +801,38 @@ public class VirtualSocketFactory {
         // user.
         VirtualSocket vs = null;
         int overloaded = 0;
-        
+
         long start = System.currentTimeMillis();
-        
+
         boolean lastAttempt = false;
-        
-        while (true) {         
-            
+
+        while (true) {
+
             long t = System.currentTimeMillis() - start;
-       
+
             // Check if we ran out of time. If so, the throw a target overloaded 
             // exception or a timeout exception depending on the value of the 
             // overloaded counter.  
-            if (t >= timeLeft) { 
-        
+            if (t >= timeLeft) {
+
                 if (conlogger.isDebugEnabled()) {
-                    conlogger.debug("Timeout while using module " + m.module 
-                            + " to set up "
-                            + "connection to " + target + " timeout = " 
-                            + timeout + " timeleft = " + timeLeft + " t = " 
-                            + t);
+                    conlogger.debug("Timeout while using module " + m.module
+                            + " to set up " + "connection to " + target
+                            + " timeout = " + timeout + " timeleft = "
+                            + timeLeft + " t = " + t);
                 }
-                    
-                if (overloaded > 0) { 
+
+                if (overloaded > 0) {
                     throw new TargetOverloadedException("Failed to create "
                             + "virtual connection to " + target + " within "
-                            + timeLeft + " ms. (Target overloaded " 
+                            + timeLeft + " ms. (Target overloaded "
                             + overloaded + " times)");
-                } else { 
+                } else {
                     throw new SocketTimeoutException("Timeout while creating"
                             + " connection to " + target);
                 }
             }
-            
+
             try {
                 vs = m.connect(target, timeout, properties);
             } catch (NonFatalIOException e) {
@@ -843,23 +840,23 @@ public class VirtualSocketFactory {
 
                 // Just print and try the next module...
                 if (conlogger.isInfoEnabled()) {
-                    conlogger.info("Module " + m.module + " failed to connect " 
-                            + "to " + target + " after " + (end - start) 
+                    conlogger.info("Module " + m.module + " failed to connect "
+                            + "to " + target + " after " + (end - start)
                             + " ms.): " + e.getMessage());
                 }
 
                 m.failed(end - start);
-                
+
                 throw e;
-                
+
                 // NOTE: The modules may also throw IOExceptions for  
                 // non-transient errors (i.e., port not found). These are 
                 // forwarded to the user. 
-            } 
+            }
 
             t = System.currentTimeMillis() - start;
-            
-            if (vs != null) { 
+
+            if (vs != null) {
                 // We now have a connection to the correct machine and must wait 
                 // for an accept from the serversocket. Since we don't have to 
                 // try any other modules, we are allowed to spend all of the 
@@ -868,27 +865,27 @@ public class VirtualSocketFactory {
                 // entire connect call, minus the time we have spend so far in 
                 // this connect. This is the timeout we pass to 'waitForAccept'. 
                 int newTimeout = (int) (timeLeft - t);
-                
+
                 if (newTimeout <= 0) {
                     // Bit of a hack. If we run out of time at the last moment
                     // we allow some extra time to finish the connection setup.
                     // TODO: should we do this ?
                     newTimeout = 1000;
                 }
-                
+
                 if (conlogger.isInfoEnabled()) {
-                    conlogger.info(getVirtualAddressAsString()
-                            + ": Success " + m.module + " connected to "
-                            + target + " now waiting for accept (for max. " 
-                            + newTimeout + " ms.)");
+                    conlogger.info(getVirtualAddressAsString() + ": Success "
+                            + m.module + " connected to " + target
+                            + " now waiting for accept (for max. " + newTimeout
+                            + " ms.)");
                 }
 
-                try { 
+                try {
                     vs.waitForAccept(newTimeout);
                     vs.setTcpNoDelay(false);
-                        
+
                     long end = System.currentTimeMillis();
-                    
+
                     if (conlogger.isInfoEnabled()) {
                         conlogger.info(getVirtualAddressAsString()
                                 + ": Success " + m.module + " connected to "
@@ -898,25 +895,25 @@ public class VirtualSocketFactory {
 
                     m.success(end - start);
                     return vs;
-                
-                } catch (TargetOverloadedException e) {                    
+
+                } catch (TargetOverloadedException e) {
                     // This is always allowed. 
                     if (conlogger.isDebugEnabled()) {
-                        conlogger.debug("Connection failed, target " + target 
-                                + " overloaded (" + overloaded 
+                        conlogger.debug("Connection failed, target " + target
+                                + " overloaded (" + overloaded
                                 + ") while using " + " module " + m.module);
                     }
 
                     overloaded++;
-                    
+
                 } catch (IOException e) {
-                    
+
                     if (conlogger.isDebugEnabled()) {
-                        conlogger.debug("Connection failed, target " + target 
-                                + ", got exception (" + e.getMessage() 
+                        conlogger.debug("Connection failed, target " + target
+                                + ", got exception (" + e.getMessage()
                                 + ") while using " + " module " + m.module);
                     }
-                    
+
                     if (!fillTimeout) {
                         // We'll only retry if 'fillTimeout' is true                    
                         throw e;
@@ -929,35 +926,35 @@ public class VirtualSocketFactory {
                 // we run out of time...                                
                 t = System.currentTimeMillis() - start;
 
-                int leftover = (int) (timeLeft-t);
+                int leftover = (int) (timeLeft - t);
 
                 if (!lastAttempt && leftover > 0) {
-                    
+
                     int sleeptime = 0;
-                    
-                    if (backoff < leftover) { 
+
+                    if (backoff < leftover) {
                         // Use a randomized sleep value to ensure the attempts 
                         // are distributed.
                         sleeptime = random.nextInt(backoff);
-                    } else { 
-                        sleeptime = leftover; 
+                    } else {
+                        sleeptime = leftover;
                         lastAttempt = true;
                     }
 
                     // System.err.println("Backoff = " + backoff + " Leftover = " + leftover + " Sleep time = " + sleeptime);
 
                     if (sleeptime > 0) {
-                        try { 
+                        try {
                             Thread.sleep(sleeptime);
                         } catch (Exception x) {
                             // ignored
                         }
                     }
 
-                    if (leftover < 500) {                        
+                    if (leftover < 500) {
                         // We're done!
                         timeLeft = 0;
-                    } else { 
+                    } else {
                         backoff *= 2;
                     }
 
@@ -965,20 +962,20 @@ public class VirtualSocketFactory {
                     // We're done
                     timeLeft = 0;
                 }
-            } 
+            }
         }
     }
 
-    private String [] getNames(ConnectModule [] modules) { 
-        String [] names = new String[modules.length];
-        
-        for (int n=0;n<modules.length;n++) { 
+    private String[] getNames(ConnectModule[] modules) {
+        String[] names = new String[modules.length];
+
+        for (int n = 0; n < modules.length; n++) {
             names[n] = modules[n].getName();
         }
-        
+
         return names;
     }
-    
+
     // This method loops over and array of connection modules, trying to setup 
     // a connection with each of them each in turn. Returns when:
     //   - a connection is established
@@ -987,47 +984,47 @@ public class VirtualSocketFactory {
     //   - a timeout occurred    
     //
     private VirtualSocket createClientSocket(VirtualSocketAddress target,
-            ConnectModule [] order, int [] timeouts, int totalTimeout,            
-            long [] timing, boolean fillTimeout, Map<String, Object> prop) 
-        throws IOException, NoSuitableModuleException {
+            ConnectModule[] order, int[] timeouts, int totalTimeout,
+            long[] timing, boolean fillTimeout, Map<String, Object> prop)
+            throws IOException, NoSuitableModuleException {
 
-        Throwable [] exceptions = new Throwable[order.length];
-        
+        Throwable[] exceptions = new Throwable[order.length];
+
         try {
             int timeLeft = totalTimeout;
-            
-            VirtualSocket vs = null; 
-            
+
+            VirtualSocket vs = null;
+
             // Now try the remaining modules (or all of them if we weren't
             // using the cache in the first place...)
             for (int i = 0; i < order.length; i++) {
-                
-                ConnectModule m = order[i];                
+
+                ConnectModule m = order[i];
                 int timeout = (timeouts != null ? timeouts[i] : m.getTimeout());
-                
+
                 long start = System.currentTimeMillis();
 
                 /*
-                if (timing != null) {
-                    timing[1 + i] = System.nanoTime();
+                 if (timing != null) {
+                 timing[1 + i] = System.nanoTime();
 
-                    if (i > 0) {
-                        prop.put("direct.detailed.timing.ignore", null);
-                    }
-                }*/
-                
-                try { 
-                    vs = createClientSocket(m, target, timeout, timeLeft, 
+                 if (i > 0) {
+                 prop.put("direct.detailed.timing.ignore", null);
+                 }
+                 }*/
+
+                try {
+                    vs = createClientSocket(m, target, timeout, timeLeft,
                             fillTimeout, prop);
                 } catch (NonFatalIOException e) {
                     // Store the exeception and continue with the next module
-                    exceptions[i] = e; 
+                    exceptions[i] = e;
                 }
 
                 /*
-                if (timing != null) {
-                    timing[1 + i] = System.nanoTime() - timing[1 + i];
-                }*/
+                 if (timing != null) {
+                 timing[1 + i] = System.nanoTime() - timing[1 + i];
+                 }*/
 
                 if (vs != null) {
                     if (i > 0) {
@@ -1039,50 +1036,51 @@ public class VirtualSocketFactory {
                 }
 
                 if (order.length > 1 && i < order.length - 1) {
-                    
+
                     timeLeft -= System.currentTimeMillis() - start;
 
                     if (timeLeft <= 0) {
                         // NOTE: This can only happen when a module breaks 
                         // the rules (defensive programming).
                         throw new NoSuitableModuleException("Timeout during "
-                                + " connect to " + target, getNames(order), 
+                                + " connect to " + target, getNames(order),
                                 exceptions);
-                    } 
+                    }
                 }
             }
-            
+
             if (logger.isInfoEnabled()) {
                 logger.info("No suitable module found to connect to " + target);
             }
 
             // No suitable modules found...
             throw new NoSuitableModuleException("No suitable module found to"
-                    + " connect to " + target + " (timeouts=" + Arrays.toString(timeouts)  
-                    + ", fillTimeout=" + fillTimeout + ")", getNames(order), exceptions);
-            
+                    + " connect to " + target + " (timeouts="
+                    + Arrays.toString(timeouts) + ", fillTimeout="
+                    + fillTimeout + ")", getNames(order), exceptions);
+
         } finally {
             if (timing != null) {
                 timing[0] = System.nanoTime() - timing[0];
                 prop.remove("direct.detailed.timing.ignore");
             }
         }
-    }    
+    }
 
     // Distribute a given timeout over a number of modules, taking the relative 
     // sizes of the default module timeouts into account.
-    private int [] distributesTimeout(int timeout, int [] timeouts, 
-            ConnectModule [] modules) {
+    private int[] distributesTimeout(int timeout, int[] timeouts,
+            ConnectModule[] modules) {
 
-        if (timeouts == null) { 
+        if (timeouts == null) {
             timeouts = new int[modules.length];
         }
-        
-        for (int i=0;i<modules.length;i++) { 
+
+        for (int i = 0; i < modules.length; i++) {
             double t = (((double) modules[i].getTimeout()) / DEFAULT_TIMEOUT);
-            timeouts[i] = (int) (t * timeout); 
+            timeouts[i] = (int) (t * timeout);
         }
-        
+
         return timeouts;
     }
 
@@ -1090,54 +1088,54 @@ public class VirtualSocketFactory {
             int timeout, Map<String, Object> prop) throws IOException {
         return createClientSocket(target, timeout, false, prop);
     }
-    
+
     public VirtualSocket createClientSocket(VirtualSocketAddress target,
-            int timeout, boolean fillTimeout, Map<String, Object> prop) 
-        throws IOException {
+            int timeout, boolean fillTimeout, Map<String, Object> prop)
+            throws IOException {
 
         // Note: it's up to the user to ensure that this thing is large enough!
         // i.e., it should be of size 1+modules.length        
-        if (conlogger.isDebugEnabled()) { 
-            conlogger.debug("createClientSocket(" + target + ", " + timeout 
-                     + ", " + fillTimeout + ", " + prop + ")");
+        if (conlogger.isDebugEnabled()) {
+            conlogger.debug("createClientSocket(" + target + ", " + timeout
+                    + ", " + fillTimeout + ", " + prop + ")");
         }
-        
+
         /*
-        long [] timing = null;
+         long [] timing = null;
 
-        if (prop != null) {
-            // Note: it's up to the user to ensure that this thing is large 
-            // enough! i.e., it should be of size 1+modules.length                
-            timing = (long[]) prop.get("virtual.detailed.timing");
+         if (prop != null) {
+         // Note: it's up to the user to ensure that this thing is large 
+         // enough! i.e., it should be of size 1+modules.length                
+         timing = (long[]) prop.get("virtual.detailed.timing");
 
-            if (timing != null) {
-                timing[0] = System.nanoTime();
-            }
-        }
-        */
-        
+         if (timing != null) {
+         timing[0] = System.nanoTime();
+         }
+         }
+         */
+
         // Check the timeout here. If it is not set, we will use the default
-        if (timeout <= 0) { 
+        if (timeout <= 0) {
             timeout = DEFAULT_TIMEOUT;
         }
-        
-        ConnectModule [] order = clusters.getOrder(target);
-        
+
+        ConnectModule[] order = clusters.getOrder(target);
+
         int timeLeft = timeout;
-        int [] timeouts = null;
-        
+        int[] timeouts = null;
+
         boolean lastAttempt = false;
         int backoff = 250;
-        
+
         NoSuitableModuleException exception = null;
         LinkedList<NoSuitableModuleException> exceptions = null;
-        
-        if (DETAILED_EXCEPTIONS) { 
+
+        if (DETAILED_EXCEPTIONS) {
             exceptions = new LinkedList<NoSuitableModuleException>();
         }
-        
+
         do {
-            if (timeLeft <= DEFAULT_TIMEOUT) { 
+            if (timeLeft <= DEFAULT_TIMEOUT) {
                 // determine timeout for each module. We assume that this time 
                 // is used completely and therefore only do this once.
                 timeouts = distributesTimeout(timeLeft, timeouts, order);
@@ -1145,42 +1143,42 @@ public class VirtualSocketFactory {
             }
 
             long start = System.currentTimeMillis();
-        
-            try { 
-                return createClientSocket(target, order, timeouts, timeLeft, 
-                        /*timing*/ null, fillTimeout, prop);
-            } catch (NoSuitableModuleException e) { 
+
+            try {
+                return createClientSocket(target, order, timeouts, timeLeft,
+                /*timing*/null, fillTimeout, prop);
+            } catch (NoSuitableModuleException e) {
                 // All modules where tried and failed. It now depends on the 
                 // user if he would like to try another round or give up. 
-                if (conlogger.isDebugEnabled()) { 
-                    conlogger.debug("createClientSocket failed. Will " 
+                if (conlogger.isDebugEnabled()) {
+                    conlogger.debug("createClientSocket failed. Will "
                             + (fillTimeout ? "" : "NOT ") + "retry");
                 }
-                
-                if (DETAILED_EXCEPTIONS) { 
+
+                if (DETAILED_EXCEPTIONS) {
                     exceptions.add(e);
-                } else { 
+                } else {
                     exception = e;
                 }
-            } 
-       
+            }
+
             timeLeft -= System.currentTimeMillis() - start;
-                
-            if (!lastAttempt && fillTimeout && timeLeft > 0) { 
-                
+
+            if (!lastAttempt && fillTimeout && timeLeft > 0) {
+
                 int sleeptime = 0;
-                
-                if (backoff < timeLeft) { 
+
+                if (backoff < timeLeft) {
                     sleeptime = random.nextInt(backoff);
-                } else { 
-                    sleeptime = timeLeft; 
+                } else {
+                    sleeptime = timeLeft;
                     lastAttempt = true;
                 }
-            
+
                 if (sleeptime >= timeLeft) {
                     // In the last attempt we sleep half a second shorter. 
                     // This allows us to attempt a connection setup.
-                    if (sleeptime > 500) { 
+                    if (sleeptime > 500) {
                         sleeptime -= 500;
                     } else {
                         // We're done!
@@ -1189,31 +1187,30 @@ public class VirtualSocketFactory {
                     }
                 }
 
-                if (sleeptime > 0) { 
-                    try { 
+                if (sleeptime > 0) {
+                    try {
                         Thread.sleep(sleeptime);
                     } catch (Exception x) {
                         // ignored
                     }
                 }
-                
+
                 backoff *= 2;
-            } else { 
+            } else {
                 fillTimeout = false;
             }
-            
+
         } while (fillTimeout);
-        
+
         if (DETAILED_EXCEPTIONS) {
-            throw new NoSuitableModuleException("No suitable module found to " +
-                    "connect to " + target + "(timeout=" + timeout 
+            throw new NoSuitableModuleException("No suitable module found to "
+                    + "connect to " + target + "(timeout=" + timeout
                     + ", fillTimeout=" + fillTimeout + ")", exceptions);
-        } else { 
+        } else {
             throw exception;
         }
     }
-    
-    
+
     private int getPort() {
 
         // TODO: should this be random ?
@@ -1248,14 +1245,14 @@ public class VirtualSocketFactory {
         return result;
     }
 
-    public VirtualServerSocket createServerSocket(
-            Map<String, Object> properties) throws IOException {
+    public VirtualServerSocket createServerSocket(Map<String, Object> properties)
+            throws IOException {
         return new VirtualServerSocket(this, DEFAULT_ACCEPT_TIMEOUT, properties);
     }
 
-    protected void bindServerSocket(VirtualServerSocket vss, int port) 
-        throws BindException {
-        
+    protected void bindServerSocket(VirtualServerSocket vss, int port)
+            throws BindException {
+
         synchronized (serverSockets) {
             if (serverSockets.containsKey(port)) {
                 throw new BindException("Port " + port + " already in use!");
@@ -1264,7 +1261,7 @@ public class VirtualSocketFactory {
             serverSockets.put(port, vss);
         }
     }
-    
+
     public VirtualServerSocket createServerSocket(int port, int backlog,
             Map<String, Object> properties) throws IOException {
 
@@ -1314,44 +1311,43 @@ public class VirtualSocketFactory {
         return hubAddress;
     }
 
-    public void addHubs(DirectSocketAddress [] hubs) {
-        if (hub != null) { 
+    public void addHubs(DirectSocketAddress[] hubs) {
+        if (hub != null) {
             hub.addHubs(hubs);
-        } else if (serviceLink != null) { 
+        } else if (serviceLink != null) {
             serviceLink.addHubs(hubs);
         }
     }
-            
-    public DirectSocketAddress [] getKnownHubs() {
-        
-        if (hub != null) { 
+
+    public DirectSocketAddress[] getKnownHubs() {
+
+        if (hub != null) {
             return hub.knownHubs();
-        } else if (serviceLink != null) {            
+        } else if (serviceLink != null) {
             try {
                 return serviceLink.hubs();
             } catch (IOException e) {
                 logger.info("Failed to retrieve hub list!", e);
             }
         }
-        
-        return null;        
+
+        return null;
     }
-    
-    public void end() { 
-        if (hub != null) { 
+
+    public void end() {
+        if (hub != null) {
             hub.end();
         }
     }
-    
+
     protected void closed(int port) {
         synchronized (serverSockets) {
             serverSockets.remove(Integer.valueOf(port));
         }
     }
 
-    public static synchronized VirtualSocketFactory getSocketFactory(
-            String name) {
-        
+    public static synchronized VirtualSocketFactory getSocketFactory(String name) {
+
         return factories.get(name);
     }
 
@@ -1364,7 +1360,7 @@ public class VirtualSocketFactory {
             result = createSocketFactory(p, addDefaults);
             factories.put(name, result);
         } else if (!p.equals(result.properties)) {
-            throw new InitializationException("could not retrieve existing" 
+            throw new InitializationException("could not retrieve existing"
                     + " factory, properties are not equal");
 
         }
@@ -1376,7 +1372,7 @@ public class VirtualSocketFactory {
             VirtualSocketFactory factory) {
         factories.put(name, factory);
     }
-        
+
     public static synchronized VirtualSocketFactory getDefaultSocketFactory()
             throws InitializationException {
 
@@ -1405,8 +1401,8 @@ public class VirtualSocketFactory {
         TypedProperties typedProperties = new TypedProperties();
 
         if (addDefaults) {
-            typedProperties.putAll(
-                    SmartSocketsProperties.getDefaultProperties());
+            typedProperties.putAll(SmartSocketsProperties
+                    .getDefaultProperties());
         }
 
         if (properties != null) {
@@ -1414,7 +1410,7 @@ public class VirtualSocketFactory {
         }
 
         VirtualSocketFactory factory = new VirtualSocketFactory(
-                DirectSocketFactory.getSocketFactory(typedProperties), 
+                DirectSocketFactory.getSocketFactory(typedProperties),
                 typedProperties);
 
         if (typedProperties.containsKey("smartsockets.factory.statistics")) {
@@ -1440,7 +1436,7 @@ public class VirtualSocketFactory {
 
         return factory;
     }
-  
+
     public VirtualSocketAddress getLocalVirtual() {
         return localVirtualAddress;
     }

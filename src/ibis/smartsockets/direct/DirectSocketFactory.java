@@ -100,8 +100,8 @@ public class DirectSocketFactory {
         //properties = p;
     
         DEFAULT_BACKLOG = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
-        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.TIMEOUT, 5000);
-        DEFAULT_LOCAL_TIMEOUT = p.getIntProperty(SmartSocketsProperties.LOCAL_TIMEOUT, 1000);
+        DEFAULT_TIMEOUT = p.getIntProperty(SmartSocketsProperties.DIRECT_TIMEOUT, 5000);
+        DEFAULT_LOCAL_TIMEOUT = p.getIntProperty(SmartSocketsProperties.DIRECT_LOCAL_TIMEOUT, 1000);
           
         boolean allowSSHIn = p.booleanProperty(SmartSocketsProperties.SSH_IN, false);
 
@@ -132,7 +132,7 @@ public class DirectSocketFactory {
                         false);
         }
         
-        USE_NIO = p.booleanProperty(SmartSocketsProperties.DIRECT_NIO, false);
+        USE_NIO = p.booleanProperty(SmartSocketsProperties.NIO, false);
         
         defaultReceiveBuffer = 
             p.getIntProperty(SmartSocketsProperties.DIRECT_SEND_BUFFER, 0);
@@ -692,14 +692,12 @@ public class DirectSocketFactory {
         // of the IOException has move to a info/debug. 
         start = System.currentTimeMillis();
         
-        if (logger.isInfoEnabled()) {
-            if (logger.isDebugEnabled()) {                 
-                logger.debug("Attempting connection to " + sas.toString()
-                        + " using network "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " local port = " + localPort
-                        + " timeout = " + timeout);
-            }
+        if (logger.isDebugEnabled()) {                 
+            logger.debug("Attempting connection to " + sas.toString()
+                    + " using network "
+                    + NetworkUtils.ipToString(target.getAddress()) + ":"
+                    + target.getPort() + " local port = " + localPort
+                    + " timeout = " + timeout);
         }
         
         try {
@@ -714,8 +712,8 @@ public class DirectSocketFactory {
             
             s.connect(target, timeout);
 
-            if (logger.isDebugEnabled()) {               
-                logger.debug("Established connection to " + sas.toString() 
+            if (logger.isInfoEnabled()) {               
+                logger.info("Established connection to " + sas.toString() 
                         + " in " + (System.currentTimeMillis()-start) + " ms.");
             }  
             
@@ -1238,7 +1236,7 @@ public class DirectSocketFactory {
             Map<String, Object> properties) throws IOException {
         return createSocket(target, timeout, 0, -1, -1, properties, false, 0);
     }
-
+    
     public DirectSocket createSocket(DirectSocketAddress target, int timeout,
             Map<String, Object> properties, int userdata) throws IOException {
         

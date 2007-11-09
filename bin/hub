@@ -29,4 +29,4 @@ do
 	shift
 done
 
-java -XX:+PrintCompilation -XX:+CITime -cp $CP $SPECIAL ibis.smartsockets.util.HubStarter $NORMAL
+java -cp $CP $SPECIAL ibis.smartsockets.util.HubStarter $NORMAL

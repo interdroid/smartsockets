@@ -9,42 +9,85 @@ import java.io.InputStream;
 
 import org.apache.log4j.Logger;
 
-
-
 public class SmartSocketsProperties {
 
     public static final String DEFAULT_FILE = "smartsockets.properties";
     
     public static final String PREFIX = "smartsockets.";
-    
+   
     public static final String FILE                = PREFIX + "file";
-    public static final String ROUTERS             = PREFIX + "routers";  
     public static final String START_HUB           = PREFIX + "start.hub";  
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
     public static final String DETAILED_EXCEPTIONS = PREFIX + "detailed.exceptions";
     
-    public static final String BACKLOG        = PREFIX + "backlog";        
-    public static final String TIMEOUT        = PREFIX + "timeout";  
-    public static final String ACCEPT_TIMEOUT = PREFIX + "timeout.accept";      
-    public static final String LOCAL_TIMEOUT  = PREFIX + "timeout.local";      
+    public static final String NIO        = PREFIX + "nio";
+    public static final String PORT_RANGE = PREFIX + "port.range";    
+    public static final String BACKLOG    = PREFIX + "backlog";
+   
+    public static final String CONNECT_TIMEOUT = PREFIX + "timeout.connect";  
+    public static final String ACCEPT_TIMEOUT  = PREFIX + "timeout.accept";      
     
-    public static final String DIRECT_PREFIX          = PREFIX + "direct.";  
-    public static final String DIRECT_BACKLOG         = DIRECT_PREFIX + "backlog";  
-    public static final String DIRECT_PORT            = DIRECT_PREFIX + "port";  
-    public static final String DIRECT_NIO             = DIRECT_PREFIX + "nio";
-    public static final String DIRECT_PORT_RANGE      = DIRECT_PREFIX + "port.range";    
-    public static final String DIRECT_SEND_BUFFER     = DIRECT_PREFIX + "sendbuffer";
-    public static final String DIRECT_RECEIVE_BUFFER  = DIRECT_PREFIX + "receivebuffer";
+    public static final String EXTERNAL_PREFIX      = PREFIX + "external.";
+    public static final String UPNP                 = EXTERNAL_PREFIX + "upnp";
+    public static final String UPNP_PORT_FORWARDING = EXTERNAL_PREFIX + "upnp.forwarding";        
+    public static final String STUN                 = EXTERNAL_PREFIX + "stun";   
+    public static final String STUN_SERVERS         = EXTERNAL_PREFIX + "stun.servers";    
+    public static final String EXTERNAL_MANUAL      = EXTERNAL_PREFIX + "manual";
     
-    //public static final String IN_BUF_SIZE  = DIRECT_PREFIX + "input_buffer";
-    //public static final String OUT_BUF_SIZE = DIRECT_PREFIX + "output_buffer";
+    public static final String DISCOVERY_PREFIX    = PREFIX + "discovery.";
+    public static final String DISCOVERY_ALLOWED   = DISCOVERY_PREFIX + "allowed"; 
+    public static final String DISCOVERY_PREFERRED = DISCOVERY_PREFIX + "preferred"; 
+    public static final String DISCOVERY_LISTED    = DISCOVERY_PREFIX + "forcelisted"; 
+    public static final String DISCOVERY_PORT      = DISCOVERY_PREFIX + "port";
+    public static final String DISCOVERY_TIMEOUT   = DISCOVERY_PREFIX + "timeout";
     
-    public static final String SSH_PREFIX    = PREFIX + "ssh.";
-    public static final String SSH_IN        = SSH_PREFIX + "in.allow";
-    public static final String SSH_OUT       = SSH_PREFIX + "out.allow";
+    public static final String HUB_PREFIX           = PREFIX + "hub.";
+    public static final String HUB_ADDRESSES        = HUB_PREFIX + "addresses";    
+    public static final String HUB_NAME             = HUB_PREFIX + "name";
+    public static final String HUB_CLUSTERS         = HUB_PREFIX + "clusters";       
+    public static final String HUB_PORT             = HUB_PREFIX + "port";                 
+    public static final String HUB_SSH_ALLOWED      = HUB_PREFIX + "ssh";     
+    public static final String HUB_SEND_BUFFER      = HUB_PREFIX + "sendbuffer";
+    public static final String HUB_RECEIVE_BUFFER   = HUB_PREFIX + "receivebuffer";
+    public static final String HUB_STATISTICS       = HUB_PREFIX + "statistics";                 
+    public static final String HUB_STATS_INTERVAL   = HUB_PREFIX + "statistics.interval";  
+    
+    public static final String HUB_DELEGATE         = HUB_PREFIX + "delegate";
+    public static final String HUB_DELEGATE_ADDRESS = HUB_PREFIX + "delegate.address";    
+    public static final String HUB_VIRTUAL_PORT     = HUB_PREFIX + "virtualPort";
+        
+    public static final String SL_PREFIX         = PREFIX + "servicelink.";        
+    public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
+    public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
+    
+    public static final String MODULES_PREFIX = PREFIX + "modules.";
+    public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
+    public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
+    public static final String MODULES_SKIP   = MODULES_PREFIX + "skip";
+    
+    public static final String DIRECT_PREFIX         = MODULES_PREFIX + "direct.";  
+    public static final String DIRECT_BACKLOG        = DIRECT_PREFIX + "backlog";  
+    public static final String DIRECT_TIMEOUT        = DIRECT_PREFIX + "timeout"; 
+    public static final String DIRECT_LOCAL_TIMEOUT  = DIRECT_PREFIX + "timeout.local";      
+    public static final String DIRECT_SEND_BUFFER    = DIRECT_PREFIX + "sendbuffer";
+    public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
+    
+    public static final String SSH_PREFIX    = DIRECT_PREFIX + "ssh.";
+    public static final String SSH_IN        = SSH_PREFIX + "in";
+    public static final String SSH_OUT       = SSH_PREFIX + "out";
     public static final String FORCE_SSH_OUT = SSH_PREFIX + "out.force";
+        
+    public static final String REVERSE_PREFIX       = MODULES_PREFIX + "reverse.";
+    public static final String REVERSE_CONNECT_SELF = REVERSE_PREFIX + "selfconnect";
     
-    public static final String NETWORKS_PREFIX = PREFIX + "networks.";        
+    public static final String ROUTED_PREFIX    = MODULES_PREFIX + "hubrouted.";
+    public static final String ROUTED_BUFFER    = ROUTED_PREFIX + "size.buffer";
+    public static final String ROUTED_FRAGMENT  = ROUTED_PREFIX + "size.fragment";
+    public static final String ROUTED_MIN_ACK   = ROUTED_PREFIX + "size.ack";
+
+    
+    public static final String NETWORKS_PREFIX  = PREFIX + "networks.";        
+    
     public static final String NETWORKS_DEFAULT = NETWORKS_PREFIX + "default";
     public static final String NETWORKS_DEFINE  = NETWORKS_PREFIX + "define";
     public static final String NETWORKS_MEMBER  = NETWORKS_PREFIX + "name";
@@ -59,50 +102,6 @@ public class SmartSocketsProperties {
     public static final String NW_FIREWALL_DENY      = NW_FIREWALL_PREFIX + "deny";
     public static final String NW_FIREWALL_DEFAULT   = NW_FIREWALL_PREFIX + "default";
     
-    public static final String EXTERNAL_PREFIX      = NETWORKS_PREFIX + "external.";
-    public static final String UPNP                 = EXTERNAL_PREFIX + "upnp";
-    public static final String UPNP_PORT_FORWARDING = EXTERNAL_PREFIX + "upnp.forwarding";        
-    public static final String STUN                 = EXTERNAL_PREFIX + "stun";   
-    public static final String STUN_SERVERS         = EXTERNAL_PREFIX + "stun.servers";    
-    public static final String EXTERNAL_MANUAL      = EXTERNAL_PREFIX + "manual";
-    
-    public static final String MODULES_PREFIX = PREFIX + "modules.";
-    public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
-    public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
-    public static final String MODULES_SKIP   = MODULES_PREFIX + "skip";
-    
-    public static final String ROUTED_PREFIX    = MODULES_PREFIX + "routed.";
-    public static final String ROUTED_BUFFER    = ROUTED_PREFIX + "receivebuffer";
-    public static final String ROUTED_FRAGMENT  = ROUTED_PREFIX + "fragment";
-    public static final String ROUTED_MIN_ACK   = ROUTED_PREFIX + "min_ack_size";
-        
-    public static final String REVERSE_PREFIX       = MODULES_PREFIX + "reverse.";
-    public static final String REVERSE_CONNECT_SELF = REVERSE_PREFIX + "allowConnectSelf";
-    
-    public static final String DISCOVERY_PREFIX    = PREFIX + "discovery.";
-    public static final String DISCOVERY_PREFERRED = DISCOVERY_PREFIX + "preferred"; 
-    public static final String DISCOVERY_ALLOWED   = DISCOVERY_PREFIX + "allowed"; 
-    public static final String DISCOVERY_PORT      = DISCOVERY_PREFIX + "port";
-    public static final String DISCOVERY_TIMEOUT   = DISCOVERY_PREFIX + "timeout";
-    
-    public static final String HUB_PREFIX           = PREFIX + "hub.";
-    public static final String HUB_ADDRESSES        = HUB_PREFIX + "addresses";    
-    public static final String HUB_SIMPLE_NAME      = HUB_PREFIX + "simple_name";
-    public static final String HUB_CLUSTERS         = HUB_PREFIX + "clusters";       
-    public static final String HUB_PORT             = HUB_PREFIX + "port";                 
-    public static final String HUB_SSH_ALLOWED      = HUB_PREFIX + "ssh";     
-    public static final String HUB_SEND_BUFFER      = HUB_PREFIX + "sendbuffer";
-    public static final String HUB_RECEIVE_BUFFER   = HUB_PREFIX + "receivebuffer";
-    public static final String HUB_STATISTICS       = HUB_PREFIX + "statistics";                 
-    public static final String HUB_STATS_INTERVAL   = HUB_PREFIX + "statistics.interval";  
-    public static final String HUB_DELEGATE         = HUB_PREFIX + "delegate";
-    public static final String HUB_DELEGATE_ADDRESS = HUB_PREFIX + "delegate.address";    
-    public static final String HUB_VIRTUAL_PORT     = HUB_PREFIX + "virtualPort";
-        
-    public static final String SL_PREFIX         = PREFIX + "servicelink.";        
-    public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
-    public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
-        
     public static final String CLUSTER_PREFIX  = PREFIX + "cluster.";
     public static final String CLUSTER_DEFINE  = CLUSTER_PREFIX + "define";
     public static final String CLUSTER_MEMBER  = CLUSTER_PREFIX + "member";
@@ -119,14 +118,15 @@ public class SmartSocketsProperties {
     private static final String [] defaults = new String [] {
             DIRECT_BACKLOG,         "255", 
             BACKLOG,                "50", 
-            LOCAL_TIMEOUT,          "1000", 
+            ACCEPT_TIMEOUT,         "60000", 
+            DIRECT_LOCAL_TIMEOUT,          "1000", 
             
             STATISTICS_INTERVAL,    "60000",
             
             SSH_OUT,                "false", 
             SSH_IN,                 "false",
             
-            DIRECT_NIO,             "false",
+            NIO,             "false",
             DIRECT_SEND_BUFFER,     "-1",
             DIRECT_RECEIVE_BUFFER,  "-1",
             
@@ -146,8 +146,8 @@ public class SmartSocketsProperties {
             MODULES_DEFINE,         "direct,reverse,hubrouted", 
             MODULES_ORDER,          "direct,reverse,hubrouted",
             
-            DISCOVERY_PREFERRED,    "false",
             DISCOVERY_ALLOWED,      "false",
+            DISCOVERY_PREFERRED,    "false",
             DISCOVERY_PORT,         "24545", 
             DISCOVERY_TIMEOUT,      "5000",    
             

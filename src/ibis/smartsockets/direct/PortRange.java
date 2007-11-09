@@ -38,7 +38,7 @@ class PortRange {
      */
     PortRange(TypedProperties p) { 
 
-        String range = p.getProperty(SmartSocketsProperties.DIRECT_PORT_RANGE);
+        String range = p.getProperty(SmartSocketsProperties.PORT_RANGE);
         
         if (range == null || range.length() == 0) { 
             return;

@@ -55,10 +55,10 @@ public class Direct extends AbstractDirectModule {
         // is '0' (any available port).
         int port = 0;
         
-        if (properties != null) { 
-            port = properties.getIntProperty(
-                    SmartSocketsProperties.DIRECT_PORT, 0);        
-        }
+     //   if (properties != null) { 
+     //       port = properties.getIntProperty(
+      //              SmartSocketsProperties.PORT, 0);        
+      //  }
         
         // TODO: why the default ??
         TypedProperties p = SmartSocketsProperties.getDefaultProperties();

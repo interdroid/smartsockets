@@ -122,7 +122,7 @@ public final class Hub extends Thread {
             goslogger.info("GossipAcceptor listning at " + local);
         }
         
-        String name = p.getProperty(SmartSocketsProperties.HUB_SIMPLE_NAME); 
+        String name = p.getProperty(SmartSocketsProperties.HUB_NAME); 
                 
         if (name == null || name.length() == 0) { 
             // If the simple name is not set, we try to use the hostname 
