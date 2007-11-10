@@ -29,6 +29,14 @@ sockets. As a result, converting existing applications to SmartSockets in
 usually quite straightforward.
 
 
+Requirements:
+-------------
+
+SmartSockets in implemented in Java, and requires Java 1.5 or higher. 
+To build SmartSockets from source, the ant build system of apache is 
+used (see http://ant.apache.org/ for details).
+
+
 Ideas behind smartsockets:
 --------------------------
 
@@ -252,13 +260,75 @@ Besides this (almost) mandatory options, SmartSockets has many other settings
 that can be tweaked. The 'smartsockets.properties.example' file shows all of 
 them, and includes a resonably extensive explanation of what they do. 
 
+Note that to use SmartSockets, you must include the file 'smartsockets-1.0.jar'
+and all dependancies in the 'external' directory of the distribution into 
+you classpath. The 'bin/app' script in the distribution illustrates how this can 
+be done. An example is shown below. 
+
+
+Example application:
+--------------------
+
+PLEASE NOTE: The example below works fine, but others may no longer work (or make 
+             any sense). They need to be tested for the final release!!
+
+The SmartSockets distribution contains several test applications and benchmarks 
+in the 'test.*' packages. As an example, we will now describe how to run one of 
+these applications, a simple latency test.
+
+We start by creating a hub network as described above. In our case, a single hub 
+is sufficient:
+   
+   ./bin/hub
+  
+Which prints: 
+
+  130.37.193.15-17878~jason
+
+We now start one of the test applications using a script in the distribution:
+
+  ./bin/app test.virtual.simple.Latency \
+       -Dsmartsockets.hub.addresses=130.37.193.15-17878~jason
+
+Note that we provide the hub contact address to the application using the '-D'
+option, as described above. This application now prints:
+
+  Creating server
+  Created server on 130.37.193.15-44672:3000@130.37.193.15-17878~jason#
+  Server waiting for connections
+
+The application has created a serversocket, and printed its content as a string
+(the "130.37.193.15-44672:3000@130.37.193.15-17878~jason#"). As you can see, the 
+hub address is also part of this data.
+
+We now start the client side of the application on a different machine, a laptop
+behind an ADSL modem which does NAT:
+
+  ./bin/app test.virtual.simple.Latency \
+        -Dsmartsockets.hub.addresses=130.37.193.15-17878~jason \
+        -target 130.37.193.15-44672:3000@130.37.193.15-17878~jason# \
+        -count 100
+
+This commandline instructs the application to connect to the server, and then 
+measure the time it takes to do 100 round trip messages. The output: 
+
+  Created connection to 130.37.193.15-44672:3000@130.37.193.15-17878~jason#
+  Configured socket: 
+   sendbuffer     = 131071
+   receiverbuffer = 131071
+   no delay       = true
+  Starting test
+  Test took 808 ms. RTT = 8.08 ms.  
+
+shows that the connection and test was succesfull.
+
 
 Known bugs and limitations:
 ---------------------------
 
 Currently, SmartSockets has the following bugs and limitations:
 
- - The code is in desperate need of decent JavaDoc!
+ - The code is in desperate need of decent documentation (JavaDoc!)
 
  - The TCP splicing mechanism is switched off by default, since it 
    cannot be trusted to provide us with a connection is a resonable time. 

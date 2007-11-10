@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
-
 public class ConnectTest {
     
     private static final int SERVERPORT = 42611;

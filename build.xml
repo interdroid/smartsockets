@@ -24,6 +24,7 @@
 	<javac 	classpath="${external}"
 		destdir="${builddir}"
                 srcdir="${srcdir}"
+                target="1.5"
                 debug="true"
                 includes="**/*.java"/>
     </target>
@@ -69,6 +70,19 @@
 	 <zip destfile="${version}.zip">
             <zipfileset dir="." prefix="${version}"
                 includes="external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**"
+                />
+            <zipfileset dir="." prefix="${version}" filemode="755"
+                includes="bin/**"
+                />
+        </zip>
+    </target>
+
+    <target name="src.zip" depends="build">
+	<delete failonerror="false" file="${version}-src.zip"/>
+
+	 <zip destfile="${version}-src.zip">
+            <zipfileset dir="." prefix="${version}"
+                includes="src/**,external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**,build.xml"
                 />
             <zipfileset dir="." prefix="${version}" filemode="755"
                 includes="bin/**"
