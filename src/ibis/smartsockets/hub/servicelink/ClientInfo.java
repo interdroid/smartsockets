@@ -20,10 +20,8 @@ public class ClientInfo {
     
         final String orig = clientAsString;
         
-        /*
         System.out.println("Parsing client from string \"" + clientAsString 
                 + "\"");
-        */
         
         if (!clientAsString.startsWith("Client(")) { 
             throw new IllegalArgumentException("String does not contain Client" 

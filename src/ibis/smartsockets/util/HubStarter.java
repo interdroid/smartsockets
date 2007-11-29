@@ -101,8 +101,9 @@ public class HubStarter {
             try {            
                 h = new Hub(p);
                 h.addHubs(hubs);
-                
+
                 System.out.println("Hub running on: " + h.getHubAddress());            
+
             } catch (IOException e) {
                 System.err.println("Oops: failed to start hub");
                 e.printStackTrace(System.err);

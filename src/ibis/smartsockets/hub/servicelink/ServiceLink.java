@@ -1058,10 +1058,14 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    public void addHubs(DirectSocketAddress[] hubs) {
+    public void addHubs(DirectSocketAddress... hubs) {
         // TODO: implement!
     }
     
+    public void addHubs(String... hubs) {
+        // TODO: implement!
+    }
+        
     public HubInfo[] hubDetails() throws IOException {
 
         if (logger.isInfoEnabled()) {

@@ -1311,7 +1311,7 @@ public class VirtualSocketFactory {
         return hubAddress;
     }
 
-    public void addHubs(DirectSocketAddress[] hubs) {
+    public void addHubs(DirectSocketAddress... hubs) {
         if (hub != null) {
             hub.addHubs(hubs);
         } else if (serviceLink != null) {
@@ -1319,6 +1319,14 @@ public class VirtualSocketFactory {
         }
     }
 
+    public void addHubs(String... hubs) {
+        if (hub != null) {
+            hub.addHubs(hubs);
+        } else if (serviceLink != null) {
+            serviceLink.addHubs(hubs);
+        }
+    }
+    
     public DirectSocketAddress[] getKnownHubs() {
 
         if (hub != null) {
@@ -1359,10 +1367,23 @@ public class VirtualSocketFactory {
         if (result == null) {
             result = createSocketFactory(p, addDefaults);
             factories.put(name, result);
-        } else if (!p.equals(result.properties)) {
-            throw new InitializationException("could not retrieve existing"
-                    + " factory, properties are not equal");
+        } else { 
+            
+            TypedProperties typedProperties = new TypedProperties();
 
+            if (addDefaults) {
+                typedProperties.putAll(SmartSocketsProperties
+                        .getDefaultProperties());
+            }
+
+            if (p != null) {
+                typedProperties.putAll(p);
+            }
+            
+            if (!typedProperties.equals(result.properties)) {
+                throw new InitializationException("could not retrieve existing"
+                        + " factory, properties are not equal");
+            }
         }
 
         return result;

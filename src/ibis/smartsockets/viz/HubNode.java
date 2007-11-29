@@ -134,7 +134,7 @@ public class HubNode extends Node {
                         ClientNode ci = (ClientNode) old.remove(a);
 
                         if (ci == null) {
-                            
+                            /*
                             if (cs[c].hasProperty("router")) {                                 
                                 ci = new RouterClientNode(cs[c], this);                                
                             } else if (cs[c].hasProperty("visualization")) {
@@ -146,6 +146,9 @@ public class HubNode extends Node {
                             } else { 
                                 ci = new NormalClientNode(cs[c], this);                           
                             }
+                            */
+                            
+                            ci = new NormalClientNode(cs[c], this);
                             
                             parent.addNode(ci);
                             parent.addEdge(ci.getEdge());

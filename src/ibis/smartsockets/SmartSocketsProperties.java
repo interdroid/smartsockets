@@ -9,6 +9,15 @@ import java.io.InputStream;
 
 import org.apache.log4j.Logger;
 
+/**
+ *  
+ * TODO Description 
+ *  
+ * @author Jason Maassen
+ * @version 1.0 Nov 22, 2007
+ * @since 1.0
+ * 
+ */
 public class SmartSocketsProperties {
 
     public static final String DEFAULT_FILE = "smartsockets.properties";
@@ -55,6 +64,8 @@ public class SmartSocketsProperties {
     public static final String HUB_DELEGATE         = HUB_PREFIX + "delegate";
     public static final String HUB_DELEGATE_ADDRESS = HUB_PREFIX + "delegate.address";    
     public static final String HUB_VIRTUAL_PORT     = HUB_PREFIX + "virtualPort";
+    
+    public static final String HUB_ADDRESS_FILE     = HUB_PREFIX + "addressfile";
         
     public static final String SL_PREFIX         = PREFIX + "servicelink.";        
     public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
@@ -160,7 +171,8 @@ public class SmartSocketsProperties {
 
     private static TypedProperties defaultProperties;
 
-    protected static final Logger logger = Logger.getLogger("ibis.smartsockets.properties");
+    protected static final Logger logger = 
+        Logger.getLogger("ibis.smartsockets.properties");
     
     private static TypedProperties getPropertyFile(String file) {
 
@@ -227,16 +239,19 @@ public class SmartSocketsProperties {
         
         return null;
     }
-    
-    
+        
+    /**
+     * @return
+     */
     public static TypedProperties getDefaultProperties() {
         
         if (defaultProperties == null) { 
+            
             defaultProperties = new TypedProperties();
 
             // Start by inserting the default values.            
             for (int i=0;i<defaults.length;i+=2) { 
-                defaultProperties.put(defaults[i], defaults[i+1]);            
+                defaultProperties.put(defaults[i], defaults[i+1]);
             }
       
             // Get the smartsockets related properties from the commandline. 

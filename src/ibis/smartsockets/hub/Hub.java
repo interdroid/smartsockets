@@ -15,7 +15,10 @@ import ibis.smartsockets.hub.state.StateCounter;
 import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.TypedProperties;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Arrays;
 
 import org.apache.log4j.Logger;
@@ -47,6 +50,8 @@ public final class Hub extends Thread {
     private final Discovery discovery;
         
     private final VirtualConnections virtualConnections;
+    
+    private final String addressFile; 
     
     private long nextStats;
     
@@ -201,8 +206,29 @@ public final class Hub extends Thread {
         STAT_FREQ = p.getIntProperty(SmartSocketsProperties.HUB_STATS_INTERVAL, 60000);
         
         nextStats = System.currentTimeMillis() + STAT_FREQ;
+
+        addressFile = p.getProperty(SmartSocketsProperties.HUB_ADDRESS_FILE);
+      
+        if (addressFile != null && addressFile.length() > 0) { 
+            writeAddressFile();
+        }
         
         start();
+    }
+
+    private void writeAddressFile() { 
+        
+        try {
+            File f = new File(addressFile);
+            
+            PrintStream out = new PrintStream(new FileOutputStream(f));            
+            out.println(getHubAddress().toString());
+            out.close();        
+            
+            f.deleteOnExit();
+        } catch (Exception e) { 
+            misclogger.warn("Failed to save address to file!", e);
+        }
     }
     
     public void addHubs(DirectSocketAddress... hubAddresses) { 
