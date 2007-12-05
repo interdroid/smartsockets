@@ -5,14 +5,14 @@ import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 
 import java.awt.Color;
+import java.awt.Paint;
 import java.util.HashMap;
 import java.util.Iterator;
-
 
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
-public class HubNode extends Node {
+public class HubNode extends SmartNode {
     
     final SmartsocketsViz parent;
     
@@ -25,22 +25,36 @@ public class HubNode extends Node {
     
     private CollectionClientNode clientCollection;
     
-    private boolean collapseClients = true;
+    private boolean collapseClients = false;
+    
+    private Pattern pattern; 
     
     public HubNode(SmartsocketsViz parent, HubInfo info) {
-        super("Hub " + info.hubAddress.toString(), " H ");            
+        super("Hub " + info.hubAddress.toString(), " H ");
         
         setPopup("CollapsedHubNode");
         
-        setType(Node.TYPE_CIRCLE);
-        setBackColor(Color.decode("#8B2500"));
-        setNodeBorderInactiveColor(Color.decode("#5c1800"));
+        setType(Node.TYPE_ELLIPSE);
+        
+//        setBackColor(Color.decode("#8B2500"));
+//        setNodeBorderInactiveColor(Color.decode("#5c1800"));
+        
+        // color = parent.getUniqueColor();        
+        //setColor(color);
+        
+        pattern = parent.getUniquePaint();
+        
+        setPattern(pattern);
         
         this.parent = parent;
         
         updateInfo(info);
         
         clientCollection = new CollectionClientNode(info.clients, this);
+    }
+    
+    public Pattern getPatern() { 
+        return pattern;
     }
         
     public void deleteEdge(Edge e) { 
@@ -119,10 +133,6 @@ public class HubNode extends Node {
                 clients.put("collection", clientCollection);
 
             } else { 
-                // NOTE: this does not allow clients to 'change shape' during 
-                // the run (e.g., a client changing from a router to a normal 
-                // client)
-                
                 ClientInfo [] cs = parent.getClientsForHub(info.hubAddress);
                 
                 if (cs != null) { 
@@ -134,27 +144,13 @@ public class HubNode extends Node {
                         ClientNode ci = (ClientNode) old.remove(a);
 
                         if (ci == null) {
-                            /*
-                            if (cs[c].hasProperty("router")) {                                 
-                                ci = new RouterClientNode(cs[c], this);                                
-                            } else if (cs[c].hasProperty("visualization")) {
-                                ci = new VizClientNode(cs[c], this);
-                            } else if (cs[c].hasProperty("nameserver")) {
-                                ci = new NameServerClientNode(cs[c], this);                                                            
-                            } else if (cs[c].hasProperty("ibis")) {
-                                ci = new IbisClientNode(cs[c], this);                           
-                            } else { 
-                                ci = new NormalClientNode(cs[c], this);                           
-                            }
-                            */
-                            
-                            ci = new NormalClientNode(cs[c], this);
+                            ci = new ClientNode(cs[c], this);
                             
                             parent.addNode(ci);
                             parent.addEdge(ci.getEdge());
                             
-                        } else if (ci instanceof RouterClientNode) { 
-                            ((RouterClientNode) ci).update(cs[c]);
+                        } else { 
+                            ci.update(cs[c], this);
                         }
 
                         clients.put(a, ci);
@@ -216,7 +212,8 @@ public class HubNode extends Node {
         
         setMouseOverText(new String[] { 
                 "Hub: " + info.name, 
-                "Loc: " + info.hubAddress.toString() });
+                "Loc: " + info.hubAddress.toString(), 
+                "Color: " + pattern.id});
     }
     
     public synchronized void expandClients() {        

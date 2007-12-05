@@ -112,6 +112,9 @@ public final class Hub extends Thread {
             }
         }
                 
+        System.err.println("Port = " + port);
+        
+        
         // NOTE: These are not started until later. We first need to init the
         // rest of the world!        
         acceptor = new Acceptor(p, port, state, connections, hubs, 

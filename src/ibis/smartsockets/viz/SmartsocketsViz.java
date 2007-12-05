@@ -10,6 +10,7 @@ import ibis.smartsockets.hub.servicelink.ServiceLink;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.MenuItem;
+import java.awt.Paint;
 import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -20,7 +21,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-
 
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.GLPanel;
@@ -46,6 +46,9 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     private HashMap<DirectSocketAddress, HubNode> oldHubs = 
         new HashMap<DirectSocketAddress, HubNode>();
 
+    private UniquePaint c = new UniquePaint();
+    
+    
     /** Default constructor.
      * @param hub 
      */
@@ -61,11 +64,11 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
             DirectServerSocket ss = df.createServerSocket(0, 1, null);
 
             sl = ServiceLink.getServiceLink(null, hub, ss.getAddressSet());
-            sl.registerProperty("visualization", "");                        
+            sl.registerProperty("smartsockets.viz", "V^Visualization^#545454");                        
         } catch (Exception e) {
             throw new Error("Failed to connect to Hub: ", e);
         }
-
+        
         new Thread(this).start();
     }
 
@@ -212,6 +215,8 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         for (HubNode n : hubs.values()) { 
             n.updateRouters(clients);
         }
+        
+        tgPanel.repaint();
     }
 
     public void run() {
@@ -286,5 +291,9 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     
     public void deleteNode(Node node) {
         tgPanel.deleteNode(node);
+    }
+    
+    public Pattern getUniquePaint() {    
+        return c.getUniquePaint();
     }
 }

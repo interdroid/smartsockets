@@ -1,13 +1,15 @@
 package ibis.smartsockets.viz;
 
 import java.awt.Color;
+import java.awt.Paint;
+import java.util.StringTokenizer;
 
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
-public class ClientNode extends Node {
+public class ClientNode extends SmartNode {
 
     protected Edge edge;
     protected HubNode hub;
@@ -18,7 +20,9 @@ public class ClientNode extends Node {
         
         this.hub = hub;
         edge = new Edge(this, hub);
-        edge.useArrowHead(true);
+        edge.useArrowHead(false);
+        
+        
     }
     
     public ClientNode(ClientInfo info, HubNode hub) { 
@@ -26,42 +30,74 @@ public class ClientNode extends Node {
         this(info.getClientAddress().toString(), hub);        
         
         setType(Node.TYPE_CIRCLE);
-
+        
+        update(info, hub);
+    } 
+        
+    public void update(ClientInfo info, HubNode hub) {
+        
         String adr = info.getClientAddress().toString();
 
         System.out.println("Adding client " + adr);
 
-        String label = info.getProperty("smartsockets.viz.label");
-        String color = info.getProperty("smartsockets.viz.color");
-        String bg = info.getProperty("smartsockets.viz.bgcolor");
-        String popup = info.getProperty("smartsockets.viz.popup");
+        String tmp = info.getProperty("smartsockets.viz");
         
-        if (label == null) { 
-            setLabel("C");
-        }        
+        String label    = getElement(tmp, 0, "C");
+        String [] popup = getElements(tmp, 1, new String[] { "Client:", adr });
+        String color    = getElement(tmp, 2, null);
         
         setLabel(label);
         
-        if (color != null) { 
-            setBackColor(Color.decode(color));
+        if (color != null) {
+            setPattern(Color.decode(color));
+        } else {
+            setPattern(hub.getPatern());
         }
-        
-        if (bg != null) {
-            setNodeBorderInactiveColor(Color.decode(bg));
-        }
-        
-        if (popup != null) { 
-            setMouseOverText(parsePopup(popup));
-        } else { 
-            setMouseOverText(new String[] { "Client:", adr });
-        }
+                
+        setMouseOverText(popup);
     }
     
-    private String [] parsePopup(String s) { 
-        return new String[] { "eek", "ook", "aak" };
+    private String getElement(String s, int num, String def) {
+        
+        if (s == null) { 
+            return def;
+        }
+        
+        String [] tmp = split(s, "^");
+        
+        System.out.println("tmp = " + tmp + " " + tmp.length);
+        
+        if (tmp.length <= num || tmp[num] == null) {
+            return def;
+        }
+
+        return tmp[num];
     }
     
+    private String [] split(String s, String seperator) { 
+        
+        StringTokenizer t = new StringTokenizer(s, seperator);
+        
+        String [] result = new String[t.countTokens()];
+        
+        for (int i=0;i<result.length;i++) { 
+            result[i] = t.nextToken();
+        }
+        
+        return result;
+    }
     
+    private String [] getElements(String s, int num, String [] def) {
+        
+        String tmp = getElement(s, num, null);
+
+        if (tmp == null) { 
+            return def;
+        }
+        
+        return split(tmp, ",");
+    }    
+        
     public Edge getEdge() {
         return edge;
     }
