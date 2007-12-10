@@ -12,7 +12,7 @@ public class UniquePaint {
     private ArrayList <Pattern> patterns = new ArrayList<Pattern>();
     private int index = 0;
     
-    private int hueParts = 6;
+    private int hueParts = 12;
 
     public UniquePaint() { 
         generateColors();
@@ -25,9 +25,9 @@ public class UniquePaint {
         generateColors(0.5f, 1.0f);
         generateColors(1.0f, 0.5f);
 
-        generateTextures(1.0f, 1.0f, Color.BLACK);
-        generateTextures(0.5f, 1.0f, Color.BLACK);
-        generateTextures(1.0f, 0.5f, Color.BLACK);
+ //         generateTextures(1.0f, 1.0f, Color.BLACK);
+  //      generateTextures(0.5f, 1.0f, Color.BLACK);
+       // generateTextures(1.0f, 0.5f, Color.BLACK);
     }
     
     private void generateColors(float sat, float bri) { 

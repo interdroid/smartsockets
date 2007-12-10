@@ -4,7 +4,6 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 
 import java.util.StringTokenizer;
 
-
 public class HubInfo {
 
     public final DirectSocketAddress hubAddress;

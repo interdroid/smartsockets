@@ -30,9 +30,11 @@ public final class Hub extends Thread {
     private static final int DEFAULT_DISCOVERY_PORT = 24545;
     private static final int DEFAULT_ACCEPT_PORT    = 17878;    
 
-    private static final Logger misclogger = Logger.getLogger("ibis.smartsockets.hub.misc");
+    private static final Logger misclogger = 
+        Logger.getLogger("ibis.smartsockets.hub.misc");
 
-    private static final Logger goslogger = Logger.getLogger("ibis.smartsockets.hub.gossip");
+    private static final Logger goslogger = 
+        Logger.getLogger("ibis.smartsockets.hub.gossip");
 
     private final boolean printStatistics;
     private final long STAT_FREQ;

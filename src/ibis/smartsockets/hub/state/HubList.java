@@ -37,7 +37,7 @@ public class HubList {
         
     public synchronized HubDescription nextHubToCheck() {
                
-        // Wait until there are proxies to check.
+        // Wait until there are hubs to check.
         while (mustCheck.size() == 0) {             
             try {
                 wait();

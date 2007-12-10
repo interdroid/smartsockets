@@ -4,8 +4,6 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 
-import java.awt.Color;
-import java.awt.Paint;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -17,6 +15,7 @@ public class HubNode extends SmartNode {
     final SmartsocketsViz parent;
     
     private HubInfo info;
+    
     private HashMap<DirectSocketAddress, Edge> edges = 
         new HashMap<DirectSocketAddress, Edge>();
     
@@ -35,12 +34,6 @@ public class HubNode extends SmartNode {
         setPopup("CollapsedHubNode");
         
         setType(Node.TYPE_ELLIPSE);
-        
-//        setBackColor(Color.decode("#8B2500"));
-//        setNodeBorderInactiveColor(Color.decode("#5c1800"));
-        
-        // color = parent.getUniqueColor();        
-        //setColor(color);
         
         pattern = parent.getUniquePaint();
         
@@ -65,6 +58,75 @@ public class HubNode extends SmartNode {
         parent.addEdge(e);
     }
     
+    public void removeUnusedEdges() {
+
+        HashMap oldEdges = edges;
+        edges = new HashMap<DirectSocketAddress, Edge>();
+
+        System.out.println("Hub " + info.hubAddress.toString() 
+                + " connected to " + info.connectedTo.length + " others");
+        
+        // Refresh existing edges and add new ones..
+        for (int i=0;i<info.connectedTo.length;i++) { 
+
+            DirectSocketAddress to = info.connectedTo[i];
+
+            Edge e = (Edge) oldEdges.remove(to);
+
+            if (e != null) { 
+                edges.put(to, e);
+            }
+        }
+
+        // remove old edges
+        if (oldEdges.size() > 0) { 
+            Iterator itt = oldEdges.values().iterator();
+
+            while (itt.hasNext()) {
+                parent.deleteEdge((Edge) itt.next());
+            }
+        }        
+    }
+
+    public void addAndUpdateEdges() {
+        
+        // Refresh existing edges and add new ones..
+        for (int i=0;i<info.connectedTo.length;i++) { 
+
+            DirectSocketAddress to = info.connectedTo[i];
+
+            Edge e = (Edge) edges.get(to);
+
+            if (e == null) { 
+
+                HubNode other = parent.getHubNode(to);
+
+                if (other != null) {
+                    // we know the target
+                    
+                    Edge e2 = other.edges.get(info.hubAddress); 
+                    
+                    if (e2 != null) { 
+                        // The other node already has an edge pointing to me, so
+                        // we reuse that one!
+                        e2.useArrowHead(false);
+                        // parent.addEdge(e2);
+                    } else { 
+                        e = new Edge(this, other);
+                        e.useArrowHead(true);
+                        parent.addEdge(e);
+                    }
+                } else { 
+                    System.out.println("Failed to find hub: " + to);
+                }
+            }
+
+            if (e != null) { 
+                edges.put(to, e);
+            }
+        }
+    }
+    
     public void updateEdges() {
 
         HashMap oldEdges = edges;
@@ -86,6 +148,7 @@ public class HubNode extends SmartNode {
 
                 if (other != null) {
                     // we know the target
+                    
                     e = new Edge(this, other);
                     e.useArrowHead(true);
                     parent.addEdge(e);
@@ -212,8 +275,8 @@ public class HubNode extends SmartNode {
         
         setMouseOverText(new String[] { 
                 "Hub: " + info.name, 
-                "Loc: " + info.hubAddress.toString(), 
-                "Color: " + pattern.id});
+                "Loc: " + info.hubAddress.toString() });
+                //"Color: " + pattern.id});
     }
     
     public synchronized void expandClients() {        

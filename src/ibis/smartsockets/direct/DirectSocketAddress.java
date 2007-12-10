@@ -451,8 +451,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         
         if (hashCode == 0) { 
             
-            hashCode = (Arrays.hashCode(externalAds) ^ Arrays.hashCode(publicAds)
-                ^ Arrays.hashCode(privateAds));
+            hashCode = (Arrays.hashCode(externalAds) 
+                    ^ Arrays.hashCode(publicAds)
+                    ^ Arrays.hashCode(privateAds));
             
             // Small chance, but let's fix this case anyway...
             if (hashCode == 0) { 

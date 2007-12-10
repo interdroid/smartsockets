@@ -7,6 +7,7 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.discovery.Discovery;
 import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
+import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.TypedProperties;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 import ibis.smartsockets.virtual.modules.AcceptHandler;
@@ -358,14 +359,14 @@ public class VirtualSocketFactory {
         // Still no address ? Give up...
         if (hubs.size() == 0) {
             // properties not set, so no central hub is available
-            // if (logger.isInfoEnabled()) {
-            System.out
-                    .println("ServiceLink not created: no hub address available!");
-            logger.info("ServiceLink not created: no hub address available!");
-            // }
+            logger.warn("ServiceLink not created: no hub address available!");
             return;
         }
 
+        // Sort addresses according to locality ?
+        
+        
+        
         try {
             serviceLink = ServiceLink.getServiceLink(properties, hubs,
                     myAddresses);

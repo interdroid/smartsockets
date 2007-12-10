@@ -19,7 +19,7 @@ public class ClientNode extends SmartNode {
         super(id);        
         
         this.hub = hub;
-        edge = new Edge(this, hub);
+        edge = new Edge(this, hub, 20);
         edge.useArrowHead(false);
         
         

@@ -104,15 +104,21 @@ class Connector extends CommunicationThread {
                 hconlogger.debug("Succesfully created connection!");
             }
             
-            d.setReachable();
-           
+            //if (!d.reachableKnown() || !d.isReachable()) {
+                d.setReachable();
+                knownHubs.getLocalDescription().addConnectedTo(d.hubAddressAsString);
+            //}
+            
         } catch (IOException e) {
             
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.info("Failed to set up connection!");
             }
             
-            d.setUnreachable();
+//            if (!d.reachableKnown() || d.isReachable()) {
+                d.setUnreachable();
+                knownHubs.getLocalDescription().removeConnectedTo(d.hubAddressAsString);
+  //          }
             
         } finally {             
             DirectSocketFactory.close(s, out, in);
@@ -184,7 +190,8 @@ class Connector extends CommunicationThread {
                 }
                 
                 c = new HubConnection(s, in, out, d, connections, 
-                        knownHubs, state, virtualConnections, true);                                
+                        knownHubs, state, virtualConnections, true);
+                
                 result = d.createConnection(c);                
                 
                 if (!result) {
@@ -220,6 +227,8 @@ class Connector extends CommunicationThread {
             }
         
             d.setReachable();       
+            knownHubs.getLocalDescription().addConnectedTo(d.hubAddressAsString);
+            
         } catch (IOException e) {
             // This happens a lot, so it's not worth a warning...
             if (hconlogger.isDebugEnabled()) {

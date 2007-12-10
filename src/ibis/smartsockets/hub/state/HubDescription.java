@@ -142,8 +142,8 @@ public class HubDescription {
         } 
     }
     
-    public void update(ClientDescription [] clients, String [] connectedTo, String name, 
-            long remoteState) {
+    public void update(ClientDescription [] clients, String [] connectedTo, 
+            String name, long remoteState) {
         
         if (local) { 
             throw new IllegalStateException("Cannot update the local"
@@ -182,7 +182,9 @@ public class HubDescription {
         return homeState;
     }
     
-    public boolean addService(DirectSocketAddress client, String tag, String address) {
+    public boolean addService(DirectSocketAddress client, String tag, 
+            String address) {
+        
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -200,7 +202,9 @@ public class HubDescription {
         }
     }
 
-    public boolean updateService(DirectSocketAddress client, String tag, String address) {
+    public boolean updateService(DirectSocketAddress client, String tag, 
+            String address) {
+        
         synchronized (clients) {
             
             if (!clients.containsKey(client)) {
@@ -248,7 +252,8 @@ public class HubDescription {
     
     public ArrayList<ClientDescription> getClients(String tag) {
         
-        ArrayList<ClientDescription> result = new ArrayList<ClientDescription>();
+        ArrayList<ClientDescription> result = 
+            new ArrayList<ClientDescription>();
         
         synchronized (clients) {           
             
@@ -347,7 +352,8 @@ public class HubDescription {
         setContactTimeStamp(false);
     }
     
-    public synchronized boolean addIndirection(HubDescription indirection, int hops) {
+    public synchronized boolean addIndirection(HubDescription indirection, 
+            int hops) {
         
         if (reachable != REACHABLE && hops < this.hops) {
             this.hops = hops;
@@ -388,7 +394,7 @@ public class HubDescription {
         return (canReachMe != UNKNOWN);        
     }
         
-    synchronized boolean isReachable() { 
+    public synchronized boolean isReachable() { 
         return reachable == REACHABLE;
     }
         

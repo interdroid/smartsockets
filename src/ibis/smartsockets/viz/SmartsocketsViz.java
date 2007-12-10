@@ -200,7 +200,9 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         // Now update the connections between the hubs and the clients that 
         // are connected to them...
         for (HubNode n : hubs.values()) { 
-            n.updateEdges();
+            n.removeUnusedEdges();
+            n.addAndUpdateEdges();
+            // n.updateEdges();
             n.updateClients();
         }
         
