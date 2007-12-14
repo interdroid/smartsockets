@@ -36,6 +36,8 @@ public class HubRoutedInputStream extends InputStream {
         this.parent = parent;
         this.buffer = new byte[bufferSize];
         this.MINIMAL_ACK_SIZE = ackSize;
+        
+    //    System.err.println("Buffer = " + bufferSize + ")"); 
     }
     
     public int read() throws IOException {
@@ -106,6 +108,7 @@ public class HubRoutedInputStream extends InputStream {
     private void decreaseAvailableAndACK(int amount) throws IOException { 
         
         synchronized (this) {
+       //     System.err.println("SEND ACK Available -= " + amount + "(" + (available - amount) + ")"); 
             available -= amount;
         }
         
@@ -186,7 +189,8 @@ public class HubRoutedInputStream extends InputStream {
         
         // Sanity check -- remove ASAP
         if (len > (buffer.length - available)) { 
-            System.err.println("EEK: buffer overflow!!");
+            System.err.println("EEK: buffer overflow!! (" + len + " > " + buffer.length + " - " + available + ")");
+            new Exception().printStackTrace(System.err);
         }
         
         int cont = (buffer.length - startWrite);
@@ -201,6 +205,8 @@ public class HubRoutedInputStream extends InputStream {
             dis.readFully(buffer, 0, len-cont);
             startWrite = len-cont;
         }
+        
+     //   System.err.println("RECEIVE Available += " + len + "(" + (available + len) + ")"); 
         
         available += len;
         

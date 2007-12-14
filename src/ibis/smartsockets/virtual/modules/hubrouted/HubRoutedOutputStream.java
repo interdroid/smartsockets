@@ -25,6 +25,8 @@ public class HubRoutedOutputStream extends OutputStream {
         buffer = new byte[fragmentation];
    
         remoteBufferFree = bufferSize;
+        
+      //  System.err.println("@@@@ RemoteBuffer = " + remoteBufferFree);
     }
         
     public void write(byte[] b) throws IOException {        
@@ -76,6 +78,8 @@ public class HubRoutedOutputStream extends OutputStream {
         
         while (remoteBufferFree-used < 0) {
             try { 
+        //        System.err.println("@@@@ Waiting for RemoteBuffer (" + remoteBufferFree + " - " + used + " < 0)");
+                
                 wait(timeleft);
             } catch (InterruptedException e) {
                 // ignore
@@ -98,6 +102,9 @@ public class HubRoutedOutputStream extends OutputStream {
     }
     
     protected synchronized void messageACK(int data) { 
+
+    //    System.err.println("ACK -> RemoteBuffer += " + data + "(" + (remoteBufferFree + data) + ")");
+        
         remoteBufferFree += data;
         notifyAll();
     }
@@ -114,7 +121,12 @@ public class HubRoutedOutputStream extends OutputStream {
             waitForBufferSpace();
             
             parent.flush(buffer, 0, used);
-            remoteBufferFree -= used;
+            
+            synchronized (this) {
+           //     System.err.println("FLUSH -> RemoteBuffer -= " + used + "(" + (remoteBufferFree - used) + ")");
+                remoteBufferFree -= used;
+            }
+             
             used = 0;
         }
     }

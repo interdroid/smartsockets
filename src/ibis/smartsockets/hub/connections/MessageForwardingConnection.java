@@ -1042,7 +1042,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     
     protected final boolean runConnection() {
         
-        try { 
+        try {
             int opcode = in.read();
             
             switch (opcode) { 

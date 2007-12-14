@@ -73,7 +73,8 @@ public class Acceptor extends CommunicationThread {
             DataInputStream in, DataOutputStream out) throws IOException { 
 
         String otherAsString = in.readUTF();        
-        DirectSocketAddress addr = DirectSocketAddress.getByAddress(otherAsString); 
+        DirectSocketAddress addr = 
+            DirectSocketAddress.getByAddress(otherAsString); 
 
         if (hconlogger.isDebugEnabled()) { 
             hconlogger.debug("Got connection from " + addr);

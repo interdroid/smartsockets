@@ -1,6 +1,7 @@
 package ibis.smartsockets.virtual;
 
 import ibis.smartsockets.direct.DirectSocketAddress;
+import ibis.smartsockets.util.MalformedAddressException;
 import ibis.smartsockets.util.TransferUtils;
 
 import java.io.DataInput;
@@ -31,7 +32,8 @@ public class VirtualSocketAddress extends SocketAddress implements Serializable 
     // Cache for the coded form of this address
     private transient byte [] codedForm;
 
-    public VirtualSocketAddress(DataInput in) throws IOException {
+    public VirtualSocketAddress(DataInput in) 
+        throws IOException, MalformedAddressException {
 
         int mlen = in.readShort();         
         int hlen = in.readShort();
@@ -86,8 +88,9 @@ public class VirtualSocketAddress extends SocketAddress implements Serializable 
      * @param address 
      * @throws UnknownHostException 
      */
-    public VirtualSocketAddress(String address) throws UnknownHostException { 
-                        
+    public VirtualSocketAddress(String address) 
+        throws UnknownHostException, MalformedAddressException { 
+        
         int index1 = address.lastIndexOf('@');
         int index2 = address.lastIndexOf('#');                
 
@@ -123,22 +126,29 @@ public class VirtualSocketAddress extends SocketAddress implements Serializable 
         int index = address.lastIndexOf(':');
 
         if (index == -1) { 
-            throw new IllegalArgumentException("String does not contain " 
-                    + "VirtualSocketAddress!");
+            throw new MalformedAddressException("String \"" + address + "\"" +
+                    " does not contain VirtualSocketAddress!");
         }
                 
-        machine = DirectSocketAddress.getByAddress(address.substring(0, index));
-        port = Integer.parseInt(address.substring(index+1));                        
+        try { 
+            machine = DirectSocketAddress.getByAddress(
+                    address.substring(0, index));
+            
+            port = Integer.parseInt(address.substring(index+1));
+        } catch (NumberFormatException e) {
+            throw new MalformedAddressException("String \"" + address + "\"" +
+                    " does not contain VirtualSocketAddress!", e);
+        }
     }
 
     public VirtualSocketAddress(String machine, int port) 
-        throws UnknownHostException {
+        throws UnknownHostException, MalformedAddressException {
         
         this(DirectSocketAddress.getByAddress(machine), port, null, null);
     }
 
     public VirtualSocketAddress(String hub, String machine, int port) 
-        throws UnknownHostException {    
+        throws UnknownHostException, MalformedAddressException {    
         
         this(DirectSocketAddress.getByAddress(machine), port, 
                 DirectSocketAddress.getByAddress(hub), null);
@@ -274,7 +284,7 @@ public class VirtualSocketAddress extends SocketAddress implements Serializable 
     }
     
     public static VirtualSocketAddress fromBytes(byte [] source, int offset) 
-        throws UnknownHostException {
+        throws UnknownHostException, MalformedAddressException {
 
         int mlen = TransferUtils.readShort(source, offset);
         int hlen = TransferUtils.readShort(source, offset+2);

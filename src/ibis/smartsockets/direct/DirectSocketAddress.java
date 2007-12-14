@@ -1,6 +1,7 @@
 package ibis.smartsockets.direct;
 
 
+import ibis.smartsockets.util.MalformedAddressException;
 import ibis.smartsockets.util.NetworkUtils;
 
 import java.io.DataInput;
@@ -78,82 +79,102 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * @throws UnknownHostException 
      */    
     private DirectSocketAddress(byte [] coded, int off) 
-        throws UnknownHostException {
+        throws UnknownHostException, MalformedAddressException {
         
         decode(coded, off);
     } 
 
-    private void decode(byte [] coded, int off) throws UnknownHostException { 
-        int index = off;
+    private void decode(byte [] coded, int off) throws UnknownHostException, 
+        MalformedAddressException {
 
-        externalAds = new InetSocketAddress[coded[index++] & 0xFF];
-        publicAds = new InetSocketAddress[coded[index++] & 0xFF];
-        privateAds = new InetSocketAddress[coded[index++] & 0xFF];
+        try { 
+            int index = off;
+
+            externalAds = new InetSocketAddress[coded[index++] & 0xFF];
+            publicAds = new InetSocketAddress[coded[index++] & 0xFF];
+            privateAds = new InetSocketAddress[coded[index++] & 0xFF];
         
-        int uuidLen = coded[index++];
-        int userLen = coded[index++] & 0xFF;
-        
-        index = decode(externalAds, coded, index);
-        index = decode(publicAds, coded, index);
-        index = decode(privateAds, coded, index);
-        
-        if (uuidLen > 0) {
-            UUID = new byte[uuidLen];
-            System.arraycopy(coded, index, UUID, 0, uuidLen);
-            index += uuidLen;
-        }        
-        
-        if (userLen > 0) { 
-            user = new String(coded, index, userLen);
-        }        
+            int uuidLen = coded[index++];
+            int userLen = coded[index++] & 0xFF;
+
+            index = decode(externalAds, coded, index);
+            index = decode(publicAds, coded, index);
+            index = decode(privateAds, coded, index);
+
+            if (uuidLen > 0) {
+                UUID = new byte[uuidLen];
+                System.arraycopy(coded, index, UUID, 0, uuidLen);
+                index += uuidLen;
+            }        
+
+            if (userLen > 0) { 
+                user = new String(coded, index, userLen);
+            }
+        } catch (UnknownHostException e) { 
+            // pass through
+            throw e;
+        } catch (MalformedAddressException e) { 
+            // pass through
+            throw e;        
+        } catch (Exception e) { 
+            throw new MalformedAddressException("Failed to decode address", e);
+        }
     }    
     
     private static int decode(InetSocketAddress[] target, byte [] src, 
-            int index) throws UnknownHostException { 
+            int index) throws UnknownHostException, MalformedAddressException { 
         
-        byte [] tmp4 = null;
-        byte [] tmp16 = null;
+        try { 
+            byte [] tmp4 = null;
+            byte [] tmp16 = null;
+
+            for (int i=0;i<target.length;i++) { 
+
+                int adlen = src[index++] & 0xFF;
+
+                int port = 0;
+
+                if (adlen == 4) { 
+                    // IPv4
+                    if (tmp4 == null) { 
+                        tmp4 = new byte[4];
+                    }
+
+                    System.arraycopy(src, index, tmp4, 0, 4);
+                    index += 4;
+
+                    port = (src[index++] & 0xFF);
+                    port |= (src[index++] & 0xFF) << 8;
+
+                    target[i] = new InetSocketAddress(
+                            InetAddress.getByAddress(tmp4), port);
+                } else { 
+                    // IPv6
+                    if (tmp16 == null) { 
+                        tmp16 = new byte[16];
+                    }
+
+                    System.arraycopy(src, index, tmp16, 0, 16);
+                    index += 16;
+
+                    port = (src[index++] & 0xFF);
+                    port |= (src[index++] & 0xFF) << 8;
+
+                    target[i] = new InetSocketAddress(
+                            InetAddress.getByAddress(tmp16), port);
+                }
+
+                //address = IPAddressSet.getFromAddress(tmp);
+
+            } 
+            
+        } catch (UnknownHostException e) { 
+            // pass through
+            throw e;
+        } catch (Exception e) { 
+            throw new MalformedAddressException("Failed to decode address", e);
+        }
         
-        for (int i=0;i<target.length;i++) { 
-            
-            int adlen = src[index++] & 0xFF;
-            
-            int port = 0;
-            
-            if (adlen == 4) { 
-                // IPv4
-                if (tmp4 == null) { 
-                    tmp4 = new byte[4];
-                }
-                
-                System.arraycopy(src, index, tmp4, 0, 4);
-                index += 4;
-                
-                port = (src[index++] & 0xFF);
-                port |= (src[index++] & 0xFF) << 8;
-                
-                target[i] = new InetSocketAddress(
-                        InetAddress.getByAddress(tmp4), port);
-            } else { 
-                // IPv6
-                if (tmp16 == null) { 
-                    tmp16 = new byte[16];
-                }
-                
-                System.arraycopy(src, index, tmp16, 0, 16);
-                index += 16;
-                
-                port = (src[index++] & 0xFF);
-                port |= (src[index++] & 0xFF) << 8;
-                
-                target[i] = new InetSocketAddress(
-                        InetAddress.getByAddress(tmp16), port);
-            }
-            
-            //address = IPAddressSet.getFromAddress(tmp);
-       
-        } 
-    
         return index;
     }
     
@@ -800,13 +821,13 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
     }
    
     public static DirectSocketAddress fromBytes(byte [] coded) 
-        throws UnknownHostException {
+        throws UnknownHostException, MalformedAddressException {
         return fromBytes(coded, 0);
     }
 
     
     public static DirectSocketAddress fromBytes(byte [] coded, int off) 
-        throws UnknownHostException {
+        throws UnknownHostException, MalformedAddressException {
         
         return new DirectSocketAddress(coded, off);
     }
@@ -834,8 +855,8 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * @param address The IPAddressSet.
      * @param port The port number.
      */
-    public static DirectSocketAddress getByAddress(IPAddressSet a, int port, String user) 
-        throws UnknownHostException {
+    public static DirectSocketAddress getByAddress(IPAddressSet a, int port, 
+            String user) throws UnknownHostException {
         
         return getByAddress(null, null, a, new int [] { port }, user);
     }
@@ -881,7 +902,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         } 
     
         if (otherPorts.length != 1 && otherPorts.length != other.addresses.length) { 
-            throw new IllegalArgumentException("Number of ports does not match" 
+            throw new MalformedAddressException("Number of ports does not match" 
                     + "number of addresses");
         }        
     
@@ -905,7 +926,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         for (int i=0;i<other.addresses.length;i++) { 
          
             if (i < otherPorts.length && (otherPorts[i] <= 0 || otherPorts[i] > 65535)) { 
-                throw new IllegalArgumentException("Port["+i+"] out of range");
+                throw new MalformedAddressException("Port["+i+"] out of range");
             }
          
             int port = 0;
@@ -931,7 +952,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         } else {
             
             if (externalPorts.length != 1 && externalPorts.length != external.addresses.length) { 
-                throw new IllegalArgumentException("Number of external ports " +
+                throw new MalformedAddressException("Number of external ports " +
                         "does not match number of external addresses");
             }        
         
@@ -1020,7 +1041,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * @throws UnknownHostException
      */
     public static DirectSocketAddress getByAddress(String addressPort) 
-        throws UnknownHostException { 
+        throws UnknownHostException, MalformedAddressException { 
         
         DirectSocketAddress result = parseOldStyleAddress(addressPort);
         
@@ -1057,7 +1078,8 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         }
     }
 
-    private static DirectSocketAddress parseNewStyleAddress(String addressPort) {
+    private static DirectSocketAddress parseNewStyleAddress(String addressPort) 
+        throws MalformedAddressException {
         
         StringTokenizer st = new StringTokenizer(addressPort, SEPARATORS, true);
         
@@ -1100,7 +1122,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 case EXTERNAL_START: 
         
                     if (!allowExternalStart) { 
-                        throw new IllegalArgumentException("Unexpected " 
+                        throw new MalformedAddressException("Unexpected " 
                                 + EXTERNAL_START + " in address(" 
                                 + addressPort + ")");
                     }
@@ -1115,7 +1137,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 case EXTERNAL_END:
                     
                     if (!allowExternalEnd) {
-                        throw new IllegalArgumentException("Unexpected " 
+                        throw new MalformedAddressException("Unexpected " 
                                 + EXTERNAL_END + " in address(" 
                                 + addressPort + ")");
                     }
@@ -1135,7 +1157,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 case ADDRESS_SEPERATOR: 
                     
                     if (!allowSlash) {
-                        throw new IllegalArgumentException("Unexpected " 
+                        throw new MalformedAddressException("Unexpected " 
                                 + ADDRESS_SEPERATOR + " in address(" 
                                 + addressPort + ")");
                     }
@@ -1148,7 +1170,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 case IP_PORT_SEPERATOR: 
                     
                     if (!allowDash) { 
-                        throw new IllegalArgumentException("Unexpected " 
+                        throw new MalformedAddressException("Unexpected " 
                                 + IP_PORT_SEPERATOR + " in address(" 
                                 + addressPort + ")");
                     }
@@ -1160,7 +1182,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 case UUID_SEPERATOR: 
                     
                     if (!allowUUID) { 
-                        throw new IllegalArgumentException("Unexpected " 
+                        throw new MalformedAddressException("Unexpected " 
                                 + UUID_SEPERATOR + " in address(" 
                                 + addressPort + ")");
                     }
@@ -1175,7 +1197,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 case USER_SEPERATOR: 
                     
                     if (!allowUser) { 
-                        throw new IllegalArgumentException("Unexpected " 
+                        throw new MalformedAddressException("Unexpected " 
                                 + USER_SEPERATOR + " in address(" 
                                 + addressPort + ")");
                     }
@@ -1188,7 +1210,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                     
                 default:
                     // should never happen ? 
-                    throw new IllegalArgumentException("Unexpected delimiter: " 
+                    throw new MalformedAddressException("Unexpected delimiter: " 
                             + delim + " in address(" + addressPort + ")");
                 }
 
@@ -1217,7 +1239,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 
                 // ... do a sanity check on the port value ...
                 if (port <= 0 || port > 65535) { 
-                    throw new IllegalArgumentException("Port out of range: " + port);
+                    throw new MalformedAddressException("Port out of range: " + port);
                 }
                     
                 if (readingExternal) { 
@@ -1246,7 +1268,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 try { 
                     tmp = InetAddress.getByName(s);
                 } catch (UnknownHostException e) { 
-                    throw new IllegalArgumentException("Broken inet address " 
+                    throw new MalformedAddressException("Broken inet address " 
                             + s + " in address(" + addressPort + ")");
                 }
                 
@@ -1261,13 +1283,13 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
                 allowAddress = false;
                 allowDone = false;
             } else { 
-                throw new IllegalArgumentException("Unexpected data " 
+                throw new MalformedAddressException("Unexpected data " 
                         + s + " in address(" + addressPort + ")");
             }
         }
         
         if (!allowDone) { 
-            throw new IllegalArgumentException("Address " + addressPort 
+            throw new MalformedAddressException("Address " + addressPort 
                     + " is incomplete!");
         }
         
@@ -1379,7 +1401,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
      * and ignoreProblems is false 
      */
     public static DirectSocketAddress [] convertToSocketAddressSet(String [] s, 
-            boolean ignoreProblems) throws UnknownHostException {
+            boolean ignoreProblems) throws UnknownHostException, MalformedAddressException {
 
         if (s == null) { 
             return null;
