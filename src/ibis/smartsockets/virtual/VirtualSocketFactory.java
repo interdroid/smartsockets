@@ -7,7 +7,6 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.discovery.Discovery;
 import ibis.smartsockets.hub.Hub;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
-import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.TypedProperties;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 import ibis.smartsockets.virtual.modules.AcceptHandler;

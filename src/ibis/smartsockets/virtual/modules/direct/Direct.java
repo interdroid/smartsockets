@@ -54,7 +54,7 @@ public class Direct extends AbstractDirectModule {
         // Retrieve the value of the port property (if set). Default value 
         // is '0' (any available port).
         int port = 0;
-        
+
      //   if (properties != null) { 
      //       port = properties.getIntProperty(
       //              SmartSocketsProperties.PORT, 0);        
@@ -63,7 +63,8 @@ public class Direct extends AbstractDirectModule {
         // TODO: why the default ??
         TypedProperties p = SmartSocketsProperties.getDefaultProperties();
         
-        int backlog = p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
+        int backlog = 
+            p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
         
         defaultReceiveBuffer = p.getIntProperty(
                 SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, -1);
@@ -91,11 +92,11 @@ public class Direct extends AbstractDirectModule {
             }
             
         } catch (IOException e) {            
-            logger.info(module + ": Failed to create ServerSocket on port " 
+            logger.info(module + ": Failed to initialize direct module " 
                     + port, e);
             
-            throw new Exception("Failed to create ServerSocket on port "  
-                    + port + " (" + e.getMessage() + ")", e);            
+            throw new Exception("Failed to initialize direct module: " 
+                    + e.getMessage() + ")", e);            
         }
         
         if (logger.isInfoEnabled()) {

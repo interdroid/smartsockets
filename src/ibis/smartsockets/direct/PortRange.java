@@ -17,6 +17,15 @@ class PortRange {
             this.start = start;
             this.end = end;
         }
+        
+        public String toString() {
+            
+            if (start == end) { 
+                return "" + start;
+            }
+            
+            return start + "-" + end;
+        }
     }
 
     private Range ranges;    
@@ -78,10 +87,10 @@ class PortRange {
         
         if (ranges == null) { 
             ranges = range;
-            range.next = range;
+            range.next = null;;
         } else {             
-            range.next = ranges.next;
-            ranges.next = range;
+            range.next = ranges;
+            ranges = range;
         }
     }
 
@@ -113,5 +122,26 @@ class PortRange {
         } 
         
         return port;    
+    }
+    
+    public String toString() {
+        
+        StringBuilder tmp = new StringBuilder("[");
+        
+        Range r = ranges;
+        
+        while (r != null) { 
+            tmp.append(r.toString());
+            
+            r = r.next;
+            
+            if (r != null) { 
+                tmp.append(",");
+            }
+        }
+        
+        tmp.append("]");
+                
+        return tmp.toString();
     }
 }

@@ -46,7 +46,8 @@ import ch.ethz.ssh2.LocalStreamForwarder;
  */
 public class DirectSocketFactory {
 
-    protected static final Logger logger = Logger.getLogger("ibis.smartsockets.direct");
+    protected static final Logger logger = 
+        Logger.getLogger("ibis.smartsockets.direct");
     
     private static DirectSocketFactory defaultFactory; 
 
@@ -1002,8 +1003,10 @@ public class DirectSocketFactory {
             int backlog, boolean portForwarding, boolean forwardingMayFail,
             boolean sameExternalPort) throws IOException {
 
-        if (port == 0) {
-            port = portRange.getPort();
+        int localPort = port;
+        
+        if (localPort == 0) {
+            localPort = portRange.getPort();
         }
         
         if (backlog < 1) { 
@@ -1016,8 +1019,19 @@ public class DirectSocketFactory {
         if (receiveBuffer > 0) { 
             ss.setReceiveBufferSize(receiveBuffer);
         }
-       
-        ss.bind(new InetSocketAddress(port), backlog);
+
+        try { 
+            ss.bind(new InetSocketAddress(localPort), backlog);
+        } catch (IOException e) {
+            
+            if (port != 0) { 
+                throw new IOException("Failed to bind to port " + port + ": " 
+                        + e.getMessage());
+            } else { 
+                throw new IOException("Failed to bind to port in range " 
+                        + portRange + ": " + e.getMessage());                
+            }
+        }
         
         if (!(haveOnlyLocalAddresses && portForwarding)) {
             // We are not behind a NAT box or the user doesn't want port
@@ -1071,15 +1085,15 @@ public class DirectSocketFactory {
         }
 
         // Try to do port forwarding!        
-        if (port == 0) {
-            port = ss.getLocalPort();
+        if (localPort == 0) {
+            localPort = ss.getLocalPort();
         }
 
         DirectSocketAddress local = null;
         
         try {
-            int ePort = sameExternalPort ? port : 0;
-            ePort = UPNP.addPortMapping(port, ePort, myNATAddress, 0, "TCP");
+            int ePort = sameExternalPort ? localPort : 0;
+            ePort = UPNP.addPortMapping(localPort, ePort, myNATAddress, 0, "TCP");
             
             local = DirectSocketAddress.getByAddress(externalAddress, 
                     new int [] { ePort }, localAddress, 
@@ -1630,6 +1644,8 @@ public class DirectSocketFactory {
             forwardMayFail = getProperty(prop, "ForwardingMayFail", true);
             sameExternalPort = getProperty(prop, "SameExternalPort", true);
         }
+        
+        System.err.println("PORT " + port);
         
         return createServerSocket(port, receiveBuffer, backlog, portForwarding,
                 forwardMayFail, sameExternalPort);
