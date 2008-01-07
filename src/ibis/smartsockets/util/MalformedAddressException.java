@@ -49,6 +49,7 @@ public class MalformedAddressException extends RuntimeException {
         super(cause);
     }
 
+    /*
     public String toString() {
         String message = super.getMessage();
         Throwable cause = getCause();
@@ -60,5 +61,5 @@ public class MalformedAddressException extends RuntimeException {
         }
 
         return message;
-    }
+    }*/
 }

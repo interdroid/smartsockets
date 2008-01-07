@@ -1645,8 +1645,6 @@ public class DirectSocketFactory {
             sameExternalPort = getProperty(prop, "SameExternalPort", true);
         }
         
-        System.err.println("PORT " + port);
-        
         return createServerSocket(port, receiveBuffer, backlog, portForwarding,
                 forwardMayFail, sameExternalPort);
     }

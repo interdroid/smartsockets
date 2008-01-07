@@ -148,16 +148,27 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         } 
 
         if (meslogger.isDebugEnabled()) {
-            meslogger.debug("Attempting to directly forward message to client " 
-                    + cm.targetAsString());
+            
+            if (cm.returnToSender) { 
+                meslogger.debug("Attempting to directly return message to sender " 
+                        + cm.sourceAsString());                
+            } else {             
+                meslogger.debug("Attempting to directly forward message to client " 
+                        + cm.targetAsString());
+            }
         }
            
         // We found the target, so lets forward the message
         boolean result = c.forwardClientMessage(cm);
          
         if (meslogger.isDebugEnabled()) {
-            meslogger.debug("Directly forwarding message to client " 
-                        + cm.targetAsString() + (result ? " succeeded!" : "failed!"));
+            if (cm.returnToSender) {
+                meslogger.debug("Directly return message to sender " 
+                        + cm.sourceAsString() + (result ? " succeeded!" : "failed!"));
+            } else { 
+                meslogger.debug("Directly forwarding message to client " 
+                        + cm.targetAsString() + (result ? " succeeded!" : "failed!"));                
+            }
         }
         
         return result;        
@@ -247,7 +258,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 }
                 return;
             }
-            
+                        
             for (HubDescription h : result) {
                 
                 if (setHops) {             
@@ -258,16 +269,17 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             }    
             
         } else {
-            
+             
             if (isLocalHub(hub)) { 
-                
+
                 if (deliverLocally(m)) { 
                     return;
                 } else { 
                     returnToSender(m);
                 }
                 
-            } else { 
+            } else {
+                
                 if (forwardToHub(m, setHops)) { 
                     return;
                 } else { 
@@ -302,9 +314,16 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 out.flush();
             }
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             handleDisconnect(e);
-            meslogger.warn("Unhandled exception in writeMessage!!", e);            
+            
+            if (meslogger.isDebugEnabled()) { 
+                meslogger.debug("Forwarding message failed: " + m, e);                
+            } else { 
+                // TODO: remove
+                meslogger.warn("Forwarding message failed: " + m, e);
+            }
+            
             return false;
         }                
     }

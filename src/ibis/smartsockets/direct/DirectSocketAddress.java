@@ -94,7 +94,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             publicAds = new InetSocketAddress[coded[index++] & 0xFF];
             privateAds = new InetSocketAddress[coded[index++] & 0xFF];
         
-            int uuidLen = coded[index++];
+            int uuidLen = coded[index++] & 0xFF;
             int userLen = coded[index++] & 0xFF;
 
             index = decode(externalAds, coded, index);
@@ -115,7 +115,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             throw e;
         } catch (MalformedAddressException e) { 
             // pass through
-            throw e;        
+            throw new MalformedAddressException("Failed to parse address " +
+                    "containing " +  externalAds.length + " external, " + 
+                    publicAds + " public, " + privateAds + " private addresses", e);
         } catch (Exception e) { 
             throw new MalformedAddressException("Failed to decode address", e);
         }
@@ -148,7 +150,8 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
 
                     target[i] = new InetSocketAddress(
                             InetAddress.getByAddress(tmp4), port);
-                } else { 
+                    
+                } else if (adlen == 16) { 
                     // IPv6
                     if (tmp16 == null) { 
                         tmp16 = new byte[16];
@@ -162,6 +165,10 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
 
                     target[i] = new InetSocketAddress(
                             InetAddress.getByAddress(tmp16), port);
+                    
+                } else { 
+                    throw new MalformedAddressException("Failed to decode " +
+                            "address of length: " + adlen);
                 }
 
                 //address = IPAddressSet.getFromAddress(tmp);
