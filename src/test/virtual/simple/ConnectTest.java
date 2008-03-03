@@ -35,6 +35,8 @@ public class ConnectTest {
     
     private static boolean fillTimeout = false;
     
+    private static boolean sleep = false;
+    
     private static Random rand = new Random();
     
     public static void connect(VirtualSocketAddress target) { 
@@ -77,6 +79,13 @@ public class ConnectTest {
                     
                 }
 
+                /*
+                try { 
+                    Thread.sleep(1);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }*/
+                
             } catch (Exception e) {
                 time = System.currentTimeMillis() - time;
 
@@ -100,6 +109,14 @@ public class ConnectTest {
 
         System.out.println("Details virtual: " + Arrays.toString(detailedVirtual));
         Arrays.fill(detailedVirtual, 0);
+
+        if (sleep) { 
+            try { 
+                Thread.sleep(1000 + rand.nextInt(5000));
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
     }
     
     public static void accept(String id) throws IOException {
@@ -164,8 +181,6 @@ public class ConnectTest {
         
         int targets = args.length;
         int repeat = REPEAT;        
-        
-        boolean sleep = false;
        
         for (int i=0;i<args.length;i++) { 
             if (args[i].equals("-repeat")) { 

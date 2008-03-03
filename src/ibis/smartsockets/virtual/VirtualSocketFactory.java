@@ -43,31 +43,38 @@ public class VirtualSocketFactory {
     private static class StatisticsPrinter implements Runnable {
 
         private int timeout;
-
-        StatisticsPrinter(int timeout) {
+        private VirtualSocketFactory factory;
+        private String prefix;
+        
+        StatisticsPrinter(VirtualSocketFactory factory, int timeout, 
+                String prefix) {
             this.timeout = timeout;
+            this.factory = factory;
+            this.prefix = prefix;
         }
 
         public void run() {
 
-            while (true) {
-
-                int t = getTimeout();
-
+            int t = getTimeout();
+            
+            while (t > 0) {
                 try {
-                    Thread.sleep(t);
+                    synchronized (this) {
+                        wait(t);
+                    }
                 } catch (Exception e) {
                     // ignore
                 }
-
-                try {
-                    for (String s : VirtualSocketFactory.factories.keySet()) {
-                        VirtualSocketFactory.factories.get(s)
-                                .printStatistics(s);
+                
+                t = getTimeout();
+                
+                if (t > 0) { 
+                    try {
+                        factory.printStatistics(prefix);
+                    } catch (Exception e) {
+                        // TODO: IGNORE ?
                     }
-                } catch (Exception e) {
-                    // TODO: IGNORE ?
-                }
+                }                
             }
         }
 
@@ -76,17 +83,14 @@ public class VirtualSocketFactory {
         }
 
         public synchronized void adjustInterval(int interval) {
-            if (interval < timeout) {
-                timeout = interval;
-            }
+            timeout = interval;
+            notifyAll();
         }
     }
 
     private static final Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
 
     private static VirtualSocketFactory defaultFactory = null;
-
-    private static StatisticsPrinter printer = null;
 
     protected static final Logger logger = Logger
             .getLogger("ibis.smartsockets.virtual.misc");
@@ -132,7 +136,13 @@ public class VirtualSocketFactory {
     private Hub hub;
 
     private VirtualClusters clusters;
+    
+    private boolean printStatistics = false;
+    
+    private String statisticPrefix = null;
 
+    private StatisticsPrinter printer = null;
+   
     private static class HubAcceptor implements AcceptHandler {
 
         private final Hub hub;
@@ -141,7 +151,7 @@ public class VirtualSocketFactory {
             this.hub = hub;
         }
 
-        public void accept(DirectSocket s, int targetPort) {
+        public void accept(DirectSocket s, int targetPort, long time) {
             hub.delegateAccept(s);
         }
     }
@@ -206,6 +216,22 @@ public class VirtualSocketFactory {
                 hubAddress, clusters.localCluster());
 
         localVirtualAddressAsString = localVirtualAddress.toString();
+        
+        printStatistics = p.booleanProperty(
+                SmartSocketsProperties.STATISTICS_PRINT);
+
+        if (printStatistics) {             
+            statisticPrefix = p.getProperty(
+                    SmartSocketsProperties.STATISTICS_PREFIX, "SmartSockets");
+        
+            int tmp = p.getIntProperty(
+                    SmartSocketsProperties.STATISTICS_INTERVAL, 0);
+            
+            if (tmp > 0) {
+                printer = new StatisticsPrinter(this, tmp*1000, statisticPrefix);
+                ThreadPool.createNew(printer, "SmartSockets Statistics Printer");
+            }
+        }
     }
 
     private void startHub(TypedProperties p) throws InitializationException {
@@ -783,7 +809,7 @@ public class VirtualSocketFactory {
                         + target);
             }
 
-            m.notAllowed();
+            m.connectNotAllowed();
             return null;
         }
 
@@ -814,7 +840,6 @@ public class VirtualSocketFactory {
             // exception or a timeout exception depending on the value of the 
             // overloaded counter.  
             if (t >= timeLeft) {
-
                 if (conlogger.isDebugEnabled()) {
                     conlogger.debug("Timeout while using module " + m.module
                             + " to set up " + "connection to " + target
@@ -823,11 +848,13 @@ public class VirtualSocketFactory {
                 }
 
                 if (overloaded > 0) {
+                    m.connectRejected(t);
                     throw new TargetOverloadedException("Failed to create "
                             + "virtual connection to " + target + " within "
                             + timeLeft + " ms. (Target overloaded "
                             + overloaded + " times)");
                 } else {
+                    m.connectFailed(t);
                     throw new SocketTimeoutException("Timeout while creating"
                             + " connection to " + target);
                 }
@@ -845,7 +872,7 @@ public class VirtualSocketFactory {
                             + " ms.): " + e.getMessage());
                 }
 
-                m.failed(end - start);
+                m.connectFailed(end - start);
 
                 throw e;
 
@@ -885,7 +912,7 @@ public class VirtualSocketFactory {
                     vs.setTcpNoDelay(false);
 
                     long end = System.currentTimeMillis();
-
+                    
                     if (conlogger.isInfoEnabled()) {
                         conlogger.info(getVirtualAddressAsString()
                                 + ": Success " + m.module + " connected to "
@@ -893,7 +920,7 @@ public class VirtualSocketFactory {
                                 + " ms.)");
                     }
 
-                    m.success(end - start);
+                    m.connectSucces(end - start);
                     return vs;
 
                 } catch (TargetOverloadedException e) {
@@ -915,6 +942,8 @@ public class VirtualSocketFactory {
                     }
 
                     if (!fillTimeout) {
+                        m.connectFailed(System.currentTimeMillis() - start);
+                        
                         // We'll only retry if 'fillTimeout' is true                    
                         throw e;
                     }
@@ -925,7 +954,9 @@ public class VirtualSocketFactory {
                 // Instead we will retry using a backoff algorithm until 
                 // we run out of time...                                
                 t = System.currentTimeMillis() - start;
-
+                
+                m.connectRejected(t);
+                
                 int leftover = (int) (timeLeft - t);
 
                 if (!lastAttempt && leftover > 0) {
@@ -1343,6 +1374,15 @@ public class VirtualSocketFactory {
     }
 
     public void end() {
+        
+        if (printer != null) { 
+            printer.adjustInterval(-1);                    
+        } 
+        
+        if (printStatistics) {  
+            printStatistics(statisticPrefix + " [EXIT]");
+        }
+        
         if (hub != null) {
             hub.end();
         }
@@ -1433,28 +1473,7 @@ public class VirtualSocketFactory {
         VirtualSocketFactory factory = new VirtualSocketFactory(
                 DirectSocketFactory.getSocketFactory(typedProperties),
                 typedProperties);
-
-        if (typedProperties.containsKey("smartsockets.factory.statistics")) {
-
-            int tmp = typedProperties.getIntProperty(
-                    SmartSocketsProperties.STATISTICS_INTERVAL, 0);
-
-            if (tmp > 0) {
-
-                if (tmp < 1000) {
-                    tmp *= 1000;
-                }
-
-                if (printer == null) {
-                    printer = new StatisticsPrinter(tmp);
-                    ThreadPool.createNew(printer,
-                            "SmartSockets Statistics Printer");
-                } else {
-                    printer.adjustInterval(tmp);
-                }
-            }
-        }
-
+        
         return factory;
     }
 
@@ -1481,6 +1500,5 @@ public class VirtualSocketFactory {
                 serviceLink.printStatistics(prefix);
             }
         }
-
     }
 }

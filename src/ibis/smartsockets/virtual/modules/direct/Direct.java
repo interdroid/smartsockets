@@ -213,7 +213,7 @@ public class Direct extends AbstractDirectModule {
     public VirtualSocket connect(VirtualSocketAddress target, int timeout,
             Map<String, Object> properties) throws NonFatalIOException {
 
-        outgoingConnectionAttempts++;
+      //  outgoingConnectionAttempts++;
         
         int sendBuffer = defaultSendBuffer;
         int receiveBuffer = defaultReceiveBuffer;
@@ -242,10 +242,11 @@ public class Direct extends AbstractDirectModule {
             // Any exceptions thrown here are forwarded to the user. Note that  
             // the connection setup is not complete yet, but the rest of it is  
             // in generic code.
-            return createVirtualSocket(target, s);  
+            return createVirtualSocket(target, s); 
         } catch (IOException e) {
             // Failed to create the connection, but other modules may be more 
-            // succesful.            
+            // succesful.   
+         //   failedOutgoingConnections++; 
             throw new NonFatalIOException(e);           
         }
     }
@@ -274,7 +275,6 @@ public class Direct extends AbstractDirectModule {
             // This module worked fine, but we got a 'normal' exception while 
             // connecting (i.e., because the other side refused to connection). 
             // There is no use trying other modules.          
-            failedOutgoingConnections++;
             DirectSocketFactory.close(s, out, in);
             throw e;
         }

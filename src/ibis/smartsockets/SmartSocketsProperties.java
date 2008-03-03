@@ -26,6 +26,9 @@ public class SmartSocketsProperties {
    
     public static final String FILE                = PREFIX + "file";
     public static final String START_HUB           = PREFIX + "start.hub";  
+    
+    public static final String STATISTICS_PRINT    = PREFIX + "statistics";
+    public static final String STATISTICS_PREFIX   = PREFIX + "statistics.prefix";    
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
     public static final String DETAILED_EXCEPTIONS = PREFIX + "detailed.exceptions";
     
@@ -130,9 +133,10 @@ public class SmartSocketsProperties {
             DIRECT_BACKLOG,         "255", 
             BACKLOG,                "50", 
             ACCEPT_TIMEOUT,         "60000", 
-            DIRECT_LOCAL_TIMEOUT,          "1000", 
+            DIRECT_LOCAL_TIMEOUT,   "1000", 
             
-            STATISTICS_INTERVAL,    "60000",
+            STATISTICS_PRINT,       "false",
+            STATISTICS_INTERVAL,    "0",
             
             SSH_OUT,                "false", 
             SSH_IN,                 "false",

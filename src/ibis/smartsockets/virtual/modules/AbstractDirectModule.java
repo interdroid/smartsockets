@@ -57,7 +57,7 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
             DirectSocket s, DataOutputStream out, DataInputStream in); 
     
     
-    public void accept(DirectSocket ds, int targetPort) { 
+    public void accept(DirectSocket ds, int targetPort, long time) { 
        
         DataInputStream in = null;
         DataOutputStream out = null;
@@ -73,12 +73,13 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
                 out.flush();                
                 DirectSocketFactory.close(ds, out, null);
                 
-                rejectedIncomingConnections++;
+              //  rejectedIncomingConnections++;
                 
                 if (logger.isDebugEnabled()) { 
                     logger.debug(module + ": Connection failed, PORT not found!");
                 }                
                 
+               // acceptRejected(System.currentTimeMillis() - time);
                 return;
             }
             
@@ -99,7 +100,7 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
             
             if (accept != 0) {
                 
-                rejectedIncomingConnections++;
+             //   rejectedIncomingConnections++;
                 
                 if (accept == -1) {                 
                     out.write(CONNECTION_REJECTED);
@@ -115,21 +116,27 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
                             + (accept < 0 ? "REFUSED" : "OVERLOAD")) ;
                 }
                 
+                //acceptRejected(System.currentTimeMillis()- time);
                 return;                
             } 
             
-            acceptedIncomingConnections++;
+          //  acceptedIncomingConnections++;
             
         } catch (Exception e) {          
-            failedIncomingConnections++;
-            logger.warn(module + ": Got exception during connection setup!", e);            
+         //   failedIncomingConnections++;
+            logger.warn(module + ": Got exception during connection setup!", e);  
+            
+           //acceptFailed(System.currentTimeMillis() - time);
+            
             DirectSocketFactory.close(ds, out, in);
         }
     }
     
     protected void handleAccept(DirectSocket ds) {
-        incomingConnections++;
-         
+     //   incomingConnections++;
+        
+        long start = System.currentTimeMillis();
+        
         if (logger.isDebugEnabled()) { 
             logger.debug(module + ": Got incoming connection on " + ds);
         }
@@ -143,7 +150,7 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
                 logger.debug(module + ": Target port " + targetPort);
             }
             
-            findAcceptHandler(targetPort).accept(ds, targetPort);
+            findAcceptHandler(targetPort).accept(ds, targetPort, start);
             
         } catch (Exception e) {          
             logger.warn(module + ": Got exception during connection setup!", e);            

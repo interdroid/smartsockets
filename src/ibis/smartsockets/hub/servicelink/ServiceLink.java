@@ -1573,7 +1573,7 @@ public class ServiceLink implements Runnable {
     public void printStatistics(String prefix) {
 
         if (statslogger.isInfoEnabled()) {
-
+/*
             statslogger.info(prefix + " SL In : " + incomingConnections + "/"
                     + acceptedIncomingConnections + "/"
                     + rejectedIncomingConnections + "/"
@@ -1587,6 +1587,7 @@ public class ServiceLink implements Runnable {
                     + failedOutgoingConnections + " Msg: "
                     + outgoingDataMessages + "/" + outgoingBytes + "/"
                     + outgoingMetaMessages);
+*/
         }
 
     }

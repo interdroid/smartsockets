@@ -657,7 +657,7 @@ public class Splice extends AbstractDirectModule {
             // This module worked fine, but we got a 'normal' exception while 
             // connecting (i.e., because the other side refused to connection). 
             // There is no use trying other modules.          
-            failedOutgoingConnections++;
+        //    failedOutgoingConnections++;
             DirectSocketFactory.close(s, out, in);
             throw e;
         }

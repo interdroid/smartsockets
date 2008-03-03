@@ -16,7 +16,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-
 public abstract class ConnectModule implements CallBack {
     
     protected static final Logger statslogger = 
@@ -33,18 +32,36 @@ public abstract class ConnectModule implements CallBack {
     
     protected String name;
     
-    protected long incomingConnections; 
-    protected long acceptedIncomingConnections; 
-    protected long rejectedIncomingConnections; 
-    protected long failedIncomingConnections; 
+   // protected long incomingConnections; 
+   // protected long acceptedIncomingConnections; 
+   // protected long rejectedIncomingConnections; 
+   // protected long failedIncomingConnections; 
     
-    protected long outgoingConnectionAttempts;
-    protected long acceptedOutgoingConnections; 
-    protected long failedOutgoingConnections; 
+   // protected long outgoingConnectionAttempts;
+   // protected long acceptedOutgoingConnections; 
+   // protected long failedOutgoingConnections; 
     
-    protected long connectTime;    
-    protected long failedTime;
-    protected long notAllowed;
+    // Incoming connection statistics
+    protected long connectSuccesTime;
+    protected long connectSuccesCount;
+    
+    protected long connectFailedTime;
+    protected long connectFailedCount;
+    
+    protected long connectRejectedTime;
+    protected long connectRejectedCount;
+    
+    protected long connectNotAllowedCount;
+    
+    // Outgoing connection statistics
+    protected long acceptSuccesTime;
+    protected long acceptSuccesCount;
+    
+    protected long acceptFailedTime;
+    protected long acceptFailedCount;
+    
+    protected long acceptRejectedTime;
+    protected long acceptRejectedCount;
     
     protected int timeout; 
     
@@ -255,17 +272,41 @@ public abstract class ConnectModule implements CallBack {
         return name;
     }
     
-    public void success(long time) { 
-        connectTime += time;
+    public void connectSucces(long time) { 
+        connectSuccesTime += time;
+        connectSuccesCount++;
     }
     
-    public void failed(long time) { 
-        failedTime += time;
+    public void connectFailed(long time) { 
+        connectFailedTime += time;
+        connectFailedCount++;
     }
     
-    public void notAllowed() { 
-        notAllowed++;
+    public void connectRejected(long time) { 
+        connectRejectedTime += time;
+        connectRejectedCount++;
     }
+    
+    public void connectNotAllowed() { 
+        connectNotAllowedCount++;
+    }
+    
+    /*
+    public void acceptSucces(long time) { 
+        acceptSuccesTime += time;
+        acceptSuccesCount++;
+    }
+    
+    public void acceptFailed(long time) { 
+        acceptFailedTime += time;
+        acceptFailedCount++;
+    }
+    
+    public void acceptRejected(long time) { 
+        acceptRejectedTime += time;
+        acceptRejectedCount++;
+    }
+    */
     
     public abstract int getDefaultTimeout();
     
@@ -284,15 +325,22 @@ public abstract class ConnectModule implements CallBack {
     public void printStatistics(String prefix) {
         
         if (statslogger.isInfoEnabled()) {
-              statslogger.info(prefix + " -> " + name +" out: ["
-                      + outgoingConnectionAttempts + " / "  
-                      + acceptedOutgoingConnections + " (" + connectTime + " ms.) / "
-                      + failedOutgoingConnections + " (" + failedTime + " ms.) / " 
-                      + notAllowed + "] in: [" 
-                      + incomingConnections + "/" 
-                      + acceptedIncomingConnections + "/" 
-                      + rejectedIncomingConnections + "/"
-                      + failedIncomingConnections + "]");
+            
+                long total = connectSuccesCount + connectFailedCount + connectRejectedCount + connectNotAllowedCount;
+            
+                statslogger.info(prefix + " -> " + name + " out: "
+                      + total + " total, "  
+                      + connectSuccesCount + " successful (" + connectSuccesTime + " ms.), "
+                      + connectRejectedCount + " rejected (" + connectRejectedTime + " ms.), " 
+                      + connectFailedCount + " failed (" + connectFailedTime + " ms.), " 
+                      + connectNotAllowedCount + " not allowed.");
+                
+           /*   statslogger.info(prefix + " -> " + name + " in: " 
+                      + incomingConnections + " total, " 
+                      + acceptedIncomingConnections + " accepted, " 
+                      + rejectedIncomingConnections + " rejected, "
+                      + failedIncomingConnections + " failed.");
+                      */
           }        
     }
     

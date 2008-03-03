@@ -132,7 +132,7 @@ public class Hubrouted extends ConnectModule
             sockets.put(index, s);
             
             try { 
-                outgoingConnectionAttempts++;
+          //      outgoingConnectionAttempts++;
                 
                 serviceLink.createVirtualConnection(index, tm, hub, 
                         target.port(), localFragmentation, localBufferSize, 
@@ -141,7 +141,7 @@ public class Hubrouted extends ConnectModule
              //   return s;               
             } catch (IOException e) {
                 // No connection to hub, or the send failed. Just retry ? 
-                failedOutgoingConnections++;
+           //     failedOutgoingConnections++;
                 sockets.remove(index);
                 
                 if (logger.isInfoEnabled()) {
@@ -174,7 +174,7 @@ public class Hubrouted extends ConnectModule
                 switch (result) { 
             
                 case 0: // success
-                    acceptedOutgoingConnections++;
+            //        acceptedOutgoingConnections++;
                     return s;
                     
                 case ServiceLinkProtocol.ERROR_SERVER_OVERLOAD:
@@ -185,33 +185,33 @@ public class Hubrouted extends ConnectModule
                     
                 case -1: 
                     // Timeout. Assume it is this module's fault
-                    failedOutgoingConnections++;
+          //          failedOutgoingConnections++;
                     throw new NonFatalIOException(
                             new SocketTimeoutException("Failed to create "
                             + "virtual connection within " + timeout + " ms."));      
                 
                 case ServiceLinkProtocol.ERROR_UNKNOWN_HOST:
                     // We couldn't find the machine. Assume its our own fault.
-                    failedOutgoingConnections++;
+               //     failedOutgoingConnections++;
                     throw new NonFatalIOException(
                             new UnknownHostException("Failed to find host"
                                     + " within " + timeout + " ms."));      
                 
                 case ServiceLinkProtocol.ERROR_PORT_NOT_FOUND:
                     // User error
-                    failedOutgoingConnections++;
+             //       failedOutgoingConnections++;
                     throw new ConnectException("Remote port not found!");
                     
                 case ServiceLinkProtocol.ERROR_CONNECTION_REFUSED:
                     // User error
-                    failedOutgoingConnections++;
+              //      failedOutgoingConnections++;
                     throw new ConnectException("Connection refused by server!");
                     
                 case ServiceLinkProtocol.ERROR_ILLEGAL_TARGET:
                     // User error
-                    failedOutgoingConnections++;
-                    throw new ConnectException("Attempting to connect to " +
-                            "illegal target!");
+             //       failedOutgoingConnections++;
+                    throw new NonFatalIOException("Attempting to connect to " +
+                            "illegal target! (" + target + ")");
                 }
             }   
         } 
@@ -226,7 +226,7 @@ public class Hubrouted extends ConnectModule
             int timeout, long index) {
 
         // Incoming connection...        
-        incomingConnections++;
+      //  incomingConnections++;
         
         // Get the serversocket (if it exists). 
         VirtualServerSocket ss = parent.getServerSocket(port);
@@ -234,7 +234,7 @@ public class Hubrouted extends ConnectModule
         // Could not find it, so send a 'port not found' error back
         if (ss == null) { 
             logger.info("Failed find VirtualServerSocket(" + port + ")");
-            rejectedIncomingConnections++;
+       //     rejectedIncomingConnections++;
 
             serviceLink.nackVirtualConnection(index, 
                     ServiceLinkProtocol.ERROR_PORT_NOT_FOUND);            
@@ -259,7 +259,7 @@ public class Hubrouted extends ConnectModule
         
         if (accept != 0) { 
             sockets.remove(index);
-            rejectedIncomingConnections++;
+        //    rejectedIncomingConnections++;
             
             if (accept == -1) { 
                 serviceLink.nackVirtualConnection(index, 
