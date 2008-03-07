@@ -461,7 +461,14 @@ public class VirtualSocketFactory {
 
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            Class c = cl.loadClass(classname);
+            Class c;
+            // Check if there is a context class loader
+            if (cl != null) {
+            	c = cl.loadClass(classname);
+            }
+            else {
+            	c = Class.forName(classname);
+            }
 
             // Check if the class we loaded is indeed a flavor of ConnectModule
             if (!ConnectModule.class.isAssignableFrom(c)) {
