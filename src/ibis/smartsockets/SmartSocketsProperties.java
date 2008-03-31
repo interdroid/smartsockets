@@ -270,25 +270,16 @@ public class SmartSocketsProperties {
             // user home directory prepended.
             if (file != null) {
                 TypedProperties fromFile = getPropertyFile(file);
+                
                 if (fromFile != null) {
                     defaultProperties.putAll(fromFile);
                 } else {
-                    String homeFn = System.getProperty("user.home")
-                        + System.getProperty("file.separator") + file;
-                    fromFile = getPropertyFile(homeFn);
-                    
-                    if (fromFile == null) { 
-                        if (!file.equals(DEFAULT_FILE)) { 
-                            // If we fail to load the user specified file, we give an
-                            // error, since only the default file may fail silently.                     
-                            logger.error("User specified preferences \"" + file 
-                                        + "\" not found!");
-                        }                                            
-                    } else {                  
-                        // If we managed to load the file, we add the properties to 
-                        // the 'defaultProperties' possibly overwriting defaults.
-                        defaultProperties.putAll(fromFile);
-                    }
+                    if (!file.equals(DEFAULT_FILE)) { 
+                        // If we fail to load the user specified file, we give an
+                        // error, since only the default file may fail silently.                     
+                        logger.error("User specified preferences \"" + file 
+                                + "\" not found!");
+                    }                                            
                 }
             }
             
