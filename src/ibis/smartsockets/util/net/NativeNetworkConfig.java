@@ -94,7 +94,8 @@ public final class NativeNetworkConfig {
             
     private static boolean getInfo(NetworkInfoParser p, String [] command) { 
                 
-        RunProcess rp = new RunProcess(command, new String[0]); 
+        RunProcess rp = new RunProcess(command);
+        rp.run();
 
         byte [] errors = rp.getStderr();
         
