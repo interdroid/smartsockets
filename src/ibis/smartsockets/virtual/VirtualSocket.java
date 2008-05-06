@@ -36,6 +36,16 @@ public abstract class VirtualSocket {
         return remotePort;
     }
     
+    public long getBytesWritten() throws IOException {
+        System.err.println("getBytesWritten() not implemented by " + this);
+        throw new RuntimeException("getBytesWritten() not implemented by " + this);
+    }
+    
+    public long getBytesRead() throws IOException {
+        System.err.println("getBytesRead() not implemented by " + this);
+        throw new RuntimeException("getBytesRead() not implemented by " + this);
+    }
+    
     public void close() throws IOException {
         System.err.println("close() not implemented by " + this);
         throw new RuntimeException("close() not implemented by " + this);

@@ -6,8 +6,6 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,11 +18,11 @@ import java.util.Map;
 public class SplicedVirtualSocket extends VirtualSocket {
     
     protected final DirectSocket s;
-    protected final DataOutputStream out;
-    protected final DataInputStream in;
+    protected final OutputStream out;
+    protected final InputStream in;
     
     protected SplicedVirtualSocket(VirtualSocketAddress target, DirectSocket s, 
-            DataOutputStream out, DataInputStream in, Map p) {        
+            OutputStream out, InputStream in, Map p) {        
         
         super(target);
         

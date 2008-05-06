@@ -85,6 +85,7 @@ public class SmartSocketsProperties {
     public static final String DIRECT_LOCAL_TIMEOUT  = DIRECT_PREFIX + "timeout.local";      
     public static final String DIRECT_SEND_BUFFER    = DIRECT_PREFIX + "sendbuffer";
     public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
+    public static final String DIRECT_COUNT          = DIRECT_PREFIX + "count";  
     
     public static final String SSH_PREFIX    = DIRECT_PREFIX + "ssh.";
     public static final String SSH_IN        = SSH_PREFIX + "in";

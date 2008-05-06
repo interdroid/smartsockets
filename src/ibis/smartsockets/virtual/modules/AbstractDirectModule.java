@@ -7,8 +7,8 @@ import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 
@@ -54,16 +54,16 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
     }
     
     protected abstract VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
-            DirectSocket s, DataOutputStream out, DataInputStream in); 
+            DirectSocket s, OutputStream out, InputStream in); 
     
     
     public void accept(DirectSocket ds, int targetPort, long time) { 
        
-        DataInputStream in = null;
-        DataOutputStream out = null;
+        InputStream in = null;
+        OutputStream out = null;
         
         try {
-            out = new DataOutputStream(ds.getOutputStream());
+            out = ds.getOutputStream();
             
             // Check if the port exists locally
             VirtualServerSocket vss = parent.getServerSocket(targetPort);
@@ -83,7 +83,7 @@ public abstract class AbstractDirectModule extends MessagingModule implements Ac
                 return;
             }
             
-            in = new DataInputStream(ds.getInputStream());
+            in = ds.getInputStream();
             
             if (logger.isDebugEnabled()) { 
                 logger.debug(module + ": Connection seems OK, checking is " +

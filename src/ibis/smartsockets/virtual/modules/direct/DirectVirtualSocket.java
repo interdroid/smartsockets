@@ -2,13 +2,12 @@ package ibis.smartsockets.virtual.modules.direct;
 
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketFactory;
+import ibis.smartsockets.util.CountingOutputStream;
 import ibis.smartsockets.virtual.TargetOverloadedException;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,17 +21,42 @@ import java.util.Map;
 public class DirectVirtualSocket extends VirtualSocket {
     
     protected final DirectSocket s;
-    protected final DataOutputStream out;
-    protected final DataInputStream in;
+    protected final OutputStream out;
+    protected final InputStream in;
+    
+    protected final boolean count;
     
     protected DirectVirtualSocket(VirtualSocketAddress target, DirectSocket s, 
-            DataOutputStream out, DataInputStream in, Map p) {        
+            OutputStream out, InputStream in, boolean count, Map p) {        
         
         super(target);
         
         this.s = s;
-        this.out = out;
-        this.in = in;               
+   
+        this.count = count;
+        
+        if (count) { 
+            // TODO: add countinginput!
+            this.out = new CountingOutputStream(out);
+            this.in = in;
+        } else { 
+            this.out = out;
+            this.in = in;
+        }
+    }
+    
+    public long getBytesWritten() throws IOException {
+    
+        if (!count) { 
+            return -1;
+        }
+        
+        return ((CountingOutputStream) out).getBytesWritten();
+    }
+    
+    public long getBytesRead() throws IOException {
+        // TODO: add countinginput!
+        return -1;
     }
     
     protected void connectionAccepted(int timeout) throws IOException { 

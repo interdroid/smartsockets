@@ -16,6 +16,7 @@ import ibis.util.ThreadPool;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -664,7 +665,7 @@ public class Splice extends AbstractDirectModule {
     }   
     
     protected VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
-            DirectSocket s, DataOutputStream out, DataInputStream in) {     
+            DirectSocket s, OutputStream out, InputStream in) {     
         return new SplicedVirtualSocket(a, s, out, in, null);
     }
         

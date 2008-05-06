@@ -11,9 +11,9 @@ import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +28,8 @@ public class Direct extends AbstractDirectModule {
     private int defaultSendBuffer;
     private int defaultReceiveBuffer;
         
+    private boolean count = false;
+    
     private class AcceptThread extends Thread { 
         
         AcceptThread() { 
@@ -62,6 +64,8 @@ public class Direct extends AbstractDirectModule {
         
         // TODO: why the default ??
         TypedProperties p = SmartSocketsProperties.getDefaultProperties();
+        
+        count = p.booleanProperty(SmartSocketsProperties.DIRECT_COUNT, false);
         
         int backlog = 
             p.getIntProperty(SmartSocketsProperties.DIRECT_BACKLOG, 100);
@@ -256,21 +260,22 @@ public class Direct extends AbstractDirectModule {
         return true;
     }
 
+    // Called when incoming connections are accepted
     protected VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
-            DirectSocket s, DataOutputStream out, DataInputStream in) { 
-        return new DirectVirtualSocket(a, s, out, in, null);        
+            DirectSocket s, OutputStream out, InputStream in) { 
+        return new DirectVirtualSocket(a, s, out, in, count, null);        
     }
     
     private VirtualSocket createVirtualSocket(VirtualSocketAddress a, 
             DirectSocket s) throws IOException {
         
-        DataInputStream in = null;
-        DataOutputStream out = null;
+        InputStream in = null;
+        OutputStream out = null;
         
         try {
-            in = new DataInputStream(s.getInputStream());
-            out = new DataOutputStream(s.getOutputStream());    
-            return new DirectVirtualSocket(a, s, out, in, null);     
+            in = s.getInputStream();
+            out = s.getOutputStream();    
+            return new DirectVirtualSocket(a, s, out, in, count, null);     
         } catch (IOException e) {
             // This module worked fine, but we got a 'normal' exception while 
             // connecting (i.e., because the other side refused to connection). 
