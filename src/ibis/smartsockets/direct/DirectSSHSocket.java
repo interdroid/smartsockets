@@ -6,7 +6,9 @@ import java.io.OutputStream;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
-import ch.ethz.ssh2.LocalStreamForwarder;
+// import ch.ethz.ssh2.LocalStreamForwarder;
+
+import com.trilead.ssh2.LocalStreamForwarder;
 
 public class DirectSSHSocket extends DirectSocket {
 

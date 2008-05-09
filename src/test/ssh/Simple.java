@@ -7,8 +7,11 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import ch.ethz.ssh2.Connection;
-import ch.ethz.ssh2.LocalStreamForwarder;
+//import ch.ethz.ssh2.Connection;
+//import ch.ethz.ssh2.LocalStreamForwarder;
+
+import com.trilead.ssh2.Connection;
+import com.trilead.ssh2.LocalStreamForwarder;
 
 public class Simple {
 
@@ -38,7 +41,7 @@ public class Simple {
             
             ServerSocket ss = new ServerSocket(0);
             
-            System.out.println("Server listning on port: " + ss.getLocalPort());
+            System.out.println("Server listening on port: " + ss.getLocalPort());
             
             Socket s = ss.accept();
             

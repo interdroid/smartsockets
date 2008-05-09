@@ -27,8 +27,11 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import ch.ethz.ssh2.Connection;
-import ch.ethz.ssh2.LocalStreamForwarder;
+//import ch.ethz.ssh2.Connection;
+//import ch.ethz.ssh2.LocalStreamForwarder;
+
+import com.trilead.ssh2.Connection;
+import com.trilead.ssh2.LocalStreamForwarder;
 
 /**
  * This class implements a socket factory with support for multi-homes machines,
@@ -116,9 +119,30 @@ public class DirectSocketFactory {
         FORCE_SSH_OUT = p.booleanProperty(SmartSocketsProperties.FORCE_SSH_OUT, false);
         
         if (allowSSHOut) {
-            privateKey = getPrivateSSHKey();
+            String privateKeyFile = p.getProperty(SmartSocketsProperties.SSH_PRIVATE_KEY);
+   
+            if (privateKeyFile == null) {
+                privateKey = getPrivateSSHKey();
+            } else {
+                if (logger.isInfoEnabled()) {
+                    logger.info("Using " + privateKeyFile + " for the SSH connection");   
+                }
+                File keyFile = new File(privateKeyFile);
+                privateKey = readKeyFile(keyFile);
+            } 
+
         } else { 
             privateKey = null;
+        }
+        
+        if (allowSSHOut) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Using a passphrase to open the SSH private key");   
+            }
+            String passphrase = p.getProperty(SmartSocketsProperties.SSH_PASSPHRASE);
+            if (passphrase != null) {
+                keyFilePass = passphrase;
+            }
         }
         
         ALLOW_SSH_OUT = (privateKey != null);

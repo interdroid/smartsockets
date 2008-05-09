@@ -154,7 +154,7 @@ public class ConnectTest {
                 DirectServerSocket ss = sf.createServerSocket(SERVERPORT, 0,
                         null);
 
-                System.out.println("Created server on " + ss.getAddressSet());
+                System.out.println("Created server on " + ss.getLocalAddressSet());
 
                 while (true) {
                     DirectSocket s = ss.accept();

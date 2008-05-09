@@ -87,11 +87,13 @@ public class SmartSocketsProperties {
     public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
     public static final String DIRECT_COUNT          = DIRECT_PREFIX + "count";  
     
-    public static final String SSH_PREFIX    = DIRECT_PREFIX + "ssh.";
-    public static final String SSH_IN        = SSH_PREFIX + "in";
-    public static final String SSH_OUT       = SSH_PREFIX + "out";
-    public static final String FORCE_SSH_OUT = SSH_PREFIX + "out.force";
-        
+    public static final String SSH_PREFIX      = DIRECT_PREFIX + "ssh.";
+    public static final String SSH_IN          = SSH_PREFIX + "in";
+    public static final String SSH_OUT         = SSH_PREFIX + "out";
+    public static final String FORCE_SSH_OUT   = SSH_PREFIX + "out.force";    
+    public static final String SSH_PRIVATE_KEY = SSH_PREFIX + "privatekey";
+    public static final String SSH_PASSPHRASE  = SSH_PREFIX + "passphrase"; 
+    
     public static final String REVERSE_PREFIX       = MODULES_PREFIX + "reverse.";
     public static final String REVERSE_CONNECT_SELF = REVERSE_PREFIX + "selfconnect";
     
