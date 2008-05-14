@@ -10,7 +10,6 @@ import ibis.smartsockets.hub.servicelink.ServiceLink;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.MenuItem;
-import java.awt.Paint;
 import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
