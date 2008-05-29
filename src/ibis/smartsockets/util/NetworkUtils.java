@@ -607,13 +607,28 @@ public class NetworkUtils {
     
     public static String getHostname() throws IOException {         
 
-        InetAddress a = InetAddress.getLocalHost();
+        try { 
+            InetAddress a = InetAddress.getLocalHost();
             
-        if (a != null) {
-            return a.getHostName();
-        } else { 
-            throw new IOException("Failed to get local address");
+            if (a != null) {
+                return a.getHostName();
+            } 
+        } catch (Exception ex) {
+            // ignore        
         }
+        
+        InetAddress [] adds = getAllHostAddresses(true, false);
+
+        for (InetAddress a : adds) { 
+            
+            try { 
+                return a.getHostName();
+            } catch (Exception e) {
+                // ignore        
+            }            
+        }
+        
+        throw new IOException("Failed to get hostname!");
     }
     
     public static String getMACAddressAsString(InetAddress ip) throws IOException {         

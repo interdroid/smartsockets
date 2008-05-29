@@ -106,6 +106,8 @@ public final class Hub extends Thread {
 
            // System.err.println("**** HUB USING DELEGATION TO: " + tmp);
             
+            misclogger.debug("**** HUB USING DELEGATION TO: " + tmp);
+            
             try { 
                 delegationAddress = DirectSocketAddress.getByAddress(tmp);
             } catch (Exception e) { 

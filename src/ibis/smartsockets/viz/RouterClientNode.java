@@ -57,7 +57,7 @@ public class RouterClientNode extends ClientNode {
     
         String adr = info.getClientAddress().toString();
                 
-        System.out.println("Adding router " + adr);
+     //   System.out.println("Adding router " + adr);
                 
         setType(Node.TYPE_CIRCLE);        
         setBackColor(Color.decode("#FF7F24"));
@@ -185,7 +185,7 @@ public class RouterClientNode extends ClientNode {
             StringTokenizer t = new StringTokenizer(stats, ", ");
             
             if (t.countTokens() == 0) {
-                System.out.println("Got junk in router statistics! " + stats);
+       //         System.out.println("Got junk in router statistics! " + stats);
                 mouseOverText.add("Connections: 0");
                 mouseOverText.add("Throughput : 0 Mbit/s");
                 setMouseOverText((String []) mouseOverText.toArray(new String[0]));
@@ -200,7 +200,7 @@ public class RouterClientNode extends ClientNode {
     
     public void showConnections(HashMap clients) { 
         
-        System.out.println("Updating router connections!");
+   //     System.out.println("Updating router connections!");
                 
         Iterator itt = cons.values().iterator();
         
@@ -215,7 +215,7 @@ public class RouterClientNode extends ClientNode {
                 
                 if (from != null) {
                     
-                    System.out.println("Adding edge: " + c.from + " to router");                                 
+             //       System.out.println("Adding edge: " + c.from + " to router");                                 
                     
                     c.edge1 = new Edge(from, this);
                     c.edge1.setColor(Color.LIGHT_GRAY);
@@ -230,8 +230,8 @@ public class RouterClientNode extends ClientNode {
                 ClientNode to = (ClientNode) clients.get(c.to);
                 
                 if (to != null) {
-                    
-                    System.out.println("Adding edge: router to " + c.to);                                 
+               //     
+               //     System.out.println("Adding edge: router to " + c.to);                                 
                     
                     c.edge2 = new Edge(this, to);
                     c.edge2.setColor(Color.LIGHT_GRAY);
@@ -245,12 +245,12 @@ public class RouterClientNode extends ClientNode {
             
             
             if (c.edge1 != null && !c.edge1.isVisible()) {
-                System.out.println("Showing edge: " + c.from + " to router");                                 
+      //          System.out.println("Showing edge: " + c.from + " to router");                                 
                 hub.showEdge(c.edge1);
             }
             
             if (c.edge2 != null && !c.edge2.isVisible()) {
-                System.out.println("Showing edge: router to " + c.to);                                 
+         //       System.out.println("Showing edge: router to " + c.to);                                 
                 hub.showEdge(c.edge2);
             }
         }

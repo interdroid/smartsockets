@@ -4,6 +4,7 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 
+import java.awt.Color;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -63,8 +64,8 @@ public class HubNode extends SmartNode {
         HashMap oldEdges = edges;
         edges = new HashMap<DirectSocketAddress, Edge>();
 
-        System.out.println("Hub " + info.hubAddress.toString() 
-                + " connected to " + info.connectedTo.length + " others");
+  //      System.out.println("Hub " + info.hubAddress.toString() 
+   //             + " connected to " + info.connectedTo.length + " others");
         
         // Refresh existing edges and add new ones..
         for (int i=0;i<info.connectedTo.length;i++) { 
@@ -110,10 +111,23 @@ public class HubNode extends SmartNode {
                         // The other node already has an edge pointing to me, so
                         // we reuse that one!
                         e2.useArrowHead(false);
+                        
+                        if (info.usingSSH[i]) { 
+                            e2.setColor(Color.red);
+                        } else { 
+                            e2.setColor(Color.blue);
+                        }
                         // parent.addEdge(e2);
                     } else { 
                         e = new Edge(this, other);
                         e.useArrowHead(true);
+                        
+                        if (info.usingSSH[i]) { 
+                            e.setColor(Color.red);
+                        } else { 
+                            e.setColor(Color.blue);
+                        }
+                        
                         parent.addEdge(e);
                     }
                 } else { 
@@ -132,8 +146,8 @@ public class HubNode extends SmartNode {
         HashMap oldEdges = edges;
         edges = new HashMap<DirectSocketAddress, Edge>();
 
-        System.out.println("Hub " + info.hubAddress.toString() 
-                + " connected to " + info.connectedTo.length + " others");
+   //     System.out.println("Hub " + info.hubAddress.toString() 
+   //             + " connected to " + info.connectedTo.length + " others");
         
         // Refresh existing edges and add new ones..
         for (int i=0;i<info.connectedTo.length;i++) { 

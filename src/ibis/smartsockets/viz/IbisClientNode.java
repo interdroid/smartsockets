@@ -16,7 +16,7 @@ public class IbisClientNode extends ClientNode {
     
         String adr = info.getClientAddress().toString();
             
-        System.out.println("Adding Ibis " + adr);
+  //      System.out.println("Adding Ibis " + adr);
         
         String id = info.getProperty("ibis");
         

@@ -1,6 +1,7 @@
 package ibis.smartsockets.hub;
 
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.direct.DirectSSHSocket;
 import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.hub.connections.HubConnection;
@@ -174,9 +175,9 @@ class Connector extends CommunicationThread {
             // and just send a ping message instead. If I am the slave then we 
             // grab the lock after sending the connect message. 
             //
-            // This approach ensures that if their are two machines trying to 
-            // do a connection setup at the same time, the locks are always 
-            // first grabbed on one of the two machines. This way one of the two 
+            // This approach ensures that if there are two machines trying to 
+            // do a connection setup at the same time, the lock is always 
+            // grabbed on one of the two machines. This way one of the two 
             // will always win. Added bonus is that the receiving thread does 
             // not need to know anything about this.            
             // 
@@ -230,9 +231,15 @@ class Connector extends CommunicationThread {
             s.setSoTimeout(0);
             
             d.setReachable();       
-            knownHubs.getLocalDescription().addConnectedTo(d.hubAddressAsString);
             
-        } catch (IOException e) {
+            String name = d.hubAddressAsString;
+      
+            if (s instanceof DirectSSHSocket) { 
+                name += " (SSH)";
+            } 
+            
+            knownHubs.getLocalDescription().addConnectedTo(name);
+         } catch (IOException e) {
             // This happens a lot, so it's not worth a warning...
             if (hconlogger.isDebugEnabled()) {
                 hconlogger.debug("Got exception!", e);
@@ -251,8 +258,14 @@ class Connector extends CommunicationThread {
             
             connections.put(d.hubAddress, c);
             c.activate();            
+     
+            String name = d.hubAddressAsString;
             
-            knownHubs.getLocalDescription().addConnectedTo(d.hubAddressAsString);            
+            if (s instanceof DirectSSHSocket) { 
+                name += " (SSH)";
+            } 
+            
+            knownHubs.getLocalDescription().addConnectedTo(name);            
         } else {
             if (hconlogger.isInfoEnabled()) {
                 hconlogger.info("Failed to set up connection!");

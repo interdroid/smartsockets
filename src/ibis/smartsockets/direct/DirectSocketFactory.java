@@ -21,6 +21,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Map;
@@ -54,6 +55,8 @@ public class DirectSocketFactory {
     
     private static DirectSocketFactory defaultFactory; 
 
+    private static final char [] keyHeader = { '-','-','-','-','-','B','E','G','I','N' }; 
+    
     private final int DEFAULT_TIMEOUT;
     private final int DEFAULT_BACKLOG;
     private final int DEFAULT_LOCAL_TIMEOUT;
@@ -72,7 +75,7 @@ public class DirectSocketFactory {
         
     // User for SSH tunneling
     private final String user;
-    private final char [] privateKey;
+    private final char [][] privateKeys;
 
     private final boolean haveFirewallRules;
     
@@ -122,17 +125,23 @@ public class DirectSocketFactory {
             String privateKeyFile = p.getProperty(SmartSocketsProperties.SSH_PRIVATE_KEY);
    
             if (privateKeyFile == null) {
-                privateKey = getPrivateSSHKey();
+                privateKeys = getPrivateSSHKeys();
             } else {
                 if (logger.isInfoEnabled()) {
                     logger.info("Using " + privateKeyFile + " for the SSH connection");   
                 }
                 File keyFile = new File(privateKeyFile);
-                privateKey = readKeyFile(keyFile);
+                char [] tmp = readKeyFile(keyFile);
+                
+                if (tmp != null){ 
+                    privateKeys = new char[1][];
+                    privateKeys[0] = tmp;
+                } else { 
+                    privateKeys = null;
+                }
             } 
-
         } else { 
-            privateKey = null;
+            privateKeys = null;
         }
         
         if (allowSSHOut) {
@@ -145,7 +154,7 @@ public class DirectSocketFactory {
             }
         }
         
-        ALLOW_SSH_OUT = (privateKey != null);
+        ALLOW_SSH_OUT = (privateKeys != null && !(privateKeys.length == 0));
         
         ALLOW_UPNP = p.booleanProperty(SmartSocketsProperties.UPNP, false);
 
@@ -210,46 +219,65 @@ public class DirectSocketFactory {
         getNATAddress();
     }
 
-    private char [] getPrivateSSHKey() { 
+    private char [][] getPrivateSSHKeys() { 
 
+        ArrayList<char []> result = new ArrayList<char[]>();
+        
         // Check if we can find the files we need to setup an outgoing ssh 
         // connection.      
         String home = System.getProperty("user.home");
-        String sep = System.getProperty("file.separator");
         
-        // TODO: add windows/solaris options ?
-        String [] fileNames = new String [] { 
-                home + sep + ".ssh" + sep + "id_rsa", 
-                home + sep + ".ssh" + sep + "id_dsa"
-        };
-       
-        for (String f : fileNames) { 
-            File keyfile = new File(f);
+        File dir = new File(home + File.separator + ".ssh");
         
-            if (keyfile.exists() && keyfile.canRead() && keyfile.length() > 0) { 
-                // we have found the keyfile ?
-                char [] privateKey = readKeyFile(keyfile);
+        if (!dir.exists() || !dir.canRead()) { 
+            if (logger.isInfoEnabled()) {
+                logger.info("SSH directory not found: " + dir);   
+            }
+            return null;
+        }
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("Scanning SSH directory: " + dir);   
+        }
+        
+        File [] files = dir.listFiles();
+        
+        if (logger.isInfoEnabled()) {
+            logger.info("SSH directory contains " + files.length + " files");   
+        }
+        
+        
+        for (File f : files) { 
+            
+            char [] privateKey = readKeyFile(f);
                 
-                if (privateKey != null) {
-                    return privateKey;
-                }
-            } else {
+            if (privateKey != null) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("SSH private key not found: " + f);   
+                    logger.info("SSH private key found: " + f);   
                 }
+                    
+                result.add(privateKey);
             }
         }
 
-        if (logger.isInfoEnabled()) {
-            logger.info("No SSH private key found, outgoing SSH " +
-                    "connections disabled");   
+        if (result.size() == 0) { 
+            if (logger.isInfoEnabled()) {
+                logger.info("No SSH private key found, outgoing SSH " +
+                "connections disabled");   
+            }
+
+            return null;
         }
-        
-        //String keyfilePass = "joespass"; // will be ignored if not needed
-        return null;
+    
+        return result.toArray(new char [result.size()][]);
     }
     
     private char [] readKeyFile(File keyFile) { 
+        
+        if (!keyFile.exists() || !keyFile.canRead() || keyFile.isDirectory() 
+                || keyFile.length() < 500 || keyFile.length() > 2048) {
+            return null;
+        }
         
         FileReader fr = null;
         
@@ -267,6 +295,18 @@ public class DirectSocketFactory {
                 }
 
                 return null;
+            }
+            
+            // TODO check content!!
+
+            for (int i=0;i<keyHeader.length;i++) { 
+                if (keyHeader[i] != result[i]) { 
+                    if (logger.isInfoEnabled()) {
+                        logger.info("File does not contain SSH key: " + 
+                                keyFile.getAbsolutePath());
+                    }
+                    return null;
+                }
             }
             
             if (logger.isInfoEnabled()) {
@@ -512,19 +552,19 @@ public class DirectSocketFactory {
        
         LocalStreamForwarder lsf = null;
                
-        String fowardTarget = forwardTo.getAddress().toString();
+        String forwardTarget = forwardTo.getAddress().toString();
         
-        if (fowardTarget.startsWith("/")) { 
-            fowardTarget = fowardTarget.substring(1);
+        if (forwardTarget.startsWith("/")) { 
+            forwardTarget = forwardTarget.substring(1);
         }
                         
         if (logger.isDebugEnabled()) {               
-            logger.debug("Attempting SSH forwarding to " + fowardTarget + " via"
+            logger.debug("Attempting SSH forwarding to " + forwardTarget + " via"
                     + sas.toString());
         }      
         
         try {                
-            lsf = conn.createLocalStreamForwarder(fowardTarget, forwardTo.getPort());            
+            lsf = conn.createLocalStreamForwarder(forwardTarget, forwardTo.getPort());            
             
             InputStream in = lsf.getInputStream();
             OutputStream out = lsf.getOutputStream();
@@ -592,19 +632,19 @@ public class DirectSocketFactory {
         
         return null;    
     }
-    
+
     private DirectSocket attemptSSHConnection(DirectSocketAddress sas,
             InetSocketAddress target, int timeout, int localPort, 
             boolean mayBlock, String user, byte [] userOut, byte [] userIn, 
             boolean check) throws IOException {
-        
+
         DirectSocket result = null;
         long start = 0;
-        
+
         if (logger.isInfoEnabled()) {
-            
+
             start = System.currentTimeMillis();
-        
+
             if (logger.isDebugEnabled()) {                 
                 logger.debug("Attempting SSH connection to " + sas.toString()
                         + " using network "
@@ -613,86 +653,101 @@ public class DirectSocketFactory {
                         + "timeout = " + timeout);
             }
         }
-        
-        //try {
-            String host = target.getAddress().toString();
-            
-            if (host.startsWith("/")) { 
-                host = host.substring(1);
-            }
-            
-            Connection conn = new Connection(host);            
-            conn.connect(null, timeout, timeout);
-            
-            boolean isAuthenticated = conn.authenticateWithPublicKey(user, 
-                    privateKey, keyFilePass);
 
-            if (isAuthenticated == false) {
-                if (logger.isInfoEnabled()) { 
-                    logger.info("Authentication of SSH connection to "
+        String host = target.getAddress().toString();
+
+        if (host.startsWith("/")) { 
+            host = host.substring(1);
+        }
+
+        Connection conn = new Connection(host);            
+        conn.connect(null, timeout, timeout);
+
+        boolean isAuthenticated = false; 
+
+        for (char [] key : privateKeys) { 
+            if (logger.isDebugEnabled()) { 
+                logger.debug("Attempting authentication of SSH connection to "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort());
+            }    
+
+            try {
+                isAuthenticated = conn.authenticateWithPublicKey(user, key, 
+                        keyFilePass);
+            } catch (IOException e) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Failed to create SSH connection to "
                             + NetworkUtils.ipToString(target.getAddress()) + ":"
-                            + target.getPort() + " failed after " 
-                            + (System.currentTimeMillis()-start) + " ms.");
-                }                  
-                
-                throw new IOException("SSH authentication failed.");
+                            + target.getPort() + " after " 
+                            + (System.currentTimeMillis()-start) + " ms.", e);
+                }
             }
-            
-            if (logger.isDebugEnabled()) {               
-                logger.debug("Established SSH connection to " + sas.toString() 
-                        + " in " + (System.currentTimeMillis()-start) + " ms.");
-            }  
-        
-            if (!sas.inExternalAddress(target)) {
-            
-                // We should be able to foward a connection to the same IP!
-                result = attemptSSHForwarding(sas, target, target, conn, start, 
+
+            if (logger.isDebugEnabled()) { 
+                logger.debug("Authentication result " + isAuthenticated);
+            }                  
+
+            if (isAuthenticated) { 
+                break;
+            }
+        }
+
+        if (isAuthenticated == false) {
+            if (logger.isInfoEnabled()) { 
+                logger.info("Authentication of SSH connection to "
+                        + NetworkUtils.ipToString(target.getAddress()) + ":"
+                        + target.getPort() + " failed after " 
+                        + (System.currentTimeMillis()-start) + " ms.");
+            }                  
+
+            throw new IOException("SSH authentication failed.");
+        }
+
+        if (logger.isDebugEnabled()) {               
+            logger.debug("Established SSH connection to " + sas.toString() 
+                    + " in " + (System.currentTimeMillis()-start) + " ms.");
+        }  
+
+        if (!sas.inExternalAddress(target)) {
+
+            // We should be able to foward a connection to the same IP!
+            result = attemptSSHForwarding(sas, target, target, conn, start, 
+                    userOut, userIn, true);
+        } else { 
+            // We should forward to a local IP                 
+            for (InetSocketAddress t : sas.getPrivateAddresses()) { 
+                result = attemptSSHForwarding(sas, target, t, conn, start, 
                         userOut, userIn, true);
-            } else { 
-                // We should forward to a local IP                 
-                for (InetSocketAddress t : sas.getPrivateAddresses()) { 
-                    result = attemptSSHForwarding(sas, target, t, conn, start, 
-                            userOut, userIn, true);
-                    
+
+                if (result != null) { 
+                    break;
+                }
+            }
+
+            if (result == null) { 
+                // local IP didn't work. Try the public ones ?                  
+                for (InetSocketAddress t : sas.getPublicAddresses()) { 
+                    result = attemptSSHForwarding(sas, target, t, conn, 
+                            start, userOut, userIn, true);
+
                     if (result != null) { 
                         break;
                     }
                 }
-                
-                if (result == null) { 
-                    // local IP didn't work. Try the public ones ?                  
-                    for (InetSocketAddress t : sas.getPublicAddresses()) { 
-                        result = attemptSSHForwarding(sas, target, t, conn, 
-                                start, userOut, userIn, true);
-                        
-                        if (result != null) { 
-                            break;
-                        }
-                    }
-                }
-                
             }
-           
-            if (result == null && logger.isInfoEnabled()) {               
-                logger.info("Failed to forward to target machine during SSH " +
-                        "connection setup to "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " after " 
-                        + (System.currentTimeMillis()-start) + " ms.");
-            
-                throw new ConnectException("SSH forwarding failed.");
-            }  
 
-            /*
-        } catch (IOException e) {
-            
-            if (logger.isInfoEnabled()) {
-                logger.info("Failed to create SSH connection to "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " after " 
-                        + (System.currentTimeMillis()-start) + " ms.", e);
-            }
-        }*/
+        }
+
+        if (result == null && logger.isInfoEnabled()) {               
+            logger.info("Failed to forward to target machine during SSH " +
+                    "connection setup to "
+                    + NetworkUtils.ipToString(target.getAddress()) + ":"
+                    + target.getPort() + " after " 
+                    + (System.currentTimeMillis()-start) + " ms.");
+
+            throw new ConnectException("SSH forwarding failed.");
+        }  
 
         return result; 
     }

@@ -534,8 +534,15 @@ public class HubDescription {
         }
         
         synchronized (connectedTo) {
-            connectedTo.remove(address);
+     
             lastLocalUpdate = state.increment();
+            
+            for (int i=0;i<connectedTo.size();i++) {
+                if (connectedTo.get(i).startsWith(address)) {
+                    connectedTo.remove(i);
+                    return;
+                }
+            }
         }        
     }
 

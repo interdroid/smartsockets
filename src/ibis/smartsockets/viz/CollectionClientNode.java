@@ -8,7 +8,7 @@ public class CollectionClientNode extends ClientNode {
         
         super("ClientCollection" + hub.getID(), hub);        
         
-        System.out.println("Adding client client collection: " + clients);
+   //     System.out.println("Adding client client collection: " + clients);
 
         setType(Node.TYPE_CIRCLE);        
         setMouseOverText(new String[] { "Clients :", "" + clients});

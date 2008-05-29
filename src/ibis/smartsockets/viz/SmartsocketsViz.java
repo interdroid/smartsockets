@@ -47,6 +47,8 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     private UniquePaint c = new UniquePaint();
     
+    private boolean done = false;
+    
     
     /** Default constructor.
      * @param hub 
@@ -147,7 +149,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
         if (h == null) {
             
-            System.out.println("Found new hub " + info.hubAddress.toString());
+        //    System.out.println("Found new hub " + info.hubAddress.toString());
             
             h = new HubNode(this, info);
                         
@@ -158,7 +160,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
                 e.printStackTrace();
             }
         } else { 
-            System.out.println("Updating hub " + info.hubAddress.toString());                        
+   //         System.out.println("Updating hub " + info.hubAddress.toString());                        
             h.updateInfo(info);
         }
 
@@ -168,11 +170,11 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
   
     private void updateGraph() {
 
-        System.out.println("Retrieving graph ...");
+     //   System.out.println("Retrieving graph ...");
         
         HubInfo [] p = getHubs();
 
-        System.out.println("Retrieving graph done!");
+    //    System.out.println("Retrieving graph done!");
                 
         if (p == null) {
             return;
@@ -220,16 +222,27 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         tgPanel.repaint();
     }
 
+    public synchronized void done() { 
+        done = true;
+        notifyAll();
+    }
+    
+    public synchronized boolean getDone() { 
+        return done;
+    }
+    
+    private synchronized void waitFor(long time) { 
+        try { 
+            wait(time);
+        } catch (InterruptedException e) {
+            // ignore
+        }
+    }
+    
     public void run() {
-
-        while (true) {
+        while (!getDone()) {
             updateGraph();
-
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                // ignore
-            }
+            waitFor(5000);
         }
     }
    
@@ -260,6 +273,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         frame = new Frame("TouchGraph GraphLayout");
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
+                glPanel.done();
                 frame.remove(glPanel);
                 frame.dispose();
             }

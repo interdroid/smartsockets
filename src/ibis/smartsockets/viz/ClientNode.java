@@ -38,7 +38,7 @@ public class ClientNode extends SmartNode {
         
         String adr = info.getClientAddress().toString();
 
-        System.out.println("Adding client " + adr);
+     //   System.out.println("Adding client " + adr);
 
         String tmp = info.getProperty("smartsockets.viz");
         
@@ -65,7 +65,7 @@ public class ClientNode extends SmartNode {
         
         String [] tmp = split(s, "^");
         
-        System.out.println("tmp = " + tmp + " " + tmp.length);
+  //      System.out.println("tmp = " + tmp + " " + tmp.length);
         
         if (tmp.length <= num || tmp[num] == null) {
             return def;

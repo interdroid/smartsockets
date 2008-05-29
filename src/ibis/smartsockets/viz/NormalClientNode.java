@@ -14,7 +14,7 @@ public class NormalClientNode extends ClientNode {
 
         String adr = info.getClientAddress().toString();
                 
-        System.out.println("Adding client " + adr);
+     //   System.out.println("Adding client " + adr);
         setMouseOverText(new String[] { "Client:", adr });
         setLabel("C");        
     }

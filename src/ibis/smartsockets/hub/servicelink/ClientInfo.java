@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 
-
 public class ClientInfo {
 
     private final DirectSocketAddress clientAddress;
@@ -19,9 +18,6 @@ public class ClientInfo {
     public ClientInfo(String clientAsString) { 
     
         final String orig = clientAsString;
-        
-        System.out.println("Parsing client from string \"" + clientAsString 
-                + "\"");
         
         if (!clientAsString.startsWith("Client(")) { 
             throw new IllegalArgumentException("String does not contain Client" 

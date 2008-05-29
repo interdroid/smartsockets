@@ -81,7 +81,7 @@ public class HubConnection extends MessageForwardingConnection {
             for (HubDescription tmp : ss.getResult()) { 
                 
                 if (goslogger.isInfoEnabled()) { 
-                    goslogger.info("    Writing proxy: " + tmp.hubAddressAsString);
+                    goslogger.info("    Writing hub: " + tmp.hubAddressAsString);
                 }
                 
                 if (goslogger.isDebugEnabled()) {

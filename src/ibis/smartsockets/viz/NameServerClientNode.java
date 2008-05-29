@@ -16,7 +16,7 @@ public class NameServerClientNode extends ClientNode {
     
         String adr = info.getClientAddress().toString();
             
-        System.out.println("Adding NameServer " + adr);
+       // System.out.println("Adding NameServer " + adr);
                 
         setMouseOverText(new String[] { "Nameserver:", adr });
         

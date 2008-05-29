@@ -26,7 +26,7 @@ public class UniqueColor {
                     
             float hue = h * (1.0f / hueParts);
             
-            System.err.println("Adding color: " + hue + "-" + sat + "-" + bri);
+   //         System.err.println("Adding color: " + hue + "-" + sat + "-" + bri);
             
             colors.add(new Color(Color.HSBtoRGB(hue, sat, bri)));   
         }

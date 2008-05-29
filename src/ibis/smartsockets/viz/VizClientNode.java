@@ -15,7 +15,7 @@ public class VizClientNode extends ClientNode {
         
         String adr = info.getClientAddress().toString();
                 
-        System.out.println("Adding visualization " + adr);
+      //  System.out.println("Adding visualization " + adr);
         setMouseOverText(new String[] { "Visualization:", adr });
         setBackColor(Color.decode("#8000A0"));
         setNodeBorderInactiveColor(Color.decode("#54006A")); 

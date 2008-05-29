@@ -17,7 +17,7 @@ public class UniquePaint {
     public UniquePaint() { 
         generateColors();
         
-        System.err.println("Generated " + patterns.size() + " patterns");
+    //    System.err.println("Generated " + patterns.size() + " patterns");
     }
 
     private void generateColors() { 

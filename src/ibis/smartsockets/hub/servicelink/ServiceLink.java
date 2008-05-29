@@ -952,7 +952,7 @@ public class ServiceLink implements Runnable {
 
     private HubInfo[] convertToHubInfo(String[] message) {
 
-        System.out.println("GOT MESSAGE: " + Arrays.deepToString(message));
+  //      System.out.println("GOT MESSAGE: " + Arrays.deepToString(message));
         
         HubInfo[] result = new HubInfo[message.length];
 
