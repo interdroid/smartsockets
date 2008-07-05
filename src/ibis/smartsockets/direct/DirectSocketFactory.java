@@ -545,6 +545,19 @@ public class DirectSocketFactory {
         }
     }
 
+    private String getIP(InetSocketAddress address) { 
+        
+    	String host = address.getAddress().toString();
+
+    	int slash = host.indexOf("/");
+           
+    	if (slash >= 0) { 
+    		host = host.substring(slash+1);
+    	}
+
+    	return host;
+    }
+    
     private DirectSocket attemptSSHForwarding(DirectSocketAddress sas, 
             InetSocketAddress target, InetSocketAddress forwardTo, 
             Connection conn, long start,  byte [] userOut, byte [] userIn, 
@@ -552,14 +565,10 @@ public class DirectSocketFactory {
        
         LocalStreamForwarder lsf = null;
                
-        String forwardTarget = forwardTo.getAddress().toString();
-        
-        if (forwardTarget.startsWith("/")) { 
-            forwardTarget = forwardTarget.substring(1);
-        }
+        String forwardTarget = getIP(forwardTo);
                         
         if (logger.isDebugEnabled()) {               
-            logger.debug("Attempting SSH forwarding to " + forwardTarget + " via"
+            logger.debug("Attempting SSH forwarding to " + forwardTarget + " via "
                     + sas.toString());
         }      
         
@@ -632,7 +641,7 @@ public class DirectSocketFactory {
         
         return null;    
     }
-
+        
     private DirectSocket attemptSSHConnection(DirectSocketAddress sas,
             InetSocketAddress target, int timeout, int localPort, 
             boolean mayBlock, String user, byte [] userOut, byte [] userIn, 
@@ -641,25 +650,20 @@ public class DirectSocketFactory {
         DirectSocket result = null;
         long start = 0;
 
+        String host = getIP(target);
+             
         if (logger.isInfoEnabled()) {
 
             start = System.currentTimeMillis();
 
             if (logger.isDebugEnabled()) {                 
                 logger.debug("Attempting SSH connection to " + sas.toString()
-                        + " using network "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort() + " local port = " + localPort
+                        + " via host " + host + " local port = " + localPort
                         + "timeout = " + timeout);
             }
         }
 
-        String host = target.getAddress().toString();
-
-        if (host.startsWith("/")) { 
-            host = host.substring(1);
-        }
-
+        
         Connection conn = new Connection(host);            
         conn.connect(null, timeout, timeout);
 
