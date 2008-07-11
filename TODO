@@ -20,18 +20,6 @@ Niels/Jonathan bumped into hub address confusion...
    Clients should not be allowed to publish an untrusted address of 
    themselves. Must check if this is possible now.
 
-Jonathan found a bug:
-
-   - Using VirtualSocketFactory and DirectSocketFactory, I just tried to 
-     put null for the Map<String, Object> properties argument for socket 
-     creation, and it result in an exception : Connection refused... It would 
-     be more user friendly to detect the null value instead of forcing the 
-     user to put "new HashMap<String, Object>()" when no specific property is 
-     needed.
-
-     NOTE: I cannot reproduce this. The code seems to check for null -- J 
-
-
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
 
 Ask Ganymed/Trilead developers to add our "connect to InetAddress" patch" 
@@ -81,6 +69,24 @@ Don't remember context/reason;
 - - - - - - - - - - - - - - - - - - 
 
 Done: 
+
+X Jonathan found a bug:
+
+   - Using VirtualSocketFactory and DirectSocketFactory, I just tried to 
+     put null for the Map<String, Object> properties argument for socket 
+     creation, and it result in an exception : Connection refused... It would 
+     be more user friendly to detect the null value instead of forcing the 
+     user to put "new HashMap<String, Object>()" when no specific property is 
+     needed.
+
+     NOTE: I cannot reproduce this. The code seems to check for null -- J 
+  
+   - Clarification: 
+    	
+     - DirectSocketFactory line 1779 : p can be null (it should not arrive, 
+       but what if ?) and it results in a NPE.
+       solution : if(p == null) return getSocketFactory() else return new 
+       DirectSocketFactory(p);
 
 X Jonathan found a bug:
    - When using the UPNP class, more precisely the addPortMapping(...) 

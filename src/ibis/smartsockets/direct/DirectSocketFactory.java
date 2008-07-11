@@ -1778,7 +1778,13 @@ public class DirectSocketFactory {
      */
     public static DirectSocketFactory getSocketFactory(TypedProperties p) {
         
-        // TODO: cache based on propertties ?         
+        // TODO: cache based on properties ?     
+    	
+    	if (p == null) { 
+    		// Return the default DirectSocketFactory.
+    		return getSocketFactory();
+    	}
+    	
         return new DirectSocketFactory(p);
     }
     
