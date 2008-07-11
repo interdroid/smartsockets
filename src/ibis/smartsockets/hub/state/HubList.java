@@ -179,7 +179,7 @@ public class HubList {
     }
 
        
-    public String toString() {
+    public synchronized String toString() {
         
         StringBuffer result = new StringBuffer();
        
@@ -189,7 +189,7 @@ public class HubList {
         result.append("Hubs with a direct connection:\n");
         
         for (HubDescription desc : connectedHubs) { 
-            result.append(desc).append('\n');            
+        	result.append(desc).append('\n');            
         }
         
         result.append("Hubs without a direct connection:\n");

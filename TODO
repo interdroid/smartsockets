@@ -20,7 +20,7 @@ Niels/Jonathan bumped into hub address confusion...
    Clients should not be allowed to publish an untrusted address of 
    themselves. Must check if this is possible now.
 
-Jonathan found two bugs:
+Jonathan found a bug:
 
    - Using VirtualSocketFactory and DirectSocketFactory, I just tried to 
      put null for the Map<String, Object> properties argument for socket 
@@ -29,34 +29,7 @@ Jonathan found two bugs:
      user to put "new HashMap<String, Object>()" when no specific property is 
      needed.
 
-   - When using the UPNP class, more precisely the addPortMapping(...) 
-     method, I got a NullPointerException :
-     Exception in thread "main" java.lang.NullPointerException
-        at net.sbbi.upnp.messages.UPNPMessageFactory.getMessage(UPNPMessageFactory.java:87)
-        at ibis.smartsockets.util.UPNP.performMapping(UPNP.java:271)
-        at ibis.smartsockets.util.UPNP.addPortMapping(UPNP.java:367)
-        at jo.smartsocket.test.TestUPNP.main(TestUPNP.java:44)
-     This is due to the 
-     "UPNPMessageFactory.getNewInstance(wanConnectionService);" call in 
-     UPNP.java line 354 that return null, and is visibly assumed not null in 
-     the call to "performMapping(...)" on line 367.
-
-Ronald found a bug
-
-   Een kleine buglet in smartsockets:
-
-   Exception in thread "Hub" java.util.ConcurrentModificationException
-         at java.util.LinkedList$ListItr.checkForComodification(LinkedList.java:778)
-         at java.util.LinkedList$ListItr.next(LinkedList.java:713)
-         at ibis.smartsockets.hub.state.HubList.toString(HubList.java:205)
-         at ibis.smartsockets.hub.Hub.gossip(Hub.java:281)
-         at ibis.smartsockets.hub.Hub.run(Hub.java:378)
-
-   Gebeurt als ik een snel na elkaar connections opbouw.
-   
-
-
-
+     NOTE: I cannot reproduce this. The code seems to check for null -- J 
 
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
@@ -108,6 +81,29 @@ Don't remember context/reason;
 - - - - - - - - - - - - - - - - - - 
 
 Done: 
+
+X Jonathan found a bug:
+   - When using the UPNP class, more precisely the addPortMapping(...) 
+     method, I got a NullPointerException :
+     Exception in thread "main" java.lang.NullPointerException
+        at net.sbbi.upnp.messages.UPNPMessageFactory.getMessage(UPNPMessageFactory.java:87)
+        at ibis.smartsockets.util.UPNP.performMapping(UPNP.java:271)
+        at ibis.smartsockets.util.UPNP.addPortMapping(UPNP.java:367)
+        at jo.smartsocket.test.TestUPNP.main(TestUPNP.java:44)
+     This is due to the 
+     "UPNPMessageFactory.getNewInstance(wanConnectionService);" call in 
+     UPNP.java line 354 that return null, and is visibly assumed not null in 
+     the call to "performMapping(...)" on line 367.
+
+X Ronald found a bug
+   Een kleine buglet in smartsockets:
+   Exception in thread "Hub" java.util.ConcurrentModificationException
+         at java.util.LinkedList$ListItr.checkForComodification(LinkedList.java:778)
+         at java.util.LinkedList$ListItr.next(LinkedList.java:713)
+         at ibis.smartsockets.hub.state.HubList.toString(HubList.java:205)
+         at ibis.smartsockets.hub.Hub.gossip(Hub.java:281)
+         at ibis.smartsockets.hub.Hub.run(Hub.java:378)
+   Gebeurt als ik een snel na elkaar connections opbouw.
 
 X Fix shared direct socket factory (Hub+Virtual+No ssh)
 

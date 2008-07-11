@@ -1098,7 +1098,7 @@ public class VirtualSocketFactory {
                     + fillTimeout + ")", getNames(order), exceptions);
 
         } finally {
-            if (timing != null) {
+            if (timing != null && prop != null) {
                 timing[0] = System.nanoTime() - timing[0];
                 prop.remove("direct.detailed.timing.ignore");
             }
@@ -1302,7 +1302,7 @@ public class VirtualSocketFactory {
 
     public VirtualServerSocket createServerSocket(int port, int backlog,
             Map<String, Object> properties) throws IOException {
-
+    	
         if (backlog <= 0) {
             backlog = DEFAULT_BACKLOG;
         }
