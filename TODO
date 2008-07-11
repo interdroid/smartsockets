@@ -1,5 +1,66 @@
 TODO:
 
+Niels/Jonathan bumped into hub address confusion...
+   When hubs (or clients) are started and only get a partial hub address, 
+   it is possible that the connection can still be created to the hub. 
+
+   However, the client may not be reachable over the hub because its @  
+   part of its address is invalid. Similarly, hubs may start gossiping 
+   partial addresses which may or may not be reachable. When reachable, the 
+   connections are closed again because they result in double links between  
+   hubs. As a result, the set of 'known hubs' contains some garbage.
+
+   We can fix this by making a distinction between 'trusted' (machine 
+   generated) and 'untrusted' (user provided) addresses. Both can be 
+   gossiped and connected to. Once it is clear what the relation between 
+   a untrusted and trusted address is, this should be gossiped as well.
+   This will allow hubs to map requests from untrusted to trusted 
+   addresses.
+
+   Clients should not be allowed to publish an untrusted address of 
+   themselves. Must check if this is possible now.
+
+Jonathan found two bugs:
+
+   - Using VirtualSocketFactory and DirectSocketFactory, I just tried to 
+     put null for the Map<String, Object> properties argument for socket 
+     creation, and it result in an exception : Connection refused... It would 
+     be more user friendly to detect the null value instead of forcing the 
+     user to put "new HashMap<String, Object>()" when no specific property is 
+     needed.
+
+   - When using the UPNP class, more precisely the addPortMapping(...) 
+     method, I got a NullPointerException :
+     Exception in thread "main" java.lang.NullPointerException
+        at net.sbbi.upnp.messages.UPNPMessageFactory.getMessage(UPNPMessageFactory.java:87)
+        at ibis.smartsockets.util.UPNP.performMapping(UPNP.java:271)
+        at ibis.smartsockets.util.UPNP.addPortMapping(UPNP.java:367)
+        at jo.smartsocket.test.TestUPNP.main(TestUPNP.java:44)
+     This is due to the 
+     "UPNPMessageFactory.getNewInstance(wanConnectionService);" call in 
+     UPNP.java line 354 that return null, and is visibly assumed not null in 
+     the call to "performMapping(...)" on line 367.
+
+Ronald found a bug
+
+   Een kleine buglet in smartsockets:
+
+   Exception in thread "Hub" java.util.ConcurrentModificationException
+         at java.util.LinkedList$ListItr.checkForComodification(LinkedList.java:778)
+         at java.util.LinkedList$ListItr.next(LinkedList.java:713)
+         at ibis.smartsockets.hub.state.HubList.toString(HubList.java:205)
+         at ibis.smartsockets.hub.Hub.gossip(Hub.java:281)
+         at ibis.smartsockets.hub.Hub.run(Hub.java:378)
+
+   Gebeurt als ik een snel na elkaar connections opbouw.
+   
+
+
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++=
+
 Ask Ganymed/Trilead developers to add our "connect to InetAddress" patch" 
 to the official release.
 
@@ -145,3 +206,5 @@ Version 2.0
   Add parallel streams to routers ?  
 
   
+
+
