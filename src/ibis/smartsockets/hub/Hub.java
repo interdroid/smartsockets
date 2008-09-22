@@ -77,7 +77,8 @@ public final class Hub extends Thread {
                 SmartSocketsProperties.HUB_SSH_ALLOWED, true);
         
         if (allowSSHForHub) { 
-            p.setProperty(SmartSocketsProperties.SSH_IN, "true");
+            misclogger.info("Hub allowd to use SSH");
+        	p.setProperty(SmartSocketsProperties.SSH_IN, "true");
             p.setProperty(SmartSocketsProperties.SSH_OUT, "true");
         }
         

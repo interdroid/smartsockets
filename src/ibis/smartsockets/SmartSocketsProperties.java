@@ -73,6 +73,9 @@ public class SmartSocketsProperties {
     public static final String SL_PREFIX         = PREFIX + "servicelink.";        
     public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
     public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
+    public static final String SL_FORCE          = SL_PREFIX + "force";
+    public static final String SL_TIMEOUT        = SL_PREFIX + "timeout";
+    public static final String SL_RETRIES        = SL_PREFIX + "retries";
     
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
@@ -171,6 +174,10 @@ public class SmartSocketsProperties {
             
             SL_SEND_BUFFER,         "-1", 
             SL_RECEIVE_BUFFER,      "-1",
+            
+            SL_FORCE,               "false",
+            SL_TIMEOUT,             "10000",
+            SL_RETRIES,             "6",
             
             ROUTED_BUFFER,          "65536",
             ROUTED_FRAGMENT,        "8176"            

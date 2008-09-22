@@ -120,7 +120,7 @@ public class Direct extends AbstractDirectModule {
     public DirectSocketAddress getAddresses() { 
         return server.getAddressSet();
     }
-    
+     
     /*
     private boolean checkTarget(SocketAddressSet target) {  
         // TODO: implement

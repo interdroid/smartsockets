@@ -190,7 +190,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
            
         if (p == null) {
             if (meslogger.isDebugEnabled()) {
-                meslogger.debug("Target hub " + hub + " does not known client " 
+                meslogger.debug("Target hub " + hub + " does not know client " 
                         + cm.getTarget());
             }
             return false;

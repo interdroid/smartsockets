@@ -267,8 +267,8 @@ public class VirtualSocketFactory {
                 // And add its address to the property set as the 'delegation' 
                 // address. This is needed by the hub (since it needs to know 
                 // its own address).
-                p.setProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS, d
-                        .getAddresses().toString());
+                p.setProperty(SmartSocketsProperties.HUB_DELEGATE_ADDRESS, 
+                		d.getAddresses().toString());
             }
 
             // Now we create the hub
@@ -390,22 +390,56 @@ public class VirtualSocketFactory {
 
         // Sort addresses according to locality ?
         
-        
+        boolean force = properties.booleanProperty(SmartSocketsProperties.SL_FORCE);
         
         try {
             serviceLink = ServiceLink.getServiceLink(properties, hubs,
                     myAddresses);
 
             hubAddress = serviceLink.getAddress();
-
-            if (true) {
-                serviceLink.waitConnected(10000);
-            }
+            
         } catch (Exception e) {
             logger.warn("Failed to connect service link to hub!", e);
+        
+            if (force) { 
+            	// FIXME!! 
+            	logger.error("Permanent failure of servicelink! -- will exit");
+            	System.exit(1);
+            }
+            
             return;
         }
 
+        if (force) { 
+        	int retries = Math.max(1, properties.getIntProperty(SmartSocketsProperties.SL_RETRIES));
+              
+        	boolean connected = false;
+        	
+        	while (!connected && retries > 0) { 
+        		try { 
+        			serviceLink.waitConnected(properties.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
+        			connected = true;
+        		} catch (Exception e) {
+        			logger.warn("Failed to connect service link to hub!", e);
+        		}
+        		
+        		retries--;
+        	}
+        	
+        	if (!connected) { 
+        		//FIXME
+        		logger.error("Permanent failure of servicelink! -- will exit");
+                System.exit(1);
+        	}
+        } else { 
+        	try {
+        		serviceLink.waitConnected(properties.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
+        	} catch (Exception e) {
+        		logger.warn("Failed to connect service link to hub!", e);
+        		return;
+        	}	
+        }
+        	
         // Check if the users want us to register any properties with the hub.
         String[] props = properties.getStringList(
                 "smartsockets.register.property", ",", null);
@@ -1476,7 +1510,19 @@ public class VirtualSocketFactory {
         if (properties != null) {
             typedProperties.putAll(properties);
         }
+        
+        if (typedProperties.booleanProperty(SmartSocketsProperties.START_HUB, false)) { 
+        	
+        	boolean allowSSHForHub = typedProperties.booleanProperty(
+                          SmartSocketsProperties.HUB_SSH_ALLOWED, true);
 
+        	if (allowSSHForHub) { 
+        		typedProperties.setProperty(SmartSocketsProperties.SSH_IN, "true");
+        		// Do we need this one ?
+        		//typedProperties.setProperty(SmartSocketsProperties.SSH_OUT, "true");
+        	}
+        }
+        
         VirtualSocketFactory factory = new VirtualSocketFactory(
                 DirectSocketFactory.getSocketFactory(typedProperties),
                 typedProperties);

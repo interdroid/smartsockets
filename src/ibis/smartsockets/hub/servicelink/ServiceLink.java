@@ -99,16 +99,23 @@ public class ServiceLink implements Runnable {
     private long outgoingMetaMessages;
 
     private final int virtualHubPort;
+    
+    private final long maxReconnect;
+    
+    private final boolean forceConnection;
 
     private ServiceLink(List<DirectSocketAddress> hubs,
             DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer, 
-            int virtualHubPort) throws IOException {
+            int virtualHubPort, long maxReconnect, boolean forceConnection) throws IOException {
 
         this.hubs = hubs;
         this.sendBuffer = sendBuffer;
         this.receiveBuffer = receiveBuffer;
         this.myAddress = myAddress;
 
+        this.maxReconnect = maxReconnect;
+        this.forceConnection = forceConnection;
+        
         this.virtualHubPort = virtualHubPort;
 
         factory = DirectSocketFactory.getSocketFactory();
@@ -893,7 +900,7 @@ public class ServiceLink implements Runnable {
                 // hops left is not used here...
                 out.writeInt(-1);
                 
-                // return to sender is set to false bu default
+                // return to sender is set to false by default
                 out.writeBoolean(false);
                 
                 DirectSocketAddress.write(target, out);
@@ -1596,12 +1603,15 @@ public class ServiceLink implements Runnable {
 
         // Connect to the hub and processes the messages it gets. When the 
         // connection is lost, it will try to reconnect.
-        int sleep = 1000;
-
+        
         while (true) {
-            do {
+       
+        	int sleep = 1000;
+            long end = System.currentTimeMillis() + maxReconnect;
+            
+        	do {
                 if (hubAddress == null) { 
-                    // We haven't found a working hub yet....
+                	// This is the initial connect, where we haven't found a working hub yet....
                     for (DirectSocketAddress a : hubs) { 
                         try {
                             connectToHub(a);
@@ -1621,7 +1631,7 @@ public class ServiceLink implements Runnable {
                         }
                     }                
                 } else { 
-                    // We have found a working hub (and stick to it!)
+                	// This happens when we've lost contact with the hub and try to reconnect.
                     try {
                         connectToHub(hubAddress);
                     } catch (IOException e) {
@@ -1636,6 +1646,13 @@ public class ServiceLink implements Runnable {
                 if (sleep < 16000) {
                     sleep *= 2;
                 }
+                
+                if (forceConnection && maxReconnect > 0 && System.currentTimeMillis() > end) { 
+                	logger.error("Permanent failure of servicelink! -- will exit");
+                	// FIXME!
+                	System.exit(1);
+                }
+                
             } while (!getConnected());
 
             sleep = 1000;
@@ -1668,9 +1685,18 @@ public class ServiceLink implements Runnable {
             virtualHubPort = p.getIntProperty(SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);
         }
 
+        boolean force = p.booleanProperty(SmartSocketsProperties.SL_FORCE);
+        long maxReconnect = 0;
+        
+        if (force) { 
+        	maxReconnect = ((long) p.getIntProperty(SmartSocketsProperties.SL_RETRIES)) * 
+        			((long) p.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
+        }
+        
+        
         try {
             return new ServiceLink(hubs, myAddress, sendBuffer,
-                    receiveBuffer, virtualHubPort);
+                    receiveBuffer, virtualHubPort, maxReconnect, force);
 
         } catch (Exception e) {
             logger.warn("ServiceLink: Failed to connect to hub!", e);

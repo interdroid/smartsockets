@@ -16,7 +16,7 @@ public class CountingOutputStream extends OutputStream {
     private final long index;
     
     private long lastPrint = 0;
-    private long interval = 1000;
+    private long interval = 555;
     
     private static synchronized int getID() { 
         return streamCount++;
