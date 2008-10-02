@@ -8,12 +8,13 @@ import ibis.smartsockets.virtual.modules.ConnectModule;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class VirtualClusters {
     
-    protected static final Logger logger = Logger.getLogger("ibis.smartsockets.virtual.clustering"); 
+    protected static final Logger logger = LoggerFactory.getLogger("ibis.smartsockets.virtual.clustering"); 
     
     
     private static class ClusterDefinition {         

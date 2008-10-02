@@ -19,15 +19,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServiceLink implements Runnable {
 
     // TODO: create different loggers here!
-    private static final Logger logger = Logger
+    private static final Logger logger = LoggerFactory
             .getLogger("ibis.smartsockets.hub.servicelink");
 
-    private static final Logger statslogger = Logger
+    private static final Logger statslogger = LoggerFactory
             .getLogger("ibis.smartsockets.statistics");
 
     private static final int TIMEOUT = 5000;

@@ -8,13 +8,14 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Discovery {
     
     private static final Logger logger = 
-            Logger.getLogger("ibis.smartsockets.discovery");
+            LoggerFactory.getLogger("ibis.smartsockets.discovery");
     
     protected static final int MAGIC = (0x42<<24 | 0xff<<16 | 0x42<<8 | 0xff);
     

@@ -7,12 +7,13 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SendReceive {
     
     private static final Logger logger = 
-        Logger.getLogger("ibis.smartsockets.discovery");
+        LoggerFactory.getLogger("ibis.smartsockets.discovery");
     
     private final DatagramSocket socket;
     

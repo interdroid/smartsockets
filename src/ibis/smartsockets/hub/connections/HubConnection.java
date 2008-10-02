@@ -16,16 +16,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class HubConnection extends MessageForwardingConnection {
 
     private static final Logger conlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.hub"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.hub"); 
      
     private static final Logger goslogger = 
-        Logger.getLogger("ibis.smartsockets.hub.gossip"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.gossip"); 
           
     private final HubDescription peer;
     private final HubDescription local;    

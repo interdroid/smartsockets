@@ -28,7 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class implements a 'virtual' socket factory.
@@ -92,13 +93,13 @@ public class VirtualSocketFactory {
 
     private static VirtualSocketFactory defaultFactory = null;
 
-    protected static final Logger logger = Logger
+    protected static final Logger logger = LoggerFactory
             .getLogger("ibis.smartsockets.virtual.misc");
 
-    protected static final Logger conlogger = Logger
+    protected static final Logger conlogger = LoggerFactory
             .getLogger("ibis.smartsockets.virtual.connect");
 
-    private static final Logger statslogger = Logger
+    private static final Logger statslogger = LoggerFactory
             .getLogger("ibis.smartsockets.statistics");
 
     private final DirectSocketFactory directSocketFactory;

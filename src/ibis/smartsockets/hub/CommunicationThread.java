@@ -6,7 +6,8 @@ import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.StateCounter;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 abstract class CommunicationThread implements Runnable {
@@ -17,7 +18,7 @@ abstract class CommunicationThread implements Runnable {
     protected final StateCounter state;         
     
     protected static final Logger hublogger = 
-        Logger.getLogger("ibis.smartsockets.hub"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub"); 
         
     protected final Connections connections;     
     

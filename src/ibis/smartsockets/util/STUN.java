@@ -4,7 +4,8 @@ import ibis.util.ThreadPool;
 
 import java.net.InetAddress;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.javawi.jstun.test.DiscoveryInfo;
 import de.javawi.jstun.test.DiscoveryTest;
@@ -12,7 +13,7 @@ import de.javawi.jstun.test.DiscoveryTest;
 public class STUN {
     
     private static Logger logger = 
-        Logger.getLogger(STUN.class.getName());
+        LoggerFactory.getLogger(STUN.class.getName());
     
     private static String [] DEFAULT_SERVERS = 
         new String [] { "stun.voipbuster.com",

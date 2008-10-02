@@ -14,12 +14,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class ConnectModule implements CallBack {
     
     protected static final Logger statslogger = 
-        Logger.getLogger("ibis.smartsockets.statistics");
+        LoggerFactory.getLogger("ibis.smartsockets.statistics");
     
     public final String module;
     

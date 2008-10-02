@@ -15,16 +15,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public abstract class MessageForwardingConnection extends BaseConnection {
 
     protected final static Logger meslogger = 
-        Logger.getLogger("ibis.smartsockets.hub.messages"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.messages"); 
     
     protected final static Logger vclogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.virtual"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.virtual"); 
        
     protected final static int DEFAULT_CREDITS = 10; 
     

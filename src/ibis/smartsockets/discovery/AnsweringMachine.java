@@ -5,12 +5,13 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AnsweringMachine implements Runnable {
 
     private static final Logger logger = 
-        Logger.getLogger("ibis.smartsockets.discovery");
+        LoggerFactory.getLogger("ibis.smartsockets.discovery");
 
     private final DatagramSocket socket; 
     private final DatagramPacket packet; 

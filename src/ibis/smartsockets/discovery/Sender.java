@@ -5,12 +5,13 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Sender extends Thread {
     
     private static final Logger logger = 
-        Logger.getLogger("ibis.smartsockets.discovery");
+        LoggerFactory.getLogger("ibis.smartsockets.discovery");
     
     private final int sleep;
     

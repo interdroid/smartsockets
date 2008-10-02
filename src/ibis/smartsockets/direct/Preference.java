@@ -10,13 +10,14 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 class Preference {
 
     private static final Logger logger = 
-        Logger.getLogger("ibis.smartsockets.network.preference");
+        LoggerFactory.getLogger("ibis.smartsockets.network.preference");
     
     private final String name;
 

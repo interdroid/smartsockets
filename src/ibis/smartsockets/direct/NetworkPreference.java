@@ -14,13 +14,14 @@ import java.util.Arrays;
 import java.util.LinkedList;
 //import java.util.StringTokenizer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class NetworkPreference {
    
     private static final Logger logger
-            = Logger.getLogger("ibis.smartsockets.network.preference");
+            = LoggerFactory.getLogger("ibis.smartsockets.network.preference");
 
     private Preference defaultPreference;
     private Preference networksPreference;

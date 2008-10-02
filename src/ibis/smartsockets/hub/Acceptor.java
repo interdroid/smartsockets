@@ -23,22 +23,23 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Acceptor extends CommunicationThread {
     
     private static final Logger hconlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.hub"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.hub"); 
     
     private static final Logger cconlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.client"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.client"); 
     
     private static final Logger reglogger = 
-        Logger.getLogger("ibis.smartsockets.hub.registration"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.registration"); 
     
     private static final Logger reqlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.request"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.request"); 
         
     private DirectServerSocket server;
         

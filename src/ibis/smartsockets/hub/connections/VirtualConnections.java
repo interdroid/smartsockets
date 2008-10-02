@@ -2,12 +2,13 @@ package ibis.smartsockets.hub.connections;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VirtualConnections {
 
     private static Logger vclogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.virtual");
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.virtual");
     
     private final HashMap<String, VirtualConnection> vcs = 
         new HashMap<String, VirtualConnection>();

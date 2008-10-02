@@ -16,12 +16,13 @@ import net.sbbi.upnp.messages.UPNPMessageFactory;
 import net.sbbi.upnp.messages.UPNPResponseException;
 import net.sbbi.upnp.services.UPNPService;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
  
 public class UPNP {
     
     private static Logger logger = 
-        Logger.getLogger(UPNP.class.getName());
+        LoggerFactory.getLogger(UPNP.class.getName());
     
     private static final String GATEWAY_DEVICE_URN = 
         "urn:schemas-upnp-org:device:InternetGatewayDevice:1";                    

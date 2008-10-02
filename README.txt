@@ -420,7 +420,8 @@ SmartSockets is free software. See the file "LICENSE.txt" for copying permission
 This product includes software developed by the Apache Software
 Foundation (http://www.apache.org/).
 
-Log4J copyright notice lives in "notices/LICENSE.log4j.txt".  The
+The Slf4j copyright notice lives in "notices/LICENSE.slf4j.txt".
+The Log4J copyright notice lives in "notices/LICENSE.log4j.txt".  The
 Commons copyright notice lives in notices/LICENSE.apache-2.0.txt".
 
 This product includes jstun, which is distributed with a dual license,

@@ -17,12 +17,13 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class Connector extends CommunicationThread {
     
     private static final Logger hconlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.hub"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.hub"); 
     
     private int sendBuffer = -1;
     private int receiveBuffer = -1;

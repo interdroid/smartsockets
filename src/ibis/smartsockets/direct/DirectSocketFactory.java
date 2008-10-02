@@ -26,7 +26,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 //import ch.ethz.ssh2.Connection;
 //import ch.ethz.ssh2.LocalStreamForwarder;
@@ -51,7 +52,7 @@ import com.trilead.ssh2.LocalStreamForwarder;
 public class DirectSocketFactory {
 
     protected static final Logger logger = 
-        Logger.getLogger("ibis.smartsockets.direct");
+        LoggerFactory.getLogger("ibis.smartsockets.direct");
     
     private static DirectSocketFactory defaultFactory; 
 

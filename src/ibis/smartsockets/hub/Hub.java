@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Hub extends Thread {
     
@@ -31,10 +32,10 @@ public final class Hub extends Thread {
     private static final int DEFAULT_ACCEPT_PORT    = 17878;    
 
     private static final Logger misclogger = 
-        Logger.getLogger("ibis.smartsockets.hub.misc");
+        LoggerFactory.getLogger("ibis.smartsockets.hub.misc");
 
     private static final Logger goslogger = 
-        Logger.getLogger("ibis.smartsockets.hub.gossip");
+        LoggerFactory.getLogger("ibis.smartsockets.hub.gossip");
 
     private final boolean printStatistics;
     private final long STAT_FREQ;

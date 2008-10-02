@@ -18,18 +18,19 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ClientConnection extends MessageForwardingConnection {
 
     private static Logger conlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.connections.client"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.connections.client"); 
     
     private static Logger reqlogger = 
-        Logger.getLogger("ibis.smartsockets.hub.request"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.request"); 
     
     private static Logger reglogger = 
-        Logger.getLogger("ibis.smartsockets.hub.registration"); 
+        LoggerFactory.getLogger("ibis.smartsockets.hub.registration"); 
     
     private final DirectSocketAddress clientAddress;
     
