@@ -3,7 +3,7 @@
     default="build"
     basedir=".">
 
-    <property name="version" value="smartsockets-1.23"/>
+    <property name="version" value="smartsockets-1.4"/>
     <property name="jar" value="${version}.jar"/>
 
     <property name="srcdir" value="./src"/>
@@ -11,9 +11,9 @@
     <property name="distdir" value="./jars"/>
     <property name="javadoc" value="javadoc/smartsockets" />
 
-    <property name="external" value="./external/jug-lgpl-2.0.0.jar:./external/trilead-ssh2-build213.jar:./external/jstun-0.6.1.jar:./external/slf4j-api-1.5.3.jar:./external/ibis-util-2.1.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar:./external/TGGraphLayout-JM.jar"/>
+    <property name="external" value="./external/jug-lgpl-2.0.0.jar:./external/trilead-ssh2-build213.jar:./external/jstun-0.6.1.jar:./external/slf4j-api-1.5.3.jar:./external/ibis-util-2.1.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar:./external/TGGraphLayout-JM5.jar"/>
 
-    <!-- Internal target - Preparations for building. -->
+	<!-- Internal target - Preparations for building. -->
     <target name="prepare"> 
     	<mkdir dir="${distdir}" />
         <mkdir dir="${builddir}" />
