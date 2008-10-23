@@ -216,7 +216,11 @@ public abstract class ConnectModule implements CallBack {
         String tmp = (String) requirements.get("connect.module.skip");
         
         if (tmp != null) { 
-            if (contains(tmp, module)) { 
+            if (contains(tmp, module)) {
+            	if (logger.isInfoEnabled()) { 
+            		logger.info("Skipping module: " + module);
+            	}
+            	
                 return false;
             } // else, continue with other checks            
         }
@@ -227,7 +231,12 @@ public abstract class ConnectModule implements CallBack {
         tmp = (String) requirements.get("connect.module.type.skip");
         
         if (tmp != null) {             
-            if (contains(tmp, myTypes)) { 
+            if (contains(tmp, myTypes)) {
+            	
+            	if (logger.isInfoEnabled()) { 
+            		logger.info("Skipping module type: " + tmp + "(" + module + ")");
+            	}
+            	
                 return false;
             } // else, continue with other checks
         }

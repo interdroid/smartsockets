@@ -1,7 +1,7 @@
-** SmartSockets 1.0 README **
+** SmartSockets 1.4 README **
 -----------------------------
 
-This distribution contains version 1.0 of the SmartSockets library. 
+This distribution contains version 1.4 of the SmartSockets library. 
 
 
 What is SmartSockets:
@@ -199,7 +199,7 @@ other hubs, like this:
 
    ./bin/hub 130.37.193.15-17878~jason  
 
-This seconf hub will then attempt to connect to it. Note that hubs can only 
+This second hub will then attempt to connect to it. Note that hubs can only 
 use direct connections or SSH tunneling. Since they are part of the SmartSockets 
 implementation, they cannot use the advanced connection setup schemes themselves.
 
@@ -209,16 +209,16 @@ connect to another hub itself, may be able to pass its address on to another hub
 that is able to establish a connection.
 
 Generally, a hub network should at least form a spanning tree to be useful. 
-Unfortunately, setting up such a network is currently somthing that requires 
+Unfortunately, setting up such a network is currently something that requires 
 some experimentation by the user. Some simple guidelines apply however: 
 
  1) Generally, you need one hub per site. Preferably on a well connected machine 
     such as a cluster frontend. 
 
- 2) It often helps to a hub on a machine that is completely open. The machine 
-    itself does not need to participate in the application (or even be located  
-    anywhere near it). It just serves as a meeting point for other, less 
-    connected hubs. 
+ 2) It often helps to start a hub on a machine that is completely open. The 
+    machine itself does not need to participate in the application (or even 
+    be located anywhere near it). It just serves as a meeting point for other, 
+    less connected hubs. 
 
  3) Starting the hubs in two phases may also be useful: first start each of 
     them seperately to find out the contact address that will be used on that 
@@ -245,7 +245,7 @@ hub. There are (at least) three ways of doing this:
 
   2) By creating a 'smartsockets.properties' file that contains the line:
   
-       smartsockets.hub.addresses=130.37.193.15-17878~jason
+       smartsockets.hub.addresses=130.37.193.15-17878~jason,...
 
      Make sure that this file can be found by SmartSockets, either by putting 
      it in the local directry from which the application is run, or by adding 
@@ -256,11 +256,11 @@ hub. There are (at least) three ways of doing this:
 
        java ... -Dsmartsockets.file=<path/to/file> ...
 
-Besides this (almost) mandatory options, SmartSockets has many other settings 
-that can be tweaked. The 'smartsockets.properties.example' file shows all of 
+Besides these (almost) mandatory options, SmartSockets has many other settings 
+that can be tweaked. The 'smartsockets.properties.example' file shows most of 
 them, and includes a resonably extensive explanation of what they do. 
 
-Note that to use SmartSockets, you must include the file 'smartsockets-1.0.jar'
+Note that to use SmartSockets, you must include the file 'smartsockets-1.4.jar'
 and all dependancies in the 'external' directory of the distribution into 
 you classpath. The 'bin/app' script in the distribution illustrates how this can 
 be done. An example is shown below. 
@@ -331,13 +331,13 @@ Currently, SmartSockets has the following bugs and limitations:
  - The code is in desperate need of decent documentation (JavaDoc!)
 
  - The TCP splicing mechanism is switched off by default, since it 
-   cannot be trusted to provide us with a connection is a resonable time. 
-
- - Do not expect a very good performance of message routing over the hubs.
+   cannot be trusted to provide us with a connection in a resonable time. 
 
  - Setting up the hub network requires a certain amount of black magic. 
 
  - When a single hub needs to serve many machines, this may become a bottleneck. 
+
+ - Do not expect a very good performance of message routing over the hubs.
 
  - If a machine does not serve incoming connections fast enough, the backlog may  
    fill up, causing connections to fail completely. As a result, SmartSockets 
@@ -386,6 +386,12 @@ There are plans to extend SmartSockets in the following ways:
    protocols (such as BLAST) we could transparently offer fast 
    connections, while using the same socket-like interface.
 
+ - It may be possible to dynamic improve the performance of a connection 
+   while it is being used. For example, while the application is using 
+   a connection, smartsockets may try to find better routes over the hubs, 
+   or continue to try and create a direct connection if it is not available 
+   yet. 
+
 
 Contact:
 --------
@@ -395,13 +401,13 @@ More information can be found on the Ibis project website:
   http://www.cs.vu.nl/ibis/
 
 The latest SmartSockets source repository tree is accessible through SVN at
-"https://gforge.cs.vu.nl/svn/ibis/smartsockets/trunk". You need an account on
+https://gforge.cs.vu.nl/svn/ibis/smartsockets/trunk. You need an account on
 https://gforge.cs.vu.nl/ to access the repositories there. You can
 create an account by clicking the 'New Account' button on the
 https://gforge.cs.vu.nl/ page.
 
 You can send bug reports, feature requests, cries for help, or descriptions of 
-interesting way in which you have used SmartSockets to: jason@cs.vu.nl 
+interesting way in which you have used SmartSockets to: jason at cs.vu.nl 
 
 
 Legal stuff:
