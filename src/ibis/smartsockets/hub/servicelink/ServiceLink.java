@@ -1680,20 +1680,22 @@ public class ServiceLink implements Runnable {
         int receiveBuffer = -1;
         int virtualHubPort = 42;
                 
+        boolean force = true;
+        
         if (p != null) {
             sendBuffer = p.getIntProperty(SmartSocketsProperties.SL_SEND_BUFFER, -1);
             receiveBuffer = p.getIntProperty(SmartSocketsProperties.SL_RECEIVE_BUFFER, -1);
             virtualHubPort = p.getIntProperty(SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);
+            force = p.booleanProperty(SmartSocketsProperties.SL_FORCE);
+        
         }
-
-        boolean force = p.booleanProperty(SmartSocketsProperties.SL_FORCE);
+        
         long maxReconnect = 0;
         
         if (force) { 
         	maxReconnect = ((long) p.getIntProperty(SmartSocketsProperties.SL_RETRIES)) * 
         			((long) p.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
         }
-        
         
         try {
             return new ServiceLink(hubs, myAddress, sendBuffer,
