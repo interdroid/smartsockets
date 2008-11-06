@@ -97,7 +97,7 @@ public class HubList {
         return map.containsKey(m); 
     }
            
-    public synchronized HubDescription get(DirectSocketAddress m) {                        
+    public synchronized HubDescription get(DirectSocketAddress m) {    
         return map.get(m);
     }
             

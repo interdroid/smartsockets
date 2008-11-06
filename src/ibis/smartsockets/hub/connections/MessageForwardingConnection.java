@@ -187,7 +187,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
             return false;
         }
         
-        HubDescription p = knownHubs.get(cm.getTarget());
+        HubDescription p = knownHubs.get(hub);
            
         if (p == null) {
             if (meslogger.isDebugEnabled()) {
