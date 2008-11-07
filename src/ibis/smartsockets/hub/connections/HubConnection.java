@@ -299,6 +299,6 @@ public class HubConnection extends MessageForwardingConnection {
     }
 
     protected void handleDisconnect(Exception e) {
-        vclogger.warn("handleDisconnect not implemented in HubConnection!", e);
+        vclogger.warn("Hub lost connection to " + peer.hubAddressAsString + " (disconnect not implemented!)", e);
     }
 }
