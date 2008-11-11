@@ -922,6 +922,47 @@ public class ServiceLink implements Runnable {
         outgoingMetaMessages++;
     }
 
+    public void sendDataMessage(DirectSocketAddress target, DirectSocketAddress targetHub,
+            String targetModule, byte [] message) {
+
+        if (!getConnected()) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Cannot send message: not connected to hub");
+            }
+            return;
+        }
+        
+        try {
+            synchronized (out) {
+                out.write(MessageForwarderProtocol.DATA_MESSAGE);
+                
+                out.writeInt(4 + targetHub.getAddress().length +  
+                		4 + target.getAddress().length +  
+                		4 + (message == null ? 0 : message.length)); 
+
+                DirectSocketAddress.write(targetHub, out); // may be null ?
+                DirectSocketAddress.write(target, out);
+
+                if (message == null) { 
+                	out.writeInt(0);
+                } else { 
+                	out.writeInt(message.length);
+                	out.write(message);
+                }
+                	
+                out.flush();
+            }
+        } catch (IOException e) {
+            logger.warn("ServiceLink: Exception while writing to hub!", e);
+            closeConnectionToHub();
+        }
+
+        outgoingMetaMessages++;
+    }
+
+    
+    
+    
     /*
      public void send(SocketAddressSet target, 
      SocketAddressSet targetHub, String targetModule, int opcode, 

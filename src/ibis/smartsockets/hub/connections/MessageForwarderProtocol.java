@@ -14,6 +14,7 @@ public interface MessageForwarderProtocol extends ConnectionProtocol {
     public static final byte MESSAGE_VIRTUAL         = 65;
     public static final byte MESSAGE_VIRTUAL_ACK     = 66;
 
+    public static final byte DATA_MESSAGE            = 68;
     public static final byte INFO_MESSAGE            = 69;
- 
+	
 }

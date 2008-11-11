@@ -9,10 +9,12 @@ import ibis.smartsockets.hub.state.DirectionsSelector;
 import ibis.smartsockets.hub.state.HubDescription;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.HubsForClientSelector;
+import ibis.smartsockets.util.MalformedAddressException;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 
 import org.slf4j.Logger;
@@ -215,7 +217,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     protected void forward(ClientMessage m, boolean setHops) {   
         
         if (m.getSourceHub() == null) { 
-            // should never happen, but we like to programm defensively
+            // should never happen, but we like to program defensively
             m.setSourceHub(getLocalHub());
         }
         
@@ -480,10 +482,49 @@ public abstract class MessageForwardingConnection extends BaseConnection {
         ClientMessage cm = new ClientMessage(in);        
         
         if (meslogger.isDebugEnabled()) {
-            meslogger.debug("Got message: " + cm);
+            meslogger.debug("Got info message: " + cm);
         }
         
         forward(cm, false);          
+    }
+        
+    private void forwardData(byte [] data) throws UnknownHostException, MalformedAddressException {
+
+    	DirectSocketAddress hub = DirectSocketAddress.fromBytes(data, 4);
+
+    	//System.err.println("Hub is " + hub);
+    	
+    	int off = 4 + (hub == null ? 4 : 4 + hub.getAddress().length);    	
+    	
+    	//System.err.println("Off is " + off);
+    	
+    	DirectSocketAddress node = DirectSocketAddress.fromBytes(data, off);
+
+    	//System.err.println("Node is " + node);
+    	
+    	off += node.getAddress().length;
+
+    	//System.err.println("Dropping data for " + node + " @ " + hub + " : length " + (data.length-off));    	
+    }
+    
+    
+    protected final void handleDataMessage() throws IOException {        
+        
+    	int len = in.readInt();
+    	
+    	byte [] data = new byte[len];
+    	
+    	in.readFully(data);
+    	
+    	if (meslogger.isDebugEnabled()) {
+            meslogger.debug("Got data message: [" + data.length + "]");
+        }
+    	
+    	try { 
+    		forwardData(data);
+    	} catch (Exception e) {
+    		meslogger.warn("Failed to process data message: [" + data.length + "]", e);
+    	}
     }
     
     protected abstract void handleDisconnect(Exception e); 
@@ -1077,11 +1118,18 @@ public abstract class MessageForwardingConnection extends BaseConnection {
                 
             case MessageForwarderProtocol.INFO_MESSAGE:
                 if (meslogger.isInfoEnabled()) {
-                    meslogger.info("HubConnection got message!");
+                    meslogger.info("HubConnection got info message!");
                 }
                 handleClientMessage();
                 return true;
             
+            case MessageForwarderProtocol.DATA_MESSAGE:
+                if (meslogger.isInfoEnabled()) {
+                    meslogger.info("HubConnection got data message!");
+                }
+                handleDataMessage();
+                return true;
+                
             case MessageForwarderProtocol.CREATE_VIRTUAL:
                 if (meslogger.isInfoEnabled()) {
                     meslogger.info("HubConnection got virtual connect!");
