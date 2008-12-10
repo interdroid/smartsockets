@@ -278,7 +278,15 @@ public class IPAddressSet implements Serializable {
         System.arraycopy(a2.addresses, 0, tmp, a1.addresses.length, 
                 a2.addresses.length);
         
-        return getFromAddress(tmp);                
+        IPAddressSet result = getFromAddress(tmp);
+        
+        if (a1.UUID != null) { 
+        	result = merge(result, a1.UUID);
+        } else if (a2.UUID != null) { 
+        	result = merge(result, a2.UUID); 	
+        }
+        
+        return result;
     }
    
     /**
@@ -303,7 +311,13 @@ public class IPAddressSet implements Serializable {
         System.arraycopy(a1.addresses, 0, tmp, 0, a1.addresses.length);
         tmp[tmp.length-1] = a2;
 
-        return getFromAddress(tmp);                
+        IPAddressSet result = getFromAddress(tmp);
+        
+        if (a1.UUID != null) { 
+        	result = merge(result, a1.UUID);
+        }
+        
+        return result;
     }   
     
     /**

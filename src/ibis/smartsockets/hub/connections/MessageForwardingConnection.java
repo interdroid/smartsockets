@@ -494,6 +494,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
     	//System.err.println("Hub is " + hub);
     	
+    	/*
     	int off = 4 + (hub == null ? 4 : 4 + hub.getAddress().length);    	
     	
     	//System.err.println("Off is " + off);
@@ -503,7 +504,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
     	//System.err.println("Node is " + node);
     	
     	off += node.getAddress().length;
-
+*/
     	//System.err.println("Dropping data for " + node + " @ " + hub + " : length " + (data.length-off));    	
     }
     

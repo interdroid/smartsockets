@@ -177,12 +177,17 @@ public class DirectSocketFactory {
                         
         localAddress = IPAddressSet.getLocalHost();            
                 
+System.out.println("LOCAL = " + localAddress);
+        
         if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;
 
             byte [] uuid = NetworkUtils.getUUID();
             
+
             localAddress = IPAddressSet.merge(localAddress, uuid);    
+            
+//System.out.println("LOCAL2 = " + localAddress);
             
             getExternalAddress(p);
             
@@ -195,7 +200,9 @@ public class DirectSocketFactory {
         } else {
             completeAddress = localAddress;
         }
-        
+
+//System.out.println("COMPLETE = " + completeAddress);
+   
         portRange = new PortRange(p);
 
         preference = NetworkPreference.getPreference(completeAddress, p);
@@ -214,7 +221,8 @@ public class DirectSocketFactory {
         altCompleteAddressInBytes = toBytes(5, completeAddress, 
                 preference.getNetworkName());
          
-        
+//        System.out.println("ALTCOMPLETEADDRESS = " + altCompleteAddressInBytes.length + " " +  completeAddress);
+              
         haveFirewallRules = preference.haveFirewallRules();
         
         getNATAddress();
