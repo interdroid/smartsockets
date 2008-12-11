@@ -177,7 +177,7 @@ public class DirectSocketFactory {
                         
         localAddress = IPAddressSet.getLocalHost();            
                 
-System.out.println("LOCAL = " + localAddress);
+//System.out.println("LOCAL = " + localAddress);
         
         if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;
