@@ -1,7 +1,6 @@
 package ibis.smartsockets.viz;
 
 import java.awt.Color;
-import java.awt.Paint;
 import java.util.StringTokenizer;
 
 import ibis.smartsockets.hub.servicelink.ClientInfo;

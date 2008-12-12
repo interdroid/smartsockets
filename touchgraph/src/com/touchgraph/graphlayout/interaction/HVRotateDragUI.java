@@ -123,7 +123,7 @@ public class HVRotateDragUI extends TGAbstractDragUI implements TGPaintListener 
             lastAngle = getMouseAngle(mouseOverN.drawx, mouseOverN.drawy);
         } else {
             tempNode = new Node(); // A hack, until lenses are better
-                                    // implemented
+            // implemented
             // One should keep track of a real position on the graph
             // As opposed to having a temporary node do this task.
             tempNode.drawx = e.getX();
@@ -158,11 +158,11 @@ public class HVRotateDragUI extends TGAbstractDragUI implements TGPaintListener 
 
         tgPanel.updateDrawPositions(); // Rotate, but don't redraw
         tgPanel.updateGraphSize(); // Just in case. Mostly effects H+V
-                                    // Scrollbars
+        // Scrollbars
 
         if (tempNode != null)
             tgPanel.updateDrawPos(tempNode); // The temporary node is not
-                                                // part of the graph,
+        // part of the graph,
         // So it needs to be updated individually
         TGPoint2D lastMousePos;
         if (mouseOverN != null)
@@ -174,13 +174,13 @@ public class HVRotateDragUI extends TGAbstractDragUI implements TGPaintListener 
 
         if (!hvScroll.scrolling)
             hvScroll.scrollAtoB(lastMousePos, newPos); // Scroll the node to
-                                                        // the mouse
+        // the mouse
 
         this.tgPanel.repaintAfterMove();
 
         if (tempNode != null)
             tgPanel.updateDrawPos(tempNode); // The temporary node is not
-                                                // part of the graph,
+        // part of the graph,
         // So it needs to be updated individually
     }
 

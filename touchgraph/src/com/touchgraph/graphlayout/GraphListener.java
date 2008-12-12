@@ -48,16 +48,20 @@
  */
 
 package com.touchgraph.graphlayout;
+
 import java.util.EventListener;
- 
-/**  GraphListener.
-  *   
-  * @author   Alexander Shapiro                                        
-  * @version  1.22-jre1.1  $Id: GraphListener.java,v 1.1 2002/09/19 15:58:07 ldornbusch Exp $
-  */
-public interface GraphListener extends EventListener{
+
+/**
+ * GraphListener.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: GraphListener.java,v 1.1 2002/09/19 15:58:07
+ *          ldornbusch Exp $
+ */
+public interface GraphListener extends EventListener {
 
     void graphMoved();
+
     void graphReset();
 
 } // end com.touchgraph.graphlayout.GraphListener

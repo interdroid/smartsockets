@@ -94,6 +94,11 @@ import com.touchgraph.graphlayout.interaction.ZoomScroll;
  */
 public class GLPanel extends JPanel {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public String zoomLabel = "Zoom"; // label for zoom menu item
 
     public String rotateLabel = "Rotate"; // label for rotate menu item
@@ -112,10 +117,6 @@ public class GLPanel extends JPanel {
 
     private JSlider rotateSlider;
 
-    private Scrollbar localitySB;
-
-    private Scrollbar hyperSB;
-
     private Panel topPanel;
 
     // The default popups
@@ -125,13 +126,13 @@ public class GLPanel extends JPanel {
 
     public PopupMenu edgePopup;
 
-    private HashMap nodePopups = new HashMap();
+    private HashMap<String, PopupMenu> nodePopups = new HashMap<String, PopupMenu>();
 
     public Node popupNode;
 
     public Edge popupEdge;
 
-    public Hashtable sliderHash; // = new Hashtable();
+    public Hashtable<String, JSlider> sliderHash; // = new Hashtable();
 
     protected TGPanel tgPanel;
 
@@ -150,7 +151,7 @@ public class GLPanel extends JPanel {
         // this.setBackground(defaultBorderBackColor);
         // this.setForeground(defaultForeColor);
         setBorder(BorderFactory.createTitledBorder(""));
-        sliderHash = new Hashtable();
+        sliderHash = new Hashtable<String, JSlider>();
         tgLensSet = new TGLensSet();
         tgPanel = new TGPanel();
         tgPanel.setBackColor(UIManager.getColor("Panel.background"));
@@ -369,7 +370,7 @@ public class GLPanel extends JPanel {
             add(m);
             nodePopups.put(ID, m);
 
-            System.out.println("Added node popup: " + ID);
+            //System.out.println("Added node popup: " + ID);
         }
     }
 
@@ -563,7 +564,7 @@ public class GLPanel extends JPanel {
         tgPanel.setLocale(n1, 1);
         tgPanel.setSelect(n1);
         try {
-            Thread.currentThread().sleep(2000);
+            Thread.sleep(2000);
         } catch (InterruptedException ex) {
         }
 

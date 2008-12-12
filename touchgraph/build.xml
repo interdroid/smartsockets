@@ -1,0 +1,40 @@
+<project name="Smartsockets Touchgraph" default="build" basedir=".">
+
+    <description>
+	Build file for Smartsockets version of TouchGraph library
+    </description>
+
+    <!-- Global properties -->
+
+    <property name="version" value="" />
+
+    <property name="jar" location="../jars/TGGraphLayout-smartsockets${version}.jar" />
+
+    <target name="build" description="build touchgraph">
+        <!-- Clean up -->
+        <delete dir="tmp" />
+
+        <!-- Create the build directory structure used by compile -->
+        <mkdir dir="tmp" />
+
+        <!-- Compile the java code from ${src} into ${tmp} -->
+        <javac srcdir="src" destdir="tmp" debug="on" source="1.5" target="1.5">
+            <compilerarg value="-Xlint:unchecked" />
+        </javac>
+
+        <!-- create target dir for jar if needed -->
+        <mkdir dir="../jars" />
+
+        <!-- Put everything in ${tmp} into the jar file -->
+        <jar jarfile="${jar}" basedir="tmp" />
+
+        <!-- And delete the build dir -->
+        <delete dir="tmp" />
+    </target>
+
+    <target name="clean" description="clean up">
+        <delete dir="tmp" />
+        <delete file="${jar}" />
+    </target>
+
+</project>

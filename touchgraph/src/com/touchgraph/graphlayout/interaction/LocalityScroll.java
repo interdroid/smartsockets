@@ -49,18 +49,19 @@
 
 package com.touchgraph.graphlayout.interaction;
 
-import  com.touchgraph.graphlayout.*;
-import  com.touchgraph.graphlayout.graphelements.*;
-
-import  java.awt.event.*;
+import com.touchgraph.graphlayout.*;
+import java.awt.event.*;
 import java.awt.*;
-//import  javax.swing.*;
 
-/** LocalityScroll.
-  *
-  * @author   Alexander Shapiro
-  * @version  1.22-jre1.1  $Id: LocalityScroll.java,v 1.2 2002/09/23 18:45:48 ldornbusch Exp $
-  */
+// import javax.swing.*;
+
+/**
+ * LocalityScroll.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: LocalityScroll.java,v 1.2 2002/09/23 18:45:48
+ *          ldornbusch Exp $
+ */
 public class LocalityScroll implements GraphListener {
 
     private Scrollbar localitySB;
@@ -68,7 +69,7 @@ public class LocalityScroll implements GraphListener {
     private TGPanel tgPanel;
 
     public LocalityScroll(TGPanel tgp) {
-        tgPanel=tgp;
+        tgPanel = tgp;
         localitySB = new Scrollbar(Scrollbar.HORIZONTAL, 1, 1, 0, 7);
         localitySB.setBlockIncrement(1);
         localitySB.setUnitIncrement(1);
@@ -82,30 +83,37 @@ public class LocalityScroll implements GraphListener {
 
     public int getLocalityRadius() {
         int locVal = localitySB.getValue();
-        if(locVal>=6) return LocalityUtils.INFINITE_LOCALITY_RADIUS;
-        else return locVal;
+        if (locVal >= 6)
+            return LocalityUtils.INFINITE_LOCALITY_RADIUS;
+        else
+            return locVal;
     }
 
     public void setLocalityRadius(int radius) {
-        if (radius <= 0 ) 
+        if (radius <= 0)
             localitySB.setValue(0);
-        else if (radius <= 5) //and > 0
+        else if (radius <= 5) // and > 0
             localitySB.setValue(radius);
-        else // radius > 5
-            localitySB.setValue(6);        
+        else
+            // radius > 5
+            localitySB.setValue(6);
     }
 
-    public void graphMoved() {} //From GraphListener interface
-    public void graphReset() { localitySB.setValue(1); } //From GraphListener interface
+    public void graphMoved() {
+    } // From GraphListener interface
+
+    public void graphReset() {
+        localitySB.setValue(1);
+    } // From GraphListener interface
 
     private class localityAdjustmentListener implements AdjustmentListener {
         public void adjustmentValueChanged(AdjustmentEvent e) {
-            Node select = tgPanel.getSelect();                        
-            if (select!=null || getLocalityRadius() == LocalityUtils.INFINITE_LOCALITY_RADIUS)
+            Node select = tgPanel.getSelect();
+            if (select != null
+                    || getLocalityRadius() == LocalityUtils.INFINITE_LOCALITY_RADIUS)
                 try {
                     tgPanel.setLocale(select, getLocalityRadius());
-                }
-                catch (TGException ex) {
+                } catch (TGException ex) {
                     System.out.println("Error setting locale");
                     ex.printStackTrace();
                 }

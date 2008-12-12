@@ -49,31 +49,38 @@
 
 package com.touchgraph.graphlayout;
 
-/** TGPoint2D is only needed for java 1.1.
-  *   
-  * @author   Alexander Shapiro                                        
-  * @version  1.22-jre1.1  $Id: TGPoint2D.java,v 1.1 2002/09/19 15:58:08 ldornbusch Exp $
-  */
+/**
+ * TGPoint2D is only needed for java 1.1.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: TGPoint2D.java,v 1.1 2002/09/19 15:58:08 ldornbusch
+ *          Exp $
+ */
 public class TGPoint2D {
 
-    public double x,y;
-    
-    public TGPoint2D( double xpos, double ypos ) {
-        x=xpos;
-        y=ypos;
+    public double x, y;
+
+    public TGPoint2D(double xpos, double ypos) {
+        x = xpos;
+        y = ypos;
     }
 
-    public TGPoint2D( TGPoint2D p ) {
-        x=p.x;
-        y=p.y;
+    public TGPoint2D(TGPoint2D p) {
+        x = p.x;
+        y = p.y;
     }
-    
-    public void setLocation( double xpos,double ypos ) {
-        x=xpos;
-        y=ypos;
+
+    public void setLocation(double xpos, double ypos) {
+        x = xpos;
+        y = ypos;
     }
-    
-    public void setX( double xpos ) { x=xpos; }
-    public void setY( double ypos ) { y=ypos; }
+
+    public void setX(double xpos) {
+        x = xpos;
+    }
+
+    public void setY(double ypos) {
+        y = ypos;
+    }
 
 } // end com.touchgraph.graphlayout.TGPoint2D

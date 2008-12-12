@@ -49,19 +49,23 @@
 
 package com.touchgraph.graphlayout.graphelements;
 
-import  com.touchgraph.graphlayout.Node; 
+import com.touchgraph.graphlayout.Node;
 
-/** TGForEachNodePair: A dummy object for iterating through pairs of nodes
-  *   
-  * @author   Alexander Shapiro                                        
-  * @version  1.22-jre1.1  $Id: TGForEachNodePair.java,v 1.1 2002/09/19 15:58:32 ldornbusch Exp $
-  */
+/**
+ * TGForEachNodePair: A dummy object for iterating through pairs of nodes
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: TGForEachNodePair.java,v 1.1 2002/09/19 15:58:32
+ *          ldornbusch Exp $
+ */
 public abstract class TGForEachNodePair {
 
-    public void beforeInnerLoop( Node n1 ) {};
+    public void beforeInnerLoop(Node n1) {
+    };
 
-    public void afterInnerLoop( Node n1 ) {};
+    public void afterInnerLoop(Node n1) {
+    };
 
-    public abstract void forEachNodePair( Node n1, Node n2 );
+    public abstract void forEachNodePair(Node n1, Node n2);
 
 } // end com.touchgraph.graphlayout.graphelements.TGForEachNodePair

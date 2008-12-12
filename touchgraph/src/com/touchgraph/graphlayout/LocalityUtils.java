@@ -49,25 +49,30 @@
 
 package com.touchgraph.graphlayout;
 
-import  com.touchgraph.graphlayout.graphelements.*;
+import com.touchgraph.graphlayout.graphelements.*;
 
-import  java.util.*;
+import java.util.*;
 
-/** LocalityUtils:  Utilities for switching locality.  Animation effects
-  * require a reference to TGPanel.
-  *
-  * @author   Alexander Shapiro
-  * @version  1.22-jre1.1  $Id: LocalityUtils.java,v 1.2 2002/09/20 14:00:35 ldornbusch Exp $
-  */
+/**
+ * LocalityUtils: Utilities for switching locality. Animation effects require a
+ * reference to TGPanel.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: LocalityUtils.java,v 1.2 2002/09/20 14:00:35
+ *          ldornbusch Exp $
+ */
 public class LocalityUtils {
 
     TGPanel tgPanel;
+
     Locality locality;
 
     public static final int INFINITE_LOCALITY_RADIUS = Integer.MAX_VALUE;
 
     ShiftLocaleThread shiftLocaleThread;
-    boolean fastFinishShift=false;  // If finish fast is true, quickly wrap up animation
+
+    boolean fastFinishShift = false; // If finish fast is true, quickly wrap
+                                        // up animation
 
     public LocalityUtils(Locality loc, TGPanel tgp) {
         locality = loc;
@@ -79,15 +84,17 @@ public class LocalityUtils {
     }
 
     /** Mark for deletion nodes not contained within distHash. */
-    private synchronized boolean markDistantNodes(final Hashtable subgraph) {//Collection subgraph) {
+    private synchronized boolean markDistantNodes(final Hashtable subgraph) {// Collection
+                                                                                // subgraph)
+                                                                                // {
         final boolean[] someNodeWasMarked = new boolean[1];
         someNodeWasMarked[0] = false;
-//        Boolean x;
+        // Boolean x;
         TGForEachNode fen = new TGForEachNode() {
             public void forEachNode(Node n) {
-//							if(!subgraph.contains(n)) {
-                if(!subgraph.containsKey(n)) {
-                    n.markedForRemoval=true;
+                // if(!subgraph.contains(n)) {
+                if (!subgraph.containsKey(n)) {
+                    n.markedForRemoval = true;
                     someNodeWasMarked[0] = true;
                 }
             }
@@ -98,39 +105,43 @@ public class LocalityUtils {
     }
 
     private synchronized void removeMarkedNodes() {
-        final Vector nodesToRemove = new Vector();
+        final Vector<Node> nodesToRemove = new Vector<Node>();
 
         TGForEachNode fen = new TGForEachNode() {
             public void forEachNode(Node n) {
-                if(n.markedForRemoval)  {
+                if (n.markedForRemoval) {
                     nodesToRemove.addElement(n);
-                    n.markedForRemoval=false;
-                    n.massfade=1;
+                    n.markedForRemoval = false;
+                    n.massfade = 1;
                 }
             }
         };
-        synchronized(locality) {
+        synchronized (locality) {
             locality.forAllNodes(fen);
             locality.removeNodes(nodesToRemove);
         }
     }
 
     /** Add to locale nodes within radius distance of a focal node. */
-    private synchronized void addNearNodes(Hashtable distHash, int radius) throws TGException {
-        for ( int r=0; r<radius+1; r++ ) {
+    private synchronized void addNearNodes(Hashtable distHash, int radius)
+            throws TGException {
+        for (int r = 0; r < radius + 1; r++) {
             Enumeration localNodes = distHash.keys();
             while (localNodes.hasMoreElements()) {
-                Node n = (Node)localNodes.nextElement();
-                if(!locality.contains(n) && ((Integer)distHash.get(n)).intValue()<=r) {
-                    n.massfade=1;
-                    n.justMadeLocal = true;                    
+                Node n = (Node) localNodes.nextElement();
+                if (!locality.contains(n)
+                        && ((Integer) distHash.get(n)).intValue() <= r) {
+                    n.massfade = 1;
+                    n.justMadeLocal = true;
                     locality.addNodeWithEdges(n);
-                    if (!fastFinishShift) {                        
-                        try { 
-                        	if(radius==1) Thread.currentThread().sleep(50); 
-                        	else Thread.currentThread().sleep(50); 
+                    if (!fastFinishShift) {
+                        try {
+                            if (radius == 1)
+                                Thread.sleep(50);
+                            else
+                                Thread.sleep(50);
+                        } catch (InterruptedException ex) {
                         }
-                        catch (InterruptedException ex) {}                        
                     }
                 }
             }
@@ -140,7 +151,7 @@ public class LocalityUtils {
     private synchronized void unmarkNewAdditions() {
         TGForEachNode fen = new TGForEachNode() {
             public void forEachNode(Node n) {
-                n.justMadeLocal=false;
+                n.justMadeLocal = false;
             }
         };
         locality.forAllNodes(fen);
@@ -149,10 +160,15 @@ public class LocalityUtils {
     /** The thread that gets instantiated for doing the locality shift animation. */
     class ShiftLocaleThread extends Thread {
         Hashtable distHash;
+
         Node focusNode;
+
         int radius;
+
         int maxAddEdgeCount;
+
         int maxExpandEdgeCount;
+
         boolean unidirectional;
 
         ShiftLocaleThread(Node n, int r, int maec, int meec, boolean unid) {
@@ -165,102 +181,119 @@ public class LocalityUtils {
 
         }
 
-        public void run() {        	
-            synchronized (LocalityUtils.this) {            
-                if (!locality.getCompleteEltSet().contains(focusNode)) return;
+        public void run() {
+            synchronized (LocalityUtils.this) {
+                if (!locality.getCompleteEltSet().contains(focusNode))
+                    return;
                 tgPanel.stopDamper();
-                distHash = GESUtils.calculateDistances(
-                             locality.getCompleteEltSet(),focusNode,radius,maxAddEdgeCount,maxExpandEdgeCount,unidirectional);
-                try {                	
-                	if (radius==1) {
-                		addNearNodes(distHash,radius);
-                    	for (int i=0;i<4&&!fastFinishShift;i++) {
-                        	Thread.currentThread().sleep(100);
-                    	}                     	                   	
-                		unmarkNewAdditions();
-                		for (int i=0;i<4&&!fastFinishShift;i++) {
-                        	Thread.currentThread().sleep(100);
-                    	}
-                	}
-                    if (markDistantNodes(distHash)){//.keySet())) {// markDistantNodes will use a Collection..
-                         for (int i=0;i<8&&!fastFinishShift;i++) {
-                             Thread.currentThread().sleep(100);
-                         }
-                    }                    
-                    removeMarkedNodes();                    
-                    for (int i=0;i<1&&!fastFinishShift;i++) {
-                        if(radius>1) Thread.currentThread().sleep(100);
+                distHash = GESUtils.calculateDistances(locality
+                        .getCompleteEltSet(), focusNode, radius,
+                        maxAddEdgeCount, maxExpandEdgeCount, unidirectional);
+                try {
+                    if (radius == 1) {
+                        addNearNodes(distHash, radius);
+                        for (int i = 0; i < 4 && !fastFinishShift; i++) {
+                            Thread.sleep(100);
+                        }
+                        unmarkNewAdditions();
+                        for (int i = 0; i < 4 && !fastFinishShift; i++) {
+                            Thread.sleep(100);
+                        }
                     }
-                    if(radius!=1) {
-                    	addNearNodes(distHash,radius);
-                    	for (int i=0;i<4&&!fastFinishShift;i++) {
-                        	Thread.currentThread().sleep(100);
-                    	}
-                    	unmarkNewAdditions();
-                	}
-                    
-                } catch ( TGException tge ) {
+                    if (markDistantNodes(distHash)) {// .keySet())) {//
+                                                        // markDistantNodes will
+                                                        // use a Collection..
+                        for (int i = 0; i < 8 && !fastFinishShift; i++) {
+                            Thread.sleep(100);
+                        }
+                    }
+                    removeMarkedNodes();
+                    for (int i = 0; i < 1 && !fastFinishShift; i++) {
+                        if (radius > 1)
+                            Thread.sleep(100);
+                    }
+                    if (radius != 1) {
+                        addNearNodes(distHash, radius);
+                        for (int i = 0; i < 4 && !fastFinishShift; i++) {
+                            Thread.sleep(100);
+                        }
+                        unmarkNewAdditions();
+                    }
+
+                } catch (TGException tge) {
                     System.err.println("TGException: " + tge.getMessage());
-                } catch (InterruptedException ex) {}
+                } catch (InterruptedException ex) {
+                }
                 tgPanel.resetDamper();
             }
         }
     }
 
-    public void setLocale(Node n, final int radius, final int maxAddEdgeCount, final int maxExpandEdgeCount,
-                          final boolean unidirectional) throws TGException {
-        if (n==null || radius<0) return;
-        if(shiftLocaleThread!=null && shiftLocaleThread.isAlive()) {
-            fastFinishShift=true; //This should cause last locale shift to finish quickly
-            while(shiftLocaleThread.isAlive())
-                try { Thread.currentThread().sleep(100); }
-                catch (InterruptedException ex) {}
+    public void setLocale(Node n, final int radius, final int maxAddEdgeCount,
+            final int maxExpandEdgeCount, final boolean unidirectional)
+            throws TGException {
+        if (n == null || radius < 0)
+            return;
+        if (shiftLocaleThread != null && shiftLocaleThread.isAlive()) {
+            fastFinishShift = true; // This should cause last locale shift to
+                                    // finish quickly
+            while (shiftLocaleThread.isAlive())
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                }
         }
-        if (radius == INFINITE_LOCALITY_RADIUS || n==null) {
+        if (radius == INFINITE_LOCALITY_RADIUS || n == null) {
             addAllGraphElts();
             tgPanel.resetDamper();
             return;
         }
 
-        fastFinishShift=false;
-        shiftLocaleThread=new ShiftLocaleThread(n, radius, maxAddEdgeCount, maxExpandEdgeCount, unidirectional);
+        fastFinishShift = false;
+        shiftLocaleThread = new ShiftLocaleThread(n, radius, maxAddEdgeCount,
+                maxExpandEdgeCount, unidirectional);
     }
 
     public void setLocale(Node n, final int radius) throws TGException {
-        setLocale(n,radius,1000,1000, false);
+        setLocale(n, radius, 1000, 1000, false);
     }
 
     public synchronized void addAllGraphElts() throws TGException {
         locality.addAll();
     }
 
-   /** Add to locale nodes that are one edge away from a given node.
-     * This method does not utilize "fastFinishShift" so it's likely that
-     * synchronization errors will occur.
+    /**
+     * Add to locale nodes that are one edge away from a given node. This method
+     * does not utilize "fastFinishShift" so it's likely that synchronization
+     * errors will occur.
      */
     public void expandNode(final Node n) {
         new Thread() {
             public void run() {
                 synchronized (LocalityUtils.this) {
-                    if (!locality.getCompleteEltSet().contains(n)) return;
+                    if (!locality.getCompleteEltSet().contains(n))
+                        return;
                     tgPanel.stopDamper();
-                    for(int i=0;i<n.edgeCount();i++) {
+                    for (int i = 0; i < n.edgeCount(); i++) {
                         Node newNode = n.edgeAt(i).getOtherEndpt(n);
                         if (!locality.contains(newNode)) {
                             newNode.justMadeLocal = true;
                             try {
                                 locality.addNodeWithEdges(newNode);
-                                Thread.currentThread().sleep(50);
-                            } catch ( TGException tge ) {
-                                System.err.println("TGException: " + tge.getMessage());
-                            } catch ( InterruptedException ex ) {}
-                        }
-                        else if (!locality.contains(n.edgeAt(i))) {
+                                Thread.sleep(50);
+                            } catch (TGException tge) {
+                                System.err.println("TGException: "
+                                        + tge.getMessage());
+                            } catch (InterruptedException ex) {
+                            }
+                        } else if (!locality.contains(n.edgeAt(i))) {
                             locality.addEdge(n.edgeAt(i));
                         }
                     }
-                    try { Thread.currentThread().sleep(200); }
-                    catch (InterruptedException ex) {}
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException ex) {
+                    }
                     unmarkNewAdditions();
                     tgPanel.resetDamper();
                 }
@@ -268,26 +301,33 @@ public class LocalityUtils {
         }.start();
     }
 
-   /** Hides a node, and all the nodes attached to it. */
-    public synchronized void hideNode( final Node hideNode ) {
-        if (hideNode==null) return;
+    /** Hides a node, and all the nodes attached to it. */
+    public synchronized void hideNode(final Node hideNode) {
+        if (hideNode == null)
+            return;
         new Thread() {
             public void run() {
-                synchronized(LocalityUtils.this) {
-                    if (!locality.getCompleteEltSet().contains(hideNode)) return;
+                synchronized (LocalityUtils.this) {
+                    if (!locality.getCompleteEltSet().contains(hideNode))
+                        return;
 
-                    locality.removeNode(hideNode); //Necessary so that node is ignored in distances calculation.
-                    if (hideNode==tgPanel.getSelect()) {
+                    locality.removeNode(hideNode); // Necessary so that node is
+                                                    // ignored in distances
+                                                    // calculation.
+                    if (hideNode == tgPanel.getSelect()) {
                         tgPanel.clearSelect();
                     }
 
-
-//									Collection subgraph = GESUtils.getLargestConnectedSubgraph(locality);
-										Hashtable subgraph = GESUtils.getLargestConnectedSubgraph(locality);
+                    // Collection subgraph =
+                    // GESUtils.getLargestConnectedSubgraph(locality);
+                    Hashtable subgraph = GESUtils
+                            .getLargestConnectedSubgraph(locality);
                     markDistantNodes(subgraph);
-                    tgPanel.repaint();                    
-                    try { Thread.currentThread().sleep(200); }
-                    catch (InterruptedException ex) {}
+                    tgPanel.repaint();
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException ex) {
+                    }
                     removeMarkedNodes();
 
                     tgPanel.resetDamper();
@@ -296,26 +336,42 @@ public class LocalityUtils {
         }.start();
     }
 
-   /** Opposite of expand node, works like hide node except that the selected node is not hidden.*/
-    public synchronized void collapseNode( final Node collapseNode ) {
-        if (collapseNode==null) return;
+    /**
+     * Opposite of expand node, works like hide node except that the selected
+     * node is not hidden.
+     */
+    public synchronized void collapseNode(final Node collapseNode) {
+        if (collapseNode == null)
+            return;
         new Thread() {
             public void run() {
-                synchronized(LocalityUtils.this) {
-                    if (!locality.getCompleteEltSet().contains(collapseNode)) return;
+                synchronized (LocalityUtils.this) {
+                    if (!locality.getCompleteEltSet().contains(collapseNode))
+                        return;
 
-                    locality.removeNode(collapseNode); //Necessary so that node is ignored in distances calculation.
-//										Collection subgraph = GESUtils.getLargestConnectedSubgraph(locality);
-										Hashtable subgraph = GESUtils.getLargestConnectedSubgraph(locality);
+                    locality.removeNode(collapseNode); // Necessary so that
+                                                        // node is ignored in
+                                                        // distances
+                                                        // calculation.
+                    // Collection subgraph =
+                    // GESUtils.getLargestConnectedSubgraph(locality);
+                    Hashtable subgraph = GESUtils
+                            .getLargestConnectedSubgraph(locality);
                     markDistantNodes(subgraph);
                     try {
-                        locality.addNodeWithEdges(collapseNode); // Add the collapsed node back in.
+                        locality.addNodeWithEdges(collapseNode); // Add the
+                                                                    // collapsed
+                                                                    // node back
+                                                                    // in.
+                    } catch (TGException tge) {
+                        tge.printStackTrace();
                     }
-                    catch (TGException tge) { tge.printStackTrace(); }
                     tgPanel.repaint();
                     tgPanel.resetDamper();
-                    try { Thread.currentThread().sleep(600); }
-                    catch (InterruptedException ex) {}
+                    try {
+                        Thread.sleep(600);
+                    } catch (InterruptedException ex) {
+                    }
                     removeMarkedNodes();
 
                     tgPanel.resetDamper();

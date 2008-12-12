@@ -52,7 +52,6 @@ package com.touchgraph.graphlayout.interaction;
 import com.touchgraph.graphlayout.*;
 
 import java.awt.event.*;
-import java.awt.*;
 
 // import javax.swing.*;
 // import javax.swing.event.*;
@@ -128,15 +127,15 @@ public class GLNavigateUI extends TGUserInterface {
 
         public void mouseReleased(MouseEvent e) {
 
-            System.out.println("Mouse released!");
+            //System.out.println("Mouse released!");
 
             if (e.getButton() == MouseEvent.BUTTON3) {
 
-                System.out.println("Popup triggered");
+              //  System.out.println("Popup triggered");
 
                 glPanel.showPopup(e.getX(), e.getY());
             } else {
-                System.out.println("Popup NOT triggered");
+                //System.out.println("Popup NOT triggered");
                 tgPanel.setMaintainMouseOver(false);
             }
         }

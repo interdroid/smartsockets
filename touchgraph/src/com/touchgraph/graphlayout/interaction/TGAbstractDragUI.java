@@ -49,41 +49,46 @@
 
 package com.touchgraph.graphlayout.interaction;
 
-import  com.touchgraph.graphlayout.*;
+import com.touchgraph.graphlayout.*;
 
-import  java.awt.*;
-import  java.awt.event.*;
+import java.awt.event.*;
 
-/** TGAbstractDragUI allows one to write user interfaces that handle
-  * what happends when a mouse is pressed, dragged, and released.
-  *
-  * @author   Alexander Shapiro
-  * @version  1.22-jre1.1  $Id: TGAbstractDragUI.java,v 1.1 2002/09/19 15:58:21 ldornbusch Exp $
-  */
+/**
+ * TGAbstractDragUI allows one to write user interfaces that handle what
+ * happends when a mouse is pressed, dragged, and released.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: TGAbstractDragUI.java,v 1.1 2002/09/19 15:58:21
+ *          ldornbusch Exp $
+ */
 public abstract class TGAbstractDragUI extends TGSelfDeactivatingUI {
 
     public TGPanel tgPanel;
 
     private ADUIMouseListener ml;
+
     private ADUIMouseMotionListener mml;
-    public boolean mouseWasDragged; //To differentiate between mouse pressed+dragged, and mouseClicked
 
-  // ............
+    public boolean mouseWasDragged; // To differentiate between mouse
+                                    // pressed+dragged, and mouseClicked
 
-   /** Constructor with TGPanel <tt>tgp</tt>.
+    // ............
+
+    /**
+     * Constructor with TGPanel <tt>tgp</tt>.
      */
     public TGAbstractDragUI(TGPanel tgp) {
-        tgPanel=tgp;
-        ml =new ADUIMouseListener();
-        mml=new ADUIMouseMotionListener();
+        tgPanel = tgp;
+        ml = new ADUIMouseListener();
+        mml = new ADUIMouseMotionListener();
     }
 
-     public final void activate() {
+    public final void activate() {
         preActivate();
         tgPanel.addMouseListener(ml);
         tgPanel.addMouseMotionListener(mml);
-			 mouseWasDragged=false;
-     }
+        mouseWasDragged = false;
+    }
 
     public final void activate(MouseEvent e) {
         activate();
@@ -94,16 +99,18 @@ public abstract class TGAbstractDragUI extends TGSelfDeactivatingUI {
         preDeactivate();
         tgPanel.removeMouseListener(ml);
         tgPanel.removeMouseMotionListener(mml);
-        super.deactivate(); //To activate parentUI from TGUserInterface
+        super.deactivate(); // To activate parentUI from TGUserInterface
     }
 
     public abstract void preActivate();
+
     public abstract void preDeactivate();
 
-    public abstract void mousePressed( MouseEvent e );
-    public abstract void mouseDragged( MouseEvent e );
-    public abstract void mouseReleased( MouseEvent e );
+    public abstract void mousePressed(MouseEvent e);
 
+    public abstract void mouseDragged(MouseEvent e);
+
+    public abstract void mouseReleased(MouseEvent e);
 
     private class ADUIMouseListener extends MouseAdapter {
         public void mousePressed(MouseEvent e) {
@@ -112,14 +119,15 @@ public abstract class TGAbstractDragUI extends TGSelfDeactivatingUI {
 
         public void mouseReleased(MouseEvent e) {
             TGAbstractDragUI.this.mouseReleased(e);
-            if (selfDeactivate) deactivate();
+            if (selfDeactivate)
+                deactivate();
         }
     }
 
     private class ADUIMouseMotionListener extends MouseMotionAdapter {
         public void mouseDragged(MouseEvent e) {
-            mouseWasDragged=true;
-              TGAbstractDragUI.this.mouseDragged(e);
+            mouseWasDragged = true;
+            TGAbstractDragUI.this.mouseDragged(e);
         }
     }
 

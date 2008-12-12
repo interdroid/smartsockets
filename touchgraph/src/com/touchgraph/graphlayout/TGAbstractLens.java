@@ -49,15 +49,19 @@
 
 package com.touchgraph.graphlayout;
 
-/**  TGAbstractLens.  A lens warps 2D space.
-  *   
-  * @author   Alexander Shapiro                                        
-  * @version  1.22-jre1.1  $Id: TGAbstractLens.java,v 1.1 2002/09/19 15:58:07 ldornbusch Exp $
-  */
+/**
+ * TGAbstractLens. A lens warps 2D space.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: TGAbstractLens.java,v 1.1 2002/09/19 15:58:07
+ *          ldornbusch Exp $
+ */
 public abstract class TGAbstractLens {
-    
-    protected void applyLens( TGPoint2D p ) {}
-    
-    protected void undoLens( TGPoint2D p ) {}
+
+    protected void applyLens(TGPoint2D p) {
+    }
+
+    protected void undoLens(TGPoint2D p) {
+    }
 
 } // end com.touchgraph.graphlayout.TGAbstractLens

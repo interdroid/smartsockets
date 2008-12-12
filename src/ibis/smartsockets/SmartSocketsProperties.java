@@ -255,9 +255,6 @@ public class SmartSocketsProperties {
         return null;
     }
         
-    /**
-     * @return
-     */
     public static TypedProperties getDefaultProperties() {
         
         if (defaultProperties == null) { 

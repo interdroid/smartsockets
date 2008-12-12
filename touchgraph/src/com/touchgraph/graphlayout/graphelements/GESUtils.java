@@ -49,35 +49,38 @@
 
 package com.touchgraph.graphlayout.graphelements;
 
-import  com.touchgraph.graphlayout.Node;
-import  com.touchgraph.graphlayout.Edge;
-import  com.touchgraph.graphlayout.TGException;
+import com.touchgraph.graphlayout.Node;
+import com.touchgraph.graphlayout.Edge;
+import java.util.*;
 
-import  java.util.*;
-
-/** GESUtils is a set of functions that return information about a GraphEltSet
-  *
-  * @author   Alexander Shapiro
-  * @version  1.22-jre1.1  $Id: GESUtils.java,v 1.2 2002/09/20 14:03:51 ldornbusch Exp $
-  */
+/**
+ * GESUtils is a set of functions that return information about a GraphEltSet
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: GESUtils.java,v 1.2 2002/09/20 14:03:51 ldornbusch
+ *          Exp $
+ */
 public class GESUtils {
 
-   /** Returns a hashtable of Node-Integer pairs, where integers are the minimum
-     * distance from the focusNode to any given Node, and the Nodes in the Hashtable
-     * are all within radius distance from the focusNode.
-     *
-     * Nodes with edge degrees of more then maxAddEdgeCount are not added to the hashtable, and those
-     * with edge degrees of more then maxExpandEdgeCount are added but not expanded.
-     *
-     * If unidirectional is set to true, then edges are only follewed in the forward direction.
-     *
+    /**
+     * Returns a hashtable of Node-Integer pairs, where integers are the minimum
+     * distance from the focusNode to any given Node, and the Nodes in the
+     * Hashtable are all within radius distance from the focusNode.
+     * 
+     * Nodes with edge degrees of more then maxAddEdgeCount are not added to the
+     * hashtable, and those with edge degrees of more then maxExpandEdgeCount
+     * are added but not expanded.
+     * 
+     * If unidirectional is set to true, then edges are only follewed in the
+     * forward direction.
+     * 
      */
 
-    public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode, int radius,
-                                               int maxAddEdgeCount, int maxExpandEdgeCount,
-                                               boolean unidirectional ) {
-        Hashtable distHash = new Hashtable();
-        distHash.put(focusNode,new Integer(0));
+    public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode,
+            int radius, int maxAddEdgeCount, int maxExpandEdgeCount,
+            boolean unidirectional) {
+        Hashtable<Node, Integer> distHash = new Hashtable<Node, Integer>();
+        distHash.put(focusNode, new Integer(0));
 
         TGNodeQueue nodeQ = new TGNodeQueue();
         nodeQ.push(focusNode);
@@ -86,53 +89,64 @@ public class GESUtils {
             Node n = nodeQ.pop();
             int currDist = ((Integer) distHash.get(n)).intValue();
 
-            if (currDist>=radius) break;
+            if (currDist >= radius)
+                break;
 
-            for (int i = 0 ; i < n.edgeCount(); i++) {
-                Edge e=n.edgeAt(i);
-                if(n!=n.edgeAt(i).getFrom() && unidirectional) continue;
+            for (int i = 0; i < n.edgeCount(); i++) {
+                Edge e = n.edgeAt(i);
+                if (n != n.edgeAt(i).getFrom() && unidirectional)
+                    continue;
                 Node adjNode = e.getOtherEndpt(n);
-                if(ges.contains(e) && !distHash.containsKey(adjNode) && adjNode.edgeCount()<=maxAddEdgeCount) {
-                    if (adjNode.edgeCount()<=maxExpandEdgeCount) nodeQ.push(adjNode);
-                    distHash.put(adjNode,new Integer(currDist+1));
+                if (ges.contains(e) && !distHash.containsKey(adjNode)
+                        && adjNode.edgeCount() <= maxAddEdgeCount) {
+                    if (adjNode.edgeCount() <= maxExpandEdgeCount)
+                        nodeQ.push(adjNode);
+                    distHash.put(adjNode, new Integer(currDist + 1));
                 }
             }
         }
         return distHash;
     }
 
-    public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode, int radius ) {
+    public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode,
+            int radius) {
         return calculateDistances(ges, focusNode, radius, 1000, 1000, false);
     }
 
-   /** A temporary function that returns the largest connected subgraph in a GraphEltSet.
+    /**
+     * A temporary function that returns the largest connected subgraph in a
+     * GraphEltSet.
      */
 
-//	 public static Collection getLargestConnectedSubgraph(GraphEltSet ges) {
-		 public static Hashtable getLargestConnectedSubgraph(GraphEltSet ges) {
+    // public static Collection getLargestConnectedSubgraph(GraphEltSet ges) {
+    @SuppressWarnings("unchecked")
+    public static Hashtable getLargestConnectedSubgraph(GraphEltSet ges) {
         int nodeCount = ges.nodeCount();
-        if(nodeCount==0) return null;
+        if (nodeCount == 0)
+            return null;
 
-        Vector subgraphVector = new Vector();
-        for(int i=0; i<nodeCount; i++) {
+        Vector<Hashtable<Node, Integer>> subgraphVector = new Vector<Hashtable<Node, Integer>>();
+        for (int i = 0; i < nodeCount; i++) {
             Node n = ges.nodeAt(i);
-            boolean skipNode=false;
-            for (int j = 0; j<subgraphVector.size();j++) {
-                if(((Hashtable) subgraphVector.elementAt(j)).contains(n)) {
-                    skipNode=true;
+            boolean skipNode = false;
+            for (int j = 0; j < subgraphVector.size(); j++) {
+                if (((Hashtable) subgraphVector.elementAt(j)).contains(n)) {
+                    skipNode = true;
                 }
             }
-//					Collection subgraph = calculateDistances(ges,n,1000).keySet();
-						Hashtable subgraph = calculateDistances(ges,n,1000);
-            if(subgraph.size()>nodeCount/2) return subgraph; //We are done
-            if (!skipNode) subgraphVector.addElement(subgraph);
+            // Collection subgraph = calculateDistances(ges,n,1000).keySet();
+            Hashtable subgraph = calculateDistances(ges, n, 1000);
+            if (subgraph.size() > nodeCount / 2)
+                return subgraph; // We are done
+            if (!skipNode)
+                subgraphVector.addElement(subgraph);
 
         }
 
-        int maxSize=0;
-        int maxIndex=0;
-        for (int j = 0; j<subgraphVector.size();j++) {
-            if(((Hashtable) subgraphVector.elementAt(j)).size()>maxSize) {
+        int maxSize = 0;
+        int maxIndex = 0;
+        for (int j = 0; j < subgraphVector.size(); j++) {
+            if (((Hashtable) subgraphVector.elementAt(j)).size() > maxSize) {
                 maxSize = ((Hashtable) subgraphVector.elementAt(j)).size();
                 maxIndex = j;
             }

@@ -49,107 +49,142 @@
 
 package com.touchgraph.graphlayout.interaction;
 
-import  com.touchgraph.graphlayout.*;
+import com.touchgraph.graphlayout.*;
 
-import  java.awt.*;
-import  java.awt.event.*;
+import java.awt.*;
+import java.awt.event.*;
 
-/** TGAbstractMousePausedUI allows one to handle MousePaused events.
-  *
-  * @author   Alexander Shapiro
-  * @version  1.22-jre1.1  $Id: TGAbstractMousePausedUI.java,v 1.1 2002/09/19 15:58:21 ldornbusch Exp $
-  */
+/**
+ * TGAbstractMousePausedUI allows one to handle MousePaused events.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: TGAbstractMousePausedUI.java,v 1.1 2002/09/19
+ *          15:58:21 ldornbusch Exp $
+ */
 public abstract class TGAbstractMousePausedUI extends TGUserInterface {
 
-     private AMPUIMouseMotionListener mml;
-     private AMPUIMouseListener ml;
-     protected TGPanel tgPanel;
-     Point mousePos=null;
-     PauseThread pauseThread=null;
+    private AMPUIMouseMotionListener mml;
 
-  // ............
+    private AMPUIMouseListener ml;
 
-   /** Constructor with TGPanel <tt>tgp</tt>.
+    protected TGPanel tgPanel;
+
+    Point mousePos = null;
+
+    PauseThread pauseThread = null;
+
+    // ............
+
+    /**
+     * Constructor with TGPanel <tt>tgp</tt>.
      */
-     public TGAbstractMousePausedUI( TGPanel tgp ) { // Instantiate this way to keep listening
-                                                     // for clicks until deactivate is called
-          tgPanel=tgp;
-          ml = new AMPUIMouseListener();
-          mml = new AMPUIMouseMotionListener();
-      }
+    public TGAbstractMousePausedUI(TGPanel tgp) { // Instantiate this way to
+                                                    // keep listening
+        // for clicks until deactivate is called
+        tgPanel = tgp;
+        ml = new AMPUIMouseListener();
+        mml = new AMPUIMouseMotionListener();
+    }
 
-     public final void activate() {
+    public final void activate() {
         preActivate();
-          tgPanel.addMouseMotionListener(mml);
-          tgPanel.addMouseListener(ml);
-     }
+        tgPanel.addMouseMotionListener(mml);
+        tgPanel.addMouseListener(ml);
+    }
 
     public final void deactivate() {
         tgPanel.removeMouseMotionListener(mml);
         tgPanel.removeMouseListener(ml);
         postDeactivate();
-        super.deactivate(); //To activate parentUI from TGUserInterface
+        super.deactivate(); // To activate parentUI from TGUserInterface
     }
 
-    public void preActivate() {}
-    public void postDeactivate() {}
+    public void preActivate() {
+    }
+
+    public void postDeactivate() {
+    }
+
     public abstract void mousePaused(MouseEvent e);
+
     public abstract void mouseMoved(MouseEvent e);
+
     public abstract void mouseDragged(MouseEvent e);
 
-    class PauseThread extends Thread{
+    class PauseThread extends Thread {
         boolean resetSleep;
+
         boolean cancelled;
-           PauseThread() { cancelled = false; start(); }
 
-           void reset() { resetSleep = true; cancelled = false; }
-           void cancel() { cancelled = true; }
+        PauseThread() {
+            cancelled = false;
+            start();
+        }
 
-           public void run() {
-               try {
-                   do {  resetSleep=false; sleep(250); } while (resetSleep);
+        void reset() {
+            resetSleep = true;
+            cancelled = false;
+        }
+
+        void cancel() {
+            cancelled = true;
+        }
+
+        public void run() {
+            try {
+                do {
+                    resetSleep = false;
+                    sleep(250);
+                } while (resetSleep);
                 if (!cancelled) {
-                    MouseEvent pausedEvent =
-                        new MouseEvent(tgPanel,MouseEvent.MOUSE_ENTERED, 0,0, mousePos.x,mousePos.y,0,false);
+                    MouseEvent pausedEvent = new MouseEvent(tgPanel,
+                            MouseEvent.MOUSE_ENTERED, 0, 0, mousePos.x,
+                            mousePos.y, 0, false);
                     mousePaused(pausedEvent);
                 }
-               }
-               catch (Exception e) {e.printStackTrace();}
-           }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void resetPause() {
-        if (pauseThread!=null && pauseThread.isAlive()) pauseThread.reset();
-        else pauseThread = new PauseThread();
+        if (pauseThread != null && pauseThread.isAlive())
+            pauseThread.reset();
+        else
+            pauseThread = new PauseThread();
     }
 
     public void cancelPause() {
-        if (pauseThread!=null && pauseThread.isAlive()) pauseThread.cancel();
+        if (pauseThread != null && pauseThread.isAlive())
+            pauseThread.cancel();
     }
 
     private class AMPUIMouseMotionListener implements MouseMotionListener {
         public void mouseMoved(MouseEvent e) {
-              mousePos=e.getPoint();
-              resetPause();
-              TGAbstractMousePausedUI.this.mouseMoved(e);
+            mousePos = e.getPoint();
+            resetPause();
+            TGAbstractMousePausedUI.this.mouseMoved(e);
         }
 
         public void mouseDragged(MouseEvent e) {
-              mousePos=e.getPoint();
-              resetPause();
-              TGAbstractMousePausedUI.this.mouseDragged(e);
+            mousePos = e.getPoint();
+            resetPause();
+            TGAbstractMousePausedUI.this.mouseDragged(e);
         }
     }
 
     private class AMPUIMouseListener extends MouseAdapter {
         public void mousePressed(MouseEvent e) {
-              cancelPause();
+            cancelPause();
         }
+
         public void mouseReleased(MouseEvent e) {
-              cancelPause();
+            cancelPause();
         }
+
         public void mouseExited(MouseEvent e) {
-              //cancelPause();
+            // cancelPause();
         }
     }
 

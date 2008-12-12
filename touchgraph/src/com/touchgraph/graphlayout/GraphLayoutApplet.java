@@ -49,21 +49,27 @@
 
 package com.touchgraph.graphlayout;
 
-import  java.applet.*;
-import  java.awt.BorderLayout;
+import java.applet.*;
+import java.awt.BorderLayout;
 
-/**  GraphLayoutApplet.  
-  *
-  * @author   Alexander Shapiro                                        
-  * @version  1.21  $Id: GraphLayoutApplet.java,v 1.15 2002/04/01 05:52:15 x_ander Exp $
-  */
+/**
+ * GraphLayoutApplet.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.21 $Id: GraphLayoutApplet.java,v 1.15 2002/04/01 05:52:15 x_ander
+ *          Exp $
+ */
 public class GraphLayoutApplet extends Applet {
 
-    public String getAppletInfo()
-    {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
+    public String getAppletInfo() {
         String s = "";
         s += "***************************************************************************\n";
-        s += "*   TouchGraph GraphLayout                                                *\n"; 
+        s += "*   TouchGraph GraphLayout                                                *\n";
         s += "*   (c) 2001-2002 TouchGraph LLC                                          *\n";
         s += "*   Author: Alexander Shapiro     Email: alex@touchgraph.com              *\n";
         s += "***************************************************************************\n";
@@ -73,7 +79,7 @@ public class GraphLayoutApplet extends Applet {
     public void init() {
         System.out.println(getAppletInfo());
         setLayout(new BorderLayout());
-        setSize(800,600);
+        setSize(800, 600);
         add(new GLPanel(), BorderLayout.CENTER);
     }
 

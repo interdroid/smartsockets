@@ -65,8 +65,6 @@ import java.util.Vector;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
-
 import com.touchgraph.graphlayout.graphelements.GraphEltSet;
 import com.touchgraph.graphlayout.graphelements.ImmutableGraphEltSet;
 import com.touchgraph.graphlayout.graphelements.TGForEachEdge;
@@ -96,6 +94,11 @@ import com.touchgraph.graphlayout.interaction.TGAbstractClickUI;
 public class TGPanel extends JPanel {
 
     // static variables for use within the package
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
     public static Color BACK_COLOR = Color.white;
 
@@ -134,9 +137,9 @@ public class TGPanel extends JPanel {
 
     Graphics offgraphics;
 
-    private Vector graphListeners;
+    private Vector<GraphListener> graphListeners;
 
-    private Vector paintListeners;
+    private Vector<TGPaintListener> paintListeners;
 
     TGLensSet tgLensSet; // Converts between a nodes visual position (drawx,
 
@@ -159,8 +162,8 @@ public class TGPanel extends JPanel {
         basicMML = new BasicMouseMotionListener();
         addMouseMotionListener(basicMML);
 
-        graphListeners = new Vector();
-        paintListeners = new Vector();
+        graphListeners = new Vector<GraphListener>();
+        paintListeners = new Vector<TGPaintListener>();
 
         adjustOriginLens = new AdjustOriginLens();
         switchSelectUI = new SwitchSelectUI();
@@ -237,7 +240,7 @@ public class TGPanel extends JPanel {
      * match is found.
      * 
      * @param id
-     *                The ID identifier used as a query.
+     *            The ID identifier used as a query.
      * @return The Node whose ID matches the provided 'id', null if no match is
      *         found.
      */
@@ -252,7 +255,7 @@ public class TGPanel extends JPanel {
      * no match is found.
      * 
      * @param strURL
-     *                The URL identifier used as a query.
+     *            The URL identifier used as a query.
      * @return The Node whose URL matches the provided 'URL', null if no match
      *         is found.
      */
@@ -276,7 +279,7 @@ public class TGPanel extends JPanel {
      * null if no match is found.
      * 
      * @param substring
-     *                The Substring used as a query.
+     *            The Substring used as a query.
      */
     public Node findNodeLabelContaining(String substring) {
         if (substring == null)
@@ -338,7 +341,7 @@ public class TGPanel extends JPanel {
      * (or if the ID value was null).
      * 
      * @param id
-     *                The ID identifier used as a query.
+     *            The ID identifier used as a query.
      * @return true if the deletion occurred.
      */
     public boolean deleteNodeById(String id) {
@@ -383,7 +386,6 @@ public class TGPanel extends JPanel {
         if (dragNode != null || maintainMouseOver)
             return; // So you don't accidentally switch nodes while dragging
         if (mouseOverN != node) {
-            Node oldMouseOverN = mouseOverN;
             mouseOverN = node;
         }
 
@@ -461,7 +463,6 @@ public class TGPanel extends JPanel {
         if (dragNode != null || maintainMouseOver)
             return; // No funny business while dragging
         if (mouseOverE != edge) {
-            Edge oldMouseOverE = mouseOverE;
             mouseOverE = edge;
         }
     }
@@ -533,10 +534,6 @@ public class TGPanel extends JPanel {
         paintListeners.removeElement(pl);
     }
 
-    private void redraw() {
-        resetDamper();
-    }
-
     public void setMaintainMouseOver(boolean maintain) {
         maintainMouseOver = maintain;
     }
@@ -582,7 +579,7 @@ public class TGPanel extends JPanel {
             maxY = to.y;
         }
 
-        final Vector selectedNodes = new Vector();
+        final Vector<Node> selectedNodes = new Vector<Node>();
 
         TGForEachNode fen = new TGForEachNode() {
             public void forEachNode(Node node) {
@@ -702,7 +699,7 @@ public class TGPanel extends JPanel {
             mousePos = e.getPoint();
             findMouseOver();
             try {
-                Thread.currentThread().sleep(6); // An attempt to make the
+                Thread.sleep(6); // An attempt to make the
                 // cursor flicker less
             } catch (InterruptedException ex) {
                 // break;
@@ -918,6 +915,7 @@ public class TGPanel extends JPanel {
         update(g);
     }
 
+    @SuppressWarnings("unchecked")
     public synchronized void update(Graphics g) {
         Dimension d = getSize();
         if ((offscreen == null) || (d.width != offscreensize.width)

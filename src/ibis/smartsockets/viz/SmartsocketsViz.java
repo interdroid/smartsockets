@@ -1,11 +1,13 @@
 package ibis.smartsockets.viz;
 
+import ibis.smartsockets.SmartSocketsProperties;
 import ibis.smartsockets.direct.DirectServerSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
+import ibis.smartsockets.util.TypedProperties;
 
 import java.awt.Color;
 import java.awt.Frame;
@@ -61,7 +63,11 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         initPopups();
         
         try {
-            DirectSocketFactory df = DirectSocketFactory.getSocketFactory();
+            TypedProperties p = SmartSocketsProperties.getDefaultProperties();
+            p.setProperty(SmartSocketsProperties.SSH_IN, "true");
+            p.setProperty(SmartSocketsProperties.SSH_OUT, "true");
+            
+            DirectSocketFactory df = DirectSocketFactory.getSocketFactory(p);
             DirectServerSocket ss = df.createServerSocket(0, 1, null);
 
             sl = ServiceLink.getServiceLink(null, hub, ss.getAddressSet());
@@ -247,6 +253,8 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     }
    
     public static void main(String[] args) {
+        
+        System.err.println("Starting Smartsockets Vizualization...");
 
         if (args.length != 1) {
             System.err.println("Hub address required as a parameter...");
@@ -270,7 +278,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
             
         final Frame frame;
         final SmartsocketsViz glPanel = new SmartsocketsViz(hub);
-        frame = new Frame("TouchGraph GraphLayout");
+        frame = new Frame("Smartsockets Visualization");
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
                 glPanel.done();

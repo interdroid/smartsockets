@@ -57,7 +57,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
-import java.awt.TexturePaint;
 import java.util.Vector;
 
 /**
@@ -162,7 +161,7 @@ public class Node {
 
     protected boolean visible;
 
-    private Vector edges;
+    private Vector<Edge> edges;
 
     private String[] mouseOverText;
 
@@ -226,7 +225,7 @@ public class Node {
 
     private void initialize(String identifier) {
         this.id = identifier;
-        edges = new Vector();
+        edges = new Vector<Edge>();
         x = Math.random() * 2 - 1; // If multiple nodes are added without
         // repositioning,
         y = Math.random() * 2 - 1; // randomizing starting location causes them

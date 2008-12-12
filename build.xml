@@ -1,105 +1,120 @@
-<project
-    name="SmartSockets"
-    default="build"
-    basedir=".">
+<project name="SmartSockets" default="build" basedir=".">
 
-    <property name="version" value="smartsockets-1.42"/>
-    <property name="jar" value="${version}.jar"/>
+    <property name="version" value="-1.42" />
+    <property name="jar" value="smartsockets${version}.jar" />
 
-    <property name="srcdir" value="./src"/>
-    <property name="builddir" value="./build"/>
-    <property name="distdir" value="./jars"/>
+    <property name="zip" value="smartsockets${version}.zip" />
+
+    <property name="src-zip" value="smartsockets${version}-src.zip" />
+
+    <property name="srcdir" value="./src" />
+    <property name="builddir" value="./build" />
+    <property name="distdir" value="./jars" />
     <property name="javadoc" value="javadoc/smartsockets" />
 
-    <property name="external" value="./external/jug-lgpl-2.0.0.jar:./external/trilead-ssh2-build213.jar:./external/jstun-0.6.1.jar:./external/slf4j-api-1.5.3.jar:./external/ibis-util-2.1.jar:./external/sbbi-upnplib-1.0.2.jar:./external/commons-logging-api.jar:./external/TGGraphLayout-JM.jar"/>
+    <path id="default.classpath">
+        <fileset dir="external">
+            <include name="*.jar" />
+        </fileset>
+        <fileset dir="jars">
+            <include name="*.jar" />
+        </fileset>
+    </path>
 
-	<!-- Internal target - Preparations for building. -->
-    <target name="prepare"> 
-    	<mkdir dir="${distdir}" />
+    <!-- Compile smartsockets -->
+    <target name="compile">
+        <mkdir dir="${distdir}" />
         <mkdir dir="${builddir}" />
-    </target>
 
-    <target name="compile" depends="prepare">
-	
-	<javac 	classpath="${external}"
-		destdir="${builddir}"
-                srcdir="${srcdir}"
-                target="1.5"
-                debug="true"
-                includes="**/*.java"/>
-    </target>
+        <javac destdir="${builddir}"
+               srcdir="${srcdir}"
+               target="1.5"
+               debug="true"
+               includes="**/*.java"
+               classpathref="default.classpath"
+        />
 
-    <!-- Internal target - Builds the JAR file -->
-    <target name="jar" depends="compile">
-
-	<delete failonerror="false" file="${distdir}/${jar}" />
-
-	<jar 	jarfile="${distdir}/${jar}"
-                basedir="${builddir}"
-		includes="**">
-       		<manifest>
-			<attribute name="Built-By" value="${user.name}"/>
-		</manifest>
-	</jar>
+        <jar jarfile="${distdir}/${jar}" basedir="${builddir}" includes="**">
+            <manifest>
+                <attribute name="Built-By" value="${user.name}" />
+            </manifest>
+        </jar>
 
     </target>
 
     <target name="javadoc" description="Create javadocs">
-        <!-- Create the javadoc directory -->
-        <delete dir="${javadoc}" />
+        <!-- Create the javadoc -->
         <mkdir dir="${javadoc}" />
         <javadoc destdir="${javadoc}"
                  access="public"
                  sourcepath="src"
-                 windowtitle="SmartSockets 1.0 Documentation"
+                 windowtitle="SmartSockets Documentation"
                  packagenames="ibis.smartsockets,ibis.smartsockets.virtual"
                  overview="src/overview.html"
                  doctitle="SmartSockets 1.0 Documentation"
-                 bottom="The Ibis project">
+                 bottom="The Ibis project"
+            	classpathref="default.classpath"
+        >
             <link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
         </javadoc>
+
     </target>
 
-    
-    <target name="build" depends="clean,prepare,compile,jar">
+    <target name="touchgraph" description="Build touchgraph subproject">
+        <ant dir="touchgraph" inheritAll="false" target="build">
+            <property name="version" value="${version}" />
+        </ant>
     </target>
+
+    <target name="build" depends="clean,touchgraph,compile,javadoc">
+    </target>
+
 
     <target name="bin.zip" depends="build">
-	<delete failonerror="false" file="${version}.zip"/>
+        <delete failonerror="false" file="${zip}" />
 
-	 <zip destfile="${version}.zip">
-            <zipfileset dir="." prefix="${version}"
-                includes="external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**"
-                />
-            <zipfileset dir="." prefix="${version}" filemode="755"
-                includes="bin/**"
-                />
+        <zip destfile="${zip}">
+            <zipfileset dir="."
+                        prefix="smartsockets-${version}"
+                        includes="external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**"
+            />
+            <zipfileset dir="."
+                        prefix="smartsockets-${version}"
+                        filemode="755"
+                        includes="bin/**"
+            />
         </zip>
     </target>
 
     <target name="src.zip" depends="build">
-	<delete failonerror="false" file="${version}-src.zip"/>
+        <delete failonerror="false" file="${src-zip}" />
 
-	 <zip destfile="${version}-src.zip">
-            <zipfileset dir="." prefix="${version}"
-                includes="src/**,external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**,build.xml"
-                />
-            <zipfileset dir="." prefix="${version}" filemode="755"
-                includes="bin/**"
-                />
+        <zip destfile="${src-zip}">
+            <zipfileset dir="."
+                        prefix="smartsockets-${version}"
+                        includes="src/**,external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**,build.xml"
+            />
+            <zipfileset dir="."
+                        prefix="smartsockets-${version}"
+                        filemode="755"
+                        includes="bin/**"
+            />
         </zip>
     </target>
 
-	
+
     <!-- remove all generated code -->
     <target name="clean" description="Removes the ${distdir} directory">
-         <delete failonerror="false" dir="${builddir}" />
-         <delete failonerror="false" dir="${distdir}" />
+        <delete failonerror="false" dir="${builddir}" />
+        <delete failonerror="false" dir="${distdir}" />
+        <delete failonerror="false" dir="${javadoc}" />
+        <ant dir="touchgraph" inheritAll="false" target="clean" />
     </target>
 
     <target name="distclean" depends="clean">
-         <delete failonerror="false" dir="./build-eclipse" />
- 	 <delete failonerror="false" file="${version}.zip"/>
+        <delete failonerror="false" dir="./build-eclipse" />
+        <delete failonerror="false" file="${zip}" />
+        <delete failonerror="false" file="${src-zip}" />
     </target>
 
 

@@ -50,40 +50,46 @@
 package com.touchgraph.graphlayout;
 
 import java.awt.BasicStroke;
-import  java.awt.Color;
-import  java.awt.Graphics;
-import  java.awt.Dimension;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
-import java.awt.Stroke;
 
-import com.sun.org.apache.bcel.internal.generic.FDIV;
-
-/**  Edge.
-  *
-  * @author   Alexander Shapiro
-  * @version  1.22-jre1.1  $Id: Edge.java,v 1.1 2002/09/19 15:58:07 ldornbusch Exp $
-  */
+/**
+ * Edge.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: Edge.java,v 1.1 2002/09/19 15:58:07 ldornbusch Exp $
+ */
 public class Edge {
 
     public static Color DEFAULT_COLOR = Color.decode("#006090");
+
     public static Color MOUSE_OVER_COLOR = Color.decode("#ccddff");
+
     public static int DEFAULT_LENGTH = 40;
 
-    public Node from; //Should be private, changing from effects "from" Node
-    public Node to;   //Should be private, changing from effects "to" Node
-  
-    protected boolean arrowHead = false;    
-    protected Color col;
-    protected int length;
-    protected boolean visible;
-    protected String id = null;
-  
-  // ............
+    public Node from; // Should be private, changing from effects "from" Node
 
-    /** Constructor with two Nodes and a length.
-      */
+    public Node to; // Should be private, changing from effects "to" Node
+
+    protected boolean arrowHead = false;
+
+    protected Color col;
+
+    protected int length;
+
+    protected boolean visible;
+
+    protected String id = null;
+
+    // ............
+
+    /**
+     * Constructor with two Nodes and a length.
+     */
     public Edge(Node f, Node t, int len) {
         from = f;
         to = t;
@@ -92,75 +98,87 @@ public class Edge {
         visible = false;
     }
 
-    /** Constructor with two Nodes, which uses a default length.
-      */
+    /**
+     * Constructor with two Nodes, which uses a default length.
+     */
     public Edge(Node f, Node t) {
         this(f, t, DEFAULT_LENGTH);
     }
 
-   // setters and getters ...............
-   
-    public static void setEdgeDefaultColor( Color color ) { DEFAULT_COLOR = color; }
-    public static void setEdgeMouseOverColor( Color color ) { MOUSE_OVER_COLOR = color; }
-    public static void setEdgeDefaultLength( int length ) { DEFAULT_LENGTH = length; }
+    // setters and getters ...............
 
-    
-    
-   /** Returns the starting "from" node of this edge as Node. */
-    public Node getFrom() { return from; }
-    
-   /** Returns the terminating "to" node of this edge as Node. */
-    public Node getTo() { return to; }
-    
-   /** Returns the color of this edge as Color. */
+    public static void setEdgeDefaultColor(Color color) {
+        DEFAULT_COLOR = color;
+    }
+
+    public static void setEdgeMouseOverColor(Color color) {
+        MOUSE_OVER_COLOR = color;
+    }
+
+    public static void setEdgeDefaultLength(int length) {
+        DEFAULT_LENGTH = length;
+    }
+
+    /** Returns the starting "from" node of this edge as Node. */
+    public Node getFrom() {
+        return from;
+    }
+
+    /** Returns the terminating "to" node of this edge as Node. */
+    public Node getTo() {
+        return to;
+    }
+
+    /** Returns the color of this edge as Color. */
     public Color getColor() {
         return col;
     }
 
-   /** Set the color of this Edge to the Color <tt>color</tt>. */
-    public void setColor( Color color ) {
+    /** Set the color of this Edge to the Color <tt>color</tt>. */
+    public void setColor(Color color) {
         col = color;
     }
 
     public void useArrowHead(boolean value) {
         arrowHead = value;
     }
-    
-   /** Returns the ID of this Edge as a String. */
-    public String getID()
-    {
+
+    /** Returns the ID of this Edge as a String. */
+    public String getID() {
         return id;
     }
 
-   /** Set the ID of this Edge to the String <tt>id</tt>. */
-    public void setID( String id )
-    {
-        this.id=id;
+    /** Set the ID of this Edge to the String <tt>id</tt>. */
+    public void setID(String id) {
+        this.id = id;
     }
 
-   /** Returns the length of this Edge as a double. */
+    /** Returns the length of this Edge as a double. */
     public int getLength() {
         return length;
     }
 
-   /** Set the length of this Edge to the int <tt>len</tt>. */
+    /** Set the length of this Edge to the int <tt>len</tt>. */
     public void setLength(int len) {
-        length=len;
+        length = len;
     }
 
-   /** Set the visibility of this Edge to the boolean <tt>v</tt>. */
-    public void setVisible( boolean v) {
+    /** Set the visibility of this Edge to the boolean <tt>v</tt>. */
+    public void setVisible(boolean v) {
         visible = v;
-    } 
+    }
 
-   /** Return the visibility of this Edge as a boolean. */
+    /** Return the visibility of this Edge as a boolean. */
     public boolean isVisible() {
         return visible;
-    } 
+    }
 
-    public Node getOtherEndpt(Node n) { //yields false results if Node n is not an endpoint
-        if (to != n) return to;
-        else return from;
+    public Node getOtherEndpt(Node n) { // yields false results if Node n is not
+                                        // an endpoint
+        if (to != n)
+            return to;
+        else
+            return from;
     }
 
     /** Switches the endpoints of the edge */
@@ -176,58 +194,61 @@ public class Edge {
         int x2 = (int) to.drawx;
         int y2 = (int) to.drawy;
 
-        return (((x1>0 || x2>0) && (x1<d.width  || x2<d.width)) &&
-                  ((y1>0 || y2>0) && (y1<d.height || y2<d.height) ));
+        return (((x1 > 0 || x2 > 0) && (x1 < d.width || x2 < d.width)) && ((y1 > 0 || y2 > 0) && (y1 < d.height || y2 < d.height)));
 
     }
 
     public double distFromPoint(double px, double py) {
-        double x1= from.drawx;
-        double y1= from.drawy;
-        double x2= to.drawx;
-        double y2= to.drawy;
+        double x1 = from.drawx;
+        double y1 = from.drawy;
+        double x2 = to.drawx;
+        double y2 = to.drawy;
 
-        if (px<Math.min(x1, x2)-8 || px>Math.max(x1, x2)+8 ||
-            py<Math.min(y1, y2)-8 || py>Math.max(y1, y2)+8)
+        if (px < Math.min(x1, x2) - 8 || px > Math.max(x1, x2) + 8
+                || py < Math.min(y1, y2) - 8 || py > Math.max(y1, y2) + 8)
             return 1000;
 
         double dist = 1000;
-        if (x1-x2!=0) dist = Math.abs((y2-y1)/(x2-x1)*(px - x1) + (y1 - py));
-        if (y1-y2!=0) dist = Math.min(dist, Math.abs((x2-x1)/(y2-y1)*(py - y1) + (x1 - px)));
+        if (x1 - x2 != 0)
+            dist = Math.abs((y2 - y1) / (x2 - x1) * (px - x1) + (y1 - py));
+        if (y1 - y2 != 0)
+            dist = Math.min(dist, Math.abs((x2 - x1) / (y2 - y1) * (py - y1)
+                    + (x1 - px)));
 
         return dist;
     }
 
     public boolean containsPoint(double px, double py) {
-        return distFromPoint(px,py)<10;
+        return distFromPoint(px, py) < 10;
     }
 
-    public static void drawArrowHead(Graphics g, double xCenter, double yCenter,
-            double x, double y, double stroke) {
-        
-        double aDir = Math.atan2(xCenter-x, yCenter-y);
-        //g.drawLine(x,y,xCenter,yCenter);
-        
+    public static void drawArrowHead(Graphics g, double xCenter,
+            double yCenter, double x, double y, double stroke) {
+
+        double aDir = Math.atan2(xCenter - x, yCenter - y);
+        // g.drawLine(x,y,xCenter,yCenter);
+
         Polygon tmpPoly = new Polygon();
-        double i1=6+stroke*2;
-        double i2=6+stroke;                           // make the arrow head the same size regardless of the length length
-        tmpPoly.addPoint((int) Math.round(x), (int)Math.round(y));                          // arrow tip
-        tmpPoly.addPoint((int) Math.round(x+xCor(i1,aDir+0.5)), 
-                (int) Math.round(y+yCor(i1,aDir+0.5)));
-        //tmpPoly.addPoint(x+xCor(i2,aDir),y+yCor(i2,aDir));
-        tmpPoly.addPoint((int) Math.round(x+xCor(i1,aDir-0.5)),
-                (int) Math.round(y+yCor(i1,aDir-0.5)));
-        tmpPoly.addPoint((int) Math.round(x), (int)Math.round(y));                          // arrow tip
-        // arrow tip        
+        double i1 = 6 + stroke * 2;
+        double i2 = 6 + stroke; // make the arrow head the same size regardless
+                                // of the length length
+        tmpPoly.addPoint((int) Math.round(x), (int) Math.round(y)); // arrow tip
+        tmpPoly.addPoint((int) Math.round(x + xCor(i1, aDir + 0.5)), (int) Math
+                .round(y + yCor(i1, aDir + 0.5)));
+        // tmpPoly.addPoint(x+xCor(i2,aDir),y+yCor(i2,aDir));
+        tmpPoly.addPoint((int) Math.round(x + xCor(i1, aDir - 0.5)), (int) Math
+                .round(y + yCor(i1, aDir - 0.5)));
+        tmpPoly.addPoint((int) Math.round(x), (int) Math.round(y)); // arrow tip
+        // arrow tip
         g.drawPolygon(tmpPoly);
-        g.fillPolygon(tmpPoly);                       // remove this line to leave arrow head unpainted
-                
-      
-        g.drawLine((int) Math.round(xCenter), (int) Math.round(yCenter), 
-                (int) Math.round(x+xCor(i2,aDir)),
-                (int) Math.round(y+yCor(i2,aDir)));
-     }
-    
+        g.fillPolygon(tmpPoly); // remove this line to leave arrow head
+                                // unpainted
+
+        g.drawLine((int) Math.round(xCenter), (int) Math.round(yCenter),
+                (int) Math.round(x + xCor(i2, aDir)), (int) Math.round(y
+                        + yCor(i2, aDir)));
+    }
+
     private static double yCor(double len, double dir) {
         return (len * Math.cos(dir));
     }
@@ -235,128 +256,113 @@ public class Edge {
     private static double xCor(double len, double dir) {
         return (len * Math.sin(dir));
     }
-    
-    public static void paintArrow(Graphics g, int x1, int y1, int x2, int y2, 
+
+    public static void paintArrow(Graphics g, int x1, int y1, int x2, int y2,
             Color c) {
-        System.out.println("EEK");        
-        paintArrow((Graphics2D) g, x1, y1, x2, y2, false, c);        
+        System.out.println("EEK");
+        paintArrow((Graphics2D) g, x1, y1, x2, y2, false, c);
     }
-        
-    public static void paintArrow(Graphics2D g, int x1, int y1, int x2, int y2, 
+
+    public static void paintArrow(Graphics2D g, int x1, int y1, int x2, int y2,
             boolean head, Color c) {
-    
-        //Forget hyperbolic bending for now
 
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, 
+        // Forget hyperbolic bending for now
+
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-        
+
         g.setColor(c);
-        
+
         /*
-        int x3=x1;
-        int y3=y1;
+         * int x3=x1; int y3=y1;
+         * 
+         * double dist=Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1)); if
+         * (dist>10) { double adjustDistRatio = (dist-10)/dist; x3=(int)
+         * (x1+(x2-x1)*adjustDistRatio); y3=(int) (y1+(y2-y1)*adjustDistRatio); }
+         * 
+         * x3=(int) ((x3*4+x1)/5.0); y3=(int) ((y3*4+y1)/5.0);
+         * 
+         * g.drawLine(x3, y3, x2, y2);
+         * 
+         * g.drawLine(x1, y1, x3, y3); g.drawLine(x1+1, y1, x3, y3);
+         * g.drawLine(x1+2, y1, x3, y3); g.drawLine(x1+3, y1, x3, y3);
+         * g.drawLine(x1+4, y1, x3, y3); g.drawLine(x1-1, y1, x3, y3);
+         * g.drawLine(x1-2, y1, x3, y3); g.drawLine(x1-3, y1, x3, y3);
+         * g.drawLine(x1-4, y1, x3, y3);
+         * 
+         * g.drawLine(x1, y1+1, x3, y3); g.drawLine(x1, y1+2, x3, y3);
+         * g.drawLine(x1, y1+3, x3, y3); g.drawLine(x1, y1+4, x3, y3);
+         * g.drawLine(x1, y1-1, x3, y3); g.drawLine(x1, y1-2, x3, y3);
+         * g.drawLine(x1, y1-3, x3, y3); g.drawLine(x1, y1-4, x3, y3);
+         */
 
-        double dist=Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
-        if (dist>10) {
-            double adjustDistRatio = (dist-10)/dist;
-            x3=(int) (x1+(x2-x1)*adjustDistRatio);
-            y3=(int) (y1+(y2-y1)*adjustDistRatio);
-        }
-
-        x3=(int) ((x3*4+x1)/5.0);
-        y3=(int) ((y3*4+y1)/5.0);
-
-        g.drawLine(x3,   y3,   x2, y2);
-       
-        g.drawLine(x1,   y1,   x3, y3);
-        g.drawLine(x1+1, y1,   x3, y3);
-        g.drawLine(x1+2, y1,   x3, y3);
-        g.drawLine(x1+3, y1,   x3, y3);
-        g.drawLine(x1+4, y1,   x3, y3);
-        g.drawLine(x1-1, y1,   x3, y3);
-        g.drawLine(x1-2, y1,   x3, y3);
-        g.drawLine(x1-3, y1,   x3, y3);
-        g.drawLine(x1-4, y1,   x3, y3);
-                
-        g.drawLine(x1,   y1+1, x3, y3);
-        g.drawLine(x1,   y1+2, x3, y3);
-        g.drawLine(x1,   y1+3, x3, y3);
-        g.drawLine(x1,   y1+4, x3, y3);
-        g.drawLine(x1,   y1-1, x3, y3);
-        g.drawLine(x1,   y1-2, x3, y3);
-        g.drawLine(x1,   y1-3, x3, y3);
-        g.drawLine(x1,   y1-4, x3, y3);
-        */
-               
         g.setStroke(new BasicStroke((float) 2.0));
-        
-        if (head) {                       
-            double x3=x1;
-            double y3=y1;
 
-            double x4=x1;
-            double y4=y1;
+        if (head) {
+            double x3 = x1;
+            double y3 = y1;
 
-            double dist=Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+            double x4 = x1;
+            double y4 = y1;
 
-            if (dist>10) {
-                double adjustDistRatio = (dist-10)/dist;
-                x3=(int) (x1+(x2-x1)*adjustDistRatio);
-                y3=(int) (y1+(y2-y1)*adjustDistRatio);
+            double dist = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1)
+                    * (y2 - y1));
 
-                x4=(int) (x1+(x2-x1)*adjustDistRatio);
-                y4=(int) (y1+(y2-y1)*adjustDistRatio);            
+            if (dist > 10) {
+                double adjustDistRatio = (dist - 10) / dist;
+                x3 = (int) (x1 + (x2 - x1) * adjustDistRatio);
+                y3 = (int) (y1 + (y2 - y1) * adjustDistRatio);
+
+                x4 = (int) (x1 + (x2 - x1) * adjustDistRatio);
+                y4 = (int) (y1 + (y2 - y1) * adjustDistRatio);
             }
 
-            x3=((x3*4.0+x1)/5.0);
-            y3=((y3*4.0+y1)/5.0);
+            x3 = ((x3 * 4.0 + x1) / 5.0);
+            y3 = ((y3 * 4.0 + y1) / 5.0);
 
-            x4=((x3*9.0+x1*2.0)/11.0);
-            y4=((y3*9.0+y1*2.0)/11.0);
+            x4 = ((x3 * 9.0 + x1 * 2.0) / 11.0);
+            y4 = ((y3 * 9.0 + y1 * 2.0) / 11.0);
 
-            g.drawLine(x2, y2, (int) Math.round(x3), (int)Math.round(y3));
-            
-            double aDir = Math.atan2(x4-x3, y4-y3);            
+            g.drawLine(x2, y2, (int) Math.round(x3), (int) Math.round(y3));
+
+            double aDir = Math.atan2(x4 - x3, y4 - y3);
             double stroke = 1.0;
-            
-            // make the arrow head the same size regardless of the length length
-            double i1=6+stroke*2;
-            double i2=6+stroke;                        
-            
-            Polygon tmpPoly = new Polygon();
-            tmpPoly.addPoint((int) Math.round(x3), (int)Math.round(y3)); 
 
-            tmpPoly.addPoint(
-                    (int) Math.round(x3+xCor(i1,aDir+0.5)), 
-                    (int) Math.round(y3+yCor(i1,aDir+0.5)));
-            
-            tmpPoly.addPoint(
-                    (int) Math.round(x3+xCor(i1,aDir-0.5)),
-                    (int) Math.round(y3+yCor(i1,aDir-0.5)));
-            
-            tmpPoly.addPoint((int) Math.round(x3), (int)Math.round(y3));
-            
+            // make the arrow head the same size regardless of the length length
+            double i1 = 6 + stroke * 2;
+            double i2 = 6 + stroke;
+
+            Polygon tmpPoly = new Polygon();
+            tmpPoly.addPoint((int) Math.round(x3), (int) Math.round(y3));
+
+            tmpPoly.addPoint((int) Math.round(x3 + xCor(i1, aDir + 0.5)),
+                    (int) Math.round(y3 + yCor(i1, aDir + 0.5)));
+
+            tmpPoly.addPoint((int) Math.round(x3 + xCor(i1, aDir - 0.5)),
+                    (int) Math.round(y3 + yCor(i1, aDir - 0.5)));
+
+            tmpPoly.addPoint((int) Math.round(x3), (int) Math.round(y3));
+
             g.drawPolygon(tmpPoly);
-            g.fillPolygon(tmpPoly);                
-                             
-            g.drawLine(x1, y1,  
-                    (int) Math.round(x3+xCor(i2,aDir)),
-                    (int) Math.round(y3+yCor(i2,aDir)));
+            g.fillPolygon(tmpPoly);
+
+            g.drawLine(x1, y1, (int) Math.round(x3 + xCor(i2, aDir)),
+                    (int) Math.round(y3 + yCor(i2, aDir)));
         } else {
             g.drawLine(x1, y1, x2, y2);
         }
     }
 
     public void paint(Graphics g, TGPanel tgPanel) {
-        Color c = (tgPanel.getMouseOverE()==this) ? MOUSE_OVER_COLOR : col;
+        Color c = (tgPanel.getMouseOverE() == this) ? MOUSE_OVER_COLOR : col;
 
-        int x1=(int) from.drawx;
-        int y1=(int) from.drawy;
-        int x2=(int) to.drawx;
-        int y2=(int) to.drawy;
-        
-        if (intersects(tgPanel.getSize())) { 
-            paintArrow((Graphics2D) g, x1, y1, x2, y2, arrowHead, c);            
+        int x1 = (int) from.drawx;
+        int y1 = (int) from.drawy;
+        int x2 = (int) to.drawx;
+        int y2 = (int) to.drawy;
+
+        if (intersects(tgPanel.getSize())) {
+            paintArrow((Graphics2D) g, x1, y1, x2, y2, arrowHead, c);
         }
     }
 

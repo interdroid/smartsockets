@@ -42,7 +42,7 @@ public class UniquePaint {
             
             Color f = Color.BLACK;
             
-            System.err.println("Adding color: " + id);
+            //System.out.println("Adding color: " + id);
             
             Color ia = new Color(Color.HSBtoRGB(hue, sat, 0.25f));
             

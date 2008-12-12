@@ -49,35 +49,35 @@
 
 package com.touchgraph.graphlayout.interaction;
 
-import  com.touchgraph.graphlayout.*;
+import com.touchgraph.graphlayout.*;
 
-import  java.io.*;
-import  java.util.*;
-import  java.awt.*;
-import  java.applet.*;
+import java.awt.*;
+import java.awt.event.*;
 
-import  java.awt.event.*;
-
-/**  DragAddUI contains code for adding nodes + edges by dragging.
-  *   
-  * @author   Alexander Shapiro                                        
-  * @version  1.22-jre1.1  $Id: DragAddUI.java,v 1.1 2002/09/19 15:58:21 ldornbusch Exp $
-  */
+/**
+ * DragAddUI contains code for adding nodes + edges by dragging.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: DragAddUI.java,v 1.1 2002/09/19 15:58:21 ldornbusch
+ *          Exp $
+ */
 public class DragAddUI extends TGAbstractDragUI implements TGPaintListener {
 
     Point mousePos = null;
+
     Node dragAddNode = null;
 
-  // ............
+    // ............
 
-   /** Constructor with provided TGPanel <tt>tgp</tt>.
-     */ 
-    public DragAddUI( TGPanel tgp ) {
-        super(tgp); 
+    /**
+     * Constructor with provided TGPanel <tt>tgp</tt>.
+     */
+    public DragAddUI(TGPanel tgp) {
+        super(tgp);
     }
 
     public void preActivate() {
-        mousePos=null;
+        mousePos = null;
         tgPanel.addPaintListener(this);
     }
 
@@ -85,66 +85,73 @@ public class DragAddUI extends TGAbstractDragUI implements TGPaintListener {
         tgPanel.removePaintListener(this);
     };
 
-    public void mousePressed( MouseEvent e ) {
+    public void mousePressed(MouseEvent e) {
         dragAddNode = tgPanel.getMouseOverN();
-    }    
+    }
 
-    public void mouseReleased( MouseEvent e ) {
+    public void mouseReleased(MouseEvent e) {
         Node mouseOverN = tgPanel.getMouseOverN();
 
-        if (mouseOverN!=null && dragAddNode!=null && mouseOverN!=dragAddNode) {
-            Edge ed=tgPanel.findEdge(dragAddNode,mouseOverN);
-            if (ed==null) tgPanel.addEdge(dragAddNode,mouseOverN, Edge.DEFAULT_LENGTH); 
-            else tgPanel.deleteEdge(ed);
+        if (mouseOverN != null && dragAddNode != null
+                && mouseOverN != dragAddNode) {
+            Edge ed = tgPanel.findEdge(dragAddNode, mouseOverN);
+            if (ed == null)
+                tgPanel.addEdge(dragAddNode, mouseOverN, Edge.DEFAULT_LENGTH);
+            else
+                tgPanel.deleteEdge(ed);
 
-        } else if ( mouseOverN == null && dragAddNode != null ) {
+        } else if (mouseOverN == null && dragAddNode != null) {
             try {
-                Node n =tgPanel.addNode(); 
-                tgPanel.addEdge(dragAddNode,n, Edge.DEFAULT_LENGTH); 
-                n.drawx = tgPanel.getMousePos().x; 
+                Node n = tgPanel.addNode();
+                tgPanel.addEdge(dragAddNode, n, Edge.DEFAULT_LENGTH);
+                n.drawx = tgPanel.getMousePos().x;
                 n.drawy = tgPanel.getMousePos().y;
-                tgPanel.updatePosFromDraw(n); 
-            } catch ( TGException tge ) {
+                tgPanel.updatePosFromDraw(n);
+            } catch (TGException tge) {
                 System.err.println(tge.getMessage());
                 tge.printStackTrace(System.err);
             }
         }
 
-        if (mouseWasDragged) { //Don't reset the damper on a mouseClicked
+        if (mouseWasDragged) { // Don't reset the damper on a mouseClicked
             tgPanel.resetDamper();
             tgPanel.startDamper();
-        }   
+        }
 
-        dragAddNode=null;
+        dragAddNode = null;
     }
 
-    public void mouseDragged(MouseEvent e) {    
-        mousePos=e.getPoint();
-       tgPanel.repaint();
+    public void mouseDragged(MouseEvent e) {
+        mousePos = e.getPoint();
+        tgPanel.repaint();
     }
 
-    public void paintFirst(Graphics g) {};
-    public void paintLast(Graphics g) {};
+    public void paintFirst(Graphics g) {
+    };
+
+    public void paintLast(Graphics g) {
+    };
 
     public void paintAfterEdges(Graphics g) {
 
-        if(mousePos==null) return;
+        if (mousePos == null)
+            return;
 
         Node mouseOverN = tgPanel.getMouseOverN();
 
-        if (mouseOverN==null) {
-//            g.setColor(Node.BACK_DEFAULT_COLOR);
-            g.drawRect(mousePos.x-7, mousePos.y-7, 14, 14);
+        if (mouseOverN == null) {
+            // g.setColor(Node.BACK_DEFAULT_COLOR);
+            g.drawRect(mousePos.x - 7, mousePos.y - 7, 14, 14);
         }
 
         Color c;
-        if (mouseOverN==dragAddNode)
+        if (mouseOverN == dragAddNode)
             c = Color.darkGray;
         else
             c = Color.blue;
 
         Edge.paintArrow(g, (int) dragAddNode.drawx, (int) dragAddNode.drawy,
-               mousePos.x, mousePos.y, c);
+                mousePos.x, mousePos.y, c);
     }
 
 } // end com.touchgraph.graphlayout.interaction.DragAddUI
