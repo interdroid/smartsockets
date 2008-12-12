@@ -67,7 +67,7 @@ public class DirectServerSocket {
         handShake[1] = (byte) ((tmp.length >> 8) & 0xFF);
         System.arraycopy(tmp, 0, handShake, 2, tmp.length);        
 
-        altHandShake = DirectSocketFactory.toBytes(5, local.getAddressSet(), 2);
+        altHandShake = DirectSocketFactory.toBytes(5, local, 2);
         
         if (preference != null && preference.haveFirewallRules()) { 
             haveFirewallRules = true;     
@@ -157,7 +157,7 @@ public class DirectServerSocket {
                 // Read the size of the machines address blob
                 int size = (DirectSocketFactory.readByte(in) & 0xFF);
                 size |= ((DirectSocketFactory.readByte(in) & 0xFF) << 8); 
-                     
+                
                 // Read the bytes....
                 byte [] tmp = DirectSocketFactory.readFully(in, new byte[size]);
                 
@@ -165,11 +165,10 @@ public class DirectServerSocket {
                 size = (DirectSocketFactory.readByte(in) & 0xFF);
                 size |= ((DirectSocketFactory.readByte(in) & 0xFF) << 8); 
 
-                // Read the address itself....
+                // Read the name itself....
                 byte [] name = DirectSocketFactory.readFully(in, new byte[size]);
             
-                IPAddressSet a = IPAddressSet.getByAddress(tmp);
-                DirectSocketAddress sa = DirectSocketAddress.getByAddress(a, 1, null); 
+                DirectSocketAddress sa = DirectSocketAddress.fromBytes(tmp);
                 
                 // Optimistically create the socket ? 
                 // TODO: fix to get 'real' port numbers here... 
@@ -187,7 +186,7 @@ public class DirectServerSocket {
                     String network = new String(name);
                     
                     // We must check if we are allowed to accept the client
-                    if (preference.accept(a.addresses, network)) { 
+                    if (preference.accept(sa.getAddressSet().addresses, network)) { 
                         out.write(ACCEPT);
                         out.flush();       
                     } else { 

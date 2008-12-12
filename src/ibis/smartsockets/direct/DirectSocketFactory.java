@@ -177,8 +177,6 @@ public class DirectSocketFactory {
                         
         localAddress = IPAddressSet.getLocalHost();            
                 
-//System.out.println("LOCAL = " + localAddress);
-        
         if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;
 
@@ -187,12 +185,15 @@ public class DirectSocketFactory {
 
             localAddress = IPAddressSet.merge(localAddress, uuid);    
             
-//System.out.println("LOCAL2 = " + localAddress);
-            
             getExternalAddress(p);
             
             if (externalNATAddress != null) {
-                completeAddress = IPAddressSet.merge(localAddress,
+
+            	// FIXME!! This is wrong! The IPAddressSet has no clue about the 
+            	// difference between a public local and external address! So 
+            	// the value of completeAddress is bs!
+         
+            	completeAddress = IPAddressSet.merge(localAddress,
                         externalNATAddress);    
             } else {
                 completeAddress = localAddress;
@@ -201,8 +202,6 @@ public class DirectSocketFactory {
             completeAddress = localAddress;
         }
 
-//System.out.println("COMPLETE = " + completeAddress);
-   
         portRange = new PortRange(p);
 
         preference = NetworkPreference.getPreference(completeAddress, p);
@@ -218,11 +217,10 @@ public class DirectSocketFactory {
             logger.info("Local network: " + preference.getNetworkName());
         }
         
-        altCompleteAddressInBytes = toBytes(5, completeAddress, 
-                preference.getNetworkName());
+        DirectSocketAddress tmp = DirectSocketAddress.getByAddress(externalAddress, 1, localAddress, 1, user);
+        
+        altCompleteAddressInBytes = toBytes(5, tmp, preference.getNetworkName());
          
-//        System.out.println("ALTCOMPLETEADDRESS = " + altCompleteAddressInBytes.length + " " +  completeAddress);
-              
         haveFirewallRules = preference.haveFirewallRules();
         
         getNATAddress();
@@ -345,10 +343,9 @@ public class DirectSocketFactory {
         }
     }
     
-    protected static byte [] toBytes(int header, IPAddressSet address, int trailer) { 
+    protected static byte [] toBytes(int header, DirectSocketAddress ad, int trailer) { 
         
-        byte [] tmp = address.getAddress();
-        
+        byte [] tmp = ad.getAddress();
         byte [] result = new byte[header + 2 + tmp.length + trailer];
             
         result[header] = (byte) (tmp.length & 0xFF);
@@ -358,13 +355,13 @@ public class DirectSocketFactory {
         return result;
     }
 
-    protected static byte [] toBytes(int header, IPAddressSet address, 
-            String s) { 
+    protected static byte [] toBytes(int header, DirectSocketAddress ad,  
+            String network) { 
         
-        byte [] tmp1 = address.getAddress();
-        byte [] tmp2 = (s == null ? new byte[0] : s.getBytes());
+        byte [] tmp1 = ad.getAddress();
+        byte [] tmp3 = (network == null ? new byte[0] : network.getBytes());
         
-        byte [] result = new byte[header + 4 + tmp1.length + tmp2.length];
+        byte [] result = new byte[header + 4 + tmp1.length + tmp3.length];
         
         result[header] = (byte) (tmp1.length & 0xFF);
         result[header+1] = (byte) ((tmp1.length >> 8) & 0xFF);
@@ -372,11 +369,11 @@ public class DirectSocketFactory {
         System.arraycopy(tmp1, 0, result, header+2, tmp1.length);
         
         int off = header + 2 + tmp1.length;
-        
-        result[off] = (byte) (tmp2.length & 0xFF);
-        result[off+1] = (byte) ((tmp1.length >> 8) & 0xFF);
        
-        System.arraycopy(tmp2, 0, result, off+2, tmp2.length);
+        result[off] = (byte) (tmp3.length & 0xFF);
+        result[off+1] = (byte) ((tmp3.length >> 8) & 0xFF);
+       
+        System.arraycopy(tmp3, 0, result, off+2, tmp3.length);
        
         return result;
     }
@@ -956,6 +953,8 @@ public class DirectSocketFactory {
                     altCompleteAddressInBytes[1+i] = userOut[i];
                 }
             
+                //System.out.println("WRITE ALT: " + altCompleteAddressInBytes.length);
+                
                 out.write(altCompleteAddressInBytes);
                 out.flush();
             }
@@ -966,7 +965,7 @@ public class DirectSocketFactory {
             // Read the other sides user data 
             readFully(in, userIn);
             
-            // Read the size of the machines address
+            // Read the size of the local addresses
             int size = (readByte(in) & 0xFF);
             size |= ((readByte(in) & 0xFF) << 8); 
 
@@ -984,11 +983,9 @@ public class DirectSocketFactory {
             
             // Create the address and see if we are to talking to the right 
             // process.
-            IPAddressSet ipas = IPAddressSet.getByAddress(tmp);
+        	server = DirectSocketAddress.fromBytes(tmp);
             
-           // System.out.println("Got address: " + ipas);
-            
-            server = DirectSocketAddress.getByAddress(ipas, 1, null); 
+            //System.out.println("$$$$ SERVER = " + server);
             
             if (checkIdentity) { 
                 
