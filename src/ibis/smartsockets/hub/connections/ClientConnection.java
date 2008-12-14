@@ -242,7 +242,7 @@ public class ClientConnection extends MessageForwardingConnection {
         String tag = in.readUTF();
         String info = in.readUTF();
 
-        if (reqlogger.isDebugEnabled()) {
+        if (reglogger.isDebugEnabled()) {
             reglogger.debug("Connection " + clientAddress + " return id: " + id +  
                     " adding info: " + tag + " " + info);
         }
@@ -269,7 +269,7 @@ public class ClientConnection extends MessageForwardingConnection {
         String tag = in.readUTF();
         String info = in.readUTF();
 
-        if (reqlogger.isDebugEnabled()) {
+        if (reglogger.isDebugEnabled()) {
             reglogger.debug("Connection " + clientAddress + " return id: " + id +  
                     " updating info: " + tag + " " + info);         
         }
@@ -295,7 +295,7 @@ public class ClientConnection extends MessageForwardingConnection {
         int id = in.readInt();
         String tag = in.readUTF();
         
-        if (reqlogger.isDebugEnabled()) {
+        if (reglogger.isDebugEnabled()) {
             reglogger.debug("Connection " + clientAddress + " return id: " + id +  
                     " removing info: " + tag);
         }

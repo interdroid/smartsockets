@@ -156,14 +156,15 @@ public class Acceptor extends CommunicationThread {
             ClientConnection c = new ClientConnection(srcAddr, s, in, out, 
                     connections, knownHubs, virtualConnections);
             
-            connections.put(srcAddr, c);                                               
-            c.activate();
-
+            connections.put(srcAddr, c);     
             knownHubs.getLocalDescription().addClient(srcAddr);
             
             if (reglogger.isInfoEnabled()) {
                 reglogger.info("Added client: " + src);
             }
+            
+            // Finally activate the thread so it can handle incoming requests. 
+            c.activate();
             
             return true;
 

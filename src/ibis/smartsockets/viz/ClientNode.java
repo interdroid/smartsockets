@@ -1,6 +1,7 @@
 package ibis.smartsockets.viz;
 
 import java.awt.Color;
+import java.util.Arrays;
 import java.util.StringTokenizer;
 
 import ibis.smartsockets.hub.servicelink.ClientInfo;
@@ -63,8 +64,6 @@ public class ClientNode extends SmartNode {
         }
         
         String [] tmp = split(s, "^");
-        
-  //      System.out.println("tmp = " + tmp + " " + tmp.length);
         
         if (tmp.length <= num || tmp[num] == null) {
             return def;

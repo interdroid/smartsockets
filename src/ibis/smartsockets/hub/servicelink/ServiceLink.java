@@ -1645,7 +1645,6 @@ public class ServiceLink implements Runnable {
 
         // Connect to the hub and processes the messages it gets. When the 
         // connection is lost, it will try to reconnect.
-        
         while (true) {
        
         	int sleep = 1000;
