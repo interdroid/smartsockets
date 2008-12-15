@@ -250,6 +250,8 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
             updateGraph();
             waitFor(5000);
         }
+        
+        sl.setDone();
     }
    
     public static void main(String[] args) {

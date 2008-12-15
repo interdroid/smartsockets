@@ -51,6 +51,8 @@ public class ServiceLink implements Runnable {
 
     private boolean connected = false;
     
+    private boolean done = false;
+    
     private DirectSocket hub;
     
     private DataOutputStream out;
@@ -124,6 +126,21 @@ public class ServiceLink implements Runnable {
         ThreadPool.createNew(this, "ServiceLink Message Reader");
     }
 
+    public synchronized boolean getDone() { 
+    	return done;
+    }
+    
+    public synchronized void setDone() { 
+    	if (done) { 
+    		return;
+    	}
+    	
+    	done = true;
+    	
+    	// hum... this may be a bit harsh ?
+    	closeConnectionToHub();
+    }
+    
     public synchronized void registerVCCallBack(VirtualConnectionCallBack cb) {
         vcCallBack = cb;
     }
@@ -814,8 +831,12 @@ public class ServiceLink implements Runnable {
                 }
 
             } catch (IOException e) {
-                logger.warn("ServiceLink: Exception while receiving!", e);
-                closeConnectionToHub();
+              
+            	if (!getDone()) {
+            		logger.warn("ServiceLink: Exception while receiving!", e);
+            	}
+            	
+            	closeConnectionToHub();
             }
         }
     }
@@ -1645,7 +1666,7 @@ public class ServiceLink implements Runnable {
 
         // Connect to the hub and processes the messages it gets. When the 
         // connection is lost, it will try to reconnect.
-        while (true) {
+        while (!getDone()) {
        
         	int sleep = 1000;
             long end = System.currentTimeMillis() + maxReconnect;

@@ -66,6 +66,9 @@ public class VizTest {
 					System.out.println("EEP: update failed!");
 				}
 						
+				if (state >= 5) { 
+					done();
+				}
 			}
 
 		} catch (Exception e) {
@@ -80,6 +83,12 @@ public class VizTest {
 		}
 
 		System.out.println("Done!");
+		
+		try {
+			Thread.sleep(50000);
+		} catch (InterruptedException e) {
+			// ignore
+		}
 	}
 
 	public static void main(String[] args) {

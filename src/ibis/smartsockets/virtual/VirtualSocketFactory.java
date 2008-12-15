@@ -1425,6 +1425,11 @@ public class VirtualSocketFactory {
             printStatistics(statisticPrefix + " [EXIT]");
         }
         
+        if (serviceLink != null) { 
+        	serviceLink.setDone();
+        }
+        
+        
         if (hub != null) {
             hub.end();
         }
