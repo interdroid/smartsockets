@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 abstract class CommunicationThread implements Runnable {
 
-    protected static final int DEFAULT_TIMEOUT = 60000;
+    protected static final int DEFAULT_TIMEOUT = 10000;
        
     protected final String name;
     protected final StateCounter state;         
