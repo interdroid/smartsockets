@@ -58,8 +58,6 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     public SmartsocketsViz(List<DirectSocketAddress> hub) {
         super();
 
-        tgPanel.setBackground(Color.BLACK);
-        
         initPopups();
         
         try {
@@ -279,7 +277,18 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         }
             
         final Frame frame;
+        
         final SmartsocketsViz glPanel = new SmartsocketsViz(hub);
+
+        String color = System.getProperty("smartsockets.color");
+        if (color != null && color.equalsIgnoreCase("white")) {
+            glPanel.setBackground(Color.WHITE);
+            glPanel.tgPanel.setBackColor(Color.WHITE);
+        } else if (color != null && color.equalsIgnoreCase("black")) {
+            glPanel.setBackground(Color.BLACK);
+            glPanel.tgPanel.setBackColor(Color.BLACK);
+        }
+
         frame = new Frame("Smartsockets Visualization");
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
