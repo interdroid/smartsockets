@@ -74,6 +74,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.UIManager;
+import javax.swing.text.StyledEditorKit.ForegroundAction;
 
 import com.touchgraph.graphlayout.graphelements.TGForEachNode;
 import com.touchgraph.graphlayout.interaction.GLEditUI;
@@ -142,33 +143,39 @@ public class GLPanel extends JPanel {
 
     private JSlider currentSlider = null;
 
-    // ............
+    private final Color textColor;
+
+    private final Color backgroundColor;
+
+    public GLPanel() {
+        this(null, null);
+    }
 
     /**
      * Default constructor.
      */
-    public GLPanel() {
-        // this.setBackground(defaultBorderBackColor);
-        // this.setForeground(defaultForeColor);
+    public GLPanel(Color textColor, Color backgroundColor) {
+        if (textColor == null) {
+            textColor = UIManager.getColor("Panel.foreground");
+        }
+        this.textColor = textColor;
+
+        if (backgroundColor == null) {
+            backgroundColor = UIManager.getColor("Panel.background");
+        }
+        this.backgroundColor = backgroundColor;
+
+        this.setForeground(this.textColor);
+        this.setBackground(this.backgroundColor);
+
         setBorder(BorderFactory.createTitledBorder(""));
         sliderHash = new Hashtable<String, JSlider>();
         tgLensSet = new TGLensSet();
-        tgPanel = new TGPanel();
-        tgPanel.setBackColor(UIManager.getColor("Panel.background"));
-        if (System.getProperty("hub.background") != null) {
-            String[] background = System.getProperty("hub.background").split(
-                    ",");
-            if (background.length == 3) {
-                try {
-                    tgPanel.setBackColor(new Color(Integer
-                            .parseInt(background[0]), Integer
-                            .parseInt(background[1]), Integer
-                            .parseInt(background[2])));
-                } catch (NumberFormatException e) {
-                    // ignore
-                }
-            }
-        }
+        tgPanel = new TGPanel(this.backgroundColor);
+
+        tgPanel.setForeground(this.textColor);
+        tgPanel.setBackground(this.backgroundColor);
+
         hvScroll = new HVScroll(tgPanel, tgLensSet);
         zoomScroll = new ZoomScroll(tgPanel);
         rotateScroll = new RotateScroll(tgPanel);
@@ -370,7 +377,7 @@ public class GLPanel extends JPanel {
             add(m);
             nodePopups.put(ID, m);
 
-            //System.out.println("Added node popup: " + ID);
+            // System.out.println("Added node popup: " + ID);
         }
     }
 
@@ -512,19 +519,30 @@ public class GLPanel extends JPanel {
 
     protected JPanel scrollSelectPanel(final String[] sliderNames) {
         final JPanel sbp = new JPanel(new BorderLayout());
+        sbp.setBackground(backgroundColor);
+        sbp.setForeground(textColor);
         JPanel labelPanel = new JPanel(new GridLayout(1, 2));
+        labelPanel.setBackground(backgroundColor);
+        labelPanel.setForeground(textColor);
         JPanel sliderPanel = new JPanel(new GridLayout(1, 2));
+        sliderPanel.setBackground(backgroundColor);
+        sliderPanel.setForeground(textColor);
+
         // labelPanel
         // .add(new JLabel(
         // "Right-click nodes and background for more options"));
 
         for (int i = 0; i < sliderNames.length; i++) {
             JSlider slider = (JSlider) sliderHash.get(sliderNames[i]);
+            slider.setBackground(backgroundColor);
+            slider.setForeground(textColor);
             if (slider == null)
                 continue;
             if (currentSlider == null)
                 currentSlider = slider;
             JLabel label = new JLabel(sliderNames[i]);
+            label.setBackground(backgroundColor);
+            label.setForeground(textColor);
             labelPanel.add(label);
             sliderPanel.add(slider);
         }

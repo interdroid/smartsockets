@@ -78,6 +78,10 @@ public class SmartSocketsProperties {
     public static final String SL_TIMEOUT        = SL_PREFIX + "timeout";
     public static final String SL_RETRIES        = SL_PREFIX + "retries";
     
+    public static final String VIZ_PREFIX           = PREFIX + "viz.";
+    public static final String VIZ_TEXT_COLOR       = VIZ_PREFIX + "text.color" ;
+    public static final String VIZ_BACKGROUND_COLOR = VIZ_PREFIX + "background.color" ;    
+    
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";

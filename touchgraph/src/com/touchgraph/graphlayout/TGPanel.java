@@ -100,10 +100,6 @@ public class TGPanel extends JPanel {
      */
     private static final long serialVersionUID = 1L;
 
-    public static Color BACK_COLOR = Color.white;
-
-    // ....
-
     private GraphEltSet completeEltSet;
 
     private VisibleLocality visibleLocality;
@@ -150,10 +146,14 @@ public class TGPanel extends JPanel {
 
     SwitchSelectUI switchSelectUI;
 
+    private Color backgroundColor;
+
     /**
      * Default constructor.
      */
-    public TGPanel() {
+    public TGPanel(Color backgroundColor) {
+        this.backgroundColor = backgroundColor;
+        
         setLayout(null);
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
@@ -198,10 +198,6 @@ public class TGPanel extends JPanel {
     }
 
     // color and font setters ......................
-
-    public void setBackColor(Color color) {
-        BACK_COLOR = color;
-    }
 
     // Node manipulation ...........................
 
@@ -929,7 +925,7 @@ public class TGPanel extends JPanel {
             fireMovedEvent();
         }
 
-        offgraphics.setColor(BACK_COLOR);
+        offgraphics.setColor(backgroundColor);
         offgraphics.fillRect(0, 0, d.width, d.height);
 
         synchronized (this) {
@@ -993,7 +989,7 @@ public class TGPanel extends JPanel {
 
         Frame frame;
         frame = new Frame("TGPanel");
-        TGPanel tgPanel = new TGPanel();
+        TGPanel tgPanel = new TGPanel(Color.BLACK);
 
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {

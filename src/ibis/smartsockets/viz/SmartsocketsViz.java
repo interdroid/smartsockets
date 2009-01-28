@@ -18,6 +18,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -28,12 +29,14 @@ import com.touchgraph.graphlayout.GLPanel;
 import com.touchgraph.graphlayout.Node;
 import com.touchgraph.graphlayout.TGException;
 
-/** GLPanel contains code for adding scrollbars and interfaces to the TGPanel
- * The "GL" prefix indicates that this class is GraphLayout specific, and
- * will probably need to be rewritten for other applications.
- *
- * @author   Alexander Shapiro
- * @version  1.22-jre1.1  $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch Exp $
+/**
+ * GLPanel contains code for adding scrollbars and interfaces to the TGPanel The
+ * "GL" prefix indicates that this class is GraphLayout specific, and will
+ * probably need to be rewritten for other applications.
+ * 
+ * @author Alexander Shapiro
+ * @version 1.22-jre1.1 $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch
+ *          Exp $
  */
 public final class SmartsocketsViz extends GLPanel implements Runnable {
 
@@ -41,92 +44,124 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     private ServiceLink sl;
 
-    private HashMap<DirectSocketAddress, HubNode> hubs = 
-        new HashMap<DirectSocketAddress, HubNode>();
-    
-    private HashMap<DirectSocketAddress, HubNode> oldHubs = 
-        new HashMap<DirectSocketAddress, HubNode>();
+    private HashMap<DirectSocketAddress, HubNode> hubs = new HashMap<DirectSocketAddress, HubNode>();
+
+    private HashMap<DirectSocketAddress, HubNode> oldHubs = new HashMap<DirectSocketAddress, HubNode>();
 
     private UniquePaint c = new UniquePaint();
-    
+
     private boolean done = false;
-    
-    
-    /** Default constructor.
-     * @param hub 
+
+    private static Color getTextColor() {
+        String textColorString = System
+                .getProperty(SmartSocketsProperties.VIZ_TEXT_COLOR);
+
+        if (textColorString == null) {
+            return null;
+        }
+        return Color.decode(textColorString);
+
+    }
+
+    private static Color getBackgroundColor() {
+        String backgroundColorString = System
+                .getProperty(SmartSocketsProperties.VIZ_BACKGROUND_COLOR);
+
+        if (backgroundColorString == null) {
+            return null;
+        }
+
+        return Color.decode(backgroundColorString);
+    }
+
+    public SmartsocketsViz(List<DirectSocketAddress> hubs) {
+        this(hubs.toArray(new DirectSocketAddress[0]));
+    }
+
+    public SmartsocketsViz(DirectSocketAddress... hubs) {
+        this(getTextColor(), getBackgroundColor(), hubs);
+    }
+
+    /**
+     * Default constructor.
+     * 
+     * @param hub
      */
-    public SmartsocketsViz(List<DirectSocketAddress> hub) {
-        super();
+    public SmartsocketsViz(Color textColor, Color backgroundColor,
+            DirectSocketAddress... hubs) {
+        super(textColor, backgroundColor);
 
         initPopups();
-        
+
         try {
             TypedProperties p = SmartSocketsProperties.getDefaultProperties();
             p.setProperty(SmartSocketsProperties.SSH_IN, "true");
             p.setProperty(SmartSocketsProperties.SSH_OUT, "true");
-            
+
             DirectSocketFactory df = DirectSocketFactory.getSocketFactory(p);
             DirectServerSocket ss = df.createServerSocket(0, 1, null);
 
-            sl = ServiceLink.getServiceLink(null, hub, ss.getAddressSet());
-            sl.registerProperty("smartsockets.viz", "V^Visualization^#545454");                        
+            List<DirectSocketAddress> hubList = Arrays.asList(hubs);
+
+            sl = ServiceLink.getServiceLink(null, hubList, ss.getAddressSet());
+            sl.registerProperty("smartsockets.viz", "V^Visualization^#545454");
         } catch (Exception e) {
             throw new Error("Failed to connect to Hub: ", e);
         }
-        
+
         new Thread(this).start();
     }
 
     private void initPopups() {
-        setNodePopup(null, null);        
+        setNodePopup(null, null);
         initHubPopups();
     }
 
-    private void initHubPopups() { 
-        
+    private void initHubPopups() {
+
         PopupMenu p = new PopupMenu();
-        
+
         MenuItem menuItem;
         menuItem = new MenuItem("Expand clients");
-                        
+
         ActionListener action = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (popupNode != null && popupNode instanceof HubNode) {                    
+                if (popupNode != null && popupNode instanceof HubNode) {
                     ((HubNode) popupNode).expandClients();
                 }
-//              JDK11 Change .. because of MenuBecomesInvisible
+                // JDK11 Change .. because of MenuBecomesInvisible
                 tgPanel.setMaintainMouseOver(false);
                 tgPanel.setMouseOverN(null);
                 tgPanel.repaint();
-//              JDK11 Change .. because of MenuBecomesInvisible
+                // JDK11 Change .. because of MenuBecomesInvisible
             }
         };
 
         menuItem.addActionListener(action);
-        p.add(menuItem);        
+        p.add(menuItem);
         setNodePopup("CollapsedHubNode", p);
-               
-        p = new PopupMenu();        
+
+        p = new PopupMenu();
         menuItem = new MenuItem("Collapse clients");
-        
+
         action = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (popupNode != null && popupNode instanceof HubNode) {                    
+                if (popupNode != null && popupNode instanceof HubNode) {
                     ((HubNode) popupNode).collapseClients();
                 }
-//              JDK11 Change .. because of MenuBecomesInvisible
+                // JDK11 Change .. because of MenuBecomesInvisible
                 tgPanel.setMaintainMouseOver(false);
                 tgPanel.setMouseOverN(null);
                 tgPanel.repaint();
-//              JDK11 Change .. because of MenuBecomesInvisible
+                // JDK11 Change .. because of MenuBecomesInvisible
             }
         };
 
         menuItem.addActionListener(action);
-        p.add(menuItem);        
+        p.add(menuItem);
         setNodePopup("ExpandedHubNode", p);
     }
-        
+
     private synchronized HubInfo[] getHubs() {
         try {
             return sl.hubDetails();
@@ -152,39 +187,39 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         HubNode h = (HubNode) oldHubs.remove(info.hubAddress);
 
         if (h == null) {
-            
-        //    System.out.println("Found new hub " + info.hubAddress.toString());
-            
+
+            // System.out.println("Found new hub " +
+            // info.hubAddress.toString());
+
             h = new HubNode(this, info);
-                        
-            try {              
+
+            try {
                 tgPanel.addNode(h);
             } catch (TGException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-        } else { 
-   //         System.out.println("Updating hub " + info.hubAddress.toString());                        
+        } else {
+            // System.out.println("Updating hub " + info.hubAddress.toString());
             h.updateInfo(info);
         }
 
         hubs.put(info.hubAddress, h);
     }
-    
-  
+
     private void updateGraph() {
 
-     //   System.out.println("Retrieving graph ...");
-        
-        HubInfo [] p = getHubs();
+        // System.out.println("Retrieving graph ...");
 
-    //    System.out.println("Retrieving graph done!");
-                
+        HubInfo[] p = getHubs();
+
+        // System.out.println("Retrieving graph done!");
+
         if (p == null) {
             return;
         }
 
-        // Flip the hashmaps 
+        // Flip the hashmaps
         HashMap<DirectSocketAddress, HubNode> tmp = hubs;
         hubs = oldHubs;
         oldHubs = tmp;
@@ -192,68 +227,68 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         for (int i = 0; i < p.length; i++) {
             updateHub(p[i]);
         }
-        
+
         if (oldHubs.size() > 0) {
             Iterator itt = oldHubs.values().iterator();
 
             while (itt.hasNext()) {
-                HubNode hi = (HubNode) itt.next();                
+                HubNode hi = (HubNode) itt.next();
                 hi.delete();
             }
         }
 
-        // Now update the connections between the hubs and the clients that 
+        // Now update the connections between the hubs and the clients that
         // are connected to them...
-        for (HubNode n : hubs.values()) { 
+        for (HubNode n : hubs.values()) {
             n.removeUnusedEdges();
             n.addAndUpdateEdges();
             // n.updateEdges();
             n.updateClients();
         }
-        
-        // Finally update router information (which may depend on information of 
-        // other clients  
+
+        // Finally update router information (which may depend on information of
+        // other clients
         HashMap<Object, ClientNode> clients = new HashMap<Object, ClientNode>();
-        
-        for (HubNode n : hubs.values()) { 
+
+        for (HubNode n : hubs.values()) {
             n.getClients(clients);
         }
 
-        for (HubNode n : hubs.values()) { 
+        for (HubNode n : hubs.values()) {
             n.updateRouters(clients);
         }
-        
+
         tgPanel.repaint();
     }
 
-    public synchronized void done() { 
+    public synchronized void done() {
         done = true;
         notifyAll();
     }
-    
-    public synchronized boolean getDone() { 
+
+    public synchronized boolean getDone() {
         return done;
     }
-    
-    private synchronized void waitFor(long time) { 
-        try { 
+
+    private synchronized void waitFor(long time) {
+        try {
             wait(time);
         } catch (InterruptedException e) {
             // ignore
         }
     }
-    
+
     public void run() {
         while (!getDone()) {
             updateGraph();
             waitFor(5000);
         }
-        
+
         sl.setDone();
     }
-   
+
     public static void main(String[] args) {
-        
+
         System.err.println("Starting Smartsockets Vizualization...");
 
         if (args.length != 1) {
@@ -263,31 +298,22 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
         List<DirectSocketAddress> hub = new LinkedList<DirectSocketAddress>();
 
-        for (String s : args) {         
+        for (String s : args) {
             try {
                 hub.add(DirectSocketAddress.getByAddress(s));
             } catch (Exception e1) {
                 System.err.println("Couldn't parse hub address: " + s);
             }
         }
-        
-        if (hub.size() == 0) { 
-            System.err.println("No hubs provided!");
-            System.exit(1);            
-        }
-            
-        final Frame frame;
-        
-        final SmartsocketsViz glPanel = new SmartsocketsViz(hub);
 
-        String color = System.getProperty("smartsockets.color");
-        if (color != null && color.equalsIgnoreCase("white")) {
-            glPanel.setBackground(Color.WHITE);
-            glPanel.tgPanel.setBackColor(Color.WHITE);
-        } else if (color != null && color.equalsIgnoreCase("black")) {
-            glPanel.setBackground(Color.BLACK);
-            glPanel.tgPanel.setBackColor(Color.BLACK);
+        if (hub.size() == 0) {
+            System.err.println("No hubs provided!");
+            System.exit(1);
         }
+
+        final Frame frame;
+
+        final SmartsocketsViz glPanel = new SmartsocketsViz(hub);
 
         frame = new Frame("Smartsockets Visualization");
         frame.addWindowListener(new WindowAdapter() {
@@ -301,11 +327,11 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         frame.setSize(800, 600);
         frame.setVisible(true);
     }
-    
+
     public void addEdge(Edge e) {
         tgPanel.addEdge(e);
     }
-    
+
     public void deleteEdge(Edge e) {
         tgPanel.deleteEdge(e);
     }
@@ -322,12 +348,12 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
             e.printStackTrace();
         }
     }
-    
+
     public void deleteNode(Node node) {
         tgPanel.deleteNode(node);
     }
-    
-    public Pattern getUniquePaint() {    
+
+    public Pattern getUniquePaint() {
         return c.getUniquePaint();
     }
 }
