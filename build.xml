@@ -1,6 +1,6 @@
 <project name="SmartSockets" default="build" basedir=".">
 
-    <property name="version" value="-1.45" />
+    <property name="version" value="-1.46" />
     <property name="jar" value="smartsockets${version}.jar" />
 
     <property name="zip" value="smartsockets${version}.zip" />
