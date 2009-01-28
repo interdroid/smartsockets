@@ -48,13 +48,20 @@ public class Acceptor extends CommunicationThread {
     
     private LinkedList<DirectSocket> incoming = new LinkedList<DirectSocket>();
     
+    private final StatisticsCallback callback; 
+    private final long statisticsInterval;
+    
     Acceptor(TypedProperties p, int port, StateCounter state, 
             Connections connections, HubList knownProxies, 
             VirtualConnections vcs, DirectSocketFactory factory, 
-            DirectSocketAddress delegationAddress) throws IOException {
+            DirectSocketAddress delegationAddress, StatisticsCallback callback, 
+            long statisticsInterval) throws IOException {
 
         super("HubAcceptor", state, connections, knownProxies, vcs, factory);        
 
+        this.callback = callback;
+        this.statisticsInterval = statisticsInterval;
+        
         if (delegationAddress == null) { 
             sendBuffer = p.getIntProperty(SmartSocketsProperties.HUB_SEND_BUFFER, -1);
             receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);
@@ -85,7 +92,8 @@ public class Acceptor extends CommunicationThread {
         d.setCanReachMe();
 
         HubConnection c = new HubConnection(s, in, out, d, connections, 
-                knownHubs, state, virtualConnections, false);
+                knownHubs, state, virtualConnections, false, callback, 
+                statisticsInterval);
 
         if (!d.createConnection(c)) { 
             // There already was a connection with this hub...  
@@ -154,7 +162,8 @@ public class Acceptor extends CommunicationThread {
             out.flush();
 
             ClientConnection c = new ClientConnection(srcAddr, s, in, out, 
-                    connections, knownHubs, virtualConnections);
+                    connections, knownHubs, virtualConnections, callback, 
+                    statisticsInterval);
             
             connections.put(srcAddr, c);     
             knownHubs.getLocalDescription().addClient(srcAddr);

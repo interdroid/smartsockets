@@ -20,6 +20,8 @@ public class ClientMessage {
     int code; 
     byte [] message;    
     
+    long messageSize = -1;
+    
     ClientMessage(DataInputStream in) throws IOException {
         
         source = DirectSocketAddress.read(in);
@@ -120,5 +122,33 @@ public class ClientMessage {
         if (sourceHub == null) { 
             sourceHub = hub;
         }
-    }    
+    }
+
+	public long messageSize() {
+		
+		if (messageSize <= 0) { 
+			messageSize = 4 + 4 + 4 + 1; // Fixed length parts...
+			
+			messageSize += source.getAddress().length;
+			messageSize += target.getAddress().length;
+
+			if (sourceHub != null) { 
+				messageSize += sourceHub.getAddress().length;			
+			}
+
+			if (targetHub != null) { 
+				messageSize += targetHub.getAddress().length;			
+			}
+
+			if (module != null) { 
+				messageSize += module.length() * 2 + 4; 			
+			}
+
+			if (message != null) { 
+				messageSize += message.length;
+			}
+		}
+		
+		return messageSize;
+	}    
 }

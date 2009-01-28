@@ -5,6 +5,7 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.hub.Connections;
 import ibis.smartsockets.hub.HubProtocol;
+import ibis.smartsockets.hub.StatisticsCallback;
 import ibis.smartsockets.hub.state.ClientDescription;
 import ibis.smartsockets.hub.state.HubDescription;
 import ibis.smartsockets.hub.state.HubList;
@@ -43,10 +44,10 @@ public class HubConnection extends MessageForwardingConnection {
     public HubConnection(DirectSocket s, DataInputStream in, 
             DataOutputStream out, HubDescription peer, Connections connections, 
             HubList hubs, StateCounter state, VirtualConnections vcs, 
-            boolean master) {
+            boolean master, StatisticsCallback callback, long statisticsInterval) {
         
         super(s, in, out, connections, hubs, vcs, master, "Hub(" 
-                + peer.hubAddressAsString + ")");
+                + peer.hubAddressAsString + ")", callback, statisticsInterval);
         
         this.peer = peer;        
         this.state = state;

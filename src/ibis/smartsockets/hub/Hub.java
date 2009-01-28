@@ -7,6 +7,7 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.discovery.Discovery;
 import ibis.smartsockets.hub.connections.ClientConnection;
 import ibis.smartsockets.hub.connections.HubConnection;
+import ibis.smartsockets.hub.connections.MessageForwardingConnectionStatistics;
 import ibis.smartsockets.hub.connections.VirtualConnections;
 import ibis.smartsockets.hub.state.ConnectionsSelector;
 import ibis.smartsockets.hub.state.HubDescription;
@@ -24,7 +25,7 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class Hub extends Thread {
+public final class Hub extends Thread implements StatisticsCallback {
     
     private static int GOSSIP_SLEEP = 3000;
     
@@ -57,6 +58,10 @@ public final class Hub extends Thread {
     private final String addressFile; 
     
     private long nextStats;
+    
+    // FIXME: Quick hack
+    private MessageForwardingConnectionStatistics mfcStats = 
+    	new MessageForwardingConnectionStatistics("Connection(*)"); 
     
     private boolean done = false;
     
@@ -123,10 +128,10 @@ public final class Hub extends Thread {
         // NOTE: These are not started until later. We first need to init the
         // rest of the world!        
         acceptor = new Acceptor(p, port, state, connections, hubs, 
-                virtualConnections, factory, delegationAddress);        
+                virtualConnections, factory, delegationAddress, this, 5000);        
         
         connector = new Connector(p, state, connections, hubs, 
-                virtualConnections, factory);
+                virtualConnections, factory, this, 5000);
      
         DirectSocketAddress local = acceptor.getLocal();    
         connector.setLocal(local);
@@ -330,11 +335,30 @@ public final class Hub extends Thread {
         connector.end();
     }
     
-    private void statistics() { 
+    public void add(Statistics s) {
+    	
+    	if (!printStatistics) { 
+            return;
+        }
+    	
+    	if (mfcStats == null) {
+    		return;
+    	}
+    	
+    	synchronized (mfcStats) {
+    		mfcStats.add(s);
+    	}
+    }     
+        
+    private synchronized void statistics() { 
         
         if (!printStatistics) { 
             return;
         }
+    
+        if (mfcStats == null) {
+    		return;
+    	}
         
         long now = System.currentTimeMillis();
         
@@ -342,6 +366,15 @@ public final class Hub extends Thread {
             return;
         }
         
+        System.err.println("--- HUB Statistics ---");
+        
+        System.err.println(" Connections : " + connections.numberOfConnections());
+        System.err.println("  - hubs     : " + connections.numberOfHubs());
+        System.err.println("  - clients  : " + connections.numberOfClients());
+        
+        System.err.println("--- Connection Statistics ---");
+        
+        /*
         DirectSocketAddress [] hubs = connections.hubs();
         
         for (DirectSocketAddress a : hubs) { 
@@ -362,7 +395,11 @@ public final class Hub extends Thread {
             if (c != null) { 
                c.printStatistics();
             }
-        }
+        }*/
+        
+        synchronized (mfcStats) {
+    		mfcStats.print(System.err, " ");
+    	}
         
         nextStats = now + STAT_FREQ; 
     }
@@ -382,5 +419,7 @@ public final class Hub extends Thread {
             gossip();            
             statistics();
         }        
-    }     
+    }
+
+	
 }

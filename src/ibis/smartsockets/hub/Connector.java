@@ -30,12 +30,19 @@ class Connector extends CommunicationThread {
 
     private final int usercode;
     
+    private final StatisticsCallback callback; 
+    private final long statisticsInterval;
+    
     Connector(TypedProperties p, StateCounter state, Connections connections,
             HubList knownHubs, VirtualConnections vcs,
-            DirectSocketFactory factory) {
+            DirectSocketFactory factory, StatisticsCallback callback, 
+            long statisticsInterval) {
         
         super("HubConnector", state, connections, knownHubs, vcs, factory);
-    
+        
+        this.callback = callback;
+        this.statisticsInterval = statisticsInterval;
+        
         sendBuffer = p.getIntProperty(SmartSocketsProperties.HUB_SEND_BUFFER, -1);
         receiveBuffer = p.getIntProperty(SmartSocketsProperties.HUB_RECEIVE_BUFFER, -1);        
         usercode = p.getIntProperty(SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);        
@@ -193,7 +200,8 @@ class Connector extends CommunicationThread {
                 }
                 
                 c = new HubConnection(s, in, out, d, connections, 
-                        knownHubs, state, virtualConnections, true);
+                        knownHubs, state, virtualConnections, true, 
+                        callback, statisticsInterval);
                 
                 result = d.createConnection(c);                
                 
@@ -218,7 +226,8 @@ class Connector extends CommunicationThread {
 
                 if (result) {                 
                     c = new HubConnection(s, in, out, d, connections, 
-                            knownHubs, state, virtualConnections, false);                
+                            knownHubs, state, virtualConnections, false, 
+                            callback, statisticsInterval);                
                     result = d.createConnection(c);
                     
                     if (!result) { 

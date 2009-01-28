@@ -4,6 +4,7 @@ import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.hub.Connections;
+import ibis.smartsockets.hub.StatisticsCallback;
 import ibis.smartsockets.hub.servicelink.ServiceLinkProtocol;
 import ibis.smartsockets.hub.state.AddressAsStringSelector;
 import ibis.smartsockets.hub.state.ClientsByTagAsStringSelector;
@@ -40,10 +41,12 @@ public class ClientConnection extends MessageForwardingConnection {
     
     public ClientConnection(DirectSocketAddress clientAddress, DirectSocket s, 
             DataInputStream in, DataOutputStream out, Connections connections,
-            HubList hubs, VirtualConnections vcs) {
+            HubList hubs, VirtualConnections vcs, StatisticsCallback callback, 
+            long statisticsInterval) {
      
         super(s, in, out, connections, hubs, vcs, false, 
-                "Client(" + clientAddress.toString() + ")");        
+                "Client(" + clientAddress.toString() + ")", callback, 
+                statisticsInterval);        
      
         this.clientAddress = clientAddress;        
         this.clientAddressAsString = clientAddress.toString();
@@ -404,6 +407,4 @@ public class ClientConnection extends MessageForwardingConnection {
         
         return false;
     }
-
-   
 }
