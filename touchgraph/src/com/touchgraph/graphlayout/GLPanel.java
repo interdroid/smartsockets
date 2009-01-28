@@ -345,10 +345,9 @@ public class GLPanel extends JPanel {
         add(topPanel);
         add(scrollPanel);
         
-//        scrollPanel.setPreferredSize(new Dimension(2000,2000));
-//        scrollPanel.setMinimumSize(new Dimension(2000,2000));
-//        scrollPanel.setMaximumSize(new Dimension(2000,2000));
-
+        scrollPanel.setMinimumSize(new Dimension(200, 300));
+        this.setMinimumSize(new Dimension(200, 300));
+        topPanel.setMinimumSize(new Dimension(200, 300));
         
         layout.putConstraint(SpringLayout.WEST, scrollPanel, 0, SpringLayout.WEST,this);
         layout.putConstraint(SpringLayout.NORTH, scrollPanel, 0, SpringLayout.NORTH,this);
