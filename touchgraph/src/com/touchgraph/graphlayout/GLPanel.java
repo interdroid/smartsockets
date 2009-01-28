@@ -51,6 +51,7 @@ package com.touchgraph.graphlayout;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -73,6 +74,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SpringLayout;
 import javax.swing.UIManager;
 import javax.swing.text.StyledEditorKit.ForegroundAction;
 
@@ -288,7 +290,11 @@ public class GLPanel extends JPanel {
         zoomSlider = zoomScroll.getZoomSlider();
         rotateSlider = rotateScroll.getRotateSlider();
 
-        setLayout(new BorderLayout());
+        //setLayout(new BorderLayout());
+
+        SpringLayout layout = new SpringLayout();
+        
+        setLayout(layout);
 
         Panel scrollPanel = new Panel();
         scrollPanel.setLayout(new GridBagLayout());
@@ -316,7 +322,7 @@ public class GLPanel extends JPanel {
                 rotateLabel });
         topPanel.add(scrollselect, c);
 
-        add(topPanel, BorderLayout.EAST);
+
 
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 1;
@@ -336,7 +342,23 @@ public class GLPanel extends JPanel {
         c.gridy = 2;
         // scrollPanel.add(horizontalSB,c); // For WDR We do not need scrollbars
 
-        add(scrollPanel, BorderLayout.CENTER);
+        add(topPanel);
+        add(scrollPanel);
+        
+//        scrollPanel.setPreferredSize(new Dimension(2000,2000));
+//        scrollPanel.setMinimumSize(new Dimension(2000,2000));
+//        scrollPanel.setMaximumSize(new Dimension(2000,2000));
+
+        
+        layout.putConstraint(SpringLayout.WEST, scrollPanel, 0, SpringLayout.WEST,this);
+        layout.putConstraint(SpringLayout.NORTH, scrollPanel, 0, SpringLayout.NORTH,this);
+        layout.putConstraint(SpringLayout.SOUTH, scrollPanel, 0, SpringLayout.SOUTH,this);
+        layout.putConstraint(SpringLayout.EAST, scrollPanel, 0, SpringLayout.EAST,this);
+
+        
+        layout.putConstraint(SpringLayout.EAST, topPanel, 0, SpringLayout.EAST,this);
+        layout.putConstraint(SpringLayout.VERTICAL_CENTER, topPanel, 0, SpringLayout.VERTICAL_CENTER,this);
+
     }
 
     public void setBackgroundPopup(PopupMenu m) {
