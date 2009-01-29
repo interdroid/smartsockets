@@ -59,8 +59,12 @@ public abstract class BaseConnection implements Runnable {
             cont = runConnection();
             
             if (System.currentTimeMillis() > next) { 
-            
             	
+            	Statistics s = getStatistics();
+            	
+            	if (s != null && callback != null) { 
+            		callback.add(s);
+            	}
             	
             	next = System.currentTimeMillis() + statisticsInterval;
             }            
