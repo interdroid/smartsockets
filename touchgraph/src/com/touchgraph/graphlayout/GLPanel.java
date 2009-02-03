@@ -158,12 +158,12 @@ public class GLPanel extends JPanel {
      */
     public GLPanel(Color textColor, Color backgroundColor) {
         if (textColor == null) {
-            textColor = UIManager.getColor("Panel.foreground");
+            textColor = Color.BLACK;
         }
         this.textColor = textColor;
 
         if (backgroundColor == null) {
-            backgroundColor = UIManager.getColor("Panel.background");
+            backgroundColor = Color.WHITE;
         }
         this.backgroundColor = backgroundColor;
 
