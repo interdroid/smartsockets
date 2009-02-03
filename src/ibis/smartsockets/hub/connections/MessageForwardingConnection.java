@@ -962,7 +962,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 		if (this == vc.mfc1) {
 
 			if (vclogger.isInfoEnabled()) {
-				vclogger.info("forward connect ACK for 2: " + vc.index2);
+				vclogger.info("forward connect NACK for 2: " + vc.index2);
 			}
 
 			vc.mfc2.forwardVirtualConnectNACK(vc.index2, reason);
@@ -970,7 +970,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 		} else if (this == vc.mfc2) {
 
 			if (vclogger.isInfoEnabled()) {
-				vclogger.info("forward connect ACK for 1: " + vc.index1);
+				vclogger.info("forward connect NACK for 1: " + vc.index1);
 			}
 
 			vc.mfc1.forwardVirtualConnectNACK(vc.index1, reason);
