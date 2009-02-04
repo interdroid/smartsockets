@@ -321,6 +321,9 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
                 glPanel.done();
                 frame.remove(glPanel);
                 frame.dispose();
+                System.exit(0);         // otherwise it does'nt exit, there
+                                        // is a non-deamon thread in touchgraph.
+                                        // --Ceriel
             }
         });
         frame.add("Center", glPanel);
