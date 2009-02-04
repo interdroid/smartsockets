@@ -400,7 +400,7 @@ public class VirtualSocketFactory {
             hubAddress = serviceLink.getAddress();
             
         } catch (Exception e) {
-            logger.warn("Failed to connect service link to hub!", e);
+            logger.warn("Failed to obtain service link to hub!", e);
         
             if (force) { 
             	// FIXME!! 
@@ -421,7 +421,7 @@ public class VirtualSocketFactory {
         			serviceLink.waitConnected(properties.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
         			connected = true;
         		} catch (Exception e) {
-        			logger.warn("Failed to connect service link to hub!", e);
+        			logger.warn("Failed to connect service link to hub " + hubAddress, e);
         		}
         		
         		retries--;
@@ -436,7 +436,7 @@ public class VirtualSocketFactory {
         	try {
         		serviceLink.waitConnected(properties.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
         	} catch (Exception e) {
-        		logger.warn("Failed to connect service link to hub!", e);
+        		logger.warn("Failed to connect service link to hub " + hubAddress, e);
         		return;
         	}	
         }
