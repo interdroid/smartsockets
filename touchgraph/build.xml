@@ -1,40 +1,78 @@
 <project name="Smartsockets Touchgraph" default="build" basedir=".">
 
-    <description>
+	<description>
 	Build file for Smartsockets version of TouchGraph library
     </description>
 
-    <!-- Global properties -->
+	<!-- Global properties -->
 
-    <property name="version" value="" />
+	<property name="version" value="" />
 
-    <property name="jar" location="../jars/TGGraphLayout-smartsockets${version}.jar" />
+	<property name="jar" location="../jars/TGGraphLayout-smartsockets${version}.jar" />
+	<property name="android-jar" location="../jars/TGGraphLayout-smartsockets${version}-android.jar" />
 
-    <target name="build" description="build touchgraph">
-        <!-- Clean up -->
-        <delete dir="tmp" />
+	<path id="android.classpath">
+		<fileset dir="external-android">
+			<include name="*.jar" />
+		</fileset>
+	</path>
 
-        <!-- Create the build directory structure used by compile -->
-        <mkdir dir="tmp" />
+	<target name="build" description="build touchgraph">
+		<!-- Clean up -->
+		<delete dir="tmp" />
 
-        <!-- Compile the java code from ${src} into ${tmp} -->
-        <javac srcdir="src" destdir="tmp" debug="on" source="1.5" target="1.5">
-            <compilerarg value="-Xlint:unchecked" />
-        </javac>
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="tmp" />
 
-        <!-- create target dir for jar if needed -->
-        <mkdir dir="../jars" />
+		<!-- Compile the java code from ${src} into ${tmp} -->
+		<javac srcdir="src" destdir="tmp" debug="on" source="1.5" target="1.5">
+			<compilerarg value="-Xlint:unchecked" />
+		</javac>
 
-        <!-- Put everything in ${tmp} into the jar file -->
-        <jar jarfile="${jar}" basedir="tmp" />
+		<!-- create target dir for jar if needed -->
+		<mkdir dir="../jars" />
 
-        <!-- And delete the build dir -->
-        <delete dir="tmp" />
-    </target>
+		<!-- Put everything in ${tmp} into the jar file -->
+		<jar jarfile="${jar}" basedir="tmp" />
 
-    <target name="clean" description="clean up">
-        <delete dir="tmp" />
-        <delete file="${jar}" />
-    </target>
+		<!-- And delete the build dir -->
+		<delete dir="tmp" />
+	</target>
+
+	<!-- depends="copy-external-android" -->
+	<target name="android" description="build touchgraph for android">
+		<!-- Clean up -->
+		<delete dir="tmp" />
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="tmp" />
+
+		<!-- Compile the java code from ${src} into ${tmp} -->
+		<javac srcdir="src-android" destdir="tmp" debug="on" source="1.5" target="1.5" classpathref="android.classpath">
+			<compilerarg value="-Xlint:unchecked" />
+		</javac>
+
+		<!-- create target dir for jar if needed -->
+		<mkdir dir="../jars" />
+
+		<!-- Put everything in ${tmp} into the jar file -->
+		<jar jarfile="${android-jar}" basedir="tmp" />
+
+		<!-- And delete the build dir -->
+		<delete dir="tmp" />
+	</target>
+	<target name="copy-external-android">
+		<mkdir dir="../jars" />
+		<!-- Copy external libraries to lib directory -->
+		<copy todir="../jars">
+			<fileset dir="external-android" />
+		</copy>
+	</target>
+
+
+	<target name="clean" description="clean up">
+		<delete dir="tmp" />
+		<delete file="${jar}" />
+	</target>
 
 </project>

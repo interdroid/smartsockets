@@ -1,121 +1,135 @@
 <project name="SmartSockets" default="build" basedir=".">
 
-    <property name="version" value="-1.47" />
-    <property name="jar" value="smartsockets${version}.jar" />
+	<property name="version" value="-1.47" />
+	<property name="jar" value="smartsockets${version}.jar" />
+	<property name="jar-android" value="smartsockets${version}-android.jar" />
 
-    <property name="zip" value="smartsockets${version}.zip" />
+	<property name="zip" value="smartsockets${version}.zip" />
 
-    <property name="src-zip" value="smartsockets${version}-src.zip" />
+	<property name="src-zip" value="smartsockets${version}-src.zip" />
 
-    <property name="srcdir" value="./src" />
-    <property name="builddir" value="./build" />
-    <property name="distdir" value="./jars" />
-    <property name="javadoc" value="javadoc/smartsockets" />
+	<property name="srcdir" value="./src" />
+	<property name="srcdir-android" value="./src-android" />
+	<property name="builddir" value="./build" />
+	<property name="distdir" value="./jars" />
+	<property name="javadoc" value="javadoc/smartsockets" />
 
-    <path id="default.classpath">
-        <fileset dir="external">
-            <include name="*.jar" />
-        </fileset>
-        <fileset dir="jars">
-            <include name="*.jar" />
-        </fileset>
-    </path>
+	<path id="default.classpath">
+		<fileset dir="external">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="jars">
+			<include name="*.jar" />
+		</fileset>
+	</path>
 
-    <!-- Compile smartsockets -->
-    <target name="compile">
-        <mkdir dir="${distdir}" />
-        <mkdir dir="${builddir}" />
+	<path id="android.classpath">
+		<fileset dir="external">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="jars">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="touchgraph/external-android">
+			<include name="*.jar" />
+		</fileset>
+	</path>
 
-        <javac destdir="${builddir}"
-               srcdir="${srcdir}"
-               target="1.5"
-               debug="true"
-               includes="**/*.java"
-               classpathref="default.classpath"
-        />
+	<!-- Compile smartsockets -->
+	<target name="compile">
+		<mkdir dir="${distdir}" />
+		<mkdir dir="${builddir}" />
 
-        <jar jarfile="${distdir}/${jar}" basedir="${builddir}" includes="**">
-            <manifest>
-                <attribute name="Built-By" value="${user.name}" />
-            </manifest>
-        </jar>
+		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="**/*.java" classpathref="default.classpath" />
 
-    </target>
+		<jar jarfile="${distdir}/${jar}" basedir="${builddir}" includes="**">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+		</jar>
 
-    <target name="javadoc" description="Create javadocs">
-        <!-- Create the javadoc -->
-        <mkdir dir="${javadoc}" />
-        <javadoc destdir="${javadoc}"
-                 access="public"
-                 sourcepath="src"
-                 windowtitle="SmartSockets Documentation"
-                 packagenames="ibis.smartsockets,ibis.smartsockets.virtual"
-                 overview="src/overview.html"
-                 doctitle="SmartSockets 1.0 Documentation"
-                 bottom="The Ibis project"
-            	classpathref="default.classpath"
-        >
-            <link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
-        </javadoc>
+	</target>
 
-    </target>
+	<!-- Compile smartsockets for android-->
+	<target name="compile-android">
+		<mkdir dir="${distdir}" />
+		<mkdir dir="${builddir}" />
 
-    <target name="touchgraph" description="Build touchgraph subproject">
-        <ant dir="touchgraph" inheritAll="false" target="build">
-            <property name="version" value="${version}" />
-        </ant>
-    </target>
+		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="**/*.java" excludes="ibis/smartsockets/viz/**" classpathref="default.classpath" />
+		<javac destdir="${builddir}" srcdir="${srcdir-android}" target="1.5" debug="true" includes="**/*.java" classpathref="android.classpath" />
 
-    <target name="build" depends="clean,touchgraph,compile,javadoc">
-    </target>
+		<jar jarfile="${distdir}/${jar-android}" basedir="${builddir}" includes="**">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+		</jar>
+
+	</target>
 
 
-    <target name="bin.zip" depends="build">
-        <delete failonerror="false" file="${zip}" />
+	<target name="javadoc" description="Create javadocs">
+		<!-- Create the javadoc -->
+		<mkdir dir="${javadoc}" />
+		<javadoc destdir="${javadoc}" access="public" sourcepath="src" windowtitle="SmartSockets Documentation" packagenames="ibis.smartsockets,ibis.smartsockets.virtual" overview="src/overview.html" doctitle="SmartSockets 1.0 Documentation" bottom="The Ibis project" classpathref="default.classpath">
+			<link href="http://java.sun.com/j2se/1.5.0/docs/api/" />
+		</javadoc>
 
-        <zip destfile="${zip}">
-            <zipfileset dir="."
-                        prefix="smartsockets-${version}"
-                        includes="external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**"
-            />
-            <zipfileset dir="."
-                        prefix="smartsockets-${version}"
-                        filemode="755"
-                        includes="bin/**"
-            />
-        </zip>
-    </target>
+	</target>
 
-    <target name="src.zip" depends="build">
-        <delete failonerror="false" file="${src-zip}" />
+	<target name="touchgraph" description="Build touchgraph subproject">
+		<ant dir="touchgraph" inheritAll="false" target="build">
+			<property name="version" value="${version}" />
+		</ant>
+	</target>
 
-        <zip destfile="${src-zip}">
-            <zipfileset dir="."
-                        prefix="smartsockets-${version}"
-                        includes="src/**,external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**,build.xml"
-            />
-            <zipfileset dir="."
-                        prefix="smartsockets-${version}"
-                        filemode="755"
-                        includes="bin/**"
-            />
-        </zip>
-    </target>
+	<target name="touchgraph-android" description="Build touchgraph subproject for android">
+		<ant dir="touchgraph" inheritAll="false" target="android">
+			<property name="version" value="${version}" />
+		</ant>
+	</target>
 
 
-    <!-- remove all generated code -->
-    <target name="clean" description="Removes the ${distdir} directory">
-        <delete failonerror="false" dir="${builddir}" />
-        <delete failonerror="false" dir="${distdir}" />
-        <delete failonerror="false" dir="${javadoc}" />
-        <ant dir="touchgraph" inheritAll="false" target="clean" />
-    </target>
 
-    <target name="distclean" depends="clean">
-        <delete failonerror="false" dir="./build-eclipse" />
-        <delete failonerror="false" file="${zip}" />
-        <delete failonerror="false" file="${src-zip}" />
-    </target>
+	<target name="build" depends="clean,touchgraph,compile,javadoc">
+	</target>
+
+	<target name="android" depends="clean,touchgraph-android,compile-android">
+	</target>
+
+
+
+	<target name="bin.zip" depends="build">
+		<delete failonerror="false" file="${zip}" />
+
+		<zip destfile="${zip}">
+			<zipfileset dir="." prefix="smartsockets-${version}" includes="external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**" />
+			<zipfileset dir="." prefix="smartsockets-${version}" filemode="755" includes="bin/**" />
+		</zip>
+	</target>
+
+	<target name="src.zip" depends="build">
+		<delete failonerror="false" file="${src-zip}" />
+
+		<zip destfile="${src-zip}">
+			<zipfileset dir="." prefix="smartsockets-${version}" includes="src/**,external/**,jars/**,*.properties,*.example,notices/**,README.txt,INSTALL.txt,LICENSE.txt,javadoc/**,build.xml" />
+			<zipfileset dir="." prefix="smartsockets-${version}" filemode="755" includes="bin/**" />
+		</zip>
+	</target>
+
+
+	<!-- remove all generated code -->
+	<target name="clean" description="Removes the ${distdir} directory">
+		<delete failonerror="false" dir="${builddir}" />
+		<delete failonerror="false" dir="${distdir}" />
+		<delete failonerror="false" dir="${javadoc}" />
+		<ant dir="touchgraph" inheritAll="false" target="clean" />
+	</target>
+
+	<target name="distclean" depends="clean">
+		<delete failonerror="false" dir="./build-eclipse" />
+		<delete failonerror="false" file="${zip}" />
+		<delete failonerror="false" file="${src-zip}" />
+	</target>
 
 
 </project>
