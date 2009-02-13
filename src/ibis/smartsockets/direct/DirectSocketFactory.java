@@ -127,12 +127,26 @@ public class DirectSocketFactory {
         boolean allowSSHIn = p.booleanProperty(SmartSocketsProperties.SSH_IN,
                 false);
 
+        String username = null;
+        
         if (allowSSHIn) {
-            user = System.getProperty("user.name");
-        } else {
-            user = null;
-        }
-
+            username = System.getProperty("user.name");
+        
+            if (username == null || username.equals("") || username.equals("?")) { 
+            	// The user.name property fails on some machines (unclear why), so 
+            	// we use the $USER environment variable as an alternative. 	
+            	username = System.getenv("USER");
+            }
+            
+            if (username != null && (username.equals("") || username.equals("?"))) { 
+            	// If $USER also returns a strang value, we give up. This will disable 
+            	// SSH tunneling
+            	username = null;
+            }    
+        } 
+        
+        user = username;
+        
         boolean allowSSHOut = p.booleanProperty(SmartSocketsProperties.SSH_OUT,
                 false);
         FORCE_SSH_OUT = p.booleanProperty(SmartSocketsProperties.FORCE_SSH_OUT,
