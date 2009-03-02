@@ -115,9 +115,11 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             throw e;
         } catch (MalformedAddressException e) { 
             // pass through
-            throw new MalformedAddressException("Failed to parse address " +
-                    "containing " +  externalAds.length + " external, " + 
-                    publicAds + " public, " + privateAds + " private addresses", e);
+            throw new MalformedAddressException("Failed to parse address " 
+            		+ "containing " +  externalAds.length + " external, " 
+            		+ publicAds.length + " public, " + privateAds.length 
+            		+ " private addresses, coded array has length " 
+            		+ coded.length + " reading at offset " + off, e);
         } catch (Exception e) { 
             throw new MalformedAddressException("Failed to decode address", e);
         }
@@ -176,6 +178,9 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
             } 
             
         } catch (UnknownHostException e) { 
+            // pass through
+            throw e;
+        } catch (MalformedAddressException e) { 
             // pass through
             throw e;
         } catch (Exception e) { 
