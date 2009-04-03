@@ -205,6 +205,9 @@ public class VirtualServerSocket {
     }
 
     public String toString() {
+        if (localAddress == null) {
+            return "VirtualServerSocket(UNBOUND)";
+        }
         return "VirtualServerSocket(" + localAddress.toString() + ")";
     }
     
