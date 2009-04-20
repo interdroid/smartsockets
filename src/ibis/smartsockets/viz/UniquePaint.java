@@ -38,13 +38,14 @@ public class UniquePaint {
           
             String id = hue + "," + sat + "," + bri + ","; 
             
-            Color c = new Color(Color.HSBtoRGB(hue, sat, bri));
+            //border
+            Color ia = new Color(Color.HSBtoRGB(hue, sat, bri));
             
             Color f = Color.BLACK;
             
             //System.out.println("Adding color: " + id);
-            
-            Color ia = new Color(Color.HSBtoRGB(hue, sat, 0.25f));
+
+            Color c = new Color(ia.getRed(), ia.getGreen(), ia.getBlue(), 100);
             
             Pattern p = new Pattern("C" + id + "B", c, f, ia);
             

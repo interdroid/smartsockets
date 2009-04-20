@@ -57,6 +57,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.util.Vector;
 
 /**
@@ -65,7 +66,8 @@ import java.util.Vector;
  * @author Alexander Shapiro
  * @author Murray Altheim (2001-11-06; added support for round rects and
  *         alternate Node colors)
- * @version 1.22-jre1.1 $Id: Node.java,v 1.2 2002/09/20 14:00:22 ldornbusch Exp $
+ * @version 1.22-jre1.1 $Id: Node.java,v 1.2 2002/09/20 14:00:22 ldornbusch Exp
+ *          $
  */
 public class Node {
 
@@ -193,9 +195,9 @@ public class Node {
     }
 
     /**
-     * Constructor with Strings for ID <tt>id</tt> and <tt>label</tt>,
-     * using defaults for type (rectangle) and color (a static variable from
-     * TGPanel). If the label is null, it will be taken from the ID value.
+     * Constructor with Strings for ID <tt>id</tt> and <tt>label</tt>, using
+     * defaults for type (rectangle) and color (a static variable from TGPanel).
+     * If the label is null, it will be taken from the ID value.
      */
     public Node(String id, String label) {
         initialize(id);
@@ -207,8 +209,8 @@ public class Node {
 
     /**
      * Constructor with a String ID <tt>id</tt>, an int <tt>type</tt>,
-     * Background Color <tt>bgColor</tt>, and a String <tt>label</tt>. If
-     * the label is null, it will be taken from the ID value.
+     * Background Color <tt>bgColor</tt>, and a String <tt>label</tt>. If the
+     * label is null, it will be taken from the ID value.
      * 
      * @see TYPE_RECTANGLE
      * @see TYPE_ROUNDRECT
@@ -620,6 +622,18 @@ public class Node {
 
         if (backPaint == null) {
 
+            g.setColor(Color.WHITE);
+            if (typ == TYPE_ROUNDRECT) {
+                g.fillRoundRect(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4,
+                        r, r);
+            } else if (typ == TYPE_ELLIPSE) {
+                g.fillOval(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4);
+            } else if (typ == TYPE_CIRCLE) {
+                g.fillOval(ix - w / 2 + 2, iy - w / 2 + 2, w - 4, w - 4);
+            } else { // TYPE_RECTANGLE
+                g.fillRect(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4);
+            }
+
             Color backCol = getPaintBackColor(tgPanel);
             g.setColor(backCol);
 
@@ -636,6 +650,19 @@ public class Node {
         } else {
 
             Graphics2D g2 = (Graphics2D) g;
+
+            g2.setColor(Color.WHITE);
+            if (typ == TYPE_ROUNDRECT) {
+                g2.fillRoundRect(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4,
+                        r, r);
+            } else if (typ == TYPE_ELLIPSE) {
+                g2.fillOval(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4);
+            } else if (typ == TYPE_CIRCLE) {
+                g2.fillOval(ix - w / 2 + 2, iy - w / 2 + 2, w - 4, w - 4);
+            } else { // TYPE_RECTANGLE
+                g2.fillRect(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4);
+            }
+
             g2.setPaint(backPaint);
 
             if (typ == TYPE_ROUNDRECT) {
@@ -657,20 +684,38 @@ public class Node {
 
         // Big hack to draw an outlined font...
 
-        g2.setColor(BORDER_INACTIVE_COLOR);
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD));
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+        
+        g2.setColor(Color.BLACK);
 
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
                 + fontMetrics.getDescent() + 1 + 1);
+        
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
                 + fontMetrics.getDescent() + 1 - 1);
+        
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
                 + fontMetrics.getDescent() + 1 + 1);
+        
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
                 + fontMetrics.getDescent() + 1 - 1);
+        
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
                 + fontMetrics.getDescent() + 1 + 1);
+        
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
                 + fontMetrics.getDescent() + 1 - 1);
+        
+        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
+                + fontMetrics.getDescent() + 1 + 0);
+
+        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
+                + fontMetrics.getDescent() + 1 + 0);
 
         g2.setColor(Color.WHITE);
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy

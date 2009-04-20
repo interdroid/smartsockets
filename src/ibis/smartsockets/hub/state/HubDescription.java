@@ -29,6 +29,8 @@ public class HubDescription {
     // Easy access to the global state counter 
     final StateCounter state;        
     
+    private String color;
+    
     // Is this the local description ?  
     final boolean local;
             
@@ -80,17 +82,23 @@ public class HubDescription {
     private ArrayList<String> connectedTo = new ArrayList<String>();
     
     public HubDescription(DirectSocketAddress address, StateCounter state) {
-        this(null, address, state, false);
+        this(null, address, state, false, null);
     } 
     
     public HubDescription(String name, DirectSocketAddress address, 
-            StateCounter state, boolean local) {
+            StateCounter state, boolean local, String color) {
         
         this.name = name;
         this.state = state;        
         this.hubAddress = address;
         this.hubAddressAsString = address.toString();
         this.lastLocalUpdate = state.increment();
+        
+        if (color == null) {
+            this.color = "";
+        } else {
+            this.color = color;
+        }
         
         this.reachable = UNKNOWN;
         this.canReachMe = UNKNOWN;
@@ -143,7 +151,7 @@ public class HubDescription {
     }
     
     public void update(ClientDescription [] clients, String [] connectedTo, 
-            String name, long remoteState) {
+            String name, long remoteState, String color) {
         
         if (local) { 
             throw new IllegalStateException("Cannot update the local"
@@ -176,6 +184,7 @@ public class HubDescription {
         
         homeState = remoteState;
         lastLocalUpdate = state.increment();
+        this.color = color;
     }
     
     public long getHomeState() { 
@@ -557,5 +566,9 @@ public class HubDescription {
         }  
           
         return name;
+    }
+
+    public String getColor() {
+        return color;
     }
 }

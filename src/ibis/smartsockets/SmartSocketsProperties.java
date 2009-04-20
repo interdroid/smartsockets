@@ -57,6 +57,7 @@ public class SmartSocketsProperties {
     public static final String HUB_PREFIX           = PREFIX + "hub.";
     public static final String HUB_ADDRESSES        = HUB_PREFIX + "addresses";    
     public static final String HUB_NAME             = HUB_PREFIX + "name";
+    public static final String HUB_COLOR             = HUB_PREFIX + "color";
     public static final String HUB_CLUSTERS         = HUB_PREFIX + "clusters";       
     public static final String HUB_PORT             = HUB_PREFIX + "port";                 
     public static final String HUB_SSH_ALLOWED      = HUB_PREFIX + "ssh";     

@@ -11,6 +11,9 @@ public class HubInfo {
     public final long state;
     public final int clients;
     
+    public final String color;
+
+    
     public final DirectSocketAddress [] connectedTo;
     public final boolean [] usingSSH;
     
@@ -21,23 +24,27 @@ public class HubInfo {
                     "HubInfo!"); 
         }
 
-        try { 
-            StringTokenizer t = 
-                new StringTokenizer(info.substring(8, info.length()-1), ",");
+        try {
+            
+            String[] strings = info.substring(8, info.length()-1).split(",");
+            
+//            StringTokenizer t = 
+//                new StringTokenizer(info.substring(8, info.length()-1), ",");
 
-            hubAddress = DirectSocketAddress.getByAddress(t.nextToken());
-            name = t.nextToken();
-            state = Long.parseLong(t.nextToken());
-            clients = Integer.parseInt(t.nextToken());
+            hubAddress = DirectSocketAddress.getByAddress(strings[0]);
+            name = strings[1];
+            color = strings[2];
+            state = Long.parseLong(strings[3]);
+            clients = Integer.parseInt(strings[4]);
 
-            int tmp = Integer.parseInt(t.nextToken());
+            int tmp = Integer.parseInt(strings[5]);
 
             connectedTo = new DirectSocketAddress[tmp];
             usingSSH = new boolean[tmp];
             
             for (int i=0;i<connectedTo.length;i++) {
                 
-                String address = t.nextToken();
+                String address = strings[6 + i];
                 
                 if (address.endsWith(" (SSH)")) { 
                     address = address.substring(0, address.length()-6);

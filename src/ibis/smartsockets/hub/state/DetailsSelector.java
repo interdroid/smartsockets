@@ -24,11 +24,13 @@ public class DetailsSelector extends Selector {
         }
         
         tmp.append(name);
-        tmp.append(",");        
+        tmp.append(",");
+        tmp.append(description.getColor());                
+        tmp.append(",");
         tmp.append(description.getHomeState());        
         tmp.append(",");
         tmp.append(description.numberOfClients());                
-        tmp.append(",");    
+        tmp.append(",");
         
         String [] con = description.connectedTo();
         

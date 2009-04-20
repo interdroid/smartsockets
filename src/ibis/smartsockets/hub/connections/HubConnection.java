@@ -129,6 +129,7 @@ public class HubConnection extends MessageForwardingConnection {
 
             out.writeUTF(d.hubAddress.toString());
             out.writeUTF(d.getName());
+            out.writeUTF(d.getColor());
             out.writeInt(d.getHops());
 
             if (d.isLocal()) { 
@@ -164,6 +165,7 @@ public class HubConnection extends MessageForwardingConnection {
                 
         DirectSocketAddress address = DirectSocketAddress.getByAddress(in.readUTF());        
         String name = in.readUTF();
+        String color = in.readUTF();
         
         HubDescription tmp = knownHubs.add(address);
                
@@ -198,7 +200,7 @@ public class HubConnection extends MessageForwardingConnection {
             // The peer send information about itself. This should 
             // always be up-to-date.
             if (state > tmp.getHomeState()) { 
-                tmp.update(c, a, name, state);
+                tmp.update(c, a, name, state, color);
             } else if (state < tmp.getHomeState()) { 
                 goslogger.warn("EEK: got information directly from " 
                         + peer.hubAddressAsString 
@@ -222,7 +224,7 @@ public class HubConnection extends MessageForwardingConnection {
             
             // Check if the information is more recent than what I know...
             if (state > tmp.getHomeState()) { 
-                tmp.update(c, a, name, state);
+                tmp.update(c, a, name, state, color);
             } else if (state < tmp.getHomeState()) {
                 String pn = peer.getName();
         
