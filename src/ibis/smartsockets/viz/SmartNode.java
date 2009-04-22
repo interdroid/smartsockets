@@ -63,33 +63,33 @@ public class SmartNode extends Node {
         setNodeBorderMouseOverColor(Color.WHITE);
     }
 
-    private void setColor(Color c) {
-        if (c == null) {
-            return;
-        }
-
-        if (c.getRed() > 200 || c.getGreen() > 200 || c.getBlue() > 200) {
-            setTextColor(Color.BLACK);
-        } else {
-            setTextColor(Color.WHITE);
-        }
-
-        Color inactive = null;
-
-        if (c.getRed() < 64 && c.getGreen() < 64 && c.getBlue() < 64) {
-
-            if (c.getRed() < 32 && c.getGreen() < 32 && c.getBlue() < 32) {
-                // Too dark for the regular 'brighter'!
-                inactive = new Color(c.getRed() + 48, c.getGreen() + 48, c
-                        .getBlue() + 48);
-            } else {
-                inactive = c.brighter();
-            }
-        } else {
-            inactive = c.darker();
-        }
-
-        setNodeBorderInactiveColor(inactive);
-        setNodeBorderMouseOverColor(Color.WHITE);
-    }
+//    private void setColor(Color c) {
+//        if (c == null) {
+//            return;
+//        }
+//
+//        if (c.getRed() > 200 || c.getGreen() > 200 || c.getBlue() > 200) {
+//            setTextColor(Color.BLACK);
+//        } else {
+//            setTextColor(Color.WHITE);
+//        }
+//
+//        Color inactive = null;
+//
+//        if (c.getRed() < 64 && c.getGreen() < 64 && c.getBlue() < 64) {
+//
+//            if (c.getRed() < 32 && c.getGreen() < 32 && c.getBlue() < 32) {
+//                // Too dark for the regular 'brighter'!
+//                inactive = new Color(c.getRed() + 48, c.getGreen() + 48, c
+//                        .getBlue() + 48);
+//            } else {
+//                inactive = c.brighter();
+//            }
+//        } else {
+//            inactive = c.darker();
+//        }
+//
+//        setNodeBorderInactiveColor(inactive);
+//        setNodeBorderMouseOverColor(Color.WHITE);
+//    }
 }

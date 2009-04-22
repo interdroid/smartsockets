@@ -2,8 +2,6 @@ package ibis.smartsockets.hub.servicelink;
 
 import ibis.smartsockets.direct.DirectSocketAddress;
 
-import java.util.StringTokenizer;
-
 public class HubInfo {
 
     public final DirectSocketAddress hubAddress;
@@ -11,7 +9,7 @@ public class HubInfo {
     public final long state;
     public final int clients;
     
-    public final String color;
+    public final String vizInfo;
 
     
     public final DirectSocketAddress [] connectedTo;
@@ -33,7 +31,7 @@ public class HubInfo {
 
             hubAddress = DirectSocketAddress.getByAddress(strings[0]);
             name = strings[1];
-            color = strings[2];
+            vizInfo = strings[2];
             state = Long.parseLong(strings[3]);
             clients = Integer.parseInt(strings[4]);
 

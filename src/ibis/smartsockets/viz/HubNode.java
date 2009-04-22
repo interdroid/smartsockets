@@ -5,6 +5,8 @@ import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -34,10 +36,10 @@ public class HubNode extends SmartNode {
 
         setType(Node.TYPE_ELLIPSE);
 
-        //default color
+        // default color
         pattern = parent.getUniquePaint();
         setPattern(pattern);
-        
+
         this.parent = parent;
 
         updateInfo(info);
@@ -221,11 +223,17 @@ public class HubNode extends SmartNode {
                         if (ci == null) {
                             ci = new ClientNode(cs[c], this);
 
-                            parent.addNode(ci);
-                            parent.addEdge(ci.getEdge());
-
+                            if (ci.isVisible()) {
+                                parent.addNode(ci);
+                                parent.addEdge(ci.getEdge());
+                            }
                         } else {
                             ci.update(cs[c], this);
+
+                            if (!ci.isVisible()) {
+                                parent.deleteNode(ci);
+                                parent.deleteEdge(ci.getEdge());
+                            }
                         }
 
                         clients.put(a, ci);
@@ -285,18 +293,45 @@ public class HubNode extends SmartNode {
     public synchronized void updateInfo(HubInfo info) {
         this.info = info;
 
-        if (info.color.length() > 0) {
+        if (info.vizInfo.length() > 0) {
+            // double escape ^ char
+            String[] split = info.vizInfo.split("\\^");
 
-            Color color = Color.decode(info.color);
+            // color included
+            if (split.length >= 3) {
+                Color color = Color.decode(split[2]);
 
-            Color lighter = new Color(color.getRed(), color.getGreen(), color
-                    .getBlue(), 100);
+                Color lighter = new Color(color.getRed(), color.getGreen(),
+                        color.getBlue(), 100);
 
-            this.pattern = new Pattern("AdHoc", lighter, Color.BLACK, color);
-            setPattern(pattern);
-        } 
-        setMouseOverText(new String[] { "Hub: " + info.name,
-                "Loc: " + info.hubAddress.toString() });
+                this.pattern = new Pattern("AdHoc", lighter, Color.BLACK, color);
+                setPattern(pattern);
+            }
+
+            if (split.length >= 2) {
+                // popup included (split on comma too)
+                ArrayList<String> list = new ArrayList<String>();
+                list.addAll(Arrays.asList(split[1].split(",")));
+                list.add(info.hubAddress.toString());
+                
+                setMouseOverText(list.toArray(new String[0]));
+            } else {
+                //default
+                setMouseOverText(new String[] { "Hub: " + info.name,
+                        "Loc: " + info.hubAddress.toString() });
+            }
+
+            // label included
+            if (split.length >= 1) {
+                if (split[0].length() < 3) {
+                    // make sure this node is an ellipse, not a circle
+                    setLabel(" " + split[0] + " ");
+                } else {
+                    setLabel(split[0]);
+                }
+            }
+        }
+       
         // "Color: " + pattern.id});
     }
 

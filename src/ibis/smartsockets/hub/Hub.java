@@ -158,7 +158,7 @@ public final class Hub extends Thread implements StatisticsCallback {
             misclogger.info("Hub got name: " + name);
         }
         
-        String color = p.getProperty(SmartSocketsProperties.HUB_COLOR);
+        String color = p.getProperty(SmartSocketsProperties.HUB_VIZ_INFO);
         
         // Create a description for the local machine. 
         HubDescription localDesc = new HubDescription(name, local, state, true, color);        

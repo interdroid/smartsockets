@@ -25,7 +25,7 @@ public class DetailsSelector extends Selector {
         
         tmp.append(name);
         tmp.append(",");
-        tmp.append(description.getColor());                
+        tmp.append(description.getVizInfo());                
         tmp.append(",");
         tmp.append(description.getHomeState());        
         tmp.append(",");

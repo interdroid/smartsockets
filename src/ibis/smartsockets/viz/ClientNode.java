@@ -1,6 +1,7 @@
 package ibis.smartsockets.viz;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
@@ -15,20 +16,20 @@ public class ClientNode extends SmartNode {
     protected HubNode hub;
     
     public ClientNode(String id, HubNode hub) { 
-        
         super(id);        
         
         this.hub = hub;
         edge = new Edge(this, hub, 20);
         edge.useArrowHead(false);
-        
-        
     }
     
-    public ClientNode(ClientInfo info, HubNode hub) { 
+    public ClientNode(ClientInfo info, HubNode hub) {
+        super(info.getClientAddress().toString());        
+        this.hub = hub;
         
-        this(info.getClientAddress().toString(), hub);        
-        
+        edge = new Edge(this, hub, 20);
+        edge.useArrowHead(false);
+
         setType(Node.TYPE_CIRCLE);
         
         update(info, hub);
@@ -41,7 +42,7 @@ public class ClientNode extends SmartNode {
      //   System.out.println("Adding client " + adr);
 
         String tmp = info.getProperty("smartsockets.viz");
-        
+
         String label    = getElement(tmp, 0, "C");
         String [] popup = getElements(tmp, 1, new String[] { "Client:", adr });
         String color    = getElement(tmp, 2, null);
@@ -54,7 +55,16 @@ public class ClientNode extends SmartNode {
             setPattern(hub.getPatern());
         }
                 
-        setMouseOverText(popup);
+        ArrayList<String> list = new ArrayList<String>();
+        list.addAll(Arrays.asList(popup));
+        list.add(adr);
+        setMouseOverText(list.toArray(new String[0]));
+        
+        if (tmp != null && tmp.equalsIgnoreCase("invisible")) {
+        //    this.setVisible(false);
+        } else {
+            this.setVisible(true);
+        }
     }
     
     private String getElement(String s, int num, String def) {

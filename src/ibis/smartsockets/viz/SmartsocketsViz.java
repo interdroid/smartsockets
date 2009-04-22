@@ -79,15 +79,14 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     }
 
     public SmartsocketsViz(DirectSocketAddress... hubs) {
-        this(getTextColor(), getBackgroundColor(), hubs);
+        this(getTextColor(), getBackgroundColor(), true, hubs);
     }
 
     /**
      * Default constructor.
      * 
-     * @param hub
      */
-    public SmartsocketsViz(Color textColor, Color backgroundColor,
+    public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
             DirectSocketAddress... hubs) {
         super(textColor, backgroundColor);
 
@@ -104,7 +103,11 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
             List<DirectSocketAddress> hubList = Arrays.asList(hubs);
 
             sl = ServiceLink.getServiceLink(null, hubList, ss.getAddressSet());
+            if (showself) {
             sl.registerProperty("smartsockets.viz", "V^Visualization^#545454");
+            } else {
+                sl.registerProperty("smartsockets.viz", "invisible");
+            }
         } catch (Exception e) {
             throw new Error("Failed to connect to Hub: ", e);
         }

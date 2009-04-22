@@ -29,7 +29,7 @@ public class HubDescription {
     // Easy access to the global state counter 
     final StateCounter state;        
     
-    private String color;
+    private String vizInfo;
     
     // Is this the local description ?  
     final boolean local;
@@ -95,9 +95,9 @@ public class HubDescription {
         this.lastLocalUpdate = state.increment();
         
         if (color == null) {
-            this.color = "";
+            this.vizInfo = "";
         } else {
-            this.color = color;
+            this.vizInfo = color;
         }
         
         this.reachable = UNKNOWN;
@@ -184,7 +184,7 @@ public class HubDescription {
         
         homeState = remoteState;
         lastLocalUpdate = state.increment();
-        this.color = color;
+        this.vizInfo = color;
     }
     
     public long getHomeState() { 
@@ -568,7 +568,7 @@ public class HubDescription {
         return name;
     }
 
-    public String getColor() {
-        return color;
+    public String getVizInfo() {
+        return vizInfo;
     }
 }

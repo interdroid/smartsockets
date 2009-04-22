@@ -129,7 +129,7 @@ public class HubConnection extends MessageForwardingConnection {
 
             out.writeUTF(d.hubAddress.toString());
             out.writeUTF(d.getName());
-            out.writeUTF(d.getColor());
+            out.writeUTF(d.getVizInfo());
             out.writeInt(d.getHops());
 
             if (d.isLocal()) { 
