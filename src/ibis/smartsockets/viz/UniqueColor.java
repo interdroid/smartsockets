@@ -7,29 +7,19 @@ import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-public class UniquePaint {
+public class UniqueColor {
 
-    private ArrayList <Pattern> patterns = new ArrayList<Pattern>();
+    private ArrayList <Color> colors = new ArrayList<Color>();
     private int index = 0;
     
     private int hueParts = 12;
 
-    public UniquePaint() { 
-        generateColors();
-        
-    //    System.err.println("Generated " + patterns.size() + " patterns");
-    }
-
-    private void generateColors() { 
+    public UniqueColor() { 
         generateColors(1.0f, 1.0f);
         generateColors(0.5f, 1.0f);
         generateColors(1.0f, 0.5f);
-
- //         generateTextures(1.0f, 1.0f, Color.BLACK);
-  //      generateTextures(0.5f, 1.0f, Color.BLACK);
-       // generateTextures(1.0f, 0.5f, Color.BLACK);
     }
-    
+
     private void generateColors(float sat, float bri) { 
 
         for (int h=0;h<hueParts;h++) { 
@@ -38,21 +28,13 @@ public class UniquePaint {
           
             String id = hue + "," + sat + "," + bri + ","; 
             
-            //border
-            Color ia = new Color(Color.HSBtoRGB(hue, sat, bri));
+            Color color = new Color(Color.HSBtoRGB(hue, sat, bri));
             
-            Color f = Color.BLACK;
-            
-            //System.out.println("Adding color: " + id);
-
-            Color c = new Color(ia.getRed(), ia.getGreen(), ia.getBlue(), 100);
-            
-            Pattern p = new Pattern("C" + id + "B", c, f, ia);
-            
-            patterns.add(p);
+            colors.add(color);
         }
     }
 
+    /*
     private void generateTextures(float sat, float bri, Color alt) { 
 
         for (int h=0;h<hueParts;h++) { 
@@ -82,7 +64,7 @@ public class UniquePaint {
       
             patterns.add(p);
             
-            /*
+            
             
             BufferedImage b = new BufferedImage(3, 3, BufferedImage.TYPE_3BYTE_BGR);
                     
@@ -114,17 +96,19 @@ public class UniquePaint {
             p = new Pattern("T" + id + "B", 
                     new TexturePaint(b, new Rectangle(0, 0, 2, 2)), Color.BLACK, ia);
             
-            patterns.add(p);*/
+            patterns.add(p);
         }
     }
+    
+    */
 
     
-    public synchronized Pattern getUniquePaint() {
+    public synchronized Color getUniqueColor() {
         
         int tmp = index;
         
-        index = (index + 1) % patterns.size(); 
+        index = (index + 1) % colors.size(); 
         
-        return patterns.get(tmp);
+        return colors.get(tmp);
     }
 }

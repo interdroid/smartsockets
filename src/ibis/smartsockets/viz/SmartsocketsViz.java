@@ -48,7 +48,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     private HashMap<DirectSocketAddress, HubNode> oldHubs = new HashMap<DirectSocketAddress, HubNode>();
 
-    private UniquePaint c = new UniquePaint();
+    private UniqueColor c = new UniqueColor();
 
     private boolean done = false;
 
@@ -359,7 +359,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         tgPanel.deleteNode(node);
     }
 
-    public Pattern getUniquePaint() {
-        return c.getUniquePaint();
+    public Color getUniqueColor() {
+        return c.getUniqueColor();
     }
 }

@@ -44,7 +44,7 @@ public class ClientNode extends SmartNode {
         String tmp = info.getProperty("smartsockets.viz");
 
         String label    = getElement(tmp, 0, "C");
-        String [] popup = getElements(tmp, 1, new String[] { "Client:", adr });
+        String [] popup = getElements(tmp, 1, new String[] { "Client" });
         String color    = getElement(tmp, 2, null);
         
         setLabel(label);
@@ -52,7 +52,7 @@ public class ClientNode extends SmartNode {
         if (color != null) {
             setPattern(Color.decode(color));
         } else {
-            setPattern(hub.getPatern());
+            setPattern(hub.getPattern());
         }
                 
         ArrayList<String> list = new ArrayList<String>();

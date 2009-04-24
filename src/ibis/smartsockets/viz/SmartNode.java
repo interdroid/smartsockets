@@ -42,9 +42,9 @@ public class SmartNode extends Node {
         // Color lighter = new Color(red, green, blue, 255);
 
         Color lighter = new Color(color.getRed(), color.getGreen(), color
-                .getBlue(), 50);
+                .getBlue(), 135);
 
-        this.pattern = new Pattern("AdHoc", lighter, Color.BLACK, color);
+        this.pattern = new Pattern("AdHoc", lighter, Color.BLACK, color.darker());
         setColor();
     }
 

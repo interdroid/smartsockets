@@ -27,8 +27,6 @@ public class HubNode extends SmartNode {
 
     private boolean collapseClients = false;
 
-    private Pattern pattern;
-
     public HubNode(SmartsocketsViz parent, HubInfo info) {
         super("Hub " + info.hubAddress.toString(), " H ");
 
@@ -37,18 +35,13 @@ public class HubNode extends SmartNode {
         setType(Node.TYPE_ELLIPSE);
 
         // default color
-        pattern = parent.getUniquePaint();
-        setPattern(pattern);
+        setPattern(parent.getUniqueColor());
 
         this.parent = parent;
 
         updateInfo(info);
 
         clientCollection = new CollectionClientNode(info.clients, this);
-    }
-
-    public Pattern getPatern() {
-        return pattern;
     }
 
     public void deleteEdge(Edge e) {
@@ -300,12 +293,8 @@ public class HubNode extends SmartNode {
             // color included
             if (split.length >= 3) {
                 Color color = Color.decode(split[2]);
-
-                Color lighter = new Color(color.getRed(), color.getGreen(),
-                        color.getBlue(), 100);
-
-                this.pattern = new Pattern("AdHoc", lighter, Color.BLACK, color);
-                setPattern(pattern);
+               
+                setPattern(color);
             }
 
             if (split.length >= 2) {
