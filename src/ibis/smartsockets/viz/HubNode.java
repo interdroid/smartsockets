@@ -10,10 +10,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
 public class HubNode extends SmartNode {
+
+    private static Logger logger = LoggerFactory.getLogger(HubNode.class);
 
     final SmartsocketsViz parent;
 
@@ -28,14 +33,16 @@ public class HubNode extends SmartNode {
     private boolean collapseClients = false;
 
     public HubNode(SmartsocketsViz parent, HubInfo info) {
-        super("Hub " + info.hubAddress.toString(), " H ");
-
         setPopup("CollapsedHubNode");
 
         setType(Node.TYPE_ELLIPSE);
 
         // default color
         setPattern(parent.getUniqueColor());
+        // default label
+        setLabel(" H ");
+        // default text
+        setMouseOverText(new String[] { "Hub", info.hubAddress.toString() });
 
         this.parent = parent;
 
@@ -286,14 +293,16 @@ public class HubNode extends SmartNode {
     public synchronized void updateInfo(HubInfo info) {
         this.info = info;
 
-        if (info.vizInfo.length() > 0) {
+        logger.debug("Updating info for hub: \"" + info.vizInfo + "\"");
+
+        if (info.vizInfo != null && info.vizInfo.length() > 0) {
             // double escape ^ char
             String[] split = info.vizInfo.split("\\^");
 
             // color included
             if (split.length >= 3) {
                 Color color = Color.decode(split[2]);
-               
+
                 setPattern(color);
             }
 
@@ -302,10 +311,10 @@ public class HubNode extends SmartNode {
                 ArrayList<String> list = new ArrayList<String>();
                 list.addAll(Arrays.asList(split[1].split(",")));
                 list.add(info.hubAddress.toString());
-                
+
                 setMouseOverText(list.toArray(new String[0]));
             } else {
-                //default
+                // default
                 setMouseOverText(new String[] { "Hub: " + info.name,
                         "Loc: " + info.hubAddress.toString() });
             }
@@ -320,7 +329,7 @@ public class HubNode extends SmartNode {
                 }
             }
         }
-       
+
         // "Color: " + pattern.id});
     }
 

@@ -7,12 +7,8 @@ public class SmartNode extends Node {
 
     private Pattern pattern;
 
-    public SmartNode(String id) {
-        super(id);
-    }
-
-    public SmartNode(String id, String text) {
-        super(id, text);
+    public SmartNode() {
+        super();
     }
 
     public void setPattern(Pattern p) {

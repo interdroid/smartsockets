@@ -86,7 +86,7 @@ public class HubDescription {
     } 
     
     public HubDescription(String name, DirectSocketAddress address, 
-            StateCounter state, boolean local, String color) {
+            StateCounter state, boolean local, String vizInfo) {
         
         this.name = name;
         this.state = state;        
@@ -94,10 +94,10 @@ public class HubDescription {
         this.hubAddressAsString = address.toString();
         this.lastLocalUpdate = state.increment();
         
-        if (color == null) {
+        if (vizInfo == null) {
             this.vizInfo = "";
         } else {
-            this.vizInfo = color;
+            this.vizInfo = vizInfo;
         }
         
         this.reachable = UNKNOWN;
@@ -151,7 +151,7 @@ public class HubDescription {
     }
     
     public void update(ClientDescription [] clients, String [] connectedTo, 
-            String name, long remoteState, String color) {
+            String name, long remoteState, String vizInfo) {
         
         if (local) { 
             throw new IllegalStateException("Cannot update the local"
@@ -184,7 +184,7 @@ public class HubDescription {
         
         homeState = remoteState;
         lastLocalUpdate = state.increment();
-        this.vizInfo = color;
+        this.vizInfo = vizInfo;
     }
     
     public long getHomeState() { 

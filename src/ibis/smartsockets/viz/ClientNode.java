@@ -15,8 +15,8 @@ public class ClientNode extends SmartNode {
     protected Edge edge;
     protected HubNode hub;
     
-    public ClientNode(String id, HubNode hub) { 
-        super(id);        
+    public ClientNode(String id, HubNode hub) {
+        super();
         
         this.hub = hub;
         edge = new Edge(this, hub, 20);
@@ -24,7 +24,7 @@ public class ClientNode extends SmartNode {
     }
     
     public ClientNode(ClientInfo info, HubNode hub) {
-        super(info.getClientAddress().toString());        
+        super();
         this.hub = hub;
         
         edge = new Edge(this, hub, 20);
