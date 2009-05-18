@@ -496,7 +496,7 @@ public class VirtualSocketFactory {
 
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            Class c;
+            Class<?> c;
             // Check if there is a context class loader
             if (cl != null) {
             	c = cl.loadClass(classname);

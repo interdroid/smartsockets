@@ -6,7 +6,6 @@ import ibis.smartsockets.hub.servicelink.ClientInfo;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.StringTokenizer;
 
 
@@ -55,9 +54,9 @@ public class RouterClientNode extends ClientNode {
     public RouterClientNode(ClientInfo info, HubNode hub) { 
         super(info.getClientAddress().toString(), hub);        
     
-        String adr = info.getClientAddress().toString();
+        // String adr = info.getClientAddress().toString();
                 
-     //   System.out.println("Adding router " + adr);
+        // System.out.println("Adding router " + adr);
                 
         setType(Node.TYPE_CIRCLE);        
         setBackColor(Color.decode("#FF7F24"));
@@ -147,10 +146,7 @@ public class RouterClientNode extends ClientNode {
         
         if (oldCons.size() > 0) { 
             
-            Iterator itt = oldCons.values().iterator();
-
-            while (itt.hasNext()) {                 
-                ConnectionInfo i = (ConnectionInfo) itt.next();
+            for (ConnectionInfo i : oldCons.values()) {
                 
                 if (i.edge1 != null) {
                     // TODO: ugly!
@@ -198,20 +194,16 @@ public class RouterClientNode extends ClientNode {
         mouseOverText.clear();        
     }
     
-    public void showConnections(HashMap clients) { 
+    public void showConnections(HashMap<Object, ClientNode> clients) { 
         
    //     System.out.println("Updating router connections!");
-                
-        Iterator itt = cons.values().iterator();
         
-        while (itt.hasNext()) {
-            
-            ConnectionInfo c = (ConnectionInfo) itt.next();
-            
+        for (ConnectionInfo c : cons.values()) {
+                           
             if (c.edge1 == null) {                 
                 // try to find the nodes the router connects
                 
-                ClientNode from = (ClientNode) clients.get(c.from);
+                ClientNode from = clients.get(c.from);
                 
                 if (from != null) {
                     
@@ -227,7 +219,7 @@ public class RouterClientNode extends ClientNode {
             if (c.edge2 == null) {                 
                 // try to find the nodes the router connects
                 
-                ClientNode to = (ClientNode) clients.get(c.to);
+                ClientNode to = clients.get(c.to);
                 
                 if (to != null) {
                //     

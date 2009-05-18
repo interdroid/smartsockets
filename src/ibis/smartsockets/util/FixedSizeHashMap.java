@@ -30,7 +30,7 @@ public class FixedSizeHashMap<K,V> extends LinkedHashMap<K,V> {
         MAX_ENTRIES = size;        
     }    
     
-    protected boolean removeEldestEntry(Map.Entry eldest) {
+    protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
        return size() > MAX_ENTRIES;
     }
     

@@ -532,7 +532,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 	private void forwardData(byte[] data) throws UnknownHostException,
 			MalformedAddressException {
 
-		DirectSocketAddress hub = DirectSocketAddress.fromBytes(data, 4);
+		// DirectSocketAddress hub = DirectSocketAddress.fromBytes(data, 4);
 
 		// System.err.println("Hub is " + hub);
 

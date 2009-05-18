@@ -39,7 +39,7 @@ public class TypedProperties extends Properties {
      *            the properties to add.
      */
     public void putAll(Properties p) {
-        for (Enumeration e = p.propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = p.propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
             String value = p.getProperty(key);
             setProperty(key, value);
@@ -379,10 +379,10 @@ public class TypedProperties extends Properties {
             prefix = "";
         }
 
-        Iterator iterator = entrySet().iterator();
+        Iterator<Map.Entry<Object,Object>> iterator = entrySet().iterator();
 
         while (iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+            Map.Entry<Object,Object> entry = iterator.next();
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
 
@@ -420,7 +420,7 @@ public class TypedProperties extends Properties {
             prefix = "";
         }
 
-        for (Enumeration e = propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
 
             if (key.startsWith(prefix)) {
@@ -460,7 +460,7 @@ public class TypedProperties extends Properties {
             prefix = "";
         }
 
-        for (Enumeration e = propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
             String value = getProperty(key);
 
@@ -473,7 +473,7 @@ public class TypedProperties extends Properties {
     public String toVerboseString() {
         String result = "";
 
-        for (Enumeration e = propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
             String value = getProperty(key);
 
@@ -491,7 +491,7 @@ public class TypedProperties extends Properties {
 
         TypedProperties other = (TypedProperties) object;
 
-        for (Enumeration e = propertyNames(); e.hasMoreElements();) {
+        for (Enumeration<?> e = propertyNames(); e.hasMoreElements();) {
             String key = (String) e.nextElement();
             String value = getProperty(key);
 

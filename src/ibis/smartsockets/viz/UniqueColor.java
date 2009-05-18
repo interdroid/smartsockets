@@ -1,10 +1,6 @@
 package ibis.smartsockets.viz;
 
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.TexturePaint;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 public class UniqueColor {
@@ -26,7 +22,7 @@ public class UniqueColor {
 
             float hue = h * (1.0f / hueParts);
           
-            String id = hue + "," + sat + "," + bri + ","; 
+            // String id = hue + "," + sat + "," + bri + ","; 
             
             Color color = new Color(Color.HSBtoRGB(hue, sat, bri));
             

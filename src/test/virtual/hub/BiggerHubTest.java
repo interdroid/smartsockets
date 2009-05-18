@@ -45,6 +45,7 @@ public class BiggerHubTest {
                 p.setProperty("smartsockets.hub.addresses", address);
             }
             
+            @SuppressWarnings("unused")
             SimpleHubTest t = new SimpleHubTest(
                     VirtualSocketFactory.createSocketFactory(p, true));
             

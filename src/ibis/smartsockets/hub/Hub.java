@@ -5,7 +5,6 @@ import ibis.smartsockets.direct.DirectSocket;
 import ibis.smartsockets.direct.DirectSocketAddress;
 import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.discovery.Discovery;
-import ibis.smartsockets.hub.connections.ClientConnection;
 import ibis.smartsockets.hub.connections.HubConnection;
 import ibis.smartsockets.hub.connections.MessageForwardingConnectionStatistics;
 import ibis.smartsockets.hub.connections.VirtualConnections;

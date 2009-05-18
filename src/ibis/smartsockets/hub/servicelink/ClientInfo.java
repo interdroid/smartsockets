@@ -122,7 +122,7 @@ public class ClientInfo {
         result.append(version);
         result.append(", "); 
                 
-        Iterator it = properties.keySet().iterator();
+        Iterator<?> it = properties.keySet().iterator();
         
         while (it.hasNext()) { 
             String key = (String) it.next();

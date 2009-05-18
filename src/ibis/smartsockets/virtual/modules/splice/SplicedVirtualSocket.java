@@ -22,7 +22,7 @@ public class SplicedVirtualSocket extends VirtualSocket {
     protected final InputStream in;
     
     protected SplicedVirtualSocket(VirtualSocketAddress target, DirectSocket s, 
-            OutputStream out, InputStream in, Map p) {        
+            OutputStream out, InputStream in, Map<?,?> p) {        
         
         super(target);
         

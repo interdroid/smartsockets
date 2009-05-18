@@ -20,7 +20,6 @@ import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -232,10 +231,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         }
 
         if (oldHubs.size() > 0) {
-            Iterator itt = oldHubs.values().iterator();
-
-            while (itt.hasNext()) {
-                HubNode hi = (HubNode) itt.next();
+            for (HubNode hi : oldHubs.values()) {         
                 hi.delete();
             }
         }

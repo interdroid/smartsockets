@@ -34,7 +34,6 @@ import ibis.util.RunProcess;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -62,12 +61,8 @@ public final class NativeNetworkConfig {
         
     private final static void getNetworkInfo() throws IOException {
         String os = System.getProperty("os.name");
-
-        Iterator itt = parsers.iterator();
         
-        while (itt.hasNext()) { 
-            NetworkInfoParser parser = (NetworkInfoParser) itt.next();
-            
+        for (NetworkInfoParser parser : parsers) {           
             if (os.startsWith(parser.osName)) {
                 
                 if (getInfo(parser)) {

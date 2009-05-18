@@ -8,7 +8,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +60,7 @@ public class HubNode extends SmartNode {
 
     public void removeUnusedEdges() {
 
-        HashMap oldEdges = edges;
+        HashMap<DirectSocketAddress, Edge> oldEdges = edges;
         edges = new HashMap<DirectSocketAddress, Edge>();
 
         // System.out.println("Hub " + info.hubAddress.toString()
@@ -81,10 +80,8 @@ public class HubNode extends SmartNode {
 
         // remove old edges
         if (oldEdges.size() > 0) {
-            Iterator itt = oldEdges.values().iterator();
-
-            while (itt.hasNext()) {
-                parent.deleteEdge((Edge) itt.next());
+            for (Edge edge : oldEdges.values()) {
+                parent.deleteEdge(edge);
             }
         }
     }
@@ -143,7 +140,7 @@ public class HubNode extends SmartNode {
 
     public void updateEdges() {
 
-        HashMap oldEdges = edges;
+        HashMap<DirectSocketAddress, Edge> oldEdges = edges;
         edges = new HashMap<DirectSocketAddress, Edge>();
 
         // System.out.println("Hub " + info.hubAddress.toString()
@@ -154,7 +151,7 @@ public class HubNode extends SmartNode {
 
             DirectSocketAddress to = info.connectedTo[i];
 
-            Edge e = (Edge) oldEdges.remove(to);
+            Edge e = oldEdges.remove(to);
 
             if (e == null) {
 
@@ -178,17 +175,15 @@ public class HubNode extends SmartNode {
 
         // remove old edges
         if (oldEdges.size() > 0) {
-            Iterator itt = oldEdges.values().iterator();
-
-            while (itt.hasNext()) {
-                parent.deleteEdge((Edge) itt.next());
+            for (Edge edge : oldEdges.values()) {
+                parent.deleteEdge(edge);
             }
         }
     }
 
     public synchronized void updateClients() {
 
-        HashMap old = clients;
+        HashMap<Object, ClientNode> old = clients;
         clients = new HashMap<Object, ClientNode>();
 
         if (info.clients > 0) {
@@ -244,12 +239,7 @@ public class HubNode extends SmartNode {
 
         // Now remove all leftover clients...
         if (old.size() > 0) {
-            Iterator itt = old.values().iterator();
-
-            while (itt.hasNext()) {
-
-                ClientNode ci = (ClientNode) itt.next();
-
+            for (ClientNode ci : old.values()) {
                 if (ci.getEdge() != null) {
                     parent.deleteEdge(ci.getEdge());
                 }
@@ -263,21 +253,16 @@ public class HubNode extends SmartNode {
 
         // remove edges to other hubs
         if (edges.size() > 0) {
-            Iterator itt = edges.values().iterator();
-
-            while (itt.hasNext()) {
-                parent.deleteEdge((Edge) itt.next());
+            for (Edge edge : edges.values()) {
+                parent.deleteEdge(edge);
             }
         }
 
         synchronized (this) {
             // delete clients
             if (clients.size() > 0) {
-                Iterator itt = clients.values().iterator();
-
-                while (itt.hasNext()) {
-                    ClientNode n = (ClientNode) itt.next();
-
+                for (ClientNode n : clients.values()) {
+ 
                     if (n.getEdge() != null) {
                         parent.deleteEdge(n.getEdge());
                     }
@@ -345,7 +330,7 @@ public class HubNode extends SmartNode {
         updateClients();
     }
 
-    public synchronized void updateRouters(HashMap allClients) {
+    public synchronized void updateRouters(HashMap<Object, ClientNode> allClients) {
 
         if (collapseClients) {
             return;
@@ -353,12 +338,9 @@ public class HubNode extends SmartNode {
 
         if (clients.size() > 0) {
 
-            Iterator itt = clients.values().iterator();
+            for (ClientNode n : clients.values()) {
 
-            while (itt.hasNext()) {
-                ClientNode n = (ClientNode) itt.next();
-
-                if (n instanceof RouterClientNode) {
+                if (n instanceof RouterClientNode) { 
                     ((RouterClientNode) n).showConnections(allClients);
                 }
             }

@@ -4,7 +4,6 @@ import ibis.smartsockets.direct.DirectSocketAddress;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 
@@ -113,12 +112,7 @@ public class HubList {
             return;
         }
                 
-        Iterator i = map.values().iterator();
-            
-        while (i.hasNext()) {
-            
-            HubDescription d = (HubDescription) i.next();
-                
+        for (HubDescription d : map.values()) {               
             if (all || 
                (connected && (d.getConnection() != null)) ||  
                (local && d.local)) { 

@@ -3,7 +3,7 @@ package ibis.smartsockets.direct;
 import java.net.InetSocketAddress;
 import java.util.Iterator;
 
-public class AddressIterator implements Iterator {
+public class AddressIterator implements Iterator<InetSocketAddress> {
 
     public boolean hasNext() {
         // TODO Auto-generated method stub

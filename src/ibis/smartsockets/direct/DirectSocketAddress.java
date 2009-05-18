@@ -30,7 +30,7 @@ import java.util.StringTokenizer;
  * @version 1.0 Dec 19, 2005
  * @since 1.0
  */
-public class DirectSocketAddress extends SocketAddress implements Comparable {
+public class DirectSocketAddress extends SocketAddress implements Comparable<DirectSocketAddress> {
 
     private static final long serialVersionUID = -2662260670251814982L;
 
@@ -671,20 +671,13 @@ public class DirectSocketAddress extends SocketAddress implements Comparable {
         return toStringCache;
     }
 
-    public int compareTo(Object other) {
+    public int compareTo(DirectSocketAddress other) {
 
         if (this == other) {
             return 0;
         }
-
-        // Check type
-        if (!(other instanceof DirectSocketAddress)) {
-            return 0;
-        }
-
-        DirectSocketAddress tmp = (DirectSocketAddress) other;
-
-        if (hashCode() < tmp.hashCode()) {
+               
+        if (hashCode() < other.hashCode()) { 
             return -1;
         } else {
             return 1;

@@ -18,7 +18,7 @@ public class WindowsNetworkInfoParser extends NetworkInfoParser {
         return 0;
     }
 
-    boolean parse(byte[] output, List info) {
+    boolean parse(byte[] output, List<NetworkInfo> info) {
         // TODO Auto-generated method stub
         return false;
     }

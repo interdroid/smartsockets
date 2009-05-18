@@ -1,6 +1,7 @@
 package ibis.smartsockets.viz;
 
 import java.awt.Color;
+
 import com.touchgraph.graphlayout.Node;
 
 public class SmartNode extends Node {

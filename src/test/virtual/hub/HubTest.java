@@ -43,6 +43,7 @@ public class HubTest {
                 p.setProperty("name", "S" + c);
                 p.setProperty("smartsockets.hub.addresses", h[i].getHubAddress().toString());
             
+                @SuppressWarnings("unused")
                 SimpleHubTest t = new SimpleHubTest(
                         VirtualSocketFactory.createSocketFactory(p, true));
             }
