@@ -858,7 +858,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 				return;
 			}
 
-			mf = (MessageForwardingConnection) tmp;
+			mf = tmp;
 		}
 
 		if (mf == null && targetHub != null) {

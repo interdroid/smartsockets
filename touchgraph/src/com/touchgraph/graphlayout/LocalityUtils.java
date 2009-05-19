@@ -84,7 +84,7 @@ public class LocalityUtils {
     }
 
     /** Mark for deletion nodes not contained within distHash. */
-    private synchronized boolean markDistantNodes(final Hashtable subgraph) {// Collection
+    private synchronized boolean markDistantNodes(final Hashtable<Node, Integer> subgraph) {// Collection
                                                                                 // subgraph)
                                                                                 // {
         final boolean[] someNodeWasMarked = new boolean[1];
@@ -123,14 +123,14 @@ public class LocalityUtils {
     }
 
     /** Add to locale nodes within radius distance of a focal node. */
-    private synchronized void addNearNodes(Hashtable distHash, int radius)
+    private synchronized void addNearNodes(Hashtable<Node, Integer> distHash, int radius)
             throws TGException {
         for (int r = 0; r < radius + 1; r++) {
-            Enumeration localNodes = distHash.keys();
+            Enumeration<Node> localNodes = distHash.keys();
             while (localNodes.hasMoreElements()) {
-                Node n = (Node) localNodes.nextElement();
+                Node n = localNodes.nextElement();
                 if (!locality.contains(n)
-                        && ((Integer) distHash.get(n)).intValue() <= r) {
+                        && distHash.get(n).intValue() <= r) {
                     n.massfade = 1;
                     n.justMadeLocal = true;
                     locality.addNodeWithEdges(n);
@@ -159,7 +159,7 @@ public class LocalityUtils {
 
     /** The thread that gets instantiated for doing the locality shift animation. */
     class ShiftLocaleThread extends Thread {
-        Hashtable distHash;
+        Hashtable<Node, Integer> distHash;
 
         Node focusNode;
 
@@ -320,7 +320,7 @@ public class LocalityUtils {
 
                     // Collection subgraph =
                     // GESUtils.getLargestConnectedSubgraph(locality);
-                    Hashtable subgraph = GESUtils
+                    Hashtable<Node, Integer> subgraph = GESUtils
                             .getLargestConnectedSubgraph(locality);
                     markDistantNodes(subgraph);
                     tgPanel.repaint();
@@ -355,7 +355,7 @@ public class LocalityUtils {
                                                         // calculation.
                     // Collection subgraph =
                     // GESUtils.getLargestConnectedSubgraph(locality);
-                    Hashtable subgraph = GESUtils
+                    Hashtable<Node, Integer> subgraph = GESUtils
                             .getLargestConnectedSubgraph(locality);
                     markDistantNodes(subgraph);
                     try {

@@ -58,7 +58,7 @@ public class MultiplexInputStream extends InputStream {
             }
         }
         
-        return (byte []) buffers.removeFirst();
+        return buffers.removeFirst();
     }
     
     private void getBuffer() throws IOException { 

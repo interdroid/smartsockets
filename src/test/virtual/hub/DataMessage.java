@@ -61,7 +61,7 @@ public class DataMessage  {
 
         try { 
             VirtualSocketFactory factory = 
-                VirtualSocketFactory.createSocketFactory(null, true);
+                VirtualSocketFactory.createSocketFactory((java.util.Properties) null, true);
 
             System.out.println("Created socket factory");
         

@@ -1299,13 +1299,21 @@ public class VirtualSocketFactory {
     }
 
     public VirtualServerSocket createServerSocket(int port, int backlog,
-            boolean retry, Map properties) {
+            boolean retry, java.util.Properties properties) {
 
+        // Fix: extract all string properties, don't use the properties object
+        // as a map! --Ceriel
+        HashMap<String, Object> props = new HashMap<String, Object>();
+        for (String s : properties.stringPropertyNames()) {
+            props.put(s, properties.getProperty(s));
+        }
         VirtualServerSocket result = null;
 
         while (result == null) {
             try {
-                result = createServerSocket(port, backlog, null);
+                // Did not pass on properties. Fixed. --Ceriel
+                // result = createServerSocket(port, backlog, null);
+                result = createServerSocket(port, backlog, props);
             } catch (Exception e) {
                 // retry
                 if (logger.isDebugEnabled()) {
@@ -1494,10 +1502,10 @@ public class VirtualSocketFactory {
     public static VirtualSocketFactory createSocketFactory()
             throws InitializationException {
 
-        return createSocketFactory(null, true);
+        return createSocketFactory((java.util.Properties) null, true);
     }
 
-    public static VirtualSocketFactory createSocketFactory(Map p,
+    public static VirtualSocketFactory createSocketFactory(Map<String, ?> p,
             boolean addDefaults) throws InitializationException {
         return createSocketFactory(new TypedProperties(p), addDefaults);
     }

@@ -94,23 +94,23 @@ public class TGUIManager {
 
     public void removeUI(String name) {
         for (int i = 0; i < userInterfaces.size(); i++)
-            if (((NamedUI) userInterfaces.elementAt(i)).name.equals(name))
+            if (userInterfaces.elementAt(i).name.equals(name))
                 userInterfaces.removeElementAt(i);
 
     }
 
     public void removeUI(TGUserInterface ui) {
         for (int i = 0; i < userInterfaces.size(); i++)
-            if (((NamedUI) userInterfaces.elementAt(i)).ui == ui)
+            if (userInterfaces.elementAt(i).ui == ui)
                 userInterfaces.removeElementAt(i);
 
     }
 
     public void activate(String name) {
         for (int i = 0; i < userInterfaces.size(); i++) {
-            NamedUI namedInterf = (NamedUI) userInterfaces.elementAt(i);
+            NamedUI namedInterf = userInterfaces.elementAt(i);
             TGUserInterface ui = namedInterf.ui;
-            if (((NamedUI) userInterfaces.elementAt(i)).name.equals(name))
+            if (userInterfaces.elementAt(i).name.equals(name))
                 ui.activate();
             else
                 ui.deactivate();
@@ -119,7 +119,7 @@ public class TGUIManager {
 
     public void activate(TGUserInterface ui) {
         for (int i = 0; i < userInterfaces.size(); i++) {
-            if (((NamedUI) userInterfaces.elementAt(i)).ui == ui)
+            if (userInterfaces.elementAt(i).ui == ui)
                 ui.activate();
             else
                 ui.deactivate();

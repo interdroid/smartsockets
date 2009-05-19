@@ -256,7 +256,7 @@ class Preference {
 
         } else if (!inPlace) {
             // When we do not want inplace sorting, we copy the addresses.
-            result = (InetSocketAddress[]) ads.clone();
+            result = ads.clone();
 
         } else {
             // Else, we use the addresses directly.
@@ -323,7 +323,7 @@ class Preference {
 
         } else if (!inPlace) {
             // When we do not want inplace sorting, we copy the addresses.
-            result = (InetAddress[]) ads.clone();
+            result = ads.clone();
 
         } else {
             // Else, we use the addresses directly.

@@ -74,7 +74,7 @@ public class TGNodeQueue {
     }
 
     public Node pop() {
-        Node n = (Node) queue.elementAt(0);
+        Node n = queue.elementAt(0);
         queue.removeElementAt(0);
         return n;
     }

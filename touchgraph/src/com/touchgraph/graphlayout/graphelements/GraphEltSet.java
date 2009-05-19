@@ -97,7 +97,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     protected Node nodeAt(int i) {
         if (nodes.size() == 0)
             return null;
-        return (Node) nodes.elementAt(i);
+        return nodes.elementAt(i);
     }
 
     /**
@@ -179,7 +179,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     protected Edge edgeAt(int index) {
         if (edges.size() == 0)
             return null;
-        return (Edge) edges.elementAt(index);
+        return edges.elementAt(index);
     }
 
     /**
@@ -242,7 +242,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     public Node findNode(String id) {
         if (id == null)
             return null; // ignore
-        return (Node) nodeIDRegistry.get(id);
+        return nodeIDRegistry.get(id);
     }
 
     /**
@@ -254,9 +254,9 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         if (strURL == null)
             return null; // ignore
 
-        Enumeration myEnum = nodeIDRegistry.elements();
+        Enumeration<Node> myEnum = nodeIDRegistry.elements();
         while (myEnum.hasMoreElements()) {
-            Node node = (Node) myEnum.nextElement();
+            Node node = myEnum.nextElement();
             if (node.getURL().equalsIgnoreCase(strURL)) {
                 retVal = node;
                 break;
@@ -324,10 +324,10 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     }
 
     /** Delete the Edges contained within the Vector <tt>edgedToDelete</tt>. */
-    public void deleteEdges(Vector edgesToDelete) {
+    public void deleteEdges(Vector<Edge> edgesToDelete) {
         synchronized (edges) {
             for (int i = 0; i < edgesToDelete.size(); i++) {
-                deleteEdge((Edge) edgesToDelete.elementAt(i));
+                deleteEdge(edgesToDelete.elementAt(i));
             }
         }
     }
@@ -375,10 +375,10 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     }
 
     /** Delete the Nodes contained within the Vector <tt>nodesToDelete</tt>. */
-    public void deleteNodes(Vector nodesToDelete) {
+    public void deleteNodes(Vector<Node> nodesToDelete) {
         synchronized (nodes) {
             for (int i = 0; i < nodesToDelete.size(); i++) {
-                deleteNode((Node) nodesToDelete.elementAt(i));
+                deleteNode(nodesToDelete.elementAt(i));
             }
         }
     }

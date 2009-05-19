@@ -72,7 +72,7 @@ public class TGLensSet {
             return;
         // else
         for (int i = 0; i < lenses.size(); i++) {
-            ((TGAbstractLens) lenses.elementAt(i)).applyLens(p);
+            lenses.elementAt(i).applyLens(p);
         }
     }
 
@@ -81,7 +81,7 @@ public class TGLensSet {
             return;
         // else
         for (int i = lenses.size() - 1; i >= 0; i--) {
-            ((TGAbstractLens) lenses.elementAt(i)).undoLens(p);
+            lenses.elementAt(i).undoLens(p);
         }
     }
 

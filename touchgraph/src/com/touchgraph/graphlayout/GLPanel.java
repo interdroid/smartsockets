@@ -75,8 +75,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SpringLayout;
-import javax.swing.UIManager;
-import javax.swing.text.StyledEditorKit.ForegroundAction;
 
 import com.touchgraph.graphlayout.graphelements.TGForEachNode;
 import com.touchgraph.graphlayout.interaction.GLEditUI;
@@ -389,7 +387,7 @@ public class GLPanel extends JPanel {
             }
         } else {
 
-            PopupMenu old = (PopupMenu) nodePopups.remove(ID);
+            PopupMenu old = nodePopups.remove(ID);
 
             if (old != null) {
                 remove(old);
@@ -554,7 +552,7 @@ public class GLPanel extends JPanel {
         // "Right-click nodes and background for more options"));
 
         for (int i = 0; i < sliderNames.length; i++) {
-            JSlider slider = (JSlider) sliderHash.get(sliderNames[i]);
+            JSlider slider = sliderHash.get(sliderNames[i]);
             slider.setBackground(backgroundColor);
             slider.setForeground(textColor);
             if (slider == null)
@@ -649,7 +647,7 @@ public class GLPanel extends JPanel {
                     nodePopup.show(tgPanel, x, y);
                 }
             } else {
-                PopupMenu p = (PopupMenu) nodePopups.get(popup);
+                PopupMenu p = nodePopups.get(popup);
 
                 if (p != null) {
                     p.show(tgPanel, x, y);

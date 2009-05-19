@@ -64,7 +64,7 @@ public class SimpleHubTest implements Runnable {
 
         try { 
             VirtualSocketFactory factory = 
-                VirtualSocketFactory.createSocketFactory(null, true);
+                VirtualSocketFactory.createSocketFactory((java.util.Properties) null, true);
 
             System.out.println("Created socket factory");
         

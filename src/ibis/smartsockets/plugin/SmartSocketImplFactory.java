@@ -18,7 +18,7 @@ public class SmartSocketImplFactory implements SocketImplFactory {
         // factory = VirtualSocketFactory.createSocketFactory();
     }
     
-    public SmartSocketImplFactory(Map properties, boolean addDefaults) 
+    public SmartSocketImplFactory(Map<String, ?> properties, boolean addDefaults) 
         throws InitializationException {   
       //   factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
     }

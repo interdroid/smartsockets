@@ -255,7 +255,7 @@ public class Direct extends AbstractDirectModule {
         }
     }
     
-    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map<String, ?> requirements) {
         // No additional properties, so always matches requirements.
         return true;
     }

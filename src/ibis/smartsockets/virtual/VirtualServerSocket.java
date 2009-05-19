@@ -211,7 +211,7 @@ public class VirtualServerSocket {
         return "VirtualServerSocket(" + localAddress.toString() + ")";
     }
     
-    public Map properties() {
+    public Map<?, ?> properties() {
         return properties;
     }
 

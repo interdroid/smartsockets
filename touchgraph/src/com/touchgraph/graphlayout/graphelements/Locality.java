@@ -148,7 +148,7 @@ public class Locality extends GraphEltSet {
         }
     }
 
-    public synchronized void deleteEdges(Vector edgesToDelete) {
+    public synchronized void deleteEdges(Vector<Edge> edgesToDelete) {
         removeEdges(edgesToDelete);
         completeEltSet.deleteEdges(edgesToDelete);
     }
@@ -164,9 +164,9 @@ public class Locality extends GraphEltSet {
         }
     }
 
-    public synchronized void removeEdges(Vector edgesToRemove) {
+    public synchronized void removeEdges(Vector<Edge> edgesToRemove) {
         for (int i = 0; i < edgesToRemove.size(); i++) {
-            removeEdge((Edge) edgesToRemove.elementAt(i));
+            removeEdge(edgesToRemove.elementAt(i));
         }
     }
 
@@ -179,7 +179,7 @@ public class Locality extends GraphEltSet {
         }
     }
 
-    public synchronized void deleteNodes(Vector nodesToDelete) {
+    public synchronized void deleteNodes(Vector<Node> nodesToDelete) {
         removeNodes(nodesToDelete);
         completeEltSet.deleteNodes(nodesToDelete);
     }
@@ -201,9 +201,9 @@ public class Locality extends GraphEltSet {
         return true;
     }
 
-    public synchronized void removeNodes(Vector nodesToRemove) {
+    public synchronized void removeNodes(Vector<Node> nodesToRemove) {
         for (int i = 0; i < nodesToRemove.size(); i++) {
-            removeNode((Node) nodesToRemove.elementAt(i));
+            removeNode(nodesToRemove.elementAt(i));
         }
     }
 

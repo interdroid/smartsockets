@@ -165,7 +165,7 @@ public class Reverse extends MessagingModule {
         VirtualServerSocket ss = null;
         
         try { 
-            ss = (VirtualServerSocket) parent.createServerSocket(0, 1, null);
+            ss = parent.createServerSocket(0, 1, null);
         } catch (Exception e) {
             // All exceptions are converted into a module not suitable 
             // exception. 
@@ -446,7 +446,7 @@ public class Reverse extends MessagingModule {
         }
     }
                 
-    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map<String, ?> requirements) {
         // Nothing to check here ? 
         return true;
     }

@@ -27,7 +27,7 @@ public class DirectVirtualSocket extends VirtualSocket {
     protected final boolean count;
     
     protected DirectVirtualSocket(VirtualSocketAddress target, DirectSocket s, 
-            OutputStream out, InputStream in, boolean count, Map p) {        
+            OutputStream out, InputStream in, boolean count, Map<String, ?> p) {        
         
         super(target);
         

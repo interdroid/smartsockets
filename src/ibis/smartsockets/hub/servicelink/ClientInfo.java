@@ -104,7 +104,7 @@ public class ClientInfo {
     }
     
     public String getProperty(String name) { 
-        return (String) properties.get(name);
+        return properties.get(name);
     }
     
     
@@ -126,7 +126,7 @@ public class ClientInfo {
         
         while (it.hasNext()) { 
             String key = (String) it.next();
-            String value = (String) properties.get(key);            
+            String value = properties.get(key);            
             
             result.append(", [");
             result.append(key);

@@ -54,7 +54,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
             int localBufferSize, int localMinimalACKSize, 
             int remoteFragmentation, int remoteBufferSize,  
             VirtualSocketAddress target, ServiceLink serviceLink, 
-            long connectionIndex, Map p) {        
+            long connectionIndex, Map<String, ?> p) {        
         
         super(target);
         
@@ -78,7 +78,7 @@ public class HubRoutedVirtualSocket extends VirtualSocket {
    
     protected HubRoutedVirtualSocket(Hubrouted parent, int localFragmentation, 
             int localBufferSize, int localMinimalACKSize,  
-            VirtualSocketAddress target, ServiceLink serviceLink, Map p) {      
+            VirtualSocketAddress target, ServiceLink serviceLink, Map<String, ?> p) {      
     
         super(target);
         

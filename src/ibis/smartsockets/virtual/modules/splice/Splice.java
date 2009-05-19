@@ -541,7 +541,7 @@ public class Splice extends AbstractDirectModule {
         factory = DirectSocketFactory.getSocketFactory();     
     }
 
-    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map<String, ?> requirements) {
         // Alway match ? 
         return true;
     }

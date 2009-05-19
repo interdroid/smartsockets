@@ -87,7 +87,7 @@ public class RouterClientNode extends ClientNode {
         // This should be unique!
         String tmp = from + id;
         
-        ConnectionInfo c = (ConnectionInfo) oldCons.remove(tmp);
+        ConnectionInfo c = oldCons.remove(tmp);
         
         if (c == null) {
             
@@ -113,7 +113,7 @@ public class RouterClientNode extends ClientNode {
                 
         if (connections == 0) {
             mouseOverText.add("Throughput : 0 Mbit/s");
-            setMouseOverText((String []) mouseOverText.toArray(new String[0]));
+            setMouseOverText(mouseOverText.toArray(new String[0]));
             return;
         }
     
@@ -174,7 +174,7 @@ public class RouterClientNode extends ClientNode {
         if (stats == null || stats.length() == 0) {                       
             mouseOverText.add("Connections: 0");
             mouseOverText.add("Throughput : 0 Mbit/s");
-            setMouseOverText((String []) mouseOverText.toArray(new String[0]));
+            setMouseOverText(mouseOverText.toArray(new String[0]));
 
         } else { 
                     
@@ -184,13 +184,13 @@ public class RouterClientNode extends ClientNode {
        //         System.out.println("Got junk in router statistics! " + stats);
                 mouseOverText.add("Connections: 0");
                 mouseOverText.add("Throughput : 0 Mbit/s");
-                setMouseOverText((String []) mouseOverText.toArray(new String[0]));
+                setMouseOverText(mouseOverText.toArray(new String[0]));
             } else {            
                 parseConnections(t);               
             }      
         }
         
-        setMouseOverText((String []) mouseOverText.toArray(new String[0]));
+        setMouseOverText(mouseOverText.toArray(new String[0]));
         mouseOverText.clear();        
     }
     

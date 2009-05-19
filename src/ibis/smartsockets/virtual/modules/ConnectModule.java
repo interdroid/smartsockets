@@ -201,7 +201,7 @@ public abstract class ConnectModule implements CallBack {
     }
         
     
-    public boolean matchRuntimeRequirements(Map requirements) {
+    public boolean matchRuntimeRequirements(Map<String, Object> requirements) {
         
         if (requirements == null) { 
             return true;
@@ -324,7 +324,7 @@ public abstract class ConnectModule implements CallBack {
 
     public abstract void startModule() throws Exception; 
 
-    public abstract boolean matchAdditionalRuntimeRequirements(Map requirements);
+    public abstract boolean matchAdditionalRuntimeRequirements(Map<String, ?> requirements);
     
     public abstract DirectSocketAddress getAddresses(); 
     

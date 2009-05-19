@@ -459,7 +459,7 @@ public class Node {
 
     /** Return the Edge at int <tt>index</tt>. */
     public Edge edgeAt(int index) {
-        return (Edge) edges.elementAt(index);
+        return edges.elementAt(index);
     }
 
     /** Add the Edge <tt>edge</tt> to the graph. */

@@ -1299,7 +1299,7 @@ public class DirectSocketFactory {
      *                the default value
      * @return boolean result
      */
-    private boolean getProperty(Map prop, String key, boolean def) {
+    private boolean getProperty(Map<String, ?> prop, String key, boolean def) {
 
         if (prop != null && prop.containsKey(key)) {
 
@@ -1772,13 +1772,13 @@ public class DirectSocketFactory {
         return result;
     }
 
-    public DirectServerSocket createServerSocket(int port, int backlog, Map prop)
+    public DirectServerSocket createServerSocket(int port, int backlog, Map<String, Object> prop)
             throws IOException {
         return createServerSocket(port, backlog, -1, prop);
     }
 
     public DirectServerSocket createServerSocket(int port, int backlog,
-            int receiveBuffer, Map prop) throws IOException {
+            int receiveBuffer, Map<String, ?> prop) throws IOException {
 
         boolean forwardMayFail = true;
         boolean sameExternalPort = true;

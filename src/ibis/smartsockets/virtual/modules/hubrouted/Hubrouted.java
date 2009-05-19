@@ -217,7 +217,7 @@ public class Hubrouted extends ConnectModule
         } 
     }
 
-    public boolean matchAdditionalRuntimeRequirements(Map requirements) {
+    public boolean matchAdditionalRuntimeRequirements(Map<String, ?> requirements) {
         return true;
     }
 

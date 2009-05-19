@@ -76,7 +76,7 @@ public class GESUtils {
      * 
      */
 
-    public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode,
+    public static Hashtable<Node, Integer> calculateDistances(GraphEltSet ges, Node focusNode,
             int radius, int maxAddEdgeCount, int maxExpandEdgeCount,
             boolean unidirectional) {
         Hashtable<Node, Integer> distHash = new Hashtable<Node, Integer>();
@@ -87,7 +87,7 @@ public class GESUtils {
 
         while (!nodeQ.isEmpty()) {
             Node n = nodeQ.pop();
-            int currDist = ((Integer) distHash.get(n)).intValue();
+            int currDist = (distHash.get(n)).intValue();
 
             if (currDist >= radius)
                 break;
@@ -108,7 +108,7 @@ public class GESUtils {
         return distHash;
     }
 
-    public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode,
+    public static Hashtable<Node,Integer> calculateDistances(GraphEltSet ges, Node focusNode,
             int radius) {
         return calculateDistances(ges, focusNode, radius, 1000, 1000, false);
     }
@@ -119,8 +119,7 @@ public class GESUtils {
      */
 
     // public static Collection getLargestConnectedSubgraph(GraphEltSet ges) {
-    @SuppressWarnings("unchecked")
-    public static Hashtable getLargestConnectedSubgraph(GraphEltSet ges) {
+    public static Hashtable<Node, Integer> getLargestConnectedSubgraph(GraphEltSet ges) {
         int nodeCount = ges.nodeCount();
         if (nodeCount == 0)
             return null;
@@ -130,12 +129,12 @@ public class GESUtils {
             Node n = ges.nodeAt(i);
             boolean skipNode = false;
             for (int j = 0; j < subgraphVector.size(); j++) {
-                if (((Hashtable) subgraphVector.elementAt(j)).contains(n)) {
+                if (subgraphVector.elementAt(j).contains(n)) {
                     skipNode = true;
                 }
             }
             // Collection subgraph = calculateDistances(ges,n,1000).keySet();
-            Hashtable subgraph = calculateDistances(ges, n, 1000);
+            Hashtable<Node, Integer> subgraph = calculateDistances(ges, n, 1000);
             if (subgraph.size() > nodeCount / 2)
                 return subgraph; // We are done
             if (!skipNode)
@@ -146,13 +145,13 @@ public class GESUtils {
         int maxSize = 0;
         int maxIndex = 0;
         for (int j = 0; j < subgraphVector.size(); j++) {
-            if (((Hashtable) subgraphVector.elementAt(j)).size() > maxSize) {
-                maxSize = ((Hashtable) subgraphVector.elementAt(j)).size();
+            if (subgraphVector.elementAt(j).size() > maxSize) {
+                maxSize = subgraphVector.elementAt(j).size();
                 maxIndex = j;
             }
         }
 
-        return (Hashtable) subgraphVector.elementAt(maxIndex);
+        return subgraphVector.elementAt(maxIndex);
     }
 
 } // end com.touchgraph.graphlayout.graphelements.GraphEltSet

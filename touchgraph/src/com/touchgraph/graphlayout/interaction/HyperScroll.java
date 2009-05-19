@@ -173,7 +173,7 @@ public class HyperScroll implements GraphListener {
         double x2 = inverseArray[i];
         double x1 = inverseArray[i - 1];
         double j = (dist - x1) / (x2 - x1);
-        return (((double) i + j - 1) / 200.0 * width);
+        return ((i + j - 1) / 200.0 * width);
     }
 
     class HyperLens extends TGAbstractLens {

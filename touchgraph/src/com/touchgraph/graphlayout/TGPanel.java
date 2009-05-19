@@ -489,27 +489,27 @@ public class TGPanel extends JPanel {
     }
 
     void fireMovedEvent() {
-        Vector listeners;
+        Vector<GraphListener> listeners;
 
         synchronized (this) {
-            listeners = (Vector) graphListeners.clone();
+            listeners = new Vector<GraphListener>(graphListeners);
         }
 
         for (int i = 0; i < listeners.size(); i++) {
-            GraphListener gl = (GraphListener) listeners.elementAt(i);
+            GraphListener gl = listeners.elementAt(i);
             gl.graphMoved();
         }
     }
 
     public void fireResetEvent() {
-        Vector listeners;
+        Vector<GraphListener> listeners;
 
         synchronized (this) {
-            listeners = (Vector) graphListeners.clone();
+            listeners = new Vector<GraphListener>(graphListeners);
         }
 
         for (int i = 0; i < listeners.size(); i++) {
-            GraphListener gl = (GraphListener) listeners.elementAt(i);
+            GraphListener gl = listeners.elementAt(i);
             gl.graphReset();
         }
     }
@@ -591,7 +591,7 @@ public class TGPanel extends JPanel {
 
         if (selectedNodes.size() > 0) {
             int r = (int) (Math.random() * selectedNodes.size());
-            setSelect((Node) selectedNodes.elementAt(r));
+            setSelect(selectedNodes.elementAt(r));
         } else {
             clearSelect();
         }
@@ -933,7 +933,7 @@ public class TGPanel extends JPanel {
         }
 
         for (int i = 0; i < paintListeners.size(); i++) {
-            TGPaintListener pl = (TGPaintListener) paintListeners.elementAt(i);
+            TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintFirst(offgraphics);
         }
 
@@ -946,7 +946,7 @@ public class TGPanel extends JPanel {
         visibleLocality.forAllEdges(fee);
 
         for (int i = 0; i < paintListeners.size(); i++) {
-            TGPaintListener pl = (TGPaintListener) paintListeners.elementAt(i);
+            TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintAfterEdges(offgraphics);
         }
 
@@ -975,7 +975,7 @@ public class TGPanel extends JPanel {
         }
 
         for (int i = 0; i < paintListeners.size(); i++) {
-            TGPaintListener pl = (TGPaintListener) paintListeners.elementAt(i);
+            TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintLast(offgraphics);
         }
 

@@ -60,7 +60,7 @@ public class HubList {
 
             if (tmp.getLastConnect()+RETRY_DELAY < now) {
                 // we've passed the deadline and can return the hub. 
-                return (HubDescription) mustCheck.removeFirst();
+                return mustCheck.removeFirst();
             }
             
             long waitTime = (tmp.getLastConnect()+RETRY_DELAY) - now;            

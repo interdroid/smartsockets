@@ -71,7 +71,7 @@ public class HubNode extends SmartNode {
 
             DirectSocketAddress to = info.connectedTo[i];
 
-            Edge e = (Edge) oldEdges.remove(to);
+            Edge e = oldEdges.remove(to);
 
             if (e != null) {
                 edges.put(to, e);
@@ -93,7 +93,7 @@ public class HubNode extends SmartNode {
 
             DirectSocketAddress to = info.connectedTo[i];
 
-            Edge e = (Edge) edges.get(to);
+            Edge e = edges.get(to);
 
             if (e == null) {
 
@@ -213,7 +213,7 @@ public class HubNode extends SmartNode {
 
                         DirectSocketAddress a = cs[c].getClientAddress();
 
-                        ClientNode ci = (ClientNode) old.remove(a);
+                        ClientNode ci = old.remove(a);
 
                         if (ci == null) {
                             ci = new ClientNode(cs[c], this);

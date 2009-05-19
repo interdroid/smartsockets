@@ -186,7 +186,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     private void updateHub(HubInfo info) {
 
-        HubNode h = (HubNode) oldHubs.remove(info.hubAddress);
+        HubNode h = oldHubs.remove(info.hubAddress);
 
         if (h == null) {
 
@@ -339,7 +339,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     }
 
     public HubNode getHubNode(DirectSocketAddress to) {
-        return (HubNode) hubs.get(to);
+        return hubs.get(to);
     }
 
     public void addNode(Node n) {
