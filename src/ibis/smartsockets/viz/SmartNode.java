@@ -8,6 +8,11 @@ public class SmartNode extends Node {
 
     private Pattern pattern;
 
+    public SmartNode(String id) {
+        super(id);
+    }
+
+    
     public SmartNode() {
         super();
     }

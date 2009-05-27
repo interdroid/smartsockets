@@ -32,6 +32,8 @@ public class HubNode extends SmartNode {
     private boolean collapseClients = false;
 
     public HubNode(SmartsocketsViz parent, HubInfo info) {
+        super(info.hubAddress.toString());
+        
         setPopup("CollapsedHubNode");
 
         setType(Node.TYPE_ELLIPSE);
