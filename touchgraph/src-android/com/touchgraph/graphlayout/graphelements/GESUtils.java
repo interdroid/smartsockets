@@ -76,7 +76,7 @@ public class GESUtils {
     public static Hashtable calculateDistances(GraphEltSet ges, Node focusNode, int radius,
                                                int maxAddEdgeCount, int maxExpandEdgeCount,
                                                boolean unidirectional ) {
-        Hashtable distHash = new Hashtable();
+        Hashtable<Node, Integer> distHash = new Hashtable<Node, Integer>();
         distHash.put(focusNode,new Integer(0));
 
         TGNodeQueue nodeQ = new TGNodeQueue();
@@ -113,7 +113,7 @@ public class GESUtils {
         int nodeCount = ges.nodeCount();
         if(nodeCount==0) return null;
 
-        Vector subgraphVector = new Vector();
+        Vector<Hashtable> subgraphVector = new Vector<Hashtable>();
         for(int i=0; i<nodeCount; i++) {
             Node n = ges.nodeAt(i);
             boolean skipNode=false;

@@ -124,9 +124,9 @@ public class TGPanel extends View {
 
     Canvas offgraphics;
 
-    private Vector graphListeners;
+    private Vector<GraphListener> graphListeners;
 
-    private Vector paintListeners;
+    private Vector<TGPaintListener> paintListeners;
 
     TGLensSet tgLensSet; // Converts between a nodes visual position (drawx,
 
@@ -142,8 +142,8 @@ public class TGPanel extends View {
         super(context);
         setGraphEltSet(new GraphEltSet());
 
-        graphListeners = new Vector();
-        paintListeners = new Vector();
+        graphListeners = new Vector<GraphListener>();
+        paintListeners = new Vector<TGPaintListener>();
 
         adjustOriginLens = new AdjustOriginLens();
 
@@ -534,7 +534,7 @@ public class TGPanel extends View {
             maxY = to.y;
         }
 
-        final Vector selectedNodes = new Vector();
+        final Vector<Node> selectedNodes = new Vector<Node>();
 
         TGForEachNode fen = new TGForEachNode() {
             public void forEachNode(Node node) {
@@ -730,6 +730,7 @@ public class TGPanel extends View {
         return Color.argb(0, r, g, b);
     }
 
+	@SuppressWarnings("unchecked")
     public synchronized void update(Canvas canvas) {
         if ((offscreen == null) || (getWidth() != offscreenWidth)
                 || (getHeight() != offscreenHeight)) {
@@ -748,11 +749,11 @@ public class TGPanel extends View {
         offgraphics.drawRect(0, 0, getWidth(), getHeight(), offPaint);
 
         synchronized (this) {
-            paintListeners = (Vector) paintListeners.clone();
+            paintListeners = (Vector<TGPaintListener>) paintListeners.clone();
         }
 
         for (int i = 0; i < paintListeners.size(); i++) {
-            TGPaintListener pl = (TGPaintListener) paintListeners.elementAt(i);
+            TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintFirst(offgraphics);
         }
 
@@ -765,7 +766,7 @@ public class TGPanel extends View {
         visibleLocality.forAllEdges(fee);
 
         for (int i = 0; i < paintListeners.size(); i++) {
-            TGPaintListener pl = (TGPaintListener) paintListeners.elementAt(i);
+            TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintAfterEdges(offgraphics);
         }
 
@@ -794,7 +795,7 @@ public class TGPanel extends View {
         }
 
         for (int i = 0; i < paintListeners.size(); i++) {
-            TGPaintListener pl = (TGPaintListener) paintListeners.elementAt(i);
+            TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintLast(offgraphics);
         }
 

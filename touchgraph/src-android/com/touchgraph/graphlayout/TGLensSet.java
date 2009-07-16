@@ -59,7 +59,7 @@ import  java.util.Vector;
   */
 public class TGLensSet {
 
-    Vector lenses=new Vector();
+    Vector<TGAbstractLens> lenses = new Vector<TGAbstractLens>();
 
     public void addLens( TGAbstractLens l ) {
         lenses.addElement(l);

@@ -137,7 +137,7 @@ public class Locality extends GraphEltSet {
         }
     }
 
-    public synchronized void deleteEdges( Vector edgesToDelete ) {
+    public synchronized void deleteEdges( Vector<Edge> edgesToDelete ) {
         removeEdges(edgesToDelete);
         completeEltSet.deleteEdges(edgesToDelete);
     }
@@ -166,7 +166,7 @@ public class Locality extends GraphEltSet {
         }
     }
 
-    public synchronized void deleteNodes( Vector nodesToDelete ) {
+    public synchronized void deleteNodes( Vector<Node> nodesToDelete ) {
         removeNodes(nodesToDelete);
         completeEltSet.deleteNodes(nodesToDelete);
     }

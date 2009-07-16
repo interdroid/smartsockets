@@ -51,7 +51,7 @@
 	</target>
 
 	<!-- Compile smartsockets for android-->
-	<target name="compile-android">
+	<target name="compile-android" depends="touchgraph-android">
 		<mkdir dir="${distdir}" />
 		<mkdir dir="${builddir}" />
 

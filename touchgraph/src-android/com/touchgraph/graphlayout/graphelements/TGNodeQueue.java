@@ -61,10 +61,10 @@ import  java.util.Vector;
   */
 public class TGNodeQueue {
 
-    Vector queue;
+    Vector<Node> queue;
 
     public TGNodeQueue() {
-        queue=new Vector();
+        queue=new Vector<Node>();
     }
     
     public void push( Node n ) {
