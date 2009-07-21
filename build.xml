@@ -2,6 +2,7 @@
 
 	<property name="version" value="-1.51" />
 	<property name="jar" value="smartsockets${version}.jar" />
+	<property name="testjar" value="smartsockets-tests${version}.jar" />
 	<property name="jar-android" value="smartsockets${version}-android.jar" />
 
 	<property name="zip" value="smartsockets${version}.zip" />
@@ -35,12 +36,27 @@
 		</fileset>
 	</path>
 
-	<!-- Compile smartsockets -->
-	<target name="compile">
+	<!-- Compile smartsockets tests -->
+	<target name="compile-test">
+		<delete dir="${builddir}" />
 		<mkdir dir="${distdir}" />
 		<mkdir dir="${builddir}" />
 
-		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="**/*.java" classpathref="default.classpath" />
+		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="test/**/*.java" classpathref="default.classpath" />
+		<jar jarfile="${distdir}/${testjar}" basedir="${builddir}" includes="**">
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+			</manifest>
+		</jar>
+	</target>
+
+	<!-- Compile smartsockets -->
+	<target name="compile">
+		<delete dir="${builddir}" />
+		<mkdir dir="${distdir}" />
+		<mkdir dir="${builddir}" />
+
+		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="ibis/**/*.java" classpathref="default.classpath" />
 
 		<jar jarfile="${distdir}/${jar}" basedir="${builddir}" includes="**">
 			<manifest>
@@ -52,10 +68,11 @@
 
 	<!-- Compile smartsockets for android-->
 	<target name="compile-android" depends="touchgraph-android">
+		<delete dir="${builddir}" />
 		<mkdir dir="${distdir}" />
 		<mkdir dir="${builddir}" />
 
-		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="**/*.java" excludes="ibis/smartsockets/viz/**" classpathref="default.classpath" />
+		<javac destdir="${builddir}" srcdir="${srcdir}" target="1.5" debug="true" includes="ibis/**/*.java" excludes="ibis/smartsockets/viz/**" classpathref="default.classpath" />
 		<javac destdir="${builddir}" srcdir="${srcdir-android}" target="1.5" debug="true" includes="**/*.java" classpathref="android.classpath" />
 
 		<jar jarfile="${distdir}/${jar-android}" basedir="${builddir}" includes="**">
@@ -90,7 +107,7 @@
 
 
 
-	<target name="build" depends="clean,touchgraph,compile,javadoc">
+	<target name="build" depends="clean,touchgraph,compile,compile-test,android,javadoc">
 	</target>
 
 	<target name="android" depends="clean,touchgraph-android,compile-android">
