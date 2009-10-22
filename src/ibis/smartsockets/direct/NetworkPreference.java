@@ -2,6 +2,7 @@ package ibis.smartsockets.direct;
 
 
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.util.InetAddressCache;
 import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.TypedProperties;
 
@@ -606,7 +607,7 @@ public class NetworkPreference {
     private static byte[] addressToBytes(String address) {
 
         try {
-            InetAddress tmp = InetAddress.getByName(address);
+            InetAddress tmp = InetAddressCache.getByName(address);
             return tmp.getAddress();
         } catch (UnknownHostException e) {
             return new byte[0];

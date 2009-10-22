@@ -1,10 +1,10 @@
 package ibis.smartsockets.util.net;
 
 
+import ibis.smartsockets.util.InetAddressCache;
 import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.net.NetworkInfo;
 
-import java.net.InetAddress;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -72,7 +72,7 @@ public class LinuxNetworkInfoParser extends NetworkInfoParser {
             if (t != null) {
                 // .println("Got ipv4 " + t);
                 try { 
-                    nw.ipv4 = InetAddress.getByName(t);
+                    nw.ipv4 = InetAddressCache.getByName(t);
                 } catch (Exception e) {
                     // TODO: handle exception
                 }
@@ -97,7 +97,7 @@ public class LinuxNetworkInfoParser extends NetworkInfoParser {
             if (t != null) {
                 // System.out.println("Got ipv6 " + t);
                 try { 
-                    nw.ipv6 = InetAddress.getByName(t);
+                    nw.ipv6 = InetAddressCache.getByName(t);
                 } catch (Exception e) {
                     // TODO: handle exception
                 }

@@ -1,5 +1,6 @@
 package ibis.smartsockets.direct;
 
+import ibis.smartsockets.util.InetAddressCache;
 import ibis.smartsockets.util.MalformedAddressException;
 import ibis.smartsockets.util.NetworkUtils;
 
@@ -170,7 +171,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
                     String ipAddress = "" + (tmp4[0] & 0xFF) + "."
                             + (tmp4[1] & 0xFF) + "." + (tmp4[2] & 0xFF) + "."
                             + (tmp4[3] & 0xFF);
-                    target[i] = new InetSocketAddress(InetAddress
+                    target[i] = new InetSocketAddress(InetAddressCache
                             .getByName(ipAddress), port);
 
                 } else if (adlen == 16) {
@@ -1305,7 +1306,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
                 InetAddress tmp = null;
 
                 try {
-                    tmp = InetAddress.getByName(s);
+                    tmp = InetAddressCache.getByName(s);
                 } catch (UnknownHostException e) {
                     throw new MalformedAddressException("Broken inet address "
                             + s + " in address(" + addressPort + ")");

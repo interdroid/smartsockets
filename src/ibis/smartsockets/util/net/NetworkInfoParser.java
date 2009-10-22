@@ -1,6 +1,7 @@
 package ibis.smartsockets.util.net;
 
-import java.net.InetAddress;
+import ibis.smartsockets.util.InetAddressCache;
+
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -91,7 +92,7 @@ public abstract class NetworkInfoParser {
     
     protected static final byte [] ipStringToBytes(String ip) { 
         try  { 
-            return InetAddress.getByName(ip).getAddress();
+            return InetAddressCache.getByName(ip).getAddress();
         } catch (Exception e) {
             // print ??
             return null;

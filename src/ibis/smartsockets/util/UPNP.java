@@ -183,7 +183,7 @@ public class UPNP {
                 "ExternalIPAddress");
         
         try { 
-            return InetAddress.getByName(tmp);
+            return InetAddressCache.getByName(tmp);
         } catch (UnknownHostException e) {        
             return null;
         }        
@@ -240,8 +240,8 @@ public class UPNP {
 
                 InetAddress [] result = new InetAddress[2];
                 
-                result[0] = InetAddress.getByName(min);
-                result[1] = InetAddress.getByName(max);
+                result[0] = InetAddressCache.getByName(min);
+                result[1] = InetAddressCache.getByName(max);
                 
                 return result;		
             } catch (Exception e) {

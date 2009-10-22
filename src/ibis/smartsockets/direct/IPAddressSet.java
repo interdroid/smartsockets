@@ -1,6 +1,7 @@
 package ibis.smartsockets.direct;
 
 import ibis.smartsockets.util.AddressSorter;
+import ibis.smartsockets.util.InetAddressCache;
 import ibis.smartsockets.util.NetworkUtils;
 
 import java.io.Serializable;
@@ -382,7 +383,7 @@ public class IPAddressSet implements Serializable {
             // -- roelof, the above method doesn't work on Android
             String ipAddress = "" + (tmp[0] & 0xFF) + "." + (tmp[1] & 0xFF)
                     + "." + (tmp[2] & 0xFF) + "." + (tmp[3] & 0xFF);
-            addresses[0] = InetAddress.getByName(ipAddress);
+            addresses[0] = InetAddressCache.getByName(ipAddress);
 
         } else {
             // the byte [] contains a 'extended' InetAddress
@@ -453,7 +454,7 @@ public class IPAddressSet implements Serializable {
         InetAddress[] addresses = new InetAddress[len];
 
         for (int i = 0; i < len; i++) {
-            addresses[i] = InetAddress.getByName(st.nextToken());
+            addresses[i] = InetAddressCache.getByName(st.nextToken());
         }
 
         byte[] uuid = null;

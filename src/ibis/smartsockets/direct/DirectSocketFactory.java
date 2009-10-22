@@ -1,6 +1,7 @@
 package ibis.smartsockets.direct;
 
 import ibis.smartsockets.SmartSocketsProperties;
+import ibis.smartsockets.util.InetAddressCache;
 import ibis.smartsockets.util.NetworkUtils;
 import ibis.smartsockets.util.STUN;
 import ibis.smartsockets.util.TypedProperties;
@@ -553,7 +554,7 @@ public class DirectSocketFactory {
 
         if (tmp != null) {
             try {
-                result = InetAddress.getByName(tmp);
+                result = InetAddressCache.getByName(tmp);
             } catch (UnknownHostException e) {
                 logger.warn("Failed to parse property \""
                         + SmartSocketsProperties.EXTERNAL_MANUAL + "\"");
