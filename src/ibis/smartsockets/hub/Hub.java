@@ -227,6 +227,8 @@ public final class Hub extends Thread implements StatisticsCallback {
             writeAddressFile();
         }
         
+        //make this a daemon thread to keep Ibis-Deploy et al from "hanging"
+        setDaemon(true);
         start();
     }
 
