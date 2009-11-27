@@ -11,7 +11,7 @@ import ibis.smartsockets.virtual.VirtualServerSocket;
 import ibis.smartsockets.virtual.VirtualSocket;
 import ibis.smartsockets.virtual.VirtualSocketAddress;
 import ibis.smartsockets.virtual.modules.AbstractDirectModule;
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

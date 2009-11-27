@@ -2,7 +2,7 @@ package ibis.smartsockets.discovery;
 
 
 import ibis.smartsockets.util.NetworkUtils;
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.net.InetAddress;
 import java.net.SocketException;

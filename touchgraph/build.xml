@@ -8,8 +8,8 @@
 
 	<property name="version" value="" />
 
-	<property name="jar" location="../jars/TGGraphLayout-smartsockets${version}.jar" />
-	<property name="android-jar" location="../jars/TGGraphLayout-smartsockets${version}-android.jar" />
+	<property name="jar" location="../lib/TGGraphLayout-smartsockets${version}.jar" />
+	<property name="android-jar" location="../lib/TGGraphLayout-smartsockets${version}-android.jar" />
 
 	<path id="android.classpath">
 		<fileset dir="external-android">
@@ -30,7 +30,7 @@
 		</javac>
 
 		<!-- create target dir for jar if needed -->
-		<mkdir dir="../jars" />
+		<mkdir dir="../lib" />
 
 		<!-- Put everything in ${tmp} into the jar file -->
 		<jar jarfile="${jar}" basedir="tmp" />
@@ -53,7 +53,7 @@
 		</javac>
 
 		<!-- create target dir for jar if needed -->
-		<mkdir dir="../jars" />
+		<mkdir dir="../lib" />
 
 		<!-- Put everything in ${tmp} into the jar file -->
 		<jar jarfile="${android-jar}" basedir="tmp" />
@@ -62,9 +62,9 @@
 		<delete dir="tmp" />
 	</target>
 	<target name="copy-external-android">
-		<mkdir dir="../jars" />
+		<mkdir dir="../lib" />
 		<!-- Copy external libraries to lib directory -->
-		<copy todir="../jars">
+		<copy todir="../lib">
 			<fileset dir="external-android" />
 		</copy>
 	</target>

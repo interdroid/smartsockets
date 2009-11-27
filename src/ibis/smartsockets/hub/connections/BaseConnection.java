@@ -6,7 +6,7 @@ import ibis.smartsockets.hub.Connections;
 import ibis.smartsockets.hub.Statistics;
 import ibis.smartsockets.hub.StatisticsCallback;
 import ibis.smartsockets.hub.state.HubList;
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

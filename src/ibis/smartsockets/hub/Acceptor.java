@@ -13,7 +13,7 @@ import ibis.smartsockets.hub.state.HubDescription;
 import ibis.smartsockets.hub.state.HubList;
 import ibis.smartsockets.hub.state.StateCounter;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

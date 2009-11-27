@@ -8,7 +8,7 @@ import ibis.smartsockets.hub.ConnectionProtocol;
 import ibis.smartsockets.hub.connections.MessageForwarderProtocol;
 import ibis.smartsockets.hub.connections.VirtualConnectionIndex;
 import ibis.smartsockets.util.TypedProperties;
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

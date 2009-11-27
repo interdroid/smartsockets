@@ -1,6 +1,6 @@
 package ibis.smartsockets.util;
 
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.net.InetAddress;
 

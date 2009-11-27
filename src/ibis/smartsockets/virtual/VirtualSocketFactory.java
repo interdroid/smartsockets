@@ -12,7 +12,7 @@ import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 import ibis.smartsockets.virtual.modules.AcceptHandler;
 import ibis.smartsockets.virtual.modules.ConnectModule;
 import ibis.smartsockets.virtual.modules.direct.Direct;
-import ibis.util.ThreadPool;
+import ibis.smartsockets.util.ThreadPool;
 
 import java.io.IOException;
 import java.io.InputStream;

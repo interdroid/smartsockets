@@ -30,7 +30,7 @@ package ibis.smartsockets.util.net;
  */
 
 import ibis.smartsockets.util.NetworkUtils;
-import ibis.util.RunProcess;
+import ibis.smartsockets.util.RunProcess;
 
 import java.io.IOException;
 import java.net.InetAddress;
