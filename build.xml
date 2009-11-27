@@ -15,8 +15,6 @@
     <property name="distdir" value="./lib" />
     <property name="javadoc" value="javadoc/smartsockets" />
 
-
-
     <path id="android.classpath">
         <fileset dir="external">
             <include name="*.jar" />
@@ -116,13 +114,14 @@
     </target>
 
 
-
-    <target name="build" depends="clean,copy,touchgraph,compile,compile-test,android,javadoc">
+    <target name="build-tests" depends="build,compile-test">
+    </target>
+    
+    <target name="android" depends="build,touchgraph-android,compile-android">
     </target>
 
-    <target name="android" depends="clean,touchgraph-android,compile-android">
+    <target name="build" depends="clean,copy,touchgraph,compile,javadoc">
     </target>
-
 
 
     <target name="bin.zip" depends="build">
