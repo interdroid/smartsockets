@@ -24,7 +24,7 @@ import java.util.Map;
 public class Hubrouted extends ConnectModule 
     implements VirtualConnectionCallBack {
     
-    private static final int DEFAULT_CONNECT_TIMEOUT = 2000;   
+    private static final int DEFAULT_CONNECT_TIMEOUT = 5000;   
    // private static final int DEFAULT_CLOSED_CONNECTION_CACHE = 10000;   
      
     private final Map<Long, HubRoutedVirtualSocket> sockets = 
