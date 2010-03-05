@@ -273,8 +273,10 @@ public class Direct extends AbstractDirectModule {
         OutputStream out = null;
         
         try {
-            in = s.getInputStream();
-            out = s.getOutputStream();    
+            if (s != null) {
+                in = s.getInputStream();
+                out = s.getOutputStream();
+            }
             return new DirectVirtualSocket(a, s, out, in, count, null);     
         } catch (IOException e) {
             // This module worked fine, but we got a 'normal' exception while 
