@@ -49,7 +49,7 @@ public class ClientNode extends SmartNode {
         
         setLabel(label);
         
-        if (color != null) {
+        if (color != null && !color.equalsIgnoreCase("invisible")) {
             setPattern(Color.decode(color));
         } else {
             setPattern(hub.getPattern());
@@ -60,8 +60,10 @@ public class ClientNode extends SmartNode {
         list.add(adr);
         setMouseOverText(list.toArray(new String[0]));
         
-        if (tmp != null && tmp.equalsIgnoreCase("invisible")) {
-        //    this.setVisible(false);
+        if (tmp != null && tmp.equalsIgnoreCase("invisible"))  {
+            // this.setVisible(false);
+        } else if (color != null && color.equalsIgnoreCase("invisible")) {
+            // this.setVisible(false);
         } else {
             this.setVisible(true);
         }
