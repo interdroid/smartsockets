@@ -477,7 +477,8 @@ public class Node {
     /** Return the width of this Node. */
     public int getWidth() {
         if (fontMetrics != null && lbl != null) {
-            return fontMetrics.stringWidth(lbl) + 12;
+            //return fontMetrics.stringWidth(lbl) + 12;
+            return fontMetrics.stringWidth(lbl) + 35;
         } else {
             return 10;
         }
