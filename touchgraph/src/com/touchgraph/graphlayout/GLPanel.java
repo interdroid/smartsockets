@@ -76,7 +76,6 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SpringLayout;
 
-import com.touchgraph.graphlayout.graphelements.TGForEachNode;
 import com.touchgraph.graphlayout.interaction.GLEditUI;
 import com.touchgraph.graphlayout.interaction.GLNavigateUI;
 import com.touchgraph.graphlayout.interaction.HVScroll;
@@ -586,17 +585,13 @@ public class GLPanel extends JPanel {
         for (int i = 0; i < 249; i++) {
             tgPanel.addNode();
         }
-
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node n) {
-                for (int i = 0; i < 5; i++) {
-                    Node r = tgPanel.getGES().getRandomNode();
-                    if (r != n && tgPanel.findEdge(r, n) == null)
-                        tgPanel.addEdge(r, n, Edge.DEFAULT_LENGTH);
-                }
+        for (Node n : tgPanel.getGES().getNodeIterable()) {
+            for (int i = 0; i < 5; i++) {
+                Node r = tgPanel.getGES().getRandomNode();
+                if (r != n && tgPanel.findEdge(r, n) == null)
+                    tgPanel.addEdge(r, n, Edge.DEFAULT_LENGTH);
             }
-        };
-        tgPanel.getGES().forAllNodes(fen);
+        }
 
         tgPanel.setLocale(n1, 1);
         tgPanel.setSelect(n1);

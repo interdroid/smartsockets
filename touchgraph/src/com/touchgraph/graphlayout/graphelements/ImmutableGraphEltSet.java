@@ -51,6 +51,7 @@ package com.touchgraph.graphlayout.graphelements;
 
 import com.touchgraph.graphlayout.Node;
 import com.touchgraph.graphlayout.Edge;
+import com.touchgraph.graphlayout.NodePair;
 
 /**
  * ImmutableGraphEltSet provides access to the elements of GraphElementSet that
@@ -64,6 +65,12 @@ public interface ImmutableGraphEltSet {
 
     /** Return the number of Nodes in the cumulative Vector. */
     public int nodeCount();
+    
+    public Iterable<Node> getNodeIterable();
+    
+    public Iterable<Edge> getEdgeIterable();
+    
+    public Iterable<NodePair> getNodePairIterable();
 
     /**
      * Return the current Node count.
@@ -119,14 +126,5 @@ public interface ImmutableGraphEltSet {
 
     /** Return the first Node, null if none exist. */
     public Node getFirstNode();
-
-    /** iterates through all the nodes. */
-    public void forAllNodes(TGForEachNode fen);
-
-    /** iterates through pairs of Nodes. */
-    public void forAllNodePairs(TGForEachNodePair fenp);
-
-    /** iterates through Edges. */
-    public void forAllEdges(TGForEachEdge fee);
 
 } // end com.touchgraph.graphlayout.graphelements.ImmutableGraphEltSet

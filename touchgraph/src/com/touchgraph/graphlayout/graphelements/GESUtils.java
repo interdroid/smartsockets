@@ -125,11 +125,10 @@ public class GESUtils {
             return null;
 
         Vector<Hashtable<Node, Integer>> subgraphVector = new Vector<Hashtable<Node, Integer>>();
-        for (int i = 0; i < nodeCount; i++) {
-            Node n = ges.nodeAt(i);
+        for (Node n : ges.getNodeIterable()) {
             boolean skipNode = false;
-            for (int j = 0; j < subgraphVector.size(); j++) {
-                if (subgraphVector.elementAt(j).contains(n)) {
+            for (Hashtable<Node, Integer> h : subgraphVector) {
+                if (h.contains(n)) {
                     skipNode = true;
                 }
             }

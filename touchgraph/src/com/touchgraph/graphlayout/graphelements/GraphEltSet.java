@@ -51,10 +51,11 @@ package com.touchgraph.graphlayout.graphelements;
 
 import com.touchgraph.graphlayout.Node;
 import com.touchgraph.graphlayout.Edge;
+import com.touchgraph.graphlayout.NodePair;
 import com.touchgraph.graphlayout.TGException;
 
-// import java.util.Collection;
-// import java.util.Iterator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.Enumeration;
@@ -90,15 +91,148 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         edges = new Vector<Edge>();
         nodeIDRegistry = new Hashtable<String, Node>(); // registry of Node IDs
     }
+    
+    // ..........
+    
+    private static class NodeIterator implements Iterator<Node> {
+        
+        Node[] nodes;
+        int i = 0;
+        
+        NodeIterator(Node[] nodes) {
+            this.nodes = nodes;
+        }
+
+        public boolean hasNext() {
+            return i < nodes.length;
+        }
+
+        public Node next() {
+            if (i >= nodes.length) {
+                throw new NoSuchElementException("Iterator exhausted");
+            }
+            return nodes[i++];
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("remove not supported");
+        }
+    }
+    
+    private static class NodeIterable implements Iterable<Node> {
+        Node[] nodes;
+        NodeIterable(Vector<Node> nodes) {
+            this.nodes = nodes.toArray(new Node[nodes.size()]);
+        }
+        public Iterator<Node> iterator() {
+            return new NodeIterator(nodes);
+        }
+    }
+
+    private static class EdgeIterator implements Iterator<Edge> {
+        
+        Edge[] edges;
+        int i = 0;
+        
+        EdgeIterator(Edge[] edges) {
+            this.edges = edges;
+        }
+
+        public boolean hasNext() {
+            return i < edges.length;
+        }
+
+        public Edge next() {
+            if (i >= edges.length) {
+                throw new NoSuchElementException("Iterator exhausted");
+            }
+            return edges[i++];
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("remove not supported");
+        }
+    }
+    
+    private static class EdgeIterable implements Iterable<Edge> {
+        Edge[] edges;
+        EdgeIterable(Vector<Edge> edges) {
+            this.edges = edges.toArray(new Edge[edges.size()]);
+        }
+        public Iterator<Edge> iterator() {
+            return new EdgeIterator(edges);
+        }
+    }
+    
+private static class NodePairIterator implements Iterator<NodePair> {
+        
+        Node[] nodes;
+        int i = 0;
+        int j = 1;
+        NodePair pair = new NodePair();
+        
+        NodePairIterator(Node[] nodes) {
+            this.nodes = nodes;
+            if (nodes.length < 2) {
+                i = nodes.length;
+            }
+        }
+
+        public boolean hasNext() {
+            return i < nodes.length;
+        }
+
+        public NodePair next() {
+            if (i >= nodes.length) {
+                throw new NoSuchElementException("Iterator exhausted");
+            }
+            pair.n1 = nodes[i];
+            pair.n2 = nodes[j++];
+            if (j >= nodes.length) {
+                i++;
+                j = i + 1;
+                if (j >= nodes.length) {
+                    i = nodes.length;
+                }
+            }
+            return pair;
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("remove not supported");
+        }
+    }
+    
+    private static class NodePairIterable implements Iterable<NodePair> {
+        Node[] nodes;
+        NodePairIterable(Vector<Node> nodes) {
+            this.nodes = nodes.toArray(new Node[nodes.size()]);
+        }
+        public Iterator<NodePair> iterator() {
+            return new NodePairIterator(nodes);
+        }
+    }
+
+    
+    public Iterable<Node> getNodeIterable() {
+        synchronized(nodes) {
+            return new NodeIterable(nodes);
+        }
+    }
+    
+    public Iterable<Edge> getEdgeIterable() {
+        synchronized(edges) {
+            return new EdgeIterable(edges);
+        }
+    }
+    
+    public Iterable<NodePair> getNodePairIterable() {
+        synchronized(nodes) {
+            return new NodePairIterable(nodes);
+        }
+    }
 
     // Node manipulation ...........................
-
-    /** Return the Node at int <tt>index</tt>, null if none are available. */
-    protected Node nodeAt(int i) {
-        if (nodes.size() == 0)
-            return null;
-        return nodes.elementAt(i);
-    }
 
     /**
      * Return the number of Nodes in the cumulative Vector.
@@ -144,7 +278,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         if (id != null) {
             if (findNode(id) == null) { // doesn't already exist
                 nodeIDRegistry.put(id, node);
-                nodes.addElement(node);
+                nodes.add(node);
             } else
                 throw new TGException(TGException.NODE_EXISTS, "node ID '" + id
                         + "' already exists.");
@@ -162,7 +296,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
             }
             node.setID(id);
             nodeIDRegistry.put(id, node);
-            nodes.addElement(node);
+            nodes.add(node);
         }
         // } else throw new TGException(TGException.NODE_NO_ID,"node has no
         // ID."); // could be ignored?
@@ -174,13 +308,6 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     }
 
     // Edge manipulation ...........................
-
-    /** Return the Edge at int <tt>index</tt>, null if none are available. */
-    protected Edge edgeAt(int index) {
-        if (edges.size() == 0)
-            return null;
-        return edges.elementAt(index);
-    }
 
     /**
      * Return the number of Edges in the cumulative Vector.
@@ -211,7 +338,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         if (edge == null)
             return;
         if (!contains(edge)) {
-            edges.addElement(edge);
+            edges.add(edge);
             edge.from.addEdge(edge);
             edge.to.addEdge(edge);
         }
@@ -282,19 +409,17 @@ public class GraphEltSet implements ImmutableGraphEltSet {
      * null if no match is found.
      */
     public Node findNodeLabelContaining(String substring) {
-        for (int i = 0; i < nodeCount(); i++) {
-            if (nodeAt(i) != null
-                    && nodeAt(i).getLabel().toLowerCase().equals(
+        for (Node n : nodes) {
+            if (n.getLabel().toLowerCase().equals(
                             substring.toLowerCase())) {
-                return nodeAt(i);
+                return n;
             }
         }
-
-        for (int i = 0; i < nodeCount(); i++) {
-            if (nodeAt(i) != null
-                    && nodeAt(i).getLabel().toLowerCase().indexOf(
+        
+        for (Node n : nodes) {
+            if (n.getLabel().toLowerCase().indexOf(
                             substring.toLowerCase()) > -1) {
-                return nodeAt(i);
+                return n;
             }
         }
         return null;
@@ -315,7 +440,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         synchronized (edges) {
             if (edge == null)
                 return false;
-            if (!edges.removeElement(edge))
+            if (!edges.remove(edge))
                 return false;
             edge.from.removeEdge(edge);
             edge.to.removeEdge(edge);
@@ -326,8 +451,8 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     /** Delete the Edges contained within the Vector <tt>edgedToDelete</tt>. */
     public void deleteEdges(Vector<Edge> edgesToDelete) {
         synchronized (edges) {
-            for (int i = 0; i < edgesToDelete.size(); i++) {
-                deleteEdge(edgesToDelete.elementAt(i));
+            for (Edge e : edgesToDelete) {
+                deleteEdge(e);
             }
         }
     }
@@ -350,7 +475,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         synchronized (nodes) {
             if (node == null)
                 return false;
-            if (!nodes.removeElement(node))
+            if (!nodes.remove(node))
                 return false;
 
             String id = node.getID();
@@ -360,11 +485,11 @@ public class GraphEltSet implements ImmutableGraphEltSet {
             for (int i = 0; i < node.edgeCount(); i++) {
                 Edge e = node.edgeAt(i);
                 if (e.from == node) {
-                    edges.removeElement(e); // Delete edge not used, because it
+                    edges.remove(e); // Delete edge not used, because it
                                             // would change the node's edges
                     e.to.removeEdge(e); // vector which is being iterated on.
                 } else if (e.to == node) {
-                    edges.removeElement(e);
+                    edges.remove(e);
                     e.from.removeEdge(e);
                 }
                 // No edges are deleted from node. Hopefully garbage collection
@@ -377,8 +502,8 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     /** Delete the Nodes contained within the Vector <tt>nodesToDelete</tt>. */
     public void deleteNodes(Vector<Node> nodesToDelete) {
         synchronized (nodes) {
-            for (int i = 0; i < nodesToDelete.size(); i++) {
-                deleteNode(nodesToDelete.elementAt(i));
+            for (Node n : nodesToDelete) {
+                deleteNode(n);
             }
         }
     }
@@ -388,7 +513,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         if (nodes.size() == 0)
             return null;
         int r = (int) (Math.random() * nodeCount());
-        return nodeAt(r);
+        return nodes.get(r);
     }
 
     /** Return the first Node, null if none exist. */
@@ -396,54 +521,17 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         if (nodes.size() == 0)
             return null;
         else
-            return nodeAt(0);
+            return nodes.get(0);
     }
 
     /** Clear all nodes and edges. */
     public void clearAll() {
         synchronized (nodes) {
             synchronized (edges) {
-                nodes.removeAllElements();
-                edges.removeAllElements();
+                nodes.clear();
+                edges.clear();
                 nodeIDRegistry.clear();
             }
         }
     }
-
-    /**
-     * A way of iterating through all the nodes. Maybe too complex, and should
-     * be replaced by iterators.
-     */
-    public void forAllNodes(TGForEachNode fen) {
-        synchronized (nodes) {
-            for (int i = 0; i < nodeCount(); i++) {
-                Node n = nodeAt(i);
-                fen.forEachNode(n);
-            }
-        }
-    }
-
-    /** iterates through pairs of Nodes. */
-    public void forAllNodePairs(TGForEachNodePair fenp) {
-        synchronized (nodes) {
-            for (int i = 0; i < nodeCount(); i++) {
-                Node n1 = nodeAt(i);
-                fenp.beforeInnerLoop(n1);
-                for (int j = i + 1; j < nodeCount(); j++)
-                    fenp.forEachNodePair(n1, nodeAt(j));
-                fenp.afterInnerLoop(n1);
-            }
-        }
-    }
-
-    /** Iterates through Edges. */
-    public void forAllEdges(TGForEachEdge fee) {
-        synchronized (edges) {
-            for (int i = 0; i < edgeCount(); i++) {
-                Edge e = edgeAt(i);
-                fee.forEachEdge(e);
-            }
-        }
-    }
-
-} // end com.touchgraph.graphlayout.graphelements.GraphEltSet
+ } // end com.touchgraph.graphlayout.graphelements.GraphEltSet

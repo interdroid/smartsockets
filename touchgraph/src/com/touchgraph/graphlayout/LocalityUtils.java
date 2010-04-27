@@ -90,34 +90,29 @@ public class LocalityUtils {
         final boolean[] someNodeWasMarked = new boolean[1];
         someNodeWasMarked[0] = false;
         // Boolean x;
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node n) {
-                // if(!subgraph.contains(n)) {
-                if (!subgraph.containsKey(n)) {
-                    n.markedForRemoval = true;
-                    someNodeWasMarked[0] = true;
-                }
+        
+        for (Node n : locality.getNodeIterable()) {
+            // if(!subgraph.contains(n)) {
+            if (!subgraph.containsKey(n)) {
+                n.markedForRemoval = true;
+                someNodeWasMarked[0] = true;
             }
-        };
+        }
 
-        locality.forAllNodes(fen);
         return someNodeWasMarked[0];
     }
 
     private synchronized void removeMarkedNodes() {
         final Vector<Node> nodesToRemove = new Vector<Node>();
 
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node n) {
+        synchronized (locality) {
+            for (Node n : locality.getNodeIterable()) {
                 if (n.markedForRemoval) {
                     nodesToRemove.addElement(n);
                     n.markedForRemoval = false;
                     n.massfade = 1;
                 }
             }
-        };
-        synchronized (locality) {
-            locality.forAllNodes(fen);
             locality.removeNodes(nodesToRemove);
         }
     }
@@ -149,12 +144,9 @@ public class LocalityUtils {
     }
 
     private synchronized void unmarkNewAdditions() {
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node n) {
-                n.justMadeLocal = false;
-            }
-        };
-        locality.forAllNodes(fen);
+        for (Node n : locality.getNodeIterable()) {
+            n.justMadeLocal = false;
+        }
     }
 
     /** The thread that gets instantiated for doing the locality shift animation. */

@@ -104,20 +104,18 @@ public class VisibleLocality extends Locality {
     }
 
     public synchronized void removeAll() {
-        for (int i = 0; i < nodeCount(); i++) {
-            nodeAt(i).setVisible(false);
+        for (Node n : nodes) {
+            n.setVisible(false);
         }
-        for (int i = 0; i < edgeCount(); i++) {
-            edgeAt(i).setVisible(false);
+        for (Edge e : edges) {
+            e.setVisible(false);
         }
         super.removeAll();
     }
 
     public void updateLocalityFromVisibility() throws TGException {
-        // for (int i = 0 ; i < completeEltSet.nodeCount(); i++) {
-        // Node n = nodeAt(i);
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node node) {
+        synchronized(completeEltSet.nodes) {
+            for (Node node : completeEltSet.nodes) {
                 try {
                     if (node.isVisible() && !contains(node))
                         addNode(node);
@@ -127,19 +125,15 @@ public class VisibleLocality extends Locality {
                     ex.printStackTrace();
                 }
             }
-        };
-        completeEltSet.forAllNodes(fen);
-
-        // for (int i = 0 ; i < edgeCount(); i++) {
-        // Edge e = edgeAt(i);
-        TGForEachEdge fee = new TGForEachEdge() {
-            public void forEachEdge(Edge edge) {
+        }
+        
+        synchronized(completeEltSet.edges) {        
+            for (Edge edge : completeEltSet.edges) {
                 if (edge.isVisible() && !contains(edge))
                     addEdge(edge);
                 else if (!edge.isVisible() && contains(edge))
                     removeEdge(edge);
             }
-        };
-        completeEltSet.forAllEdges(fee);
+        }
     }
 } // end com.touchgraph.graphlayout.graphelements.VisibleLocality

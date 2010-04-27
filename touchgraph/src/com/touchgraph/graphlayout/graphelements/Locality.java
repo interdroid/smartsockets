@@ -101,7 +101,7 @@ public class Locality extends GraphEltSet {
 
     public void addEdge(Edge e) {
         if (!contains(e)) {
-            edges.addElement(e);
+            edges.add(e);
             // If a new Edge is created, and then added to Locality, then add
             // the new edge
             // to completeEltSet as well.
@@ -122,11 +122,11 @@ public class Locality extends GraphEltSet {
 
     public synchronized void addAll() throws TGException {
         synchronized (completeEltSet) {
-            for (int i = 0; i < completeEltSet.nodeCount(); i++) {
-                addNode(completeEltSet.nodeAt(i));
+            for (Node n : completeEltSet.nodes) {
+                addNode(n);
             }
-            for (int i = 0; i < completeEltSet.edgeCount(); i++) {
-                addEdge(completeEltSet.edgeAt(i));
+            for (Edge e : completeEltSet.edges) {
+                addEdge(e);
             }
         }
     }
@@ -157,7 +157,7 @@ public class Locality extends GraphEltSet {
         if (e == null)
             return false;
         else {
-            if (edges.removeElement(e)) {
+            if (edges.remove(e)) {
                 return true;
             }
             return false;
@@ -165,8 +165,8 @@ public class Locality extends GraphEltSet {
     }
 
     public synchronized void removeEdges(Vector<Edge> edgesToRemove) {
-        for (int i = 0; i < edgesToRemove.size(); i++) {
-            removeEdge(edgesToRemove.elementAt(i));
+        for (Edge e : edgesToRemove) {
+            removeEdge(e);
         }
     }
 
@@ -187,7 +187,7 @@ public class Locality extends GraphEltSet {
     public boolean removeNode(Node node) {
         if (node == null)
             return false;
-        if (!nodes.removeElement(node))
+        if (!nodes.remove(node))
             return false;
 
         String id = node.getID();
@@ -202,8 +202,8 @@ public class Locality extends GraphEltSet {
     }
 
     public synchronized void removeNodes(Vector<Node> nodesToRemove) {
-        for (int i = 0; i < nodesToRemove.size(); i++) {
-            removeNode(nodesToRemove.elementAt(i));
+        for (Node n : nodesToRemove) {
+            removeNode(n);
         }
     }
 

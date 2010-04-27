@@ -67,8 +67,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import com.touchgraph.graphlayout.graphelements.GraphEltSet;
 import com.touchgraph.graphlayout.graphelements.ImmutableGraphEltSet;
-import com.touchgraph.graphlayout.graphelements.TGForEachEdge;
-import com.touchgraph.graphlayout.graphelements.TGForEachNode;
 import com.touchgraph.graphlayout.graphelements.VisibleLocality;
 import com.touchgraph.graphlayout.interaction.GLEditUI;
 import com.touchgraph.graphlayout.interaction.TGAbstractClickUI;
@@ -576,18 +574,14 @@ public class TGPanel extends JPanel {
         }
 
         final Vector<Node> selectedNodes = new Vector<Node>();
-
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node node) {
-                double x = node.drawx;
-                double y = node.drawy;
-                if (x > minX && x < maxX && y > minY && y < maxY) {
-                    selectedNodes.addElement(node);
-                }
+        
+        for (Node node : visibleLocality.getNodeIterable()) {
+            double x = node.drawx;
+            double y = node.drawy;
+            if (x > minX && x < maxX && y > minY && y < maxY) {
+                selectedNodes.addElement(node);
             }
-        };
-
-        visibleLocality.forAllNodes(fen);
+        }
 
         if (selectedNodes.size() > 0) {
             int r = (int) (Math.random() * selectedNodes.size());
@@ -750,57 +744,48 @@ public class TGPanel extends JPanel {
         final Node[] monA = new Node[1];
         final Edge[] moeA = new Edge[1];
 
-        TGForEachNode fen = new TGForEachNode() {
+        double minoverdist = 100; // Kind of a hack (see second if statement)
+        
+        // Nodes can be as wide as 200 (=2*100)
+        for (Node node : visibleLocality.getNodeIterable()) {
 
-            double minoverdist = 100; // Kind of a hack (see second if
+            double x = node.drawx;
+            double y = node.drawy;
 
-            // statement)
+            double dist = Math.sqrt((mpx - x) * (mpx - x) + (mpy - y)
+                    * (mpy - y));
 
-            // Nodes can be as wide as 200 (=2*100)
-            public void forEachNode(Node node) {
-                double x = node.drawx;
-                double y = node.drawy;
+            if ((dist < minoverdist) && node.containsPoint(mpx, mpy)) {
+                minoverdist = dist;
+                monA[0] = node;
+            }
+        }
 
-                double dist = Math.sqrt((mpx - x) * (mpx - x) + (mpy - y)
+        double minDist = 8; // Tangential distance to the edge
+        double minFromDist = 1000; // Distance to the edge's "from" node
+        
+        for (Edge edge: visibleLocality.getEdgeIterable()) {
+            double x = edge.from.drawx;
+            double y = edge.from.drawy;
+            double dist = edge.distFromPoint(mpx, mpy);
+            
+            if (dist < minDist) { // Set the over edge to the edge with
+                // the minimun tangential distance
+                minDist = dist;
+                minFromDist = Math.sqrt((mpx - x) * (mpx - x) + (mpy - y)
                         * (mpy - y));
-
-                if ((dist < minoverdist) && node.containsPoint(mpx, mpy)) {
-                    minoverdist = dist;
-                    monA[0] = node;
-                }
-            }
-        };
-        visibleLocality.forAllNodes(fen);
-
-        TGForEachEdge fee = new TGForEachEdge() {
-
-            double minDist = 8; // Tangential distance to the edge
-
-            double minFromDist = 1000; // Distance to the edge's "from" node
-
-            public void forEachEdge(Edge edge) {
-                double x = edge.from.drawx;
-                double y = edge.from.drawy;
-                double dist = edge.distFromPoint(mpx, mpy);
-                if (dist < minDist) { // Set the over edge to the edge with
-                    // the minimun tangential distance
-                    minDist = dist;
-                    minFromDist = Math.sqrt((mpx - x) * (mpx - x) + (mpy - y)
-                            * (mpy - y));
+                moeA[0] = edge;
+            } else if (dist == minDist) { // If tangential distances are
+                // identical, chose
+                // the edge whose "from" node is closest.
+                double fromDist = Math.sqrt((mpx - x) * (mpx - x)
+                        + (mpy - y) * (mpy - y));
+                if (fromDist < minFromDist) {
+                    minFromDist = fromDist;
                     moeA[0] = edge;
-                } else if (dist == minDist) { // If tangential distances are
-                    // identical, chose
-                    // the edge whose "from" node is closest.
-                    double fromDist = Math.sqrt((mpx - x) * (mpx - x)
-                            + (mpy - y) * (mpy - y));
-                    if (fromDist < minFromDist) {
-                        minFromDist = fromDist;
-                        moeA[0] = edge;
-                    }
                 }
             }
-        };
-        visibleLocality.forAllEdges(fee);
+        }
 
         setMouseOverN(monA[0]);
         if (monA[0] == null)
@@ -835,27 +820,22 @@ public class TGPanel extends JPanel {
             topLeftDraw = new TGPoint2D(0, 0);
         if (bottomRightDraw == null)
             bottomRightDraw = new TGPoint2D(0, 0);
-
-        TGForEachNode fen = new TGForEachNode() {
-            boolean firstNode = true;
-
-            public void forEachNode(Node node) {
-                if (firstNode) { // initialize topRight + bottomLeft
-                    topLeftDraw.setLocation(node.drawx, node.drawy);
-                    bottomRightDraw.setLocation(node.drawx, node.drawy);
-                    firstNode = false;
-                } else { // Standard max and min finding
-                    topLeftDraw.setLocation(
-                            Math.min(node.drawx, topLeftDraw.x), Math.min(
-                                    node.drawy, topLeftDraw.y));
-                    bottomRightDraw.setLocation(Math.max(node.drawx,
-                            bottomRightDraw.x), Math.max(node.drawy,
-                            bottomRightDraw.y));
-                }
+        boolean firstNode = true;
+        
+        for (Node node : visibleLocality.getNodeIterable()) {
+            if (firstNode) { // initialize topRight + bottomLeft
+                topLeftDraw.setLocation(node.drawx, node.drawy);
+                bottomRightDraw.setLocation(node.drawx, node.drawy);
+                firstNode = false;
+            } else { // Standard max and min finding
+                topLeftDraw.setLocation(
+                        Math.min(node.drawx, topLeftDraw.x), Math.min(
+                                node.drawy, topLeftDraw.y));
+                bottomRightDraw.setLocation(Math.max(node.drawx,
+                        bottomRightDraw.x), Math.max(node.drawy,
+                                bottomRightDraw.y));
             }
-        };
-
-        visibleLocality.forAllNodes(fen);
+        }
     }
 
     public synchronized void processGraphMove() {
@@ -887,12 +867,9 @@ public class TGPanel extends JPanel {
     }
 
     public void updateDrawPositions() {
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node node) {
-                updateDrawPos(node);
-            }
-        };
-        visibleLocality.forAllNodes(fen);
+        for (Node node : visibleLocality.getNodeIterable()) {
+            updateDrawPos(node);
+        }
     }
 
     Color myBrighter(Color c) {
@@ -937,26 +914,18 @@ public class TGPanel extends JPanel {
             pl.paintFirst(offgraphics);
         }
 
-        TGForEachEdge fee = new TGForEachEdge() {
-            public void forEachEdge(Edge edge) {
-                edge.paint(offgraphics, TGPanel.this);
-            }
+        for (Edge e : visibleLocality.getEdgeIterable()) {
+            e.paint(offgraphics, TGPanel.this);            
         };
-
-        visibleLocality.forAllEdges(fee);
 
         for (int i = 0; i < paintListeners.size(); i++) {
             TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintAfterEdges(offgraphics);
         }
-
-        TGForEachNode fen = new TGForEachNode() {
-            public void forEachNode(Node node) {
-                node.paint(offgraphics, TGPanel.this);
-            }
-        };
-
-        visibleLocality.forAllNodes(fen);
+        
+        for (Node node : visibleLocality.getNodeIterable()) {
+            node.paint(offgraphics, TGPanel.this);
+        }
 
         if (mouseOverE != null) { // Make the edge the mouse is over appear on
             // top.
