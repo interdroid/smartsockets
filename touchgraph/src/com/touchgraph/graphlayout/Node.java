@@ -174,6 +174,8 @@ public class Node {
     // Modification by Lutz
     private String strUrl;
 
+    private boolean antiAlias;
+
     /**
      * Minimal constructor which will generate an ID value from Java's Date
      * class. Defaults will be used for type and color. The label will be taken
@@ -182,6 +184,7 @@ public class Node {
     public Node() {
         initialize(null);
         lbl = id;
+        antiAlias = false;
     }
 
     /**
@@ -192,6 +195,7 @@ public class Node {
     public Node(String id) {
         initialize(id);
         lbl = id;
+        antiAlias = false;
     }
 
     /**
@@ -201,10 +205,12 @@ public class Node {
      */
     public Node(String id, String label) {
         initialize(id);
-        if (label == null)
+        if (label == null) {
             lbl = id;
-        else
+        } else {
             lbl = label;
+        }
+        antiAlias = false;
     }
 
     /**
@@ -219,10 +225,34 @@ public class Node {
         initialize(id);
         typ = type;
         backColor = color;
-        if (label == null)
+        if (label == null) {
             lbl = id;
-        else
+        } else {
             lbl = label;
+        }
+        antiAlias = false;
+    }
+
+    /**
+     * Constructor with a String ID <tt>id</tt>, an int <tt>type</tt>,
+     * Background Color <tt>bgColor</tt>, and a String <tt>label</tt>. If the
+     * label is null, it will be taken from the ID value.
+     * 
+     * @see TYPE_RECTANGLE
+     * @see TYPE_ROUNDRECT
+     */
+    public Node(String id, int type, Color color, String label,
+            boolean antiAlias) {
+        initialize(id);
+        typ = type;
+        backColor = color;
+        if (label == null) {
+            lbl = id;
+        } else {
+            lbl = label;
+        }
+
+        this.antiAlias = antiAlias;
     }
 
     private void initialize(String identifier) {
@@ -241,6 +271,10 @@ public class Node {
     }
 
     // setters and getters ...............
+
+    public void setAntiAlias(boolean enabled) {
+        this.antiAlias = enabled;
+    }
 
     public void setNodeBackFixedColor(Color color) {
         BACK_FIXED_COLOR = color;
@@ -477,7 +511,7 @@ public class Node {
     /** Return the width of this Node. */
     public int getWidth() {
         if (fontMetrics != null && lbl != null) {
-            //return fontMetrics.stringWidth(lbl) + 12;
+            // return fontMetrics.stringWidth(lbl) + 12;
             return fontMetrics.stringWidth(lbl) + 35;
         } else {
             return 10;
@@ -686,32 +720,37 @@ public class Node {
         // Big hack to draw an outlined font...
 
         g2.setFont(g2.getFont().deriveFont(Font.BOLD));
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+        if (antiAlias) {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+        } else {
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_OFF);
+        }
 
         g2.setRenderingHint(RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
-        
+
         g2.setColor(Color.BLACK);
 
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
                 + fontMetrics.getDescent() + 1 + 1);
-        
+
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
                 + fontMetrics.getDescent() + 1 - 1);
-        
+
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
                 + fontMetrics.getDescent() + 1 + 1);
-        
+
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
                 + fontMetrics.getDescent() + 1 - 1);
-        
+
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
                 + fontMetrics.getDescent() + 1 + 1);
-        
+
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
                 + fontMetrics.getDescent() + 1 - 1);
-        
+
         g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
                 + fontMetrics.getDescent() + 1 + 0);
 
