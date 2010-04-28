@@ -298,59 +298,78 @@ public class Edge {
 
         g.setStroke(new BasicStroke((float) 2.0));
 
+        g.drawLine(x1, y1, x2, y2);
+        
         if (head) {
             double x3 = x1;
             double y3 = y1;
 
-            double x4 = x1;
-            double y4 = y1;
+            // double x4 = x1;
+            // double y4 = y1;
+            
+            int x3rounded = x1;
+            int y3rounded = y1;
 
             double dist = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1)
                     * (y2 - y1));
 
             if (dist > 10) {
                 double adjustDistRatio = (dist - 10) / dist;
-                x3 = (int) (x1 + (x2 - x1) * adjustDistRatio);
-                y3 = (int) (y1 + (y2 - y1) * adjustDistRatio);
+                x3 = (x1 + (x2 - x1) * adjustDistRatio);
+                y3 = (y1 + (y2 - y1) * adjustDistRatio);
 
-                x4 = (int) (x1 + (x2 - x1) * adjustDistRatio);
-                y4 = (int) (y1 + (y2 - y1) * adjustDistRatio);
+                // x4 = (int) (x1 + (x2 - x1) * adjustDistRatio);
+                // y4 = (int) (y1 + (y2 - y1) * adjustDistRatio);
+            
+
+                x3 = ((x3 * 4.0 + x1) / 5.0);
+                y3 = ((y3 * 4.0 + y1) / 5.0);
+
+                // x4 = ((x3 * 9.0 + x1 * 2.0) / 11.0);
+                // y4 = ((y3 * 9.0 + y1 * 2.0) / 11.0);
+                
+                x3rounded = (int) Math.round(x3);
+                y3rounded = (int) Math.round(y3);
             }
 
-            x3 = ((x3 * 4.0 + x1) / 5.0);
-            y3 = ((y3 * 4.0 + y1) / 5.0);
+            // g.drawLine(x2, y2, x3rounded, y3rounded);
 
-            x4 = ((x3 * 9.0 + x1 * 2.0) / 11.0);
-            y4 = ((y3 * 9.0 + y1 * 2.0) / 11.0);
-
-            g.drawLine(x2, y2, (int) Math.round(x3), (int) Math.round(y3));
-
-            double aDir = Math.atan2(x4 - x3, y4 - y3);
+            // double aDir = Math.atan2(x4 - x3, y4 - y3);
+            double aDir = Math.atan2(x2 - x1, y2 - y1);
             double stroke = 1.0;
 
-            // make the arrow head the same size regardless of the length length
+            // make the arrow head the same size regardless of the length
             double i1 = 6 + stroke * 2;
-            double i2 = 6 + stroke;
+            // double i2 = 6 + stroke;
 
             Polygon tmpPoly = new Polygon();
-            tmpPoly.addPoint((int) Math.round(x3), (int) Math.round(y3));
+            tmpPoly.addPoint(x3rounded, y3rounded);
+            
+            double x4 = x3 - xCor(i1, aDir);
+            double y4 = y3 - yCor(i1, aDir);
+            double xdiff = (x3 - x4) / 2.0;
+            double ydiff = (y3 - y4) / 2.0;
+            
+            tmpPoly.addPoint((int) Math.round(x4 + ydiff), (int) Math.round(y4 - xdiff));
+            tmpPoly.addPoint((int) Math.round(x4 - ydiff), (int) Math.round(y4 + xdiff));
 
+            /*
             tmpPoly.addPoint((int) Math.round(x3 + xCor(i1, aDir + 0.5)),
                     (int) Math.round(y3 + yCor(i1, aDir + 0.5)));
 
             tmpPoly.addPoint((int) Math.round(x3 + xCor(i1, aDir - 0.5)),
                     (int) Math.round(y3 + yCor(i1, aDir - 0.5)));
+*/
 
-            tmpPoly.addPoint((int) Math.round(x3), (int) Math.round(y3));
+            tmpPoly.addPoint(x3rounded, y3rounded);
 
             g.drawPolygon(tmpPoly);
             g.fillPolygon(tmpPoly);
 
-            g.drawLine(x1, y1, (int) Math.round(x3 + xCor(i2, aDir)),
-                    (int) Math.round(y3 + yCor(i2, aDir)));
-        } else {
-            g.drawLine(x1, y1, x2, y2);
+            // g.drawLine(x1, y1, (int) Math.round(x3 + xCor(i2, aDir)),
+            //        (int) Math.round(y3 + yCor(i2, aDir)));
         }
+ 
     }
 
     public void paint(Graphics g, TGPanel tgPanel) {
