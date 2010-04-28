@@ -310,8 +310,7 @@ public class TGLayout implements Runnable {
 
     private synchronized void moveNodes() {
         lastMaxMotion = maxMotion;
-        final double[] maxMotionA = new double[1];
-        maxMotionA[0] = 0;
+        maxMotion = 0;
         
         for (Node n : tgPanel.getGES().getNodeIterable()) {
             double dx = n.dx;
@@ -343,7 +342,7 @@ public class TGLayout implements Runnable {
                                                         // Stopping severed nodes from
                                                         // flying away?
             }
-            maxMotionA[0] = Math.max(distMoved, maxMotionA[0]);
+            maxMotion = Math.max(distMoved, maxMotion);
 
             if (!n.justMadeLocal && !n.markedForRemoval) {
                 n.massfade = 1;
@@ -354,7 +353,6 @@ public class TGLayout implements Runnable {
 
         }
 
-        maxMotion = maxMotionA[0];
         if (maxMotion > 0)
             motionRatio = lastMaxMotion / maxMotion - 1; // subtract 1 to
                                                             // make a positive
