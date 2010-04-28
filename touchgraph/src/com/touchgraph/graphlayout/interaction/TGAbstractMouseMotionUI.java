@@ -55,7 +55,7 @@ import java.awt.event.*;
 
 /**
  * TGAbstractMouseMotionUI allows one to write user interfaces that handle what
- * happends when a mouse is moved over the screen
+ * happens when a mouse is moved over the screen
  * 
  * @author Alexander Shapiro
  * @version 1.22-jre1.1 $Id: TGAbstractMouseMotionUI.java,v 1.1 2002/09/19
