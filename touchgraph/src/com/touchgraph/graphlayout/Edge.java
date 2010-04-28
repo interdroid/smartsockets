@@ -54,8 +54,11 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
 
 /**
  * Edge.
@@ -84,6 +87,8 @@ public class Edge {
     protected boolean visible;
 
     protected String id = null;
+
+    private String[] mouseOverText = null;
 
     // ............
 
@@ -371,6 +376,10 @@ public class Edge {
         }
  
     }
+    
+    public void setMouseOverText(String[] text) {
+        mouseOverText  = text;
+    }
 
     public void paint(Graphics g, TGPanel tgPanel) {
         Color c = (tgPanel.getMouseOverE() == this) ? MOUSE_OVER_COLOR : col;
@@ -382,6 +391,45 @@ public class Edge {
 
         if (intersects(tgPanel.getSize())) {
             paintArrow((Graphics2D) g, x1, y1, x2, y2, arrowHead, c);
+            if (tgPanel.getMouseOverE() == this) {
+
+                String[] text = mouseOverText;
+
+                if (text != null) {
+                    Point mouse = tgPanel.getMousePos();
+
+                    paintTextTag(g, tgPanel, mouse.x, mouse.y, Color.white, Color.black,
+                            text);
+                }
+            }
+        }
+    }
+    
+    public void paintTextTag(Graphics g, TGPanel tgPanel, int tagX, int tagY,
+            Color backCol, Color textCol, String[] text) {
+
+        g.setFont(Node.SMALL_TAG_FONT);
+        
+        // Compute size of text box
+        FontRenderContext frc = ((Graphics2D) g).getFontRenderContext();
+        int maxX = 0;
+        for (String s : text) {
+            TextLayout layout = new TextLayout(s, Node.SMALL_TAG_FONT, frc);
+            maxX = Math.max(maxX, (int) layout.getBounds().getWidth());
+        }
+        int w = maxX + 14;
+        int h = text.length * 10 + 2;
+        int ix = tagX + maxX/2 + 7;
+        int iy = tagY;
+        
+        // Draw background
+        g.setColor(backCol);
+        g.fillRect(tagX, tagY+15, w, h);
+
+        // Draw text
+        g.setColor(textCol);
+        for (int i = 0; i < text.length; i++) {
+            g.drawString(text[i], tagX + 7, tagY + 25 + i * 10);
         }
     }
 

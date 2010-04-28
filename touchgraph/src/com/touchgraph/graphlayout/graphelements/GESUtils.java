@@ -92,9 +92,8 @@ public class GESUtils {
             if (currDist >= radius)
                 break;
 
-            for (int i = 0; i < n.edgeCount(); i++) {
-                Edge e = n.edgeAt(i);
-                if (n != n.edgeAt(i).getFrom() && unidirectional)
+            for (Edge e : n.getEdgeIterable()) {
+                if (n != e.getFrom() && unidirectional)
                     continue;
                 Node adjNode = e.getOtherEndpt(n);
                 if (ges.contains(e) && !distHash.containsKey(adjNode)

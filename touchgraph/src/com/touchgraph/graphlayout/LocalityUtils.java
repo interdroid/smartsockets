@@ -266,8 +266,8 @@ public class LocalityUtils {
                     if (!locality.getCompleteEltSet().contains(n))
                         return;
                     tgPanel.stopDamper();
-                    for (int i = 0; i < n.edgeCount(); i++) {
-                        Node newNode = n.edgeAt(i).getOtherEndpt(n);
+                    for (Edge e : n.getEdgeIterable()) {
+                        Node newNode = e.getOtherEndpt(n);
                         if (!locality.contains(newNode)) {
                             newNode.justMadeLocal = true;
                             try {
@@ -278,8 +278,8 @@ public class LocalityUtils {
                                         + tge.getMessage());
                             } catch (InterruptedException ex) {
                             }
-                        } else if (!locality.contains(n.edgeAt(i))) {
-                            locality.addEdge(n.edgeAt(i));
+                        } else if (!locality.contains(e)) {
+                            locality.addEdge(e);
                         }
                     }
                     try {

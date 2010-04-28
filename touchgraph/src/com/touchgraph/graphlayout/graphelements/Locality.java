@@ -112,8 +112,7 @@ public class Locality extends GraphEltSet {
 
     public synchronized void addNodeWithEdges(Node n) throws TGException {
         addNode(n);
-        for (int i = 0; i < n.edgeCount(); i++) {
-            Edge e = n.edgeAt(i);
+        for (Edge e : n.getEdgeIterable()) {
             if (contains(e.getOtherEndpt(n)))
                 addEdge(e);
         }
@@ -194,8 +193,8 @@ public class Locality extends GraphEltSet {
         if (id != null)
             nodeIDRegistry.remove(id); // remove from registry
 
-        for (int i = 0; i < node.edgeCount(); i++) {
-            removeEdge(node.edgeAt(i));
+        for (Edge e : node.getEdgeIterable()) {
+            removeEdge(e);
         }
 
         return true;

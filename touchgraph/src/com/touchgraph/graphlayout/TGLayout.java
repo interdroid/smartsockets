@@ -252,30 +252,42 @@ public class TGLayout implements Runnable {
         }
     }
 
-    public void startDamper() {
+    public synchronized void startDamper() {
         damping = true;
+        if (! myWaitCondition()) {
+            notifyAll();
+        }
     }
 
-    public void stopDamper() {
+    public synchronized void stopDamper() {
         damping = false;
         damper = 1.0; // A value of 1.0 means no damping
+        if (! myWaitCondition()) {
+            notifyAll();
+        }
     }
 
-    public void resetDamper() { // reset the damper, but don't keep damping.
+    public synchronized void resetDamper() { // reset the damper, but don't keep damping.
         damping = true;
         damper = 1.0;
+        if (! myWaitCondition()) {
+            notifyAll();
+        }
     }
 
-    public void stopMotion() { // stabilize the graph, but do so gently by
+    public synchronized void stopMotion() { // stabilize the graph, but do so gently by
                                 // setting the damper to a low value
         damping = true;
         if (damper > 0.3)
             damper = 0.3;
         else
             damper = 0;
+        if (! myWaitCondition()) {
+            notifyAll();
+        }
     }
 
-    public void damp() {
+    public synchronized void damp() {
         if (damping) {
             if (motionRatio <= 0.001) { // This is important. Only damp when the
                                         // graph starts to move faster
@@ -305,6 +317,9 @@ public class TGLayout implements Runnable {
         }
         if (maxMotion < 0.001 && damping) {
             damper = 0;
+        }
+        if (! myWaitCondition()) {
+            notifyAll();
         }
     }
 
@@ -383,6 +398,10 @@ public class TGLayout implements Runnable {
             // break;
         }
     }
+    
+    private boolean myWaitCondition() {
+        return damper < 0.1 && damping && maxMotion < 0.001;
+    }
 
     public void run() {
         Thread me = Thread.currentThread();
@@ -393,8 +412,11 @@ public class TGLayout implements Runnable {
             try {
                 Thread.sleep(20); // Delay to wait for the prior repaint
                                     // command to finish.
-                while (damper < 0.1 && damping && maxMotion < 0.001)
-                    myWait();
+                synchronized(this) {
+                    while (myWaitCondition()) {
+                        wait();
+                    }
+                }
                 // System.out.println("damping " + damping + " damp " + damper +
                 // " maxM " + maxMotion + " motR " + motionRatio );
             } catch (InterruptedException e) {

@@ -54,6 +54,9 @@ import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.NodePair;
 import com.touchgraph.graphlayout.TGException;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Vector;
@@ -76,7 +79,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
 
     protected Vector<Node> nodes;
 
-    protected Vector<Edge> edges;
+    protected Collection<Edge> edges;
 
     /**
      * The Hashtable containing references to the Node IDs of the current graph.
@@ -88,7 +91,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     /** Default constructor. */
     public GraphEltSet() {
         nodes = new Vector<Node>();
-        edges = new Vector<Edge>();
+        edges = Collections.synchronizedSet(new HashSet<Edge>());
         nodeIDRegistry = new Hashtable<String, Node>(); // registry of Node IDs
     }
     
@@ -156,7 +159,7 @@ public class GraphEltSet implements ImmutableGraphEltSet {
     
     private static class EdgeIterable implements Iterable<Edge> {
         Edge[] edges;
-        EdgeIterable(Vector<Edge> edges) {
+        EdgeIterable(Collection<Edge> edges) {
             this.edges = edges.toArray(new Edge[edges.size()]);
         }
         public Iterator<Edge> iterator() {
@@ -221,9 +224,7 @@ private static class NodePairIterator implements Iterator<NodePair> {
     }
     
     public Iterable<Edge> getEdgeIterable() {
-        synchronized(edges) {
-            return new EdgeIterable(edges);
-        }
+        return new EdgeIterable(edges);
     }
     
     public Iterable<NodePair> getNodePairIterable() {
@@ -324,15 +325,6 @@ private static class NodePairIterator implements Iterator<NodePair> {
         return edges.size();
     }
 
-    /**
-     * Return an iterator over the Edges in the cumulative Vector, null if it is
-     * empty.
-     */
-    /*
-     * public Iterator getEdges() { if ( edges.size() == 0 ) return null; else
-     * return edges.iterator(); }
-     */
-
     /** Add the Edge <tt>edge</tt> to the graph. */
     public void addEdge(Edge edge) {
         if (edge == null)
@@ -427,8 +419,7 @@ private static class NodePairIterator implements Iterator<NodePair> {
 
     /** Return an Edge spanning Node <tt>from</tt> to Node <tt>to</tt>. */
     public Edge findEdge(Node from, Node to) {
-        for (int i = 0; i < from.edgeCount(); i++) {
-            Edge e = from.edgeAt(i);
+        for (Edge e : from.getEdgeIterable()) {
             if (e.to == to)
                 return e;
         }
@@ -437,23 +428,19 @@ private static class NodePairIterator implements Iterator<NodePair> {
 
     /** Delete the Edge <tt>edge</tt>. */
     public boolean deleteEdge(Edge edge) {
-        synchronized (edges) {
-            if (edge == null)
-                return false;
-            if (!edges.remove(edge))
-                return false;
-            edge.from.removeEdge(edge);
-            edge.to.removeEdge(edge);
-            return true;
-        }
+        if (edge == null)
+            return false;
+        if (!edges.remove(edge))
+            return false;
+        edge.from.removeEdge(edge);
+        edge.to.removeEdge(edge);
+        return true;
     }
 
     /** Delete the Edges contained within the Vector <tt>edgedToDelete</tt>. */
     public void deleteEdges(Vector<Edge> edgesToDelete) {
-        synchronized (edges) {
-            for (Edge e : edgesToDelete) {
-                deleteEdge(e);
-            }
+        for (Edge e : edgesToDelete) {
+            deleteEdge(e);
         }
     }
 
@@ -462,12 +449,10 @@ private static class NodePairIterator implements Iterator<NodePair> {
      * returning true if successful.
      */
     public boolean deleteEdge(Node from, Node to) {
-        synchronized (edges) {
-            Edge e = findEdge(from, to);
-            if (e != null)
-                return deleteEdge(e);
-            return false;
-        }
+        Edge e = findEdge(from, to);
+        if (e != null)
+            return deleteEdge(e);
+        return false;
     }
 
     /** Delete the Node <tt>node</tt>, returning true if successful. */
@@ -482,8 +467,7 @@ private static class NodePairIterator implements Iterator<NodePair> {
             if (id != null)
                 nodeIDRegistry.remove(id); // remove from registry
 
-            for (int i = 0; i < node.edgeCount(); i++) {
-                Edge e = node.edgeAt(i);
+            for (Edge e : node.getEdgeIterable()) {
                 if (e.from == node) {
                     edges.remove(e); // Delete edge not used, because it
                                             // would change the node's edges
@@ -527,11 +511,9 @@ private static class NodePairIterator implements Iterator<NodePair> {
     /** Clear all nodes and edges. */
     public void clearAll() {
         synchronized (nodes) {
-            synchronized (edges) {
-                nodes.clear();
-                edges.clear();
-                nodeIDRegistry.clear();
-            }
+            nodes.clear();
+            edges.clear();
+            nodeIDRegistry.clear();
         }
     }
  } // end com.touchgraph.graphlayout.graphelements.GraphEltSet

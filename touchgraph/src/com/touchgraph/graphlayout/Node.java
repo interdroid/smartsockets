@@ -60,7 +60,11 @@ import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
-import java.util.Vector;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * Node.
@@ -165,7 +169,7 @@ public class Node {
 
     protected boolean visible;
 
-    private Vector<Edge> edges;
+    private Collection<Edge> edges;
 
     private String[] mouseOverText;
 
@@ -177,6 +181,41 @@ public class Node {
     private String strUrl;
 
     private boolean antiAlias;
+    
+private static class EdgeIterator implements Iterator<Edge> {
+        
+        Edge[] edges;
+        int i = 0;
+        
+        EdgeIterator(Edge[] edges) {
+            this.edges = edges;
+        }
+
+        public boolean hasNext() {
+            return i < edges.length;
+        }
+
+        public Edge next() {
+            if (i >= edges.length) {
+                throw new NoSuchElementException("Iterator exhausted");
+            }
+            return edges[i++];
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("remove not supported");
+        }
+    }
+    
+    private static class EdgeIterable implements Iterable<Edge> {
+        Edge[] edges;
+        EdgeIterable(Collection<Edge> edges) {
+            this.edges = edges.toArray(new Edge[edges.size()]);
+        }
+        public Iterator<Edge> iterator() {
+            return new EdgeIterator(edges);
+        }
+    }
 
     /**
      * Minimal constructor which will generate an ID value from Java's Date
@@ -259,7 +298,7 @@ public class Node {
 
     private void initialize(String identifier) {
         this.id = identifier;
-        edges = new Vector<Edge>();
+        edges = Collections.synchronizedSet(new HashSet<Edge>());
         x = Math.random() * 2 - 1; // If multiple nodes are added without
         // repositioning,
         y = Math.random() * 2 - 1; // randomizing starting location causes them
@@ -270,6 +309,10 @@ public class Node {
         typ = DEFAULT_TYPE;
         visibleEdgeCnt = 0;
         visible = false;
+    }
+    
+    public Iterable<Edge> getEdgeIterable() {
+        return new EdgeIterable(edges);
     }
 
     // setters and getters ...............
@@ -493,21 +536,16 @@ public class Node {
         return visibleEdgeCnt;
     }
 
-    /** Return the Edge at int <tt>index</tt>. */
-    public Edge edgeAt(int index) {
-        return edges.elementAt(index);
-    }
-
     /** Add the Edge <tt>edge</tt> to the graph. */
     public void addEdge(Edge edge) {
         if (edge == null)
             return;
-        edges.addElement(edge);
+        edges.add(edge);
     }
 
     /** Remove the Edge <tt>edge</tt> from the graph. */
     public void removeEdge(Edge edge) {
-        edges.removeElement(edge);
+        edges.remove(edge);
     }
 
     /** Return the width of this Node. */
