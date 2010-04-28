@@ -58,6 +58,8 @@ import java.awt.Graphics2D;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.RenderingHints;
+import java.awt.font.FontRenderContext;
+import java.awt.font.TextLayout;
 import java.util.Vector;
 
 /**
@@ -549,9 +551,27 @@ public class Node {
 
     public void paintTextTag(Graphics g, TGPanel tgPanel, int tagX, int tagY,
             Color backCol, Color textCol, String[] text) {
-        g.setColor(textCol);
-        g.setFont(SMALL_TAG_FONT);
 
+        g.setFont(SMALL_TAG_FONT);
+        
+        // Compute size of text box
+        FontRenderContext frc = ((Graphics2D) g).getFontRenderContext();
+        int maxX = 0;
+        for (String s : text) {
+            TextLayout layout = new TextLayout(s, SMALL_TAG_FONT, frc);
+            maxX = Math.max(maxX, (int) layout.getBounds().getWidth());
+        }
+        int w = maxX + 14;
+        int h = text.length * 10 + 2;
+        int ix = tagX + maxX/2 + 7;
+        int iy = tagY;
+        
+        // Draw background
+        g.setColor(backCol);
+        g.fillRect(tagX, tagY+15, w, h);
+
+        // Draw text
+        g.setColor(textCol);
         for (int i = 0; i < text.length; i++) {
             g.drawString(text[i], tagX + 7, tagY + 25 + i * 10);
         }
