@@ -73,7 +73,17 @@ public class Edge {
     public static Color MOUSE_OVER_COLOR = Color.decode("#ccddff");
 
     public static int DEFAULT_LENGTH = 40;
+    
+    // Precomputed arrow heads, relative to (0,0).
+    private static int[] point1X;
+    private static int[] point2X;
+    private static int[] point1Y;
+    private static int[] point2Y;
 
+    static {
+        preComputeArrowPoints(8);       // 8 is tunable.
+    };
+    
     public Node from; // Should be private, changing from effects "from" Node
 
     public Node to; // Should be private, changing from effects "to" Node
@@ -339,33 +349,12 @@ public class Edge {
 
             // g.drawLine(x2, y2, x3rounded, y3rounded);
 
-            // double aDir = Math.atan2(x4 - x3, y4 - y3);
-            double aDir = Math.atan2(x2 - x1, y2 - y1);
-            double stroke = 1.0;
-
-            // make the arrow head the same size regardless of the length
-            double i1 = 6 + stroke * 2;
-            // double i2 = 6 + stroke;
+            int index = getIndex(Math.atan2(x2 - x1, y2 - y1));
 
             Polygon tmpPoly = new Polygon();
             tmpPoly.addPoint(x3rounded, y3rounded);
-            
-            double x4 = x3 - xCor(i1, aDir);
-            double y4 = y3 - yCor(i1, aDir);
-            double xdiff = (x3 - x4) / 2.0;
-            double ydiff = (y3 - y4) / 2.0;
-            
-            tmpPoly.addPoint((int) Math.round(x4 + ydiff), (int) Math.round(y4 - xdiff));
-            tmpPoly.addPoint((int) Math.round(x4 - ydiff), (int) Math.round(y4 + xdiff));
-
-            /*
-            tmpPoly.addPoint((int) Math.round(x3 + xCor(i1, aDir + 0.5)),
-                    (int) Math.round(y3 + yCor(i1, aDir + 0.5)));
-
-            tmpPoly.addPoint((int) Math.round(x3 + xCor(i1, aDir - 0.5)),
-                    (int) Math.round(y3 + yCor(i1, aDir - 0.5)));
-*/
-
+            tmpPoly.addPoint(x3rounded + point1X[index], y3rounded + point1Y[index]);
+            tmpPoly.addPoint(x3rounded + point2X[index], y3rounded + point2Y[index]);
             tmpPoly.addPoint(x3rounded, y3rounded);
 
             g.drawPolygon(tmpPoly);
@@ -376,6 +365,36 @@ public class Edge {
         }
  
     }
+    
+    private static void preComputeArrowPoints(int stroke) {
+        point1X = new int[361];
+        point2X = new int[361];
+        point1Y = new int[361];
+        point2Y = new int[361];
+        for (int i = -180; i <= 180; i++) {
+            double arc = i * Math.PI / 180;
+            double x4 = -stroke * Math.sin(arc);
+            double y4 = -stroke * Math.cos(arc);
+            double xdiff = -x4/2.0;
+            double ydiff = -y4/2.0;
+            point1X[i+180] = (int) Math.round(x4+ydiff);
+            point1Y[i+180] = (int) Math.round(y4-xdiff);
+            point2X[i+180] = (int) Math.round(x4-ydiff);
+            point2Y[i+180] = (int) Math.round(y4+xdiff);
+        }
+    }
+    
+    private static int getIndex(double arc) {
+        int index = (int) ((arc + Math.PI) * 180 / Math.PI);
+        if (index < 0) {
+            index = 0;
+        }
+        if (index > 360) {
+            index = 360;
+        }
+        return index;
+    }
+
     
     public void setMouseOverText(String[] text) {
         mouseOverText  = text;
