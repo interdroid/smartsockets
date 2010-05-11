@@ -90,27 +90,47 @@ public class Node {
     public final static int TYPE_CIRCLE = 4;
 
     public static final Font SMALL_TAG_FONT = new Font("Courier", Font.PLAIN, 9);
+    
+    private static final Color DEFAULT_BACK_FIXED_COLOR = new Color(255, 32, 20);
+    
+    private static final Color DEFAULT_BACK_SELECT_COLOR = new Color(255, 164, 0);
+    
+    private static final Color DEFAULT_BACK_DEFAULT_COLOR = Color.decode("#4080A0");
+    
+    private static final Color DEFAULT_BACK_HILIGHT_COLOR = new Color(205, 192, 166);
+    
+    private static final Color DEFAULT_BACK_MRF_COLOR = new Color(2, 35, 81);
+    
+    private static final Color DEFAULT_BACK_JML_COLOR = new Color(58, 176, 255);
+    
+    private static final Color DEFAULT_BORDER_DRAG_COLOR = new Color(130, 130, 180);
+    
+    private static final Color DEFAULT_BORDER_MOUSE_OVER_COLOR = new Color(160, 160, 180);
 
+    private static final Color DEFAULT_BORDER_INACTIVE_COLOR = new Color(30, 50, 160);
+    
+    private static final Color DEFAULT_TEXT_COLOR = Color.black;
+    
     // Variables that store default values for colors + fonts + node type
-    public Color BACK_FIXED_COLOR = new Color(255, 32, 20);
+    public Color BACK_FIXED_COLOR = DEFAULT_BACK_FIXED_COLOR;
 
-    public Color BACK_SELECT_COLOR = new Color(225, 164, 0);
+    public Color BACK_SELECT_COLOR = DEFAULT_BACK_SELECT_COLOR;
 
-    public Color BACK_DEFAULT_COLOR = Color.decode("#4080A0");
+    public Color BACK_DEFAULT_COLOR = DEFAULT_BACK_DEFAULT_COLOR;
 
-    public Color BACK_HILIGHT_COLOR = new Color(205, 192, 166);
+    public Color BACK_HILIGHT_COLOR = DEFAULT_BACK_HILIGHT_COLOR;
 
-    public Color BACK_MRF_COLOR = new Color(2, 35, 81);
+    public Color BACK_MRF_COLOR = DEFAULT_BACK_MRF_COLOR;
 
-    public Color BACK_JML_COLOR = new Color(58, 176, 255);
+    public Color BACK_JML_COLOR = DEFAULT_BACK_JML_COLOR;
 
-    public Color BORDER_DRAG_COLOR = new Color(130, 130, 180);
+    public Color BORDER_DRAG_COLOR = DEFAULT_BORDER_DRAG_COLOR;
 
-    public Color BORDER_MOUSE_OVER_COLOR = new Color(160, 160, 180);
+    public Color BORDER_MOUSE_OVER_COLOR = DEFAULT_BORDER_MOUSE_OVER_COLOR;
 
-    public Color BORDER_INACTIVE_COLOR = new Color(30, 50, 160);
+    public Color BORDER_INACTIVE_COLOR = DEFAULT_BORDER_INACTIVE_COLOR;
 
-    public Color TEXT_COLOR = Color.black;
+    public Color TEXT_COLOR = DEFAULT_TEXT_COLOR;
 
     public static Font TEXT_FONT = new Font("Verdana", Font.PLAIN, 10);
 
@@ -689,9 +709,12 @@ private static class EdgeIterator implements Iterator<Edge> {
 
     /** Paints the background of the node, along with its label */
     public void paintNodeBody(Graphics g, TGPanel tgPanel) {
+        
+        Graphics2D g2 = (Graphics2D) g;
 
         g.setFont(font);
-        fontMetrics = g.getFontMetrics();
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD));
+        fontMetrics = g2.getFontMetrics();
 
         int ix = (int) drawx;
         int iy = (int) drawy;
@@ -741,9 +764,6 @@ private static class EdgeIterator implements Iterator<Edge> {
                 g.fillRect(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4);
             }
         } else {
-
-            Graphics2D g2 = (Graphics2D) g;
-
             g2.setColor(Color.WHITE);
             if (typ == TYPE_ROUNDRECT) {
                 g2.fillRoundRect(ix - w / 2 + 2, iy - h / 2 + 2, w - 4, h - 4,
@@ -771,13 +791,11 @@ private static class EdgeIterator implements Iterator<Edge> {
 
         }
 
-        Graphics2D g2 = (Graphics2D) g;
-
         // if (backPaint != null && backPaint instanceof TexturePaint) {
 
         // Big hack to draw an outlined font...
 
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD));
+        // g2.setFont(g2.getFont().deriveFont(Font.BOLD));
         if (antiAlias) {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
@@ -789,35 +807,42 @@ private static class EdgeIterator implements Iterator<Edge> {
         g2.setRenderingHint(RenderingHints.KEY_RENDERING,
                 RenderingHints.VALUE_RENDER_QUALITY);
 
+        int len = fontMetrics.stringWidth(lbl);
+        int descent = fontMetrics.getDescent() + 1;
+/*
         g2.setColor(Color.BLACK);
+        
+        g2.drawString(lbl, ix - len / 2, iy
+                + descent + 1);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
-                + fontMetrics.getDescent() + 1 + 1);
+        g2.drawString(lbl, ix - len / 2, iy
+                + descent - 1);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
-                + fontMetrics.getDescent() + 1 - 1);
+        g2.drawString(lbl, ix - len / 2 + 1, iy
+                + descent + 1);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
-                + fontMetrics.getDescent() + 1 + 1);
+        g2.drawString(lbl, ix - len / 2 + 1, iy
+                + descent - 1);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
-                + fontMetrics.getDescent() + 1 - 1);
+        g2.drawString(lbl, ix - len / 2 - 1, iy
+                + descent + 1);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
-                + fontMetrics.getDescent() + 1 + 1);
+        g2.drawString(lbl, ix - len / 2 - 1, iy
+                + descent - 1);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
-                + fontMetrics.getDescent() + 1 - 1);
+        g2.drawString(lbl, ix - len / 2 - 1, iy
+                + descent + 0);
 
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 - 1, iy
-                + fontMetrics.getDescent() + 1 + 0);
-
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2 + 1, iy
-                + fontMetrics.getDescent() + 1 + 0);
+        g2.drawString(lbl, ix - len / 2 + 1, iy
+                + descent + 0);
 
         g2.setColor(Color.WHITE);
-        g2.drawString(lbl, ix - fontMetrics.stringWidth(lbl) / 2, iy
-                + fontMetrics.getDescent() + 1);
+        */
+        
+        g2.setColor(TEXT_COLOR);
+        
+        g2.drawString(lbl, ix - len / 2, iy
+                + descent);
         /*
          * } else { Color textCol = getPaintTextColor(tgPanel);
          * g2.setColor(textCol); g2.drawString(lbl, ix -

@@ -91,6 +91,10 @@ public class Edge {
     protected boolean arrowHead = false;
 
     protected Color col;
+    
+    private Color labelBackgroundColor = null;
+    
+    private Color labelTextColor = Color.BLACK;
 
     protected int length;
 
@@ -99,28 +103,73 @@ public class Edge {
     protected String id = null;
 
     private String[] mouseOverText = null;
+    
+    private String lbl = null;
+
+    private int lblLenHalf = 0;
 
     // ............
 
     /**
-     * Constructor with two Nodes and a length.
+     * Constructor with two Nodes, a label, and a length.
      */
-    public Edge(Node f, Node t, int len) {
+    public Edge(Node f, Node t, int len, String lbl) {
         from = f;
         to = t;
         length = len;
         col = DEFAULT_COLOR;
         visible = false;
+        this.lbl = lbl;
     }
 
     /**
-     * Constructor with two Nodes, which uses a default length.
+     * Constructor with two Nodes, which uses a default length and label.
      */
     public Edge(Node f, Node t) {
-        this(f, t, DEFAULT_LENGTH);
+        this(f, t, DEFAULT_LENGTH, null);
+    }
+    
+    /**
+     * Constructor with two Nodes and a label, which uses a default length.
+     */
+    public Edge(Node f, Node t, String lbl) {
+        this(f, t, DEFAULT_LENGTH, lbl);
+    }
+
+    /**
+     * Constructor with two Nodes and a length, which uses a default label.
+     */
+    public Edge(Node f, Node t, int length) {
+        this(f, t, length, null);
     }
 
     // setters and getters ...............
+        
+    public String getLbl() {
+        return lbl;
+    }
+
+    public void setLbl(String lbl) {
+        this.lbl = lbl;
+        lblLenHalf = 0;
+    }
+    
+
+    public Color getLabelBackgroundColor() {
+        return labelBackgroundColor;
+    }
+
+    public void setLabelBackgroundColor(Color labelBackgroundColor) {
+        this.labelBackgroundColor = labelBackgroundColor;
+    }
+    
+    public Color getLabelTextColor() {
+        return labelTextColor;
+    }
+
+    public void setLabelTextColor(Color labelTextColor) {
+        this.labelTextColor = labelTextColor;
+    }
 
     public static void setEdgeDefaultColor(Color color) {
         DEFAULT_COLOR = color;
@@ -277,7 +326,7 @@ public class Edge {
         System.out.println("EEK");
         paintArrow((Graphics2D) g, x1, y1, x2, y2, false, c);
     }
-
+    
     public static void paintArrow(Graphics2D g, int x1, int y1, int x2, int y2,
             boolean head, Color c) {
 
@@ -363,7 +412,6 @@ public class Edge {
             // g.drawLine(x1, y1, (int) Math.round(x3 + xCor(i2, aDir)),
             //        (int) Math.round(y3 + yCor(i2, aDir)));
         }
- 
     }
     
     private static void preComputeArrowPoints(int stroke) {
@@ -420,8 +468,43 @@ public class Edge {
                     paintTextTag(g, tgPanel, mouse.x, mouse.y, Color.white, Color.black,
                             text);
                 }
+            } else if (lbl != null) {
+                double dist = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1)
+                        * (y2 - y1));
+                
+                int x = (x2 + x1) / 2;
+                int y = (y2 + y1) / 2;
+
+                if (dist > 20) {
+                    x = ((x1 * 5 + x2 * 3) / 8);
+                    y = ((y1 * 5 + y2 * 3) / 8);
+                }
+                paintLabel(g, x, y, c);
             }
         }
+    }
+    
+    public void paintLabel(Graphics g, int x, int y, Color c) {
+        g.setFont(Node.SMALL_TAG_FONT);
+        
+        if (lblLenHalf == 0) {
+            // Compute size of text box
+            FontRenderContext frc = ((Graphics2D) g).getFontRenderContext();
+            TextLayout layout = new TextLayout(lbl, Node.SMALL_TAG_FONT, frc);
+            lblLenHalf = (int) layout.getBounds().getWidth()/2 + 2;
+        }
+        
+        // Draw background
+        // g.setColor(c);
+        if (labelBackgroundColor != null) {
+            g.setColor(labelBackgroundColor);
+            g.fillRect(x - lblLenHalf, y - 5, 2 * lblLenHalf, 10);
+        }
+              
+        // Draw text
+        // g.setColor(Color.WHITE);
+        g.setColor(labelTextColor);
+        g.drawString(lbl, x - lblLenHalf, y + 3);
     }
     
     public void paintTextTag(Graphics g, TGPanel tgPanel, int tagX, int tagY,
