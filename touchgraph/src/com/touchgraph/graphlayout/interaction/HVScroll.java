@@ -148,14 +148,14 @@ public class HVScroll implements GraphListener {
     public TGPoint2D getTopLeftDraw() {
         TGPoint2D tld = tgPanel.getTopLeftDraw();
         tld.setLocation(tld.x - tgPanel.getSize().width / 4, tld.y
-                - tgPanel.getSize().height / 4);
+               - tgPanel.getSize().height / 4);
         return tld;
     }
 
     public TGPoint2D getBottomRightDraw() {
         TGPoint2D brd = tgPanel.getBottomRightDraw();
         brd.setLocation(brd.x + tgPanel.getSize().width / 4, brd.y
-                + tgPanel.getSize().height / 4);
+               + tgPanel.getSize().height / 4);
         return brd;
     }
 
@@ -168,15 +168,15 @@ public class HVScroll implements GraphListener {
     Thread noRepaintThread;
 
     public void graphMoved() { // From GraphListener interface
-        if (tgPanel.getDragNode() == null && tgPanel.getSize().height > 0) {
+        if (tgPanel.getDragNode() == null && tgPanel.getSize().height > 0 && tgPanel.getNodeCount() > 0) {
             TGPoint2D drawCenter = getDrawCenter();
 
             TGPoint2D tld = getTopLeftDraw();
             TGPoint2D brd = getBottomRightDraw();
-
+            
             double newH = (-(tld.x - drawCenter.x) / (brd.x - tld.x) * 2000 - 1000);
             double newV = (-(tld.y - drawCenter.y) / (brd.y - tld.y) * 2000 - 1000);
-
+            
             boolean beyondBorder;
             beyondBorder = true;
 
@@ -272,6 +272,7 @@ public class HVScroll implements GraphListener {
 
             tgPanel.processGraphMove();
         }
+        (new Throwable()).printStackTrace();
     }
 
     private void adjustVOffset() { // The inverse of the "graphMoved" function.
