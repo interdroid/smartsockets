@@ -712,8 +712,7 @@ private static class EdgeIterator implements Iterator<Edge> {
         
         Graphics2D g2 = (Graphics2D) g;
 
-        g.setFont(font);
-        g2.setFont(g2.getFont().deriveFont(Font.BOLD));
+        g2.setFont(font.deriveFont(Font.BOLD));
         fontMetrics = g2.getFontMetrics();
 
         int ix = (int) drawx;
