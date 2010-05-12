@@ -82,5 +82,9 @@ public class TGPoint2D {
     public void setY(double ypos) {
         y = ypos;
     }
+    
+    public String toString() {
+        return "(" + x + ", " + y + ")";
+    }
 
 } // end com.touchgraph.graphlayout.TGPoint2D
