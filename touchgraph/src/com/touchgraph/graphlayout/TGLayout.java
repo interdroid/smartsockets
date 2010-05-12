@@ -390,15 +390,6 @@ public class TGLayout implements Runnable {
         tgPanel.repaintAfterMove();
     }
 
-    private void myWait() { // I think it was Netscape that caused me not to use
-                            // Wait, or was it java 1.1?
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            // break;
-        }
-    }
-    
     private boolean myWaitCondition() {
         return damper < 0.1 && damping && maxMotion < 0.001;
     }
