@@ -94,19 +94,23 @@ public class Locality extends GraphEltSet {
             // If a new Node is created, and then added to Locality, then add
             // the new edge
             // to completeEltSet as well.
-            if (!completeEltSet.contains(n))
-                completeEltSet.addNode(n);
+            synchronized(completeEltSet) {
+                if (!completeEltSet.contains(n))
+                    completeEltSet.addNode(n);
+            }
         }
     }
 
-    public void addEdge(Edge e) {
+    public synchronized void addEdge(Edge e) {
         if (!contains(e)) {
             edges.add(e);
             // If a new Edge is created, and then added to Locality, then add
             // the new edge
             // to completeEltSet as well.
-            if (!completeEltSet.contains(e))
-                completeEltSet.addEdge(e);
+            synchronized(completeEltSet) {
+                if (!completeEltSet.contains(e))
+                    completeEltSet.addEdge(e);
+            }
         }
     }
 
@@ -120,7 +124,7 @@ public class Locality extends GraphEltSet {
     }
 
     public synchronized void addAll() throws TGException {
-        synchronized (completeEltSet) {
+        synchronized(completeEltSet) {
             for (Node n : completeEltSet.nodes) {
                 addNode(n);
             }
@@ -152,7 +156,7 @@ public class Locality extends GraphEltSet {
         completeEltSet.deleteEdges(edgesToDelete);
     }
 
-    public boolean removeEdge(Edge e) {
+    public synchronized boolean removeEdge(Edge e) {
         if (e == null)
             return false;
         else {
@@ -169,7 +173,7 @@ public class Locality extends GraphEltSet {
         }
     }
 
-    public boolean deleteNode(Node node) {
+    public synchronized boolean deleteNode(Node node) {
         if (node == null)
             return false;
         else {
@@ -183,7 +187,7 @@ public class Locality extends GraphEltSet {
         completeEltSet.deleteNodes(nodesToDelete);
     }
 
-    public boolean removeNode(Node node) {
+    public synchronized boolean removeNode(Node node) {
         if (node == null)
             return false;
         if (!nodes.remove(node))

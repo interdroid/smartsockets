@@ -114,7 +114,7 @@ public class VisibleLocality extends Locality {
     }
 
     public void updateLocalityFromVisibility() throws TGException {
-        synchronized(completeEltSet.nodes) {
+        synchronized(completeEltSet) {
             for (Node node : completeEltSet.nodes) {
                 try {
                     if (node.isVisible() && !contains(node))
@@ -125,9 +125,7 @@ public class VisibleLocality extends Locality {
                     ex.printStackTrace();
                 }
             }
-        }
         
-        synchronized(completeEltSet.edges) {        
             for (Edge edge : completeEltSet.edges) {
                 if (edge.isVisible() && !contains(edge))
                     addEdge(edge);

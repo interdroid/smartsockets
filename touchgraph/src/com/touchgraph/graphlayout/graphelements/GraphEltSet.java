@@ -217,20 +217,16 @@ private static class NodePairIterator implements Iterator<NodePair> {
     }
 
     
-    public Iterable<Node> getNodeIterable() {
-        synchronized(nodes) {
-            return new NodeIterable(nodes);
-        }
+    public synchronized Iterable<Node> getNodeIterable() {
+        return new NodeIterable(nodes);
     }
     
-    public Iterable<Edge> getEdgeIterable() {
+    public synchronized Iterable<Edge> getEdgeIterable() {
         return new EdgeIterable(edges);
     }
     
-    public Iterable<NodePair> getNodePairIterable() {
-        synchronized(nodes) {
-            return new NodePairIterable(nodes);
-        }
+    public synchronized Iterable<NodePair> getNodePairIterable() {
+        return new NodePairIterable(nodes);
     }
 
     // Node manipulation ...........................
@@ -456,39 +452,35 @@ private static class NodePairIterator implements Iterator<NodePair> {
     }
 
     /** Delete the Node <tt>node</tt>, returning true if successful. */
-    public boolean deleteNode(Node node) {
-        synchronized (nodes) {
-            if (node == null)
-                return false;
-            if (!nodes.remove(node))
-                return false;
+    public synchronized boolean deleteNode(Node node) {
+        if (node == null)
+            return false;
+        if (!nodes.remove(node))
+            return false;
 
-            String id = node.getID();
-            if (id != null)
-                nodeIDRegistry.remove(id); // remove from registry
+        String id = node.getID();
+        if (id != null)
+            nodeIDRegistry.remove(id); // remove from registry
 
-            for (Edge e : node.getEdgeIterable()) {
-                if (e.from == node) {
-                    edges.remove(e); // Delete edge not used, because it
-                                            // would change the node's edges
-                    e.to.removeEdge(e); // vector which is being iterated on.
-                } else if (e.to == node) {
-                    edges.remove(e);
-                    e.from.removeEdge(e);
-                }
-                // No edges are deleted from node. Hopefully garbage collection
-                // will pick them up.
+        for (Edge e : node.getEdgeIterable()) {
+            if (e.from == node) {
+                edges.remove(e); // Delete edge not used, because it
+                                        // would change the node's edges
+                e.to.removeEdge(e); // vector which is being iterated on.
+            } else if (e.to == node) {
+                edges.remove(e);
+                e.from.removeEdge(e);
             }
+            // No edges are deleted from node. Hopefully garbage collection
+            // will pick them up.
         }
         return true;
     }
 
     /** Delete the Nodes contained within the Vector <tt>nodesToDelete</tt>. */
-    public void deleteNodes(Vector<Node> nodesToDelete) {
-        synchronized (nodes) {
-            for (Node n : nodesToDelete) {
-                deleteNode(n);
-            }
+    public synchronized void deleteNodes(Vector<Node> nodesToDelete) {
+        for (Node n : nodesToDelete) {
+            deleteNode(n);
         }
     }
 
@@ -509,11 +501,9 @@ private static class NodePairIterator implements Iterator<NodePair> {
     }
 
     /** Clear all nodes and edges. */
-    public void clearAll() {
-        synchronized (nodes) {
-            nodes.clear();
-            edges.clear();
-            nodeIDRegistry.clear();
-        }
+    public synchronized void clearAll() {
+        nodes.clear();
+        edges.clear();
+        nodeIDRegistry.clear();
     }
  } // end com.touchgraph.graphlayout.graphelements.GraphEltSet
