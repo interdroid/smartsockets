@@ -294,7 +294,7 @@ public class LocalityUtils {
     }
 
     /** Hides a node, and all the nodes attached to it. */
-    public synchronized void hideNode(final Node hideNode) {
+    public void hideNode(final Node hideNode) {
         if (hideNode == null)
             return;
         new Thread() {
@@ -332,7 +332,7 @@ public class LocalityUtils {
      * Opposite of expand node, works like hide node except that the selected
      * node is not hidden.
      */
-    public synchronized void collapseNode(final Node collapseNode) {
+    public void collapseNode(final Node collapseNode) {
         if (collapseNode == null)
             return;
         new Thread() {

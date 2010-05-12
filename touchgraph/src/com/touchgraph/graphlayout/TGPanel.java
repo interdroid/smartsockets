@@ -311,9 +311,6 @@ public class TGPanel extends JPanel {
             node = new Node(id);
         else
             node = new Node(id, label);
-
-        updateDrawPos(node); // The addNode() call should probably take a
-        // position, this just sets it at 0,0
         addNode(node);
         return node;
     }
@@ -324,7 +321,8 @@ public class TGPanel extends JPanel {
      */
     public void addNode(final Node node) throws TGException {
         synchronized (localityUtils) {
-            visibleLocality.addNode(node);
+            visibleLocality.addNode(node);        
+            updateDrawPos(node);
             resetDamper();
         }
     }
