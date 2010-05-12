@@ -904,10 +904,8 @@ public class TGPanel extends JPanel {
 
         offgraphics.setColor(backgroundColor);
         offgraphics.fillRect(0, 0, d.width, d.height);
-
-        synchronized (this) {
-            paintListeners = (Vector) paintListeners.clone();
-        }
+        
+        paintListeners = (Vector) paintListeners.clone();
 
         for (int i = 0; i < paintListeners.size(); i++) {
             TGPaintListener pl = paintListeners.elementAt(i);
@@ -916,13 +914,13 @@ public class TGPanel extends JPanel {
 
         for (Edge e : visibleLocality.getEdgeIterable()) {
             e.paint(offgraphics, TGPanel.this);            
-        };
+        }
 
         for (int i = 0; i < paintListeners.size(); i++) {
             TGPaintListener pl = paintListeners.elementAt(i);
             pl.paintAfterEdges(offgraphics);
         }
-        
+
         for (Node node : visibleLocality.getNodeIterable()) {
             node.paint(offgraphics, TGPanel.this);
         }
