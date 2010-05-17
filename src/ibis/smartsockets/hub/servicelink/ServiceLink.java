@@ -75,23 +75,18 @@ public class ServiceLink implements Runnable {
     // Some statistics
     private long incomingConnections;
 
-    @SuppressWarnings("unused")
     private long acceptedIncomingConnections;
 
     private long rejectedIncomingConnections;
 
-    @SuppressWarnings("unused")
     private long failedIncomingConnections;
 
     private long outgoingConnections;
 
-    @SuppressWarnings("unused")
     private long acceptedOutgoingConnections;
 
-    @SuppressWarnings("unused")
     private long rejectedOutgoingConnections;
 
-    @SuppressWarnings("unused")
     private long failedOutgoingConnections;
 
     private long incomingBytes;
