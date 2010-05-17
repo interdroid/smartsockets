@@ -621,8 +621,8 @@ private static class EdgeIterator implements Iterator<Edge> {
         }
         int w = maxX + 14;
         int h = text.length * 10 + 2;
-        int ix = tagX + maxX/2 + 7;
-        int iy = tagY;
+        // int ix = tagX + maxX/2 + 7;
+        // int iy = tagY;
         
         // Draw background
         g.setColor(backCol);

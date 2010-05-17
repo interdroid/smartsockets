@@ -447,8 +447,13 @@ public class Edge {
     public void setMouseOverText(String[] text) {
         mouseOverText  = text;
     }
-
+    
     public void paint(Graphics g, TGPanel tgPanel) {
+        paint(g, tgPanel, false);
+    }
+
+    public void paint(Graphics g, TGPanel tgPanel, boolean mouseOver) {
+
         Color c = (tgPanel.getMouseOverE() == this) ? MOUSE_OVER_COLOR : col;
 
         int x1 = (int) from.drawx;
@@ -458,7 +463,7 @@ public class Edge {
 
         if (intersects(tgPanel.getSize())) {
             paintArrow((Graphics2D) g, x1, y1, x2, y2, arrowHead, c);
-            if (tgPanel.getMouseOverE() == this) {
+            if (mouseOver) {
 
                 String[] text = mouseOverText;
 
@@ -521,8 +526,8 @@ public class Edge {
         }
         int w = maxX + 14;
         int h = text.length * 10 + 2;
-        int ix = tagX + maxX/2 + 7;
-        int iy = tagY;
+        // int ix = tagX + maxX/2 + 7;
+        // int iy = tagY;
         
         // Draw background
         g.setColor(backCol);

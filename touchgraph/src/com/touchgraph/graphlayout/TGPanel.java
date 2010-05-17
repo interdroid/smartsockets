@@ -923,13 +923,6 @@ public class TGPanel extends JPanel {
             node.paint(offgraphics, TGPanel.this);
         }
 
-        if (mouseOverE != null) { // Make the edge the mouse is over appear on
-            // top.
-            mouseOverE.paint(offgraphics, this);
-            mouseOverE.from.paint(offgraphics, this);
-            mouseOverE.to.paint(offgraphics, this);
-        }
-
         if (select != null) { // Make the selected node appear on top.
             select.paint(offgraphics, this);
         }
@@ -937,6 +930,13 @@ public class TGPanel extends JPanel {
         if (mouseOverN != null) { // Make the node the mouse is over appear on
             // top.
             mouseOverN.paint(offgraphics, this, true);
+        }
+        
+        if (mouseOverE != null) { // Make the edge the mouse is over appear on
+            // top.
+            mouseOverE.from.paint(offgraphics, this);
+            mouseOverE.to.paint(offgraphics, this);
+            mouseOverE.paint(offgraphics, this, true);
         }
 
         for (int i = 0; i < paintListeners.size(); i++) {
