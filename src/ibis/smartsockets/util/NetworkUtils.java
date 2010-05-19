@@ -570,7 +570,7 @@ public class NetworkUtils {
     /**
      * Produces a sensible subnet/netmask for a give -local- address. 
      * 
-     * @param ad the address for which to produce the subnet/netmask
+     * @param a the address for which to produce the subnet/netmask
      * @param sub the array containing the subnet
      * @param mask the array containing the netmask
      * 

@@ -20,8 +20,8 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @throws IOException
+     * @return the socket
      * @see java.net.ServerSocket#accept()
      */
     public Socket accept() throws IOException {
@@ -57,7 +57,6 @@ public class SmartServerSocket extends ServerSocket {
 
     /**
      * @param obj
-     * @return
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
@@ -65,7 +64,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#getChannel()
      */
     public ServerSocketChannel getChannel() {
@@ -73,7 +71,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#getInetAddress()
      */
     public InetAddress getInetAddress() {
@@ -81,7 +78,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#getLocalPort()
      */
     public int getLocalPort() {
@@ -89,7 +85,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#getLocalSocketAddress()
      */
     public SocketAddress getLocalSocketAddress() {
@@ -97,7 +92,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.ServerSocket#getReceiveBufferSize()
      */
@@ -106,7 +100,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.ServerSocket#getReuseAddress()
      */
@@ -115,7 +108,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @throws IOException
      * @see java.net.ServerSocket#getSoTimeout()
      */
@@ -124,7 +116,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
@@ -132,7 +123,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#isBound()
      */
     public boolean isBound() {
@@ -140,7 +130,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#isClosed()
      */
     public boolean isClosed() {
@@ -185,7 +174,6 @@ public class SmartServerSocket extends ServerSocket {
     }
 
     /**
-     * @return
      * @see java.net.ServerSocket#toString()
      */
     public String toString() {

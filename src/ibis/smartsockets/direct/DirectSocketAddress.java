@@ -883,7 +883,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
      * 
      * A null address will assign the wildcard address.
      * 
-     * @param address
+     * @param a
      *                The IPAddressSet.
      * @param port
      *                The port number.

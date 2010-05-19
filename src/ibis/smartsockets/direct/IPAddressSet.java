@@ -335,7 +335,7 @@ public class IPAddressSet implements Serializable {
      * 
      * @param a
      *                source IPAddressSet
-     * @param u
+     * @param uuid
      *                source UUID
      * @return new IPAddressSet containing the combination of the two.
      */
@@ -480,8 +480,8 @@ public class IPAddressSet implements Serializable {
     /**
      * Create a new InetAddressSet from a single InetAddress object.
      * 
-     * @param addresses
-     *                the InetAddresses
+     * @param address
+     *                the InetAddress
      * @return new InetAddressSet
      */
     public static IPAddressSet getFromAddress(InetAddress address) {

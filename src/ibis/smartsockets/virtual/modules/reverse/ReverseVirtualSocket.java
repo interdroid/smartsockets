@@ -91,7 +91,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
 
     /**
      * @param obj
-     * @return
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
@@ -99,7 +98,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getChannel()
      */
     public SocketChannel getChannel() {
@@ -107,7 +105,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getInetAddress()
      */
     public InetAddress getInetAddress() {
@@ -115,7 +112,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws IOException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getInputStream()
      */
@@ -124,7 +120,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.VirtualSocket#getKeepAlive()
      */
@@ -133,7 +128,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getLocalAddress()
      */
     public InetAddress getLocalAddress() {
@@ -141,7 +135,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getLocalPort()
      */
     public int getLocalPort() {
@@ -149,7 +142,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getLocalSocketAddress()
      */
     public SocketAddress getLocalSocketAddress() {
@@ -157,7 +149,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.VirtualSocket#getOOBInline()
      */
@@ -166,7 +157,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws IOException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getOutputStream()
      */
@@ -175,7 +165,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getPort()
      */
     public int getPort() {
@@ -184,7 +173,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
 
     /**
      * @param key
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getProperty(java.lang.String)
      */
     public Object getProperty(String key) {
@@ -192,7 +180,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getReceiveBufferSize()
      */
@@ -201,7 +188,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#getRemoteSocketAddress()
      */
     public SocketAddress getRemoteSocketAddress() {
@@ -209,7 +195,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getReuseAddress()
      */
@@ -218,7 +203,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getSendBufferSize()
      */
@@ -227,7 +211,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getSoLinger()
      */
@@ -236,7 +219,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getSoTimeout()
      */
@@ -245,7 +227,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#getTcpNoDelay()
      */
@@ -254,7 +235,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see ibis.smartsockets.virtual.VirtualSocket#getTrafficClass()
      */
@@ -263,7 +243,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
@@ -271,7 +250,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isBound()
      */
     public boolean isBound() {
@@ -279,7 +257,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isClosed()
      */
     public boolean isClosed() {
@@ -287,7 +264,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isConnected()
      */
     public boolean isConnected() {
@@ -295,7 +271,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isInputShutdown()
      */
     public boolean isInputShutdown() {
@@ -303,7 +278,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#isOutputShutdown()
      */
     public boolean isOutputShutdown() {
@@ -311,7 +285,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.VirtualSocket#properties()
      */
     public Map<String, Object> properties() {
@@ -453,7 +426,6 @@ public class ReverseVirtualSocket extends VirtualSocket {
     }
 
     /**
-     * @return
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#toString()
      */
     public String toString() {

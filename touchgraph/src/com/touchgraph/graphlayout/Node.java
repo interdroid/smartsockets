@@ -279,8 +279,8 @@ private static class EdgeIterator implements Iterator<Edge> {
      * Background Color <tt>bgColor</tt>, and a String <tt>label</tt>. If the
      * label is null, it will be taken from the ID value.
      * 
-     * @see TYPE_RECTANGLE
-     * @see TYPE_ROUNDRECT
+     * @see #TYPE_RECTANGLE
+     * @see #TYPE_ROUNDRECT
      */
     public Node(String id, int type, Color color, String label) {
         initialize(id);
@@ -299,8 +299,8 @@ private static class EdgeIterator implements Iterator<Edge> {
      * Background Color <tt>bgColor</tt>, and a String <tt>label</tt>. If the
      * label is null, it will be taken from the ID value.
      * 
-     * @see TYPE_RECTANGLE
-     * @see TYPE_ROUNDRECT
+     * @see #TYPE_RECTANGLE
+     * @see #TYPE_ROUNDRECT
      */
     public Node(String id, int type, Color color, String label,
             boolean antiAlias) {
@@ -439,10 +439,10 @@ private static class EdgeIterator implements Iterator<Edge> {
     /**
      * Set the type of this Node to the int <tt>type</tt>.
      * 
-     * @see TYPE_RECTANGLE
-     * @see TYPE_ROUNDRECT
-     * @see TYPE_ELLIPSE
-     * @see TYPE_CIRCLE
+     * @see #TYPE_RECTANGLE
+     * @see #TYPE_ROUNDRECT
+     * @see #TYPE_ELLIPSE
+     * @see #TYPE_CIRCLE
      */
 
     public void setType(int type) {
@@ -452,10 +452,10 @@ private static class EdgeIterator implements Iterator<Edge> {
     /**
      * Return the type of this Node as an int.
      * 
-     * @see TYPE_RECTANGLE
-     * @see TYPE_ROUNDRECT
-     * @see TYPE_ELLIPSE
-     * @see TYPE_CIRCLE
+     * @see #TYPE_RECTANGLE
+     * @see #TYPE_ROUNDRECT
+     * @see #TYPE_ELLIPSE
+     * @see #TYPE_CIRCLE
      */
     public int getType() {
         return typ;

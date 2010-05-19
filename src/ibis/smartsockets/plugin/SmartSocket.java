@@ -139,8 +139,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
-     * @throws SocketException 
      * @see java.net.Socket#getChannel()
      */
     public SocketChannel getChannel() {
@@ -153,8 +151,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
-     * @throws SocketException 
      * @see java.net.Socket#getInetAddress()
      */
     public InetAddress getInetAddress() {
@@ -167,7 +163,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws IOException
      * @see java.net.Socket#getInputStream()
      */
@@ -185,7 +180,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getKeepAlive()
      */
@@ -199,7 +193,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#getLocalAddress()
      */
     public InetAddress getLocalAddress() {
@@ -221,7 +214,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#getLocalPort()
      */
     public int getLocalPort() {
@@ -247,7 +239,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#getLocalSocketAddress()
      */
     public SocketAddress getLocalSocketAddress() {
@@ -264,7 +255,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getOOBInline()
      */
@@ -277,7 +267,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws IOException
      * @see java.net.Socket#getOutputStream()
      */
@@ -295,7 +284,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#getPort()
      */
     public int getPort() {
@@ -308,7 +296,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getReceiveBufferSize()
      */
@@ -322,8 +309,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
-     * @throws SocketException 
      * @see java.net.Socket#getRemoteSocketAddress()
      */
     public SocketAddress getRemoteSocketAddress() {
@@ -336,7 +321,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getReuseAddress()
      */
@@ -350,7 +334,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getSendBufferSize()
      */
@@ -364,7 +347,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getSoLinger()
      */
@@ -383,7 +365,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getSoTimeout()
      */
@@ -397,7 +378,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getTcpNoDelay()
      */
@@ -411,7 +391,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @throws SocketException
      * @see java.net.Socket#getTrafficClass()
      */
@@ -425,7 +404,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#isBound()
      */
     public boolean isBound() {
@@ -433,7 +411,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#isClosed()
      */
     public boolean isClosed() {
@@ -447,7 +424,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#isConnected()
      */
     public boolean isConnected() {
@@ -460,7 +436,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#isInputShutdown()
      */
     public boolean isInputShutdown() {
@@ -473,7 +448,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#isOutputShutdown()
      */
     public boolean isOutputShutdown() {
@@ -692,7 +666,6 @@ public class SmartSocket extends Socket {
     }
 
     /**
-     * @return
      * @see java.net.Socket#toString()
      */
     public String toString() {
