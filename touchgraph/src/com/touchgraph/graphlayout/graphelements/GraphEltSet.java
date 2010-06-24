@@ -54,6 +54,7 @@ import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.NodePair;
 import com.touchgraph.graphlayout.TGException;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -62,9 +63,6 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.Enumeration;
-
-// import java.util.Iterator;
-// import java.util.Collection;
 
 /**
  * GraphEltSet contains data about the graph's components. Currently the only
@@ -126,7 +124,9 @@ public class GraphEltSet implements ImmutableGraphEltSet {
         Node[] nodes;
         NodeIterable(Vector<Node> nodes) {
             this.nodes = nodes.toArray(new Node[nodes.size()]);
+            Arrays.sort(this.nodes);
         }
+
         public Iterator<Node> iterator() {
             return new NodeIterator(nodes);
         }

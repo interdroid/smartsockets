@@ -75,7 +75,7 @@ import java.util.NoSuchElementException;
  * @version 1.22-jre1.1 $Id: Node.java,v 1.2 2002/09/20 14:00:22 ldornbusch Exp
  *          $
  */
-public class Node {
+public class Node implements Comparable<Node> {
 
     /** This Node's type is a Rectangle. */
     public final static int TYPE_RECTANGLE = 1;
@@ -202,7 +202,11 @@ public class Node {
 
     private boolean antiAlias;
     
-private static class EdgeIterator implements Iterator<Edge> {
+    // A rank can be used to order the nodes for drawing: lower rank implies
+    // later drawing (so the lowest-ranked node gets on top).
+    private int rank;
+    
+    private static class EdgeIterator implements Iterator<Edge> {
         
         Edge[] edges;
         int i = 0;
@@ -391,6 +395,14 @@ private static class EdgeIterator implements Iterator<Edge> {
 
     public String getPopup() {
         return popup;
+    }
+    
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
     }
 
     /**
@@ -866,5 +878,9 @@ private static class EdgeIterator implements Iterator<Edge> {
 
     public void setURL(String strUrl) {
         this.strUrl = strUrl;
+    }
+
+    public int compareTo(Node arg0) {
+        return arg0.rank - rank;
     }
 } // end com.touchgraph.graphlayout.Node
