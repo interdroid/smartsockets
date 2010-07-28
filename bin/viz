@@ -5,7 +5,7 @@ do
     CP=$CP:$i
 done
 
-for i in jars/*.jar
+for i in lib/*.jar
 do
     CP=$CP:$i
 done
