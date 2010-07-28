@@ -208,7 +208,8 @@ public class DirectSocketFactory {
         defaultSendBuffer = p.getIntProperty(
                 SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, 0);
 
-        localAddress = IPAddressSet.getLocalHost();
+        boolean cacheIPaddress = p.booleanProperty(SmartSocketsProperties.DIRECT_CACHE_IP, true);
+       	localAddress = IPAddressSet.getLocalHost(cacheIPaddress);
 
         if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;

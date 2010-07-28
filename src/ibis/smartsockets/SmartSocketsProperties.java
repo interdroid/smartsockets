@@ -94,7 +94,9 @@ public class SmartSocketsProperties {
     public static final String DIRECT_LOCAL_TIMEOUT  = DIRECT_PREFIX + "timeout.local";      
     public static final String DIRECT_SEND_BUFFER    = DIRECT_PREFIX + "sendbuffer";
     public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
-    public static final String DIRECT_COUNT          = DIRECT_PREFIX + "count";  
+    public static final String DIRECT_COUNT          = DIRECT_PREFIX + "count";
+    public static final String DIRECT_CACHE_IP       = DIRECT_PREFIX + "cacheIP";  
+
     
     public static final String SSH_PREFIX      = DIRECT_PREFIX + "ssh.";
     public static final String SSH_IN          = SSH_PREFIX + "in";
@@ -153,9 +155,10 @@ public class SmartSocketsProperties {
             SSH_OUT,                "false", 
             SSH_IN,                 "false",
             
-            NIO,             "false",
+            NIO,                    "false",
             DIRECT_SEND_BUFFER,     "-1",
             DIRECT_RECEIVE_BUFFER,  "-1",
+            DIRECT_CACHE_IP,        "true",
             
             STUN,                   "false",
             UPNP,                   "false",            
