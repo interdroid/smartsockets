@@ -210,7 +210,12 @@ public class Direct extends AbstractDirectModule {
             handleAccept(server.accept());    
         } catch (IOException e) {
             logger.warn(module + ": Got exception while waiting " +
-                    "for connection!", e);
+                    "for connection!, waiting one second, then retrying", e);
+            try {
+            Thread.sleep(1000);
+            } catch (Exception e2) {
+                //IGNORE
+            }
         }                
     }
                 
