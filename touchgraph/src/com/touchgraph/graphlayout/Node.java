@@ -591,7 +591,9 @@ public class Node implements Comparable<Node> {
 	/** Return the width of this Node. */
 	public int getWidth() {
 		if (fontMetrics != null && lbl != null) {
-			// return fontMetrics.stringWidth(lbl) + 12;
+		    if (typ == TYPE_CIRCLE || typ == TYPE_ELLIPSE ){
+		        return fontMetrics.stringWidth(lbl) + 12;
+		    }
 			return fontMetrics.stringWidth(lbl) + 35;
 		} else {
 			return 10;
