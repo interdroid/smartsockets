@@ -52,7 +52,8 @@ public class RouterClientNode extends ClientNode {
     }
             
     public RouterClientNode(ClientInfo info, HubNode hub) { 
-        super(info.getClientAddress().toString(), hub);        
+        super(info.getClientAddress().toString(), hub);  
+        setRank(0);
     
         // String adr = info.getClientAddress().toString();
                 

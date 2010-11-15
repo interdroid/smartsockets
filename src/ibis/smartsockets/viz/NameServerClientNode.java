@@ -13,6 +13,7 @@ public class NameServerClientNode extends ClientNode {
         
         super(info.getClientAddress().toString(), hub);         
         setType(Node.TYPE_CIRCLE);
+        setRank(0);
     
         String adr = info.getClientAddress().toString();
             

@@ -17,6 +17,7 @@ public class ClientNode extends SmartNode {
     
     public ClientNode(String id, HubNode hub) {
         super();
+        setRank(1);
         
         this.hub = hub;
         edge = new Edge(this, hub, 20);
@@ -26,6 +27,7 @@ public class ClientNode extends SmartNode {
     public ClientNode(ClientInfo info, HubNode hub) {
         super();
         this.hub = hub;
+        setRank(1);
         
         edge = new Edge(this, hub, 20);
         edge.useArrowHead(false);
@@ -46,6 +48,7 @@ public class ClientNode extends SmartNode {
         String label    = getElement(tmp, 0, "C");
         String [] popup = getElements(tmp, 1, new String[] { "Client" });
         String color    = getElement(tmp, 2, null);
+        String rank     = getElement(tmp, 3, null);
         
         setLabel(label);
         
@@ -53,6 +56,15 @@ public class ClientNode extends SmartNode {
             setPattern(Color.decode(color));
         } else {
             setPattern(hub.getPattern());
+        }
+        
+        if (rank != null) {
+            try {
+                int r = Integer.parseInt(rank, 10);
+                setRank(r);
+            } catch(NumberFormatException e) {
+                // ignored
+            }
         }
                 
         ArrayList<String> list = new ArrayList<String>();

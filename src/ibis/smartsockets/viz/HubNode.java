@@ -286,6 +286,16 @@ public class HubNode extends SmartNode {
             // double escape ^ char
             String[] split = info.vizInfo.split("\\^");
 
+            // rank included
+            if (split.length >= 4) {
+                try {
+                    int r = Integer.parseInt(split[3], 10);
+                    setRank(r);
+                } catch(NumberFormatException e) {
+                    // ignored
+                }
+            }
+
             // color included
             if (split.length >= 3) {
                 Color color = Color.decode(split[2]);
