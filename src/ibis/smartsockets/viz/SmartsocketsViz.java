@@ -7,6 +7,7 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
+import ibis.smartsockets.util.MalformedAddressException;
 import ibis.smartsockets.util.TypedProperties;
 
 import java.awt.Color;
@@ -18,6 +19,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -79,6 +81,11 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     public SmartsocketsViz(DirectSocketAddress... hubs) {
         this(getTextColor(), getBackgroundColor(), true, hubs);
+    }
+    
+    public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
+            String hubAddress) throws UnknownHostException, MalformedAddressException {
+    	this(textColor, backgroundColor, showself, DirectSocketAddress.getByAddress(hubAddress));
     }
 
     /**
