@@ -80,12 +80,20 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     }
 
     public SmartsocketsViz(DirectSocketAddress... hubs) {
-        this(getTextColor(), getBackgroundColor(), true, hubs);
+        this(getTextColor(), getBackgroundColor(), false, hubs);
     }
-    
-    public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
-            String hubAddress) throws UnknownHostException, MalformedAddressException {
-    	this(textColor, backgroundColor, showself, DirectSocketAddress.getByAddress(hubAddress));
+
+    public SmartsocketsViz(String... hubs) throws Exception {
+        this(getTextColor(), getBackgroundColor(), false, getAddresses(hubs));
+    }
+   
+
+    private static DirectSocketAddress[] getAddresses(String... hubs) throws Exception {
+        DirectSocketAddress[] result = new DirectSocketAddress[hubs.length];
+        for(int i = 0; i < hubs.length;i++) {
+            result[i] = DirectSocketAddress.getByAddress(hubs[i]);
+        }
+        return result;
     }
 
     /**
