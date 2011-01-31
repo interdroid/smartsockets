@@ -49,6 +49,8 @@
 
 package com.touchgraph.graphlayout.interaction;
 
+import java.awt.Dimension;
+
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -68,21 +70,36 @@ import com.touchgraph.graphlayout.TGPoint2D;
  */
 public class ZoomScroll implements GraphListener {
 
+    private static final int MAX = 19;
+    
+    private static final int MIN = -31;
+    
+    private static final int INITIAL = -4;
+    
     protected ZoomLens zoomLens;
 
     private JSlider zoomSlider;
 
     private TGPanel tgPanel;
+    
+    private double zoomValue = INITIAL;
 
     // ............
 
     /**
      * Constructor with TGPanel <tt>tgp</tt>.
      */
+    
     public ZoomScroll(TGPanel tgp) {
+	this(tgp, false);
+    }
+    
+    public ZoomScroll(TGPanel tgp, boolean auto) {
         tgPanel = tgp;
-        zoomSlider = new JSlider(JSlider.VERTICAL, -31, 19, -4);
-        zoomSlider.addChangeListener(new ZoomChangeListener());
+        if (! auto) {
+            zoomSlider = new JSlider(JSlider.VERTICAL, MIN, MAX, INITIAL);
+            zoomSlider.addChangeListener(new ZoomChangeListener());
+        }
         zoomLens = new ZoomLens();
         tgPanel.addGraphListener(this);
     }
@@ -99,19 +116,29 @@ public class ZoomScroll implements GraphListener {
     } // From GraphListener interface
 
     public void graphReset() {
-        zoomSlider.setValue(-10);
+	if (zoomSlider != null) {
+	    zoomSlider.setValue(-10);
+	} else {
+	    zoomValue = -10;
+	}
     } // From GraphListener interface
 
     public int getZoomValue() {
-        double orientedValue = zoomSlider.getValue() - zoomSlider.getMinimum();
-        double range = zoomSlider.getMaximum() - zoomSlider.getMinimum();
-        return (int) ((orientedValue / range) * 200 - 100);
+	if (zoomSlider != null) {
+	    double orientedValue = zoomSlider.getValue() - zoomSlider.getMinimum();
+	    double range = zoomSlider.getMaximum() - zoomSlider.getMinimum();
+	    return (int) ((orientedValue / range) * 200 - 100);
+	}
+	return (int) (((zoomValue - MIN)/(MAX - MIN)) * 200) - 100;
     }
 
     public void setZoomValue(int value) {
-        double range = zoomSlider.getMaximum() - zoomSlider.getMinimum();
-        zoomSlider.setValue((int) ((value + 100) / 200.0 * range + 0.5)
-                + zoomSlider.getMinimum());
+	if (zoomSlider != null) {
+	    double range = zoomSlider.getMaximum() - zoomSlider.getMinimum();
+	    zoomSlider.setValue((int) ((value + 100) / 200.0 * range + 0.5)
+		    + zoomSlider.getMinimum());
+	}
+	zoomValue = (int) ((value + 100) / 200.0 * (MAX - MIN) + .5) + MIN;
     }
 
     private class ZoomChangeListener implements ChangeListener {
@@ -122,15 +149,69 @@ public class ZoomScroll implements GraphListener {
     }
 
     class ZoomLens extends TGAbstractLens {
-        protected void applyLens(TGPoint2D p) {
-            p.x = p.x * Math.pow(2, zoomSlider.getValue() / 10.0);
-            p.y = p.y * Math.pow(2, zoomSlider.getValue() / 10.0);
 
+	private int shiftx = 0;
+	private int shifty = 0;
+	
+	protected void computeLens() {
+	    if (zoomSlider == null) {
+		Dimension d = tgPanel.getSize();
+		TGPoint2D tl = tgPanel.getTopLeft();
+		TGPoint2D br = tgPanel.getBottomRight();
+
+		int maxx = (int) br.x;
+		int minx = (int) tl.x;
+		int maxy = (int) br.y;
+		int miny = (int) tl.y;
+		double rangex = maxx - minx;
+		double rangey = maxy - miny;
+		double requiredZoom = rangex / (d.width-20);
+		if (rangey / d.height > requiredZoom) {
+		    requiredZoom = rangey / (d.height-20);
+		}
+		if (requiredZoom <= 1) {
+		    requiredZoom = 1;
+		}
+		shiftx = (maxx + minx) / 2;
+		shifty = (maxy + miny) / 2;
+		/*
+		System.out.println("Dimension = " + d.width + "x" + d.height);
+		System.out.println("Top left = (" + tl.x + "," + tl.y + ")");
+		System.out.println("Bottom right = (" + br.x + "," + br.y + ")");
+		System.out.println("shiftx = " + shiftx + ", shifty = " + shifty);
+		System.out.println("required zoom = " + requiredZoom);
+		*/
+		
+		// Math.pow(2, zoomValue/10.0) = 1/requiredZoom
+		// zoomValue/10.0 = 2log(1/requiredZoom)
+		// zoomValue = 10.0 * 2Log(1/requiredZoom)
+		zoomValue = 10.0 * Math.log(1.0/requiredZoom)/Math.log(2.0);
+		if (zoomValue < MIN) {
+		    zoomValue = MIN;
+		}
+		if (zoomValue > MAX) {
+		    zoomValue = MAX;
+		}
+		// System.out.println("zoomValue = " + zoomValue);
+	    }
+	}
+
+        protected void applyLens(TGPoint2D p) {
+            double val = zoomSlider != null ? zoomSlider.getValue() : zoomValue;
+//            if (zoomSlider == null) {
+//        	System.out.println("applyLens: point was " + p);
+//            }
+            p.x = (p.x - shiftx) * Math.pow(2, val / 10.0);
+            p.y = (p.y - shifty) * Math.pow(2, val / 10.0);
+//            if (zoomSlider == null) {
+//        	System.out.println("applyLens: point becomes " + p);
+//            }
         }
 
         protected void undoLens(TGPoint2D p) {
-            p.x = p.x / Math.pow(2, zoomSlider.getValue() / 10.0);
-            p.y = p.y / Math.pow(2, zoomSlider.getValue() / 10.0);
+            double val = zoomSlider != null ? zoomSlider.getValue() : zoomValue;
+            p.x = p.x / Math.pow(2, val / 10.0) + shiftx;
+            p.y = p.y / Math.pow(2, val / 10.0) + shifty;
         }
     }
 

@@ -63,5 +63,8 @@ public abstract class TGAbstractLens {
 
     protected void undoLens(TGPoint2D p) {
     }
+    
+    protected void computeLens() {
+    }
 
 } // end com.touchgraph.graphlayout.TGAbstractLens

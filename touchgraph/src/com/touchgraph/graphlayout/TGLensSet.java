@@ -66,6 +66,12 @@ public class TGLensSet {
     public void addLens(TGAbstractLens l) {
         lenses.addElement(l);
     }
+    
+    public void computeLenses() {
+	for (TGAbstractLens lens : lenses) {
+	    lens.computeLens();
+	}
+    }
 
     public void applyLens(TGPoint2D p) {
         if (lenses.isEmpty())

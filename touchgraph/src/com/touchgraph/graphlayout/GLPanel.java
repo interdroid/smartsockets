@@ -145,15 +145,22 @@ public class GLPanel extends JPanel {
     private final Color textColor;
 
     private final Color backgroundColor;
+    
+    private final boolean useSliders;
 
     public GLPanel() {
         this(null, null);
+    }
+    
+    public GLPanel(Color textColor, Color backgroundColor) {
+	this(textColor, backgroundColor, true);
     }
 
     /**
      * Default constructor.
      */
-    public GLPanel(Color textColor, Color backgroundColor) {
+    public GLPanel(Color textColor, Color backgroundColor, boolean useSliders) {
+	this.useSliders = useSliders;
         if (textColor == null) {
             textColor = Color.BLACK;
         }
@@ -176,8 +183,10 @@ public class GLPanel extends JPanel {
         tgPanel.setBackground(this.backgroundColor);
 
         hvScroll = new HVScroll(tgPanel, tgLensSet);
-        zoomScroll = new ZoomScroll(tgPanel);
-        rotateScroll = new RotateScroll(tgPanel);
+        zoomScroll = new ZoomScroll(tgPanel, ! useSliders);
+        if (useSliders) {
+             rotateScroll = new RotateScroll(tgPanel);
+        }
         initialize();
     }
 
@@ -276,16 +285,24 @@ public class GLPanel extends JPanel {
 
     public void buildLens() {
         tgLensSet.addLens(hvScroll.getLens());
-        tgLensSet.addLens(zoomScroll.getLens());
-        tgLensSet.addLens(rotateScroll.getLens());
+        if (zoomScroll != null) {
+            tgLensSet.addLens(zoomScroll.getLens());
+        }
+        if (rotateScroll != null) {
+            tgLensSet.addLens(rotateScroll.getLens());
+        }
         tgLensSet.addLens(tgPanel.getAdjustOriginLens());
     }
 
     public void buildPanel() {
         horizontalSB = hvScroll.getHorizontalSB();
         verticalSB = hvScroll.getVerticalSB();
-        zoomSlider = zoomScroll.getZoomSlider();
-        rotateSlider = rotateScroll.getRotateSlider();
+        if (useSliders) {
+            zoomSlider = zoomScroll.getZoomSlider();
+        }
+        if (rotateScroll != null) {
+            rotateSlider = rotateScroll.getRotateSlider();
+        }
 
         //setLayout(new BorderLayout());
 
@@ -312,14 +329,14 @@ public class GLPanel extends JPanel {
         c.gridy = 0;
         c.weightx = 1;
 
-        sliderHash.put(zoomLabel, zoomSlider);
-        sliderHash.put(rotateLabel, rotateSlider);
+        if (useSliders) {
+            sliderHash.put(zoomLabel, zoomSlider);
+            sliderHash.put(rotateLabel, rotateSlider);
 
-        JPanel scrollselect = scrollSelectPanel(new String[] { zoomLabel,
-                rotateLabel });
-        topPanel.add(scrollselect, c);
-
-
+            JPanel scrollselect = scrollSelectPanel(new String[] { zoomLabel,
+        	    rotateLabel });
+            topPanel.add(scrollselect, c);
+        }
 
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = 1;
@@ -656,6 +673,5 @@ public class GLPanel extends JPanel {
         } else if (glPopup != null) {
             // glPopup.show(tgPanel, x, y);
         }
-    }
-
+    }   
 } // end com.touchgraph.graphlayout.GLPanel

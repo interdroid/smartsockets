@@ -155,7 +155,6 @@ public class TGPanel extends JPanel {
         setLayout(null);
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
-        setGraphEltSet(new GraphEltSet());
         addMouseListener(new BasicMouseListener());
         basicMML = new BasicMouseMotionListener();
         addMouseMotionListener(basicMML);
@@ -795,6 +794,10 @@ public class TGPanel extends JPanel {
     TGPoint2D topLeftDraw = null;
 
     TGPoint2D bottomRightDraw = null;
+    
+    TGPoint2D topLeft = null;
+    
+    TGPoint2D bottomRight = null;
 
     public TGPoint2D getTopLeftDraw() {
         return new TGPoint2D(topLeftDraw);
@@ -803,7 +806,16 @@ public class TGPanel extends JPanel {
     public TGPoint2D getBottomRightDraw() {
         return new TGPoint2D(bottomRightDraw);
     }
+    
+    public TGPoint2D getTopLeft() {
+        return new TGPoint2D(topLeft);
+    }
 
+    public TGPoint2D getBottomRight() {
+        return new TGPoint2D(bottomRight);
+    }
+
+    
     public TGPoint2D getCenter() {
         return tgLensSet.convDrawToReal(getSize().width / 2,
                 getSize().height / 2);
@@ -818,20 +830,32 @@ public class TGPanel extends JPanel {
             topLeftDraw = new TGPoint2D(0, 0);
         if (bottomRightDraw == null)
             bottomRightDraw = new TGPoint2D(0, 0);
+        if (topLeft == null)
+            topLeft = new TGPoint2D(0, 0);
+        if (bottomRight == null)
+            bottomRight = new TGPoint2D(0, 0);
         boolean firstNode = true;
         
         for (Node node : visibleLocality.getNodeIterable()) {
             if (firstNode) { // initialize topRight + bottomLeft
                 topLeftDraw.setLocation(node.drawx, node.drawy);
                 bottomRightDraw.setLocation(node.drawx, node.drawy);
+                topLeft.setLocation(node.x, node.y);
+                bottomRight.setLocation(node.x, node.y);
                 firstNode = false;
             } else { // Standard max and min finding
                 topLeftDraw.setLocation(
-                        Math.min(node.drawx, topLeftDraw.x), Math.min(
-                                node.drawy, topLeftDraw.y));
-                bottomRightDraw.setLocation(Math.max(node.drawx,
-                        bottomRightDraw.x), Math.max(node.drawy,
-                                bottomRightDraw.y));
+                        Math.min(node.drawx, topLeftDraw.x),
+                        Math.min(node.drawy, topLeftDraw.y));
+                bottomRightDraw.setLocation(
+                	Math.max(node.drawx, bottomRightDraw.x),
+                	Math.max(node.drawy, bottomRightDraw.y));
+                topLeft.setLocation(
+                        Math.min(node.x, topLeft.x),
+                        Math.min(node.y, topLeft.y));
+                bottomRight.setLocation(
+                	Math.max(node.x, bottomRight.x),
+                	Math.max(node.y, bottomRight.y));
             }
         }
     }
@@ -898,6 +922,8 @@ public class TGPanel extends JPanel {
             processGraphMove();
             findMouseOver();
             fireMovedEvent();
+        } else {
+            tgLensSet.computeLenses();
         }
 
         offgraphics.setColor(backgroundColor);

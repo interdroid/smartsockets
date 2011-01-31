@@ -86,7 +86,9 @@ public class GLNavigateUI extends TGUserInterface {
         tgPanel = glPanel.getTGPanel();
 
         hvDragUI = glPanel.getHVScroll().getHVDragUI();
-        rotateDragUI = glPanel.getRotateScroll().getRotateDragUI();
+        if (glPanel.getRotateScroll() != null) {
+            rotateDragUI = glPanel.getRotateScroll().getRotateDragUI();
+        }
         // hvRotateDragUI = new HVRotateDragUI(tgPanel,
         // glPanel.getHVScroll(), glPanel.getRotateScroll());
         dragNodeUI = new DragNodeUI(tgPanel);

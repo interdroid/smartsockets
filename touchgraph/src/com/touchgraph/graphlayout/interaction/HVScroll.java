@@ -272,7 +272,6 @@ public class HVScroll implements GraphListener {
 
             tgPanel.processGraphMove();
         }
-        (new Throwable()).printStackTrace();
     }
 
     private void adjustVOffset() { // The inverse of the "graphMoved" function.

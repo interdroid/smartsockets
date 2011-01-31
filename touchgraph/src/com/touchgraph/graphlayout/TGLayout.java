@@ -49,6 +49,8 @@
 
 package com.touchgraph.graphlayout;
 
+import com.touchgraph.graphlayout.graphelements.ImmutableGraphEltSet;
+
 /**
  * TGLayout is the thread responsible for graph layout. It updates the real
  * coordinates of the nodes in the graphEltSet object. TGPanel sends it
@@ -122,7 +124,15 @@ public class TGLayout implements Runnable {
     // relaxEdges is more like tense edges up. All edges pull nodes closes
     // together;
     private synchronized void relaxEdges() {
-        for (Edge e : tgPanel.getGES().getEdgeIterable()) {
+	ImmutableGraphEltSet ges = tgPanel.getGES();
+	if (ges == null) {
+	    return;
+	}
+	Iterable<Edge> iter = ges.getEdgeIterable();
+	if (iter == null) {
+	    return;
+	}
+        for (Edge e : iter) {
 
             double vx = e.to.x - e.from.x;
             double vy = e.to.y - e.from.y;
@@ -399,7 +409,15 @@ public class TGLayout implements Runnable {
         // me.setPriority(1); //Makes standard executable look better, but the
         // applet look worse.
         while (relaxer == me) {
-            relax();
+            try {
+        	relax();
+            } catch(NullPointerException e) {
+        	// Ignore. This exception is thrown sometimes during startup,
+        	// especially when the X-server runs remotely.
+        	// Should fix it, really, but there are several instances.
+        	// For now, we just want to keep this thread alive.
+        	// TODO. --Ceriel
+            }
             try {
                 Thread.sleep(20); // Delay to wait for the prior repaint
                                     // command to finish.
