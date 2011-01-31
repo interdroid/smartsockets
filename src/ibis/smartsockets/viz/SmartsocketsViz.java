@@ -7,7 +7,6 @@ import ibis.smartsockets.direct.DirectSocketFactory;
 import ibis.smartsockets.hub.servicelink.ClientInfo;
 import ibis.smartsockets.hub.servicelink.HubInfo;
 import ibis.smartsockets.hub.servicelink.ServiceLink;
-import ibis.smartsockets.util.MalformedAddressException;
 import ibis.smartsockets.util.TypedProperties;
 
 import java.awt.Color;
@@ -19,7 +18,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -74,20 +72,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
         return Color.decode(backgroundColorString);
     }
-
-    public SmartsocketsViz(List<DirectSocketAddress> hubs) {
-        this(hubs.toArray(new DirectSocketAddress[0]));
-    }
-
-    public SmartsocketsViz(DirectSocketAddress... hubs) {
-        this(getTextColor(), getBackgroundColor(), false, hubs);
-    }
-
-    public SmartsocketsViz(String... hubs) throws Exception {
-        this(getTextColor(), getBackgroundColor(), false, getAddresses(hubs));
-    }
-   
-
+    
     private static DirectSocketAddress[] getAddresses(String... hubs) throws Exception {
         DirectSocketAddress[] result = new DirectSocketAddress[hubs.length];
         for(int i = 0; i < hubs.length;i++) {
@@ -95,14 +80,43 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         }
         return result;
     }
+       
+    public SmartsocketsViz(boolean useSliders, List<DirectSocketAddress> hubs) {
+	this(useSliders, hubs.toArray(new DirectSocketAddress[0]));
+    }
 
+    public SmartsocketsViz(List<DirectSocketAddress> hubs) {
+        this(hubs.toArray(new DirectSocketAddress[0]));
+    }
+    
+    public SmartsocketsViz(boolean useSliders, DirectSocketAddress... hubs) {
+        this(getTextColor(), getBackgroundColor(), false, useSliders, hubs);
+    }
+
+    public SmartsocketsViz(DirectSocketAddress... hubs) {
+        this(getTextColor(), getBackgroundColor(), false, hubs);
+    }
+
+    public SmartsocketsViz(boolean useSliders, String... hubs) throws Exception {
+        this(getTextColor(), getBackgroundColor(), false, useSliders, getAddresses(hubs));
+    }
+    
+    public SmartsocketsViz(String... hubs) throws Exception {
+        this(getTextColor(), getBackgroundColor(), false, getAddresses(hubs));
+    }
+   
+    public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
+            DirectSocketAddress... hubs) {
+	this(textColor, backgroundColor, showself, true, hubs);
+    }
+    
     /**
      * Default constructor.
      * 
      */
     public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
-            DirectSocketAddress... hubs) {
-        super(textColor, backgroundColor);
+            boolean useSliders, DirectSocketAddress... hubs) {
+        super(textColor, backgroundColor, useSliders);
 
         initPopups();
 
