@@ -41,7 +41,7 @@ public class HubNode extends SmartNode {
         // default color
         setPattern(parent.getUniqueColor());
         // default label
-        setLabel(" H ");
+        setLabel("H");
         // default text
         setMouseOverText(new String[] { "Hub", info.hubAddress.toString() });
 
