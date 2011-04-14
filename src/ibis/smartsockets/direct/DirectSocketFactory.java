@@ -709,7 +709,7 @@ public class DirectSocketFactory {
             if (logger.isDebugEnabled()) {
                 logger.debug("Attempting SSH connection to " + sas.toString()
                         + " via host " + host + " local port = " + localPort
-                        + "timeout = " + timeout);
+                        + " timeout = " + timeout);
             }
         }
 
@@ -721,8 +721,7 @@ public class DirectSocketFactory {
         for (char[] key : privateKeys) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Attempting authentication of SSH connection to "
-                        + NetworkUtils.ipToString(target.getAddress()) + ":"
-                        + target.getPort());
+                        + host);
             }
 
             try {
