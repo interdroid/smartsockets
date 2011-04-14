@@ -136,8 +136,8 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 		if (p2 == null) {
 			// Oh dear, we don't have an indirection!
-			meslogger.warn("Indirection address of " + p.hubAddressAsString
-					+ " is null!");
+			meslogger.warn("Cannot forward message. No route to hub: " + p.hubAddressAsString
+					+ " (indirection address is null!)");
 
 			stats.infoMessagesDropped++;
 			return;
