@@ -11,7 +11,7 @@ public class NameServerClientNode extends ClientNode {
 
     public NameServerClientNode(ClientInfo info, HubNode hub) {
         
-        super(info.getClientAddress().toString(), hub);         
+        super(info.getClientAddress().toString(), hub, false);         
         setType(Node.TYPE_CIRCLE);
         setRank(0);
     

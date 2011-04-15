@@ -11,28 +11,37 @@ import com.touchgraph.graphlayout.Edge;
 import com.touchgraph.graphlayout.Node;
 
 public class ClientNode extends SmartNode {
-
+    
+    private final boolean compact;
+    
     protected Edge edge;
     protected HubNode hub;
     
-    public ClientNode(String id, HubNode hub) {
+    public ClientNode(String id, HubNode hub, boolean compact) {
         super();
         setRank(1);
+        this.compact = compact;
         
         this.hub = hub;
         edge = new Edge(this, hub, 20);
         edge.useArrowHead(false);
     }
     
-    public ClientNode(ClientInfo info, HubNode hub) {
+    public ClientNode(ClientInfo info, HubNode hub, boolean compact) {
         super();
         this.hub = hub;
+        this.compact = compact;
         setRank(1);
         
         edge = new Edge(this, hub, 20);
         edge.useArrowHead(false);
 
-        setType(Node.TYPE_CIRCLE);
+        
+        if (compact) {
+            setType(Node.TYPE_CIRCLE);
+        } else {
+            setType(Node.TYPE_ROUNDRECT);
+        }
         
         update(info, hub);
     } 
@@ -46,11 +55,19 @@ public class ClientNode extends SmartNode {
         String tmp = info.getProperty("smartsockets.viz");
 
         String label    = getElement(tmp, 0, "C");
-        String [] popup = getElements(tmp, 1, new String[] { "Client" });
-        String color    = getElement(tmp, 2, null);
-        String rank     = getElement(tmp, 3, null);
+        String longLabel    = getElement(tmp, 1, "Client");
+        String [] popup = getElements(tmp, 2, new String[] { "Client" });
+        String color    = getElement(tmp, 3, null);
+        String rank     = getElement(tmp, 4, null);
         
-        setLabel(label);
+        if (compact) {
+            if (label.length() > 1) {
+                label = label.substring(0, 1);
+            }
+            setLabel(label);
+        } else {
+            setLabel(longLabel);
+        }
         
         if (color != null && !color.equalsIgnoreCase("invisible")) {
             setPattern(Color.decode(color));

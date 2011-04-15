@@ -33,15 +33,23 @@ public class HubNode extends SmartNode {
 
     public HubNode(SmartsocketsViz parent, HubInfo info) {
         super(info.hubAddress.toString());
-        
+
         setPopup("CollapsedHubNode");
 
-        setType(Node.TYPE_ELLIPSE);
+        if (parent.isCompact()) {
+            setType(Node.TYPE_ELLIPSE);
+        } else {
+            setType(Node.TYPE_ROUNDRECT);
+        }
 
         // default color
         setPattern(parent.getUniqueColor());
         // default label
-        setLabel("H");
+        if (parent.isCompact()) {
+            setLabel("H");
+        } else {
+            setLabel("Hub");
+        }
         // default text
         setMouseOverText(new String[] { "Hub", info.hubAddress.toString() });
 
@@ -218,7 +226,7 @@ public class HubNode extends SmartNode {
                         ClientNode ci = old.remove(a);
 
                         if (ci == null) {
-                            ci = new ClientNode(cs[c], this);
+                            ci = new ClientNode(cs[c], this, parent.isCompact());
 
                             if (ci.isVisible()) {
                                 parent.addNode(ci);
@@ -264,7 +272,7 @@ public class HubNode extends SmartNode {
             // delete clients
             if (clients.size() > 0) {
                 for (ClientNode n : clients.values()) {
- 
+
                     if (n.getEdge() != null) {
                         parent.deleteEdge(n.getEdge());
                     }
@@ -286,27 +294,25 @@ public class HubNode extends SmartNode {
             // double escape ^ char
             String[] split = info.vizInfo.split("\\^");
 
-            // rank included
-            if (split.length >= 4) {
-                try {
-                    int r = Integer.parseInt(split[3], 10);
-                    setRank(r);
-                } catch(NumberFormatException e) {
-                    // ignored
+            // short label included
+            if (split.length >= 1) {
+                if (split[0].length() > 1) {
+                    setLabel(" " + split[0].substring(0, 1) + " ");
+                } else {
+                    setLabel(" " + split[0] + " ");
                 }
             }
 
-            // color included
-            if (split.length >= 3) {
-                Color color = Color.decode(split[2]);
-
-                setPattern(color);
+            // long label included, override previously set label if
+            // we are not "compact"
+            if (split.length >= 2 && !parent.isCompact()) {
+                setLabel(split[1]);
             }
 
-            if (split.length >= 2) {
+            if (split.length >= 3) {
                 // popup included (split on comma too)
                 ArrayList<String> list = new ArrayList<String>();
-                list.addAll(Arrays.asList(split[1].split(",")));
+                list.addAll(Arrays.asList(split[2].split(",")));
                 list.add(info.hubAddress.toString());
 
                 setMouseOverText(list.toArray(new String[0]));
@@ -316,13 +322,20 @@ public class HubNode extends SmartNode {
                         "Loc: " + info.hubAddress.toString() });
             }
 
-            // label included
-            if (split.length >= 1) {
-                if (split[0].length() < 3) {
-                    // make sure this node is an ellipse, not a circle
-                    setLabel(" " + split[0] + " ");
-                } else {
-                    setLabel(split[0]);
+            // color included
+            if (split.length >= 4) {
+                Color color = Color.decode(split[3]);
+
+                setPattern(color);
+            }
+
+            // rank included
+            if (split.length >= 5) {
+                try {
+                    int r = Integer.parseInt(split[4], 10);
+                    setRank(r);
+                } catch (NumberFormatException e) {
+                    // ignored
                 }
             }
         }
@@ -342,7 +355,8 @@ public class HubNode extends SmartNode {
         updateClients();
     }
 
-    public synchronized void updateRouters(HashMap<Object, ClientNode> allClients) {
+    public synchronized void updateRouters(
+            HashMap<Object, ClientNode> allClients) {
 
         if (collapseClients) {
             return;
@@ -352,7 +366,7 @@ public class HubNode extends SmartNode {
 
             for (ClientNode n : clients.values()) {
 
-                if (n instanceof RouterClientNode) { 
+                if (n instanceof RouterClientNode) {
                     ((RouterClientNode) n).showConnections(allClients);
                 }
             }

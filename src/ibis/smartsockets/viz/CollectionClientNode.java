@@ -6,7 +6,7 @@ public class CollectionClientNode extends ClientNode {
     
     public CollectionClientNode(int clients, HubNode hub) { 
         
-        super("ClientCollection" + hub.getID(), hub);        
+        super("ClientCollection" + hub.getID(), hub, true);        
         
    //     System.out.println("Adding client client collection: " + clients);
 

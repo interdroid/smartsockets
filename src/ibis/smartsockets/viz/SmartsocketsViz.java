@@ -41,7 +41,10 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     private static final long serialVersionUID = -3629362794531051537L;
 
-    private ServiceLink sl;
+    // if true, use compact (single letter) labels, if true use full labels
+    private final boolean compact;
+
+    private final ServiceLink sl;
 
     private HashMap<DirectSocketAddress, HubNode> hubs = new HashMap<DirectSocketAddress, HubNode>();
 
@@ -72,25 +75,27 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
         return Color.decode(backgroundColorString);
     }
-    
-    private static DirectSocketAddress[] getAddresses(String... hubs) throws Exception {
+
+    private static DirectSocketAddress[] getAddresses(String... hubs)
+            throws Exception {
         DirectSocketAddress[] result = new DirectSocketAddress[hubs.length];
-        for(int i = 0; i < hubs.length;i++) {
+        for (int i = 0; i < hubs.length; i++) {
             result[i] = DirectSocketAddress.getByAddress(hubs[i]);
         }
         return result;
     }
-       
+
     public SmartsocketsViz(boolean useSliders, List<DirectSocketAddress> hubs) {
-	this(useSliders, hubs.toArray(new DirectSocketAddress[0]));
+        this(useSliders, hubs.toArray(new DirectSocketAddress[0]));
     }
 
     public SmartsocketsViz(List<DirectSocketAddress> hubs) {
         this(hubs.toArray(new DirectSocketAddress[0]));
     }
-    
+
     public SmartsocketsViz(boolean useSliders, DirectSocketAddress... hubs) {
-        this(getTextColor(), getBackgroundColor(), false, useSliders, hubs);
+        this(getTextColor(), getBackgroundColor(), false, useSliders, true,
+                hubs);
     }
 
     public SmartsocketsViz(DirectSocketAddress... hubs) {
@@ -98,25 +103,35 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
     }
 
     public SmartsocketsViz(boolean useSliders, String... hubs) throws Exception {
-        this(getTextColor(), getBackgroundColor(), false, useSliders, getAddresses(hubs));
+        this(getTextColor(), getBackgroundColor(), false, useSliders, true,
+                getAddresses(hubs));
     }
-    
+
     public SmartsocketsViz(String... hubs) throws Exception {
         this(getTextColor(), getBackgroundColor(), false, getAddresses(hubs));
     }
-   
-    public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
-            DirectSocketAddress... hubs) {
-	this(textColor, backgroundColor, showself, true, hubs);
+
+    public SmartsocketsViz(Color textColor, Color backgroundColor,
+            boolean showself, DirectSocketAddress... hubs) {
+        this(textColor, backgroundColor, showself, true, true, hubs);
     }
     
+    public SmartsocketsViz(Color textColor, Color backgroundColor,
+            boolean showself, boolean useSliders, boolean compact,
+            String... hubs) throws Exception {
+        this(textColor, backgroundColor, showself, useSliders, compact, getAddresses(hubs));
+    }
+
     /**
      * Default constructor.
      * 
      */
-    public SmartsocketsViz(Color textColor, Color backgroundColor, boolean showself,
-            boolean useSliders, DirectSocketAddress... hubs) {
+    public SmartsocketsViz(Color textColor, Color backgroundColor,
+            boolean showself, boolean useSliders, boolean compact,
+            DirectSocketAddress... hubs) {
         super(textColor, backgroundColor, useSliders);
+
+        this.compact = compact;
 
         initPopups();
 
@@ -132,7 +147,8 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
             sl = ServiceLink.getServiceLink(null, hubList, ss.getAddressSet());
             if (showself) {
-            sl.registerProperty("smartsockets.viz", "V^Visualization^#545454");
+                sl.registerProperty("smartsockets.viz",
+                        "V^Visualization^#545454");
             } else {
                 sl.registerProperty("smartsockets.viz", "invisible");
             }
@@ -260,7 +276,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
         }
 
         if (oldHubs.size() > 0) {
-            for (HubNode hi : oldHubs.values()) {         
+            for (HubNode hi : oldHubs.values()) {
                 hi.delete();
             }
         }
@@ -349,9 +365,9 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
                 glPanel.done();
                 frame.remove(glPanel);
                 frame.dispose();
-                System.exit(0);         // otherwise it does'nt exit, there
-                                        // is a non-deamon thread in touchgraph.
-                                        // --Ceriel
+                System.exit(0); // otherwise it does'nt exit, there
+                                // is a non-deamon thread in touchgraph.
+                                // --Ceriel
             }
         });
         frame.add("Center", glPanel);
@@ -386,5 +402,9 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     public Color getUniqueColor() {
         return c.getUniqueColor();
+    }
+
+    boolean isCompact() {
+        return compact;
     }
 }

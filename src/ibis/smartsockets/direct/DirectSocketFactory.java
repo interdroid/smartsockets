@@ -179,13 +179,13 @@ public class DirectSocketFactory {
         }
 
         if (allowSSHOut) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Using a passphrase to open the SSH private key");
-            }
             String passphrase = p
                     .getProperty(SmartSocketsProperties.SSH_PASSPHRASE);
             if (passphrase != null) {
                 keyFilePass = passphrase;
+                if (logger.isInfoEnabled()) {
+                    logger.info("Using a passphrase to open the SSH private key");
+                }
             }
         }
 
