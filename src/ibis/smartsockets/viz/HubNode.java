@@ -126,7 +126,7 @@ public class HubNode extends SmartNode {
                         }
                         // parent.addEdge(e2);
                     } else {
-                        e = new Edge(this, other);
+                        e = new Edge(this, other, 200);
                         e.useArrowHead(true);
 
                         if (info.usingSSH[i]) {
@@ -148,48 +148,50 @@ public class HubNode extends SmartNode {
         }
     }
 
-    public void updateEdges() {
-
-        HashMap<DirectSocketAddress, Edge> oldEdges = edges;
-        edges = new HashMap<DirectSocketAddress, Edge>();
-
-        // System.out.println("Hub " + info.hubAddress.toString()
-        // + " connected to " + info.connectedTo.length + " others");
-
-        // Refresh existing edges and add new ones..
-        for (int i = 0; i < info.connectedTo.length; i++) {
-
-            DirectSocketAddress to = info.connectedTo[i];
-
-            Edge e = oldEdges.remove(to);
-
-            if (e == null) {
-
-                HubNode other = parent.getHubNode(to);
-
-                if (other != null) {
-                    // we know the target
-
-                    e = new Edge(this, other);
-                    e.useArrowHead(true);
-                    parent.addEdge(e);
-                } else {
-                    System.out.println("Failed to find hub: " + to);
-                }
-            }
-
-            if (e != null) {
-                edges.put(to, e);
-            }
-        }
-
-        // remove old edges
-        if (oldEdges.size() > 0) {
-            for (Edge edge : oldEdges.values()) {
-                parent.deleteEdge(edge);
-            }
-        }
-    }
+    
+    //this was unused.
+//    public void updateEdges() {
+//
+//        HashMap<DirectSocketAddress, Edge> oldEdges = edges;
+//        edges = new HashMap<DirectSocketAddress, Edge>();
+//
+//        // System.out.println("Hub " + info.hubAddress.toString()
+//        // + " connected to " + info.connectedTo.length + " others");
+//
+//        // Refresh existing edges and add new ones..
+//        for (int i = 0; i < info.connectedTo.length; i++) {
+//
+//            DirectSocketAddress to = info.connectedTo[i];
+//
+//            Edge e = oldEdges.remove(to);
+//
+//            if (e == null) {
+//
+//                HubNode other = parent.getHubNode(to);
+//
+//                if (other != null) {
+//                    // we know the target
+//
+//                    e = new Edge(this, other);
+//                    e.useArrowHead(true);
+//                    parent.addEdge(e);
+//                } else {
+//                    System.out.println("Failed to find hub: " + to);
+//                }
+//            }
+//
+//            if (e != null) {
+//                edges.put(to, e);
+//            }
+//        }
+//
+//        // remove old edges
+//        if (oldEdges.size() > 0) {
+//            for (Edge edge : oldEdges.values()) {
+//                parent.deleteEdge(edge);
+//            }
+//        }
+//    }
 
     public synchronized void updateClients() {
 
