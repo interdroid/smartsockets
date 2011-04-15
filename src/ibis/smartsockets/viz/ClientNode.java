@@ -24,6 +24,7 @@ public class ClientNode extends SmartNode {
         
         this.hub = hub;
         edge = new Edge(this, hub);
+        edge.setLength(20);
         edge.useArrowHead(false);
     }
     
@@ -35,7 +36,7 @@ public class ClientNode extends SmartNode {
         
         edge = new Edge(this, hub);
         edge.useArrowHead(false);
-        //edge.setLength(5);
+        edge.setLength(20);
 
         
         if (compact) {
