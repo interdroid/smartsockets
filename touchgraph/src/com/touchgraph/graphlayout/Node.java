@@ -405,10 +405,19 @@ public class Node implements Comparable<Node> {
 		return popup;
 	}
 
+	/**
+         * Gets the rank of a node. The lowest rank is drawn last, making it be on top.
+         * 
+         */
 	public int getRank() {
 		return rank;
 	}
 
+	/**
+	 * Sets the rank of a node. The lowest rank is drawn last, making it be on top.
+	 * 
+	 * @param rank the new rank.
+	 */
 	public void setRank(int rank) {
 		this.rank = rank;
 	}

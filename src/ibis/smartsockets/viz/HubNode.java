@@ -50,6 +50,9 @@ public class HubNode extends SmartNode {
         } else {
             setLabel("Hub");
         }
+        
+        setRank(0);
+        
         // default text
         setMouseOverText(new String[] { "Hub", info.hubAddress.toString() });
 
