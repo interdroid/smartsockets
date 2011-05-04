@@ -22,9 +22,6 @@
         <fileset dir="lib">
             <include name="*.jar" />
         </fileset>
-        <fileset dir="touchgraph/external-android">
-            <include name="*.jar" />
-        </fileset>
     </path>
 
     <target name="copy">
@@ -75,7 +72,7 @@
     </target>
 
     <!-- Compile smartsockets for android-->
-    <target name="compile-android" depends="touchgraph-android">
+    <target name="compile-android">
         <delete dir="${builddir}" />
         <mkdir dir="${distdir}" />
         <mkdir dir="${builddir}" />
@@ -101,26 +98,11 @@
 
     </target>
 
-    <target name="touchgraph" description="Build touchgraph subproject">
-        <ant dir="touchgraph" inheritAll="false" target="build">
-            <property name="version" value="${version}" />
-        </ant>
-    </target>
-
-    <target name="touchgraph-android" description="Build touchgraph subproject for android">
-        <ant dir="touchgraph" inheritAll="false" target="android">
-            <property name="version" value="${version}" />
-        </ant>
-    </target>
-
 
     <target name="build-tests" depends="build,compile-test">
     </target>
     
-    <target name="android" depends="build,touchgraph-android,compile-android">
-    </target>
-
-    <target name="build" depends="clean,copy,touchgraph,compile,javadoc">
+    <target name="build" depends="clean,copy,compile,javadoc">
     </target>
 
 
@@ -148,7 +130,6 @@
         <delete failonerror="false" dir="${builddir}" />
         <delete failonerror="false" dir="${distdir}" />
         <delete failonerror="false" dir="${javadoc}" />
-        <ant dir="touchgraph" inheritAll="false" target="clean" />
     </target>
 
     <target name="distclean" depends="clean">
