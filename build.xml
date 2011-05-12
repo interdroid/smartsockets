@@ -1,6 +1,6 @@
 <project name="SmartSockets" default="build" basedir=".">
 
-    <property name="version" value="-1.58" />
+    <property name="version" value="-1.59" />
     <property name="jar" value="smartsockets${version}.jar" />
     <property name="testjar" value="smartsockets-tests${version}.jar" />
     <property name="jar-android" value="smartsockets${version}-android.jar" />

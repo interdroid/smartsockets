@@ -1149,14 +1149,15 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
         LinkedList<InetAddress> currentLocal = new LinkedList<InetAddress>();
 
         while (st.hasMoreTokens()) {
-
+        	
             String s = st.nextToken();
 
             // System.out.println("Read: " + s);
 
-            // FIXME FIXME FIXME - This fails with single character user names!!!!
-            //  Jason @ ComplexHPC2011 tutorial
-            if (s.length() == 1) {
+            // FIXED - We need the SEPERATORS comparision to ensure we 
+            // can parse single character user names!!!!
+            // Jason @ ComplexHPC2011 tutorial
+            if (s.length() == 1 && SEPARATORS.contains(s)) {
 
                 char delim = s.charAt(0);
 
