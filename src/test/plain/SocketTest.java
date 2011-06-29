@@ -198,7 +198,7 @@ public class SocketTest {
                     
                         long time = System.currentTimeMillis();
                         
-                        int failed = 0;
+                        // int failed = 0;
                         
                         for (int c = 0; c < count; c++) {
                             
@@ -229,7 +229,7 @@ public class SocketTest {
                                 s = null;
                             } catch (IOException e) {
                                 System.err.println("" + e);
-                                failed++;                                
+                                // failed++;                                
                             }
                         }
                      

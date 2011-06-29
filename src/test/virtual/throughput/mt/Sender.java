@@ -33,11 +33,11 @@ class Sender extends Thread {
         
        // long time = System.currentTimeMillis();           
         
-        int count = 0; 
+        // int count = 0; 
         int block = d.getBlock();
 
         while (block != -1) { 
-            count++;
+            // count++;
 
             try { 
                 out.writeInt(block);
