@@ -11,78 +11,278 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  
- * TODO Description 
- *  
+ * This class is use to store a SmartSockets configuration.
+ *   
  * @author Jason Maassen
  * @version 1.0 Nov 22, 2007
  * @since 1.0
  * 
  */
-public class SmartSocketsProperties {
-
+public class SmartSocketsProperties { 
+	
+	/** Default filename of the SmartSockets properties file. */
     public static final String DEFAULT_FILE = "smartsockets.properties";
     
+    /** Prefix of all SmartSockets properties. */
     public static final String PREFIX = "smartsockets.";
    
-    public static final String FILE                = PREFIX + "file";
-    public static final String START_HUB           = PREFIX + "start.hub";  
+    /** 
+     * The SmartSockets property file to load. ("smartsockets.properties") 
+     * @see DEFAULT_FILE 
+     */ 
+    public static final String FILE = PREFIX + "file";
     
-    public static final String STATISTICS_PRINT    = PREFIX + "statistics";
-    public static final String STATISTICS_PREFIX   = PREFIX + "statistics.prefix";    
+    /** 
+     * Determines if a hub be started in the VirtualSocketFactory. (false) 
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory 
+     */ 
+    public static final String START_HUB = PREFIX + "start.hub";  
+    
+    /** Should SmartSockets print statistics ? (false) */
+    public static final String STATISTICS_PRINT = PREFIX + "statistics";
+    
+    /** Prefix used when printing SmartSockets statistics. */    
+    public static final String STATISTICS_PREFIX = PREFIX + "statistics.prefix";
+    
+    /** Time interval between printing SmartSockets statistics. (0 = only print at end)*/        
     public static final String STATISTICS_INTERVAL = PREFIX + "statistics.interval";
+    
+    /** 
+     * Should the VirtualSocketFactoy collect detailed exceptions when a connection setup fails ? (false) 
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
     public static final String DETAILED_EXCEPTIONS = PREFIX + "detailed.exceptions";
     
-    public static final String NIO        = PREFIX + "nio";
-    public static final String PORT_RANGE = PREFIX + "port.range";    
-    public static final String BACKLOG    = PREFIX + "backlog";
+    /** 
+     * Should the DirectSocketFactory create NIO sockets ? (false)
+    * @see ibis.smartsockets.direct.DirectSocketFactory
+    */
+    public static final String NIO = PREFIX + "nio";
+
+    /** 
+     * The port range used by DirectSocketFactory.
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     * @see ibis.smartsockets.direct.PortRange
+     */
+    public static final String PORT_RANGE = PREFIX + "port.range";
+    
+    /** 
+     * The backlog (number of pending incoming connections) used by VirtualSocketFactory. (50)     
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
+    public static final String BACKLOG = PREFIX + "backlog";
    
-    public static final String CONNECT_TIMEOUT = PREFIX + "timeout.connect";  
-    public static final String ACCEPT_TIMEOUT  = PREFIX + "timeout.accept";      
+    /** 
+     * Timeout used in virtual connection setup in milliseconds.     
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
+    public static final String CONNECT_TIMEOUT = PREFIX + "timeout.connect";
     
-    public static final String EXTERNAL_PREFIX      = PREFIX + "external.";
-    public static final String UPNP                 = EXTERNAL_PREFIX + "upnp";
+    /** 
+     * Timeout used virtual accept in milliseconds. (60000)     
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
+    public static final String ACCEPT_TIMEOUT = PREFIX + "timeout.accept";      
+    
+    /** Prefix for all SmartSockets "external" properties. */
+    public static final String EXTERNAL_PREFIX = PREFIX + "external.";
+    
+    /** 
+     * Should the DirectSocketFactory use uPnP to discover this machines external address (used with NAT) ? (false)
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
+    public static final String UPNP = EXTERNAL_PREFIX + "upnp";
+    
+    /** 
+     * Should the DirectSocketFactory use uPnP to enable port forwarding to this machine (used with NAT) ? (false)     * 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
     public static final String UPNP_PORT_FORWARDING = EXTERNAL_PREFIX + "upnp.forwarding";        
-    public static final String STUN                 = EXTERNAL_PREFIX + "stun";   
-    public static final String STUN_SERVERS         = EXTERNAL_PREFIX + "stun.servers";    
-    public static final String EXTERNAL_MANUAL      = EXTERNAL_PREFIX + "manual";
     
+    /** 
+     * Should the DirectSocketFactory use STUN to discover this machines external address (used with NAT) ? (false)
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
+    public static final String STUN = EXTERNAL_PREFIX + "stun";   
+    
+    /** 
+     * List of STUN servers to use. 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
+    public static final String STUN_SERVERS = EXTERNAL_PREFIX + "stun.servers";
+    
+    /** 
+     * Set the external address manually.
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
+    public static final String EXTERNAL_MANUAL = EXTERNAL_PREFIX + "manual";
+
+    /** Prefix for all SmartSockets "discovery" properties. */
     public static final String DISCOVERY_PREFIX    = PREFIX + "discovery.";
-    public static final String DISCOVERY_ALLOWED   = DISCOVERY_PREFIX + "allowed"; 
+    
+    /** 
+     * Should the VirtualSocketFactory use UDP-broadcast to discover the hub ? (false)
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     * @see ibis.smartsockets.hub.Hub
+     */    
+    public static final String DISCOVERY_ALLOWED   = DISCOVERY_PREFIX + "allowed";
+    
+    /** 
+     * Should the VirtualSocketFactory prefer the result of hub discovery over the command line ? (false)
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     * @see ibis.smartsockets.hub.Hub
+     */    
     public static final String DISCOVERY_PREFERRED = DISCOVERY_PREFIX + "preferred"; 
-    public static final String DISCOVERY_LISTED    = DISCOVERY_PREFIX + "forcelisted"; 
-    public static final String DISCOVERY_PORT      = DISCOVERY_PREFIX + "port";
-    public static final String DISCOVERY_TIMEOUT   = DISCOVERY_PREFIX + "timeout";
     
-    public static final String HUB_PREFIX           = PREFIX + "hub.";
-    public static final String HUB_ADDRESSES        = HUB_PREFIX + "addresses";    
-    public static final String HUB_NAME             = HUB_PREFIX + "name";
-    public static final String HUB_VIZ_INFO         = HUB_PREFIX + "viz.info";
-    public static final String HUB_CLUSTERS         = HUB_PREFIX + "clusters";       
-    public static final String HUB_PORT             = HUB_PREFIX + "port";                 
-    public static final String HUB_SSH_ALLOWED      = HUB_PREFIX + "ssh";     
-    public static final String HUB_SEND_BUFFER      = HUB_PREFIX + "sendbuffer";
-    public static final String HUB_RECEIVE_BUFFER   = HUB_PREFIX + "receivebuffer";
-    public static final String HUB_STATISTICS       = HUB_PREFIX + "statistics";                 
-    public static final String HUB_STATS_INTERVAL   = HUB_PREFIX + "statistics.interval";  
+    //public static final String DISCOVERY_LISTED = DISCOVERY_PREFIX + "forcelisted"; 
     
-    public static final String HUB_DELEGATE         = HUB_PREFIX + "delegate";
-    public static final String HUB_DELEGATE_ADDRESS = HUB_PREFIX + "delegate.address";    
-    public static final String HUB_VIRTUAL_PORT     = HUB_PREFIX + "virtualPort";
+    /** 
+     * Port used for UDP-broadcast to discover the hub. (24545)  
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     * @see ibis.smartsockets.hub.Hub
+     */    
+    public static final String DISCOVERY_PORT = DISCOVERY_PREFIX + "port";
     
-    public static final String HUB_ADDRESS_FILE     = HUB_PREFIX + "addressfile";
+    /** 
+     * Timeout for UDP-broadcast of discover the hub (in milliseconds). (5000)  
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     * @see ibis.smartsockets.hub.Hub
+     */    
+    public static final String DISCOVERY_TIMEOUT = DISCOVERY_PREFIX + "timeout";
+    
+    /** Prefix for all SmartSockets "hub" properties. */   
+    public static final String HUB_PREFIX = PREFIX + "hub.";
+    
+    /** 
+     * Comma separated list of SmartSockets hub addresses. 
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_ADDRESSES = HUB_PREFIX + "addresses";
+    
+    /** 
+     * Name for the hub. Used in visualization. (hostname) 
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_NAME = HUB_PREFIX + "name";
+
+    /** 
+     * Color for the hub. Used in visualization.  
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_VIZ_INFO = HUB_PREFIX + "viz.info";
+    
+    /** 
+     * Cluster names for which the hubs should reply to discovery requests.   
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_CLUSTERS = HUB_PREFIX + "clusters";
+    
+    /** 
+     * Port used for the hub. (17878)
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_PORT = HUB_PREFIX + "port";
+    
+    /** 
+     * Can hub use SSH tunnels for connection setup ? (true)
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_SSH_ALLOWED = HUB_PREFIX + "ssh";
+    
+    /** 
+     * Send buffer size for servicelink used between the hub and its clients. 
+     * @see ibis.smartsockets.hub.Hub
+     */
+    public static final String HUB_SEND_BUFFER = HUB_PREFIX + "sendbuffer";
+    
+    /** 
+     * Receive buffer size for servicelink used between the hub and its clients. 
+     * @see ibis.smartsockets.hub.Hub
+     */    
+    public static final String HUB_RECEIVE_BUFFER = HUB_PREFIX + "receivebuffer";
+    
+    /** 
+     * Should the hub gather statistics. (false)
+     * @see ibis.smartsockets.hub.Hub
+     */        
+    public static final String HUB_STATISTICS = HUB_PREFIX + "statistics";
+    
+    /** 
+     * Interval at which the hub should print statistics (in milliseconds). (60000)
+     * @see ibis.smartsockets.hub.Hub
+     */        
+    public static final String HUB_STATS_INTERVAL = HUB_PREFIX + "statistics.interval";  
+    
+    /** 
+     * Should the hub delegate connection accepts ? (false)
+     * @see ibis.smartsockets.hub.Hub
+     */        
+    public static final String HUB_DELEGATE = HUB_PREFIX + "delegate";
+    
+    /** 
+     * Address used for hub delegation.
+     * @see ibis.smartsockets.hub.Hub
+     */        
+    public static final String HUB_DELEGATE_ADDRESS = HUB_PREFIX + "delegate.address";
+    
+    /** 
+     * Virtual port used for hub delegation. (42)
+     * @see ibis.smartsockets.hub.Hub
+     */        
+    public static final String HUB_VIRTUAL_PORT = HUB_PREFIX + "virtualPort";
+    
+    /** 
+     * File containing hub addresses.
+     * @see ibis.smartsockets.hub.Hub
+     */        
+    public static final String HUB_ADDRESS_FILE = HUB_PREFIX + "addressfile";
         
-    public static final String SL_PREFIX         = PREFIX + "servicelink.";        
-    public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
-    public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
-    public static final String SL_FORCE          = SL_PREFIX + "force";
-    public static final String SL_TIMEOUT        = SL_PREFIX + "timeout";
-    public static final String SL_RETRIES        = SL_PREFIX + "retries";
+    /** Prefix for all SmartSockets "sl" (service link) properties. */   
+    public static final String SL_PREFIX         = PREFIX + "servicelink.";
     
+    /** 
+     * Send buffer size for servicelink used between the hub and its clients. 
+     * @see ibis.smartsockets.hub.servicelink.ServiceLink
+     */
+    public static final String SL_SEND_BUFFER    = SL_PREFIX + "sendbuffer";
+    
+    /** 
+     * Receive buffer size for servicelink used between the hub and its clients. 
+     * @see ibis.smartsockets.hub.servicelink.ServiceLink
+     */
+    public static final String SL_RECEIVE_BUFFER = SL_PREFIX + "receivebuffer";
+    
+    /** 
+     * Is a servicelink required ? (false) 
+     * @see ibis.smartsockets.hub.servicelink.ServiceLink
+     */
+    public static final String SL_FORCE = SL_PREFIX + "force";
+    
+    /** 
+     * Timeout for creating a servicelink (in milliseconds). (10000) 
+     * @see ibis.smartsockets.hub.servicelink.ServiceLink
+     */
+    public static final String SL_TIMEOUT = SL_PREFIX + "timeout";
+    
+    /** 
+     * Maximum number of retries when creating a servicelink. (6) 
+     * @see ibis.smartsockets.hub.servicelink.ServiceLink
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
+    public static final String SL_RETRIES = SL_PREFIX + "retries";
+
+    /** Prefix for all SmartSockets "viz" (visualization) properties. */   
     public static final String VIZ_PREFIX           = PREFIX + "viz.";
+    
+    /** Text color for SmartSockets visualization. */   
     public static final String VIZ_TEXT_COLOR       = VIZ_PREFIX + "text.color" ;
+    
+    /** Background color for SmartSockets visualization. */   
     public static final String VIZ_BACKGROUND_COLOR = VIZ_PREFIX + "background.color" ;    
     
+    /**  */   
     public static final String MODULES_PREFIX = PREFIX + "modules.";
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
     public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
@@ -262,7 +462,28 @@ public class SmartSocketsProperties {
         
         return null;
     }
-        
+
+    /**
+     * Generates a SmartSocketsProperties object containing a configuration.
+     * 
+     * The properties in this configuration object are set a follows:
+     * 
+     * First, a set of hardcoded default properties is loaded.
+     *  
+     * Next, the "smartsockets.properties" file will be loaded (if found), overwriting the default settings it necessary. 
+     * Set the "-Dsmartsockets.file=" property on the command line to load a different file.
+     *
+     * Finally, any command line properties starting with "smartsockets." will be loaded, overwriting existing settings if necessary.
+     * 
+     * @see #DEFAULT_FILE
+     *   
+     * @author Jason Maassen
+     * @version 1.0 Nov 22, 2007
+     * @since 1.0
+     * 
+     * 
+     * 
+     */
     public static TypedProperties getDefaultProperties() {
         
         if (defaultProperties == null) { 

@@ -1,7 +1,7 @@
-** SmartSockets 1.4 README **
+** SmartSockets 1.60 README **
 -----------------------------
 
-This distribution contains version 1.4 of the SmartSockets library. 
+This distribution contains version 1.60 of the SmartSockets library. 
 
 
 What is SmartSockets:

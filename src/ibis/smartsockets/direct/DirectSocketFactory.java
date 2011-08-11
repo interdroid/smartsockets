@@ -714,6 +714,7 @@ public class DirectSocketFactory {
         }
 
         Connection conn = new Connection(host);
+        //conn.enableDebugging(true, null);        
         conn.connect(null, timeout, timeout);
 
         boolean isAuthenticated = false;
