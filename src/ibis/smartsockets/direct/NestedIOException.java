@@ -3,6 +3,14 @@ package ibis.smartsockets.direct;
 import java.io.IOException;
 import java.util.LinkedList;
 
+/**
+ * This class encapsulates a set of IOExceptions.  
+ * 
+ * @author Jason Maassen
+ * @version 1.0 Dec 19, 2005
+ * @since 1.0
+ * 
+ */
 public class NestedIOException extends IOException {
 
     private static final long serialVersionUID = 7906462081071080010L;

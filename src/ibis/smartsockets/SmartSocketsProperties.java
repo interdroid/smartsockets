@@ -451,10 +451,10 @@ public class SmartSocketsProperties {
      * This property allows the user to define a set of network names. Using the 
      * smartsockets.networks.($name).range property, a rule can be defined for each 
      * of these networks that allows machines to determine in which network they reside. 
-     *
+     * <p>
      * Alternatively, the smartsockets.networks.name property can be used to force a 
      * machine to become part of a network.
-     *
+     * <p>
      * Using the smartsockets.networks.($name).preference.internal and
      * smartsockets.networks.($name).preference.default properties preferences can be 
      * specified on how to connect to machines inside and outside a network.  
@@ -474,12 +474,11 @@ public class SmartSocketsProperties {
 
     /** 
      * Network address filter that can be used to determine if a machine is part of a network. 
-     * 
-     * Examples: 
-     * 
-     * specific machine: 132.229.24.2
-     * specific network: 132.229.24.0/255.255.255.0
-     * specific network with exception: 130.37.199.*,!130.37.199.2
+     * <p>
+     * Examples:<br>
+     * specific machine: 132.229.24.2<br>
+     * specific network: 132.229.24.0/255.255.255.0<br>
+     * specific network with exception: 130.37.199.*,!130.37.199.2<br>
      *     
      * @see ibis.smartsockets.direct.NetworkPreference
      */       
@@ -493,11 +492,10 @@ public class SmartSocketsProperties {
     
     /** 
      * Network filter that can be used to determine how to connect to a machine within our network. 
-     * 
-     * Examples: 
-     * 
-     * specific network: 192.168.0.0/255.255.255.0
-     * list of networks: 192.168.0.0/255.255.255.0,site,global
+     * <p>
+     * Examples:<br> 
+     * specific network: 192.168.0.0/255.255.255.0<br>
+     * list of networks: 192.168.0.0/255.255.255.0,site,global<br>
      *     
      * @see ibis.smartsockets.direct.NetworkPreference
      */       
@@ -505,11 +503,10 @@ public class SmartSocketsProperties {
 
     /** 
      * Network filter that can be used to determine how to connect to a machine outside of our network. 
-     * 
-     * Examples: 
-     * 
-     * specific network: 137.110.131.0/255.255.255.0
-     * list of networks: 137.110.131.0/255.255.255.0,global
+     * <p>
+     * Examples:<br> 
+     * specific network: 137.110.131.0/255.255.255.0<br>
+     * list of networks: 137.110.131.0/255.255.255.0,global<br>
      *     
      * @see ibis.smartsockets.direct.NetworkPreference
      */       

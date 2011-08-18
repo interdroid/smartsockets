@@ -12,27 +12,26 @@ import java.util.StringTokenizer;
 
 /**
  * This class represents an set of IP addresses.
- * 
+ * <p>
  * Many machines found in Grid systems contain multiple network interfaces and
  * can thus be reached using several different IP addresses. Often, each of
  * these IP addresses can only be reached from a certain range of source IPs.
  * Therefore, using only a single IP address to identify a machine may be
  * insufficient to reach it in all cases. This may result in problems,
- * especially when IP addresses are forwarded from one machines to another.
- * 
+ * especially when IP addresses are forwarded from one machine to another.
+ * <p>
  * Example:
- * 
+ * <p>
  * A cluster that consists of a frontend machine and a number of compute nodes.
  * The frontend is connected to two networks; the internet using a 'public' IP
  * address and the local network using a 'site local' address. The compute nodes
- * are only connected to the local network an have a 'site local' address.
+ * are only connected to the local network and only have a 'site local' address.
  * Therefore, to reach the frontend machine, either the 'public' or 'site local'
  * address must be used, depending on the location of the machine that is trying
  * to connect to the server.
- * 
- * This class encapsulates a set of IP addresses, and can be used to represent
- * the different IP addresses of a machine. This way, the set can be forwarded
- * from one machine to another, and still contains a useful contact address.
+ * <p>
+ * This class encapsulates a set of IP addresses and is used to represent  
+ * all potential contact addresses of a single machine. 
  * 
  * @author Jason Maassen
  * @version 1.0 Dec 19, 2005

@@ -5,7 +5,18 @@ import ibis.smartsockets.util.NetworkUtils;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
-
+/**
+ * This class contains the description of a single network. 
+ * 
+ * Two types of network descriptions are supported:<p>
+ * generic: one of "none", "site", "link", "global"<br>
+ * specific: a network address and netmask<br>
+ * 
+ * @author Jason Maassen
+ * @version 1.0 Dec 19, 2005
+ * @since 1.0
+ * 
+ */
 public final class Network {
 
     private enum Type { 
@@ -16,9 +27,16 @@ public final class Network {
         SPECIFIC;            
     }
 
+    /** No network */    
     public static final Network NONE = new Network(Type.NONE);
+    
+    /** Site local network */    
     public static final Network SITE = new Network(Type.SITE);
+    
+    /** Link local network */    
     public static final Network LINK = new Network(Type.LINK);
+    
+    /** Global network */    
     public static final Network GLOBAL = new Network(Type.GLOBAL);
     
     final Type type;         
