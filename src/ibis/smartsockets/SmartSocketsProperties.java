@@ -282,64 +282,308 @@ public class SmartSocketsProperties {
     /** Background color for SmartSockets visualization. */   
     public static final String VIZ_BACKGROUND_COLOR = VIZ_PREFIX + "background.color" ;    
     
-    /**  */   
+    /** Prefix for all SmartSockets "module" properties. */   
     public static final String MODULES_PREFIX = PREFIX + "modules.";
+    
+    /** 
+     * Comma seperated list of modules used by the VirtualSocketFactory ("direct,reverse,hubrouted").
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
     public static final String MODULES_DEFINE = MODULES_PREFIX + "define";
-    public static final String MODULES_ORDER  = MODULES_PREFIX + "order";
-    public static final String MODULES_SKIP   = MODULES_PREFIX + "skip";
     
-    public static final String DIRECT_PREFIX         = MODULES_PREFIX + "direct.";  
-    public static final String DIRECT_BACKLOG        = DIRECT_PREFIX + "backlog";  
-    public static final String DIRECT_TIMEOUT        = DIRECT_PREFIX + "timeout"; 
-    public static final String DIRECT_LOCAL_TIMEOUT  = DIRECT_PREFIX + "timeout.local";      
+    /** 
+     * Order in which the VirtualSocketFactory will apply the modules when creating a connection ("direct,reverse,hubrouted"). 
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */  
+    public static final String MODULES_ORDER = MODULES_PREFIX + "order";
+    
+    /** 
+     * Modules the VirtualSocketFactory must skip when creating a connection.
+     * @see ibis.smartsockets.virtual.VirtualSocketFactory
+     */
+    public static final String MODULES_SKIP = MODULES_PREFIX + "skip";
+    
+    /** 
+     * Prefix for all SmartSockets "modules.direct" properties. 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     * @see ibis.smartsockets.virtual.modules.direct.Direct
+     */   
+    public static final String DIRECT_PREFIX = MODULES_PREFIX + "direct.";
+    
+    /** 
+     * The backlog (number of pending incoming connections) used by DirectSocketFactory. (100)     
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     * @see ibis.smartsockets.virtual.modules.direct.Direct
+     */
+    public static final String DIRECT_BACKLOG = DIRECT_PREFIX + "backlog";
+    
+    /** 
+     * The timeout used by DirectSocketFactory in connection setup (5000).     
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
+    public static final String DIRECT_TIMEOUT = DIRECT_PREFIX + "timeout";
+    
+    /** 
+     * The timeout used by DirectSocketFactory in connection setup when connection to a private IP address (100).
+     * Private IPs are assumed to be on the same LAN, and therefore a smaller timeout is 
+     * required to detect is an address is reachable.      
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */
+    public static final String DIRECT_LOCAL_TIMEOUT  = DIRECT_PREFIX + "timeout.local";
+    
+    /** 
+     * The size of the send buffer used for direct connections.
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     * @see ibis.smartsockets.virtual.modules.direct.Direct
+     */    
     public static final String DIRECT_SEND_BUFFER    = DIRECT_PREFIX + "sendbuffer";
+    
+    /** 
+     * The size of the receive buffer used for direct connections.
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     * @see ibis.smartsockets.virtual.modules.direct.Direct
+     */        
     public static final String DIRECT_RECEIVE_BUFFER = DIRECT_PREFIX + "receivebuffer";
-    public static final String DIRECT_COUNT          = DIRECT_PREFIX + "count";
-    public static final String DIRECT_CACHE_IP       = DIRECT_PREFIX + "cacheIP";  
+        
+    /** 
+     * Count the bytes send by a DirectVirtualSocket (false).
+     * @see ibis.smartsockets.virtual.modules.direct.Direct
+     */        
+    public static final String DIRECT_COUNT = DIRECT_PREFIX + "count";
+    
+    /** 
+     * Cache the network addresses of the local machine, so only a single lookup is required (true). 
+     * @see ibis.smartsockets.direct.DirectVirtualSocket
+     */            
+    public static final String DIRECT_CACHE_IP = DIRECT_PREFIX + "cacheIP";  
 
+    /** 
+     * Prefix for all SmartSockets "modules.direct.ssh" properties used by the DirectSocketFactory 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */   
+    public static final String SSH_PREFIX = DIRECT_PREFIX + "ssh.";
     
-    public static final String SSH_PREFIX      = DIRECT_PREFIX + "ssh.";
-    public static final String SSH_IN          = SSH_PREFIX + "in";
-    public static final String SSH_OUT         = SSH_PREFIX + "out";
-    public static final String FORCE_SSH_OUT   = SSH_PREFIX + "out.force";    
+    /** 
+     * Allow incoming SSH connections in the DirectSocket layer (false). 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */   
+    public static final String SSH_IN = SSH_PREFIX + "in";
+
+    /** 
+     * Allow the DirectSocketFactory to use SSH for outgoing connections (false). 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */   
+    public static final String SSH_OUT = SSH_PREFIX + "out";
+    
+    /** 
+     * Force the DirectSocketFactory to only use SSH for outgoing connections (false). 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */   
+    public static final String FORCE_SSH_OUT = SSH_PREFIX + "out.force";    
+    
+    /** 
+     * Location of SSH private key file ($HOME/.ssh/*).
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */   
     public static final String SSH_PRIVATE_KEY = SSH_PREFIX + "privatekey";
-    public static final String SSH_PASSPHRASE  = SSH_PREFIX + "passphrase"; 
+
+    /** 
+     * Passphrase required to open private key file.
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */   
+    public static final String SSH_PASSPHRASE = SSH_PREFIX + "passphrase"; 
     
-    public static final String REVERSE_PREFIX       = MODULES_PREFIX + "reverse.";
+    /** 
+     * Prefix for all SmartSockets "modules.reverse" properties. 
+     * @see ibis.smartsockets.direct.DirectSocketFactory
+     */       
+    public static final String REVERSE_PREFIX = MODULES_PREFIX + "reverse.";
+    
+    /** 
+     * Allow reverse connection setup to self (false). 
+     * @see ibis.smartsockets.virtual.modules.reverse.Reverse
+     */       
     public static final String REVERSE_CONNECT_SELF = REVERSE_PREFIX + "selfconnect";
     
-    public static final String ROUTED_PREFIX    = MODULES_PREFIX + "hubrouted.";
-    public static final String ROUTED_BUFFER    = ROUTED_PREFIX + "size.buffer";
-    public static final String ROUTED_FRAGMENT  = ROUTED_PREFIX + "size.fragment";
-    public static final String ROUTED_MIN_ACK   = ROUTED_PREFIX + "size.ack";
+    /** 
+     * Prefix for all SmartSockets "modules.hubrouted" properties. 
+     * @see ibis.smartsockets.virtual.modules.hubrouted
+     */       
+    public static final String ROUTED_PREFIX = MODULES_PREFIX + "hubrouted.";
+    
+    /** 
+     * Total buffer size for each virtual (hubrouted) connection (in bytes). (65536)
+     * @see ibis.smartsockets.virtual.modules.hubrouted
+     */       
+    public static final String ROUTED_BUFFER = ROUTED_PREFIX + "size.buffer";
+    
+    /** 
+     * Fragment size used for virtual (hubrouted) connections (in bytes). (8176)
+     * @see ibis.smartsockets.virtual.modules.hubrouted
+     */       
+    public static final String ROUTED_FRAGMENT = ROUTED_PREFIX + "size.fragment";
+    
+    /** 
+     * Minimum acknowledgement size for virtual (hubrouted) connections (in bytes). (buffersize/4)
+     * @see ibis.smartsockets.virtual.modules.hubrouted
+     */       
+    public static final String ROUTED_MIN_ACK = ROUTED_PREFIX + "size.ack";
 
+    /** 
+     * Prefix for all SmartSockets "networks" properties. 
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NETWORKS_PREFIX = PREFIX + "networks.";        
     
-    public static final String NETWORKS_PREFIX  = PREFIX + "networks.";        
-    
+    /** 
+     * Comma separated list of network preferences (auto).
+     * 
+     * This property determines the order in which network will be tried.  
+     * Allowed values are auto, site, link, global, none.  
+     *     
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
     public static final String NETWORKS_DEFAULT = NETWORKS_PREFIX + "default";
-    public static final String NETWORKS_DEFINE  = NETWORKS_PREFIX + "define";
-    public static final String NETWORKS_MEMBER  = NETWORKS_PREFIX + "name";
     
-    public static final String NW_RANGE              = "range";    
-    public static final String NW_PREFERENCE_PREFIX  = "preference.";    
-    public static final String NW_PREFERENCE_INSIDE  = NW_PREFERENCE_PREFIX + "internal";
+    /** 
+     * Comma separated list of unique network names. 
+     * 
+     * This property allows the user to define a set of network names. Using the 
+     * smartsockets.networks.($name).range property, a rule can be defined for each 
+     * of these networks that allows machines to determine in which network they reside. 
+     *
+     * Alternatively, the smartsockets.networks.name property can be used to force a 
+     * machine to become part of a network.
+     *
+     * Using the smartsockets.networks.($name).preference.internal and
+     * smartsockets.networks.($name).preference.default properties preferences can be 
+     * specified on how to connect to machines inside and outside a network.  
+     *     
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NETWORKS_DEFINE = NETWORKS_PREFIX + "define";
+    
+    /** 
+     * Network name of the network to which this machine belongs.  
+     * 
+     * This name must be previously defined using smartsockets.networks.define.
+     *     
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NETWORKS_MEMBER = NETWORKS_PREFIX + "name";
+
+    /** 
+     * Network address filter that can be used to determine if a machine is part of a network. 
+     * 
+     * Examples: 
+     * 
+     * specific machine: 132.229.24.2
+     * specific network: 132.229.24.0/255.255.255.0
+     * specific network with exception: 130.37.199.*,!130.37.199.2
+     *     
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_RANGE = "range";    
+    
+    /** 
+     * Prefix for all SmartSockets "networks.($name).preference" properties. 
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_PREFERENCE_PREFIX = "preference.";
+    
+    /** 
+     * Network filter that can be used to determine how to connect to a machine within our network. 
+     * 
+     * Examples: 
+     * 
+     * specific network: 192.168.0.0/255.255.255.0
+     * list of networks: 192.168.0.0/255.255.255.0,site,global
+     *     
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_PREFERENCE_INSIDE = NW_PREFERENCE_PREFIX + "internal";
+
+    /** 
+     * Network filter that can be used to determine how to connect to a machine outside of our network. 
+     * 
+     * Examples: 
+     * 
+     * specific network: 137.110.131.0/255.255.255.0
+     * list of networks: 137.110.131.0/255.255.255.0,global
+     *     
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
     public static final String NW_PREFERENCE_DEFAULT = NW_PREFERENCE_PREFIX + "default";
 
-    public static final String NW_FIREWALL_PREFIX    = "firewall.";
-    public static final String NW_FIREWALL_ACCEPT    = NW_FIREWALL_PREFIX + "accept";
-    public static final String NW_FIREWALL_DENY      = NW_FIREWALL_PREFIX + "deny";
-    public static final String NW_FIREWALL_DEFAULT   = NW_FIREWALL_PREFIX + "default";
+    /** 
+     * Prefix for all SmartSockets "network.firewall" properties. 
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_FIREWALL_PREFIX = "firewall.";
+
+    /** 
+     * List of networks from whom we should accept connections. 
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_FIREWALL_ACCEPT = NW_FIREWALL_PREFIX + "accept";
+
+    /** 
+     * List of networks from whom we should deny connections. 
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_FIREWALL_DENY = NW_FIREWALL_PREFIX + "deny";
+
+    /** 
+     * Default accept policy for connections from external networks. 
+     * @see ibis.smartsockets.direct.NetworkPreference
+     */       
+    public static final String NW_FIREWALL_DEFAULT = NW_FIREWALL_PREFIX + "default";
     
+    /** 
+     * Prefix for all SmartSockets "smartsockets.cluster" properties. 
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
     public static final String CLUSTER_PREFIX  = PREFIX + "cluster.";
+    
+    /** 
+     * Comma separated list of unique virtual cluster names. 
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
     public static final String CLUSTER_DEFINE  = CLUSTER_PREFIX + "define";
+
+    /** 
+     * Name of the virtual cluster to which this machine belongs.  
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
     public static final String CLUSTER_MEMBER  = CLUSTER_PREFIX + "member";
     public static final String CLUSTER_REORDER = CLUSTER_PREFIX + "reorder";
         
     // NOTE: These properties require a prefix which can only be determined at
     // runtime.  
-    public static final String CLUSTER_PREFERENCE  = "preference.";    
+    
+    /** 
+     * Prefix for all SmartSockets "smartsockets.cluster.($name).preference" properties. 
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
+    public static final String CLUSTER_PREFERENCE  = "preference.";
+    
+    /** 
+     * Method to determine to which cluster a machine belongs. 
+     * Currently only "manual" is supported.
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
     public static final String CLUSTER_MEMBERSHIP  = "preference.membership";
+    
+    /** 
+     * Virtual connection module to use when creating a connection inside a cluster. 
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
     public static final String CLUSTER_INSIDE      = "preference.inside";
+    
+    /** 
+     * Virtual connection module to use when creating a outside inside a cluster. 
+     * @see ibis.smartsockets.virtual.VirtualClusters
+     */           
     public static final String CLUSTER_DEFAULT     = "preference.default";
     public static final String CLUSTER_SUB_REORDER = "preference.reorder";
     
@@ -468,7 +712,7 @@ public class SmartSocketsProperties {
      * 
      * The properties in this configuration object are set a follows:
      * 
-     * First, a set of hardcoded default properties is loaded.
+     * First, a set of hard coded default properties is loaded.
      *  
      * Next, the "smartsockets.properties" file will be loaded (if found), overwriting the default settings it necessary. 
      * Set the "-Dsmartsockets.file=" property on the command line to load a different file.
