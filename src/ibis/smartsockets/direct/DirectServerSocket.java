@@ -8,6 +8,20 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 
+/**
+ * This class provides a alternative ServerSocket implementation.
+ * <p>
+ * A DirectServerSocket serves the same purpose as a java.net.ServerSocket, i.e., 
+ * it acts as a contact point for incoming connections. 
+ * <p>
+ * Unlike a regular ServerSocket, a DirectServerSocket performs a handshake at 
+ * connection setup to ensure that the connection has reached the correct 
+ * DirectServerSocket.
+ * 
+ * @author Jason Maassen
+ * @version 1.0 Dec 19, 2005
+ * @since 1.0
+ */
 public class DirectServerSocket {
 
     protected static final byte TYPE_SERVER               = 7;
@@ -116,6 +130,16 @@ public class DirectServerSocket {
             // ignore
         }
     }
+    
+    /** 
+     * Accept a new connection.
+     * 
+     * When accepting a connection, a handshake will be performed to 
+     * ensure that the connection ha reached the intended destination.
+     * 
+     * @return A DirectSocket representing the new connection.
+     * @throws IOException
+     */
     
     public DirectSocket accept() throws IOException {    
         
@@ -233,19 +257,41 @@ public class DirectServerSocket {
         
         return result;        
     }
-
+    
+    /** 
+     * Close the DirectServerSocket.
+     * 
+     * @throws IOException
+     */
     public void close() throws IOException {
         serverSocket.close();
     }
 
+    /**
+     * Test if the DirectServerSocket is closed.
+     * 
+     * @return if the DirectServerSocket is closed.
+     */
     public boolean isClosed() {
         return serverSocket.isClosed();        
     }
    
+    /**
+     * Get a ServerSocketChannel representing this DirectServerSocket.
+     * 
+     * @return the ServerSocketChannel representing this DirectServerSocket, or null if unavailable.
+     * @see java.nio.ServerSocketChannel
+     */
     public ServerSocketChannel getChannel() {
         return serverSocket.getChannel();
     }
        
+    /** 
+     * Get the DirectSocketAddress for this DirectServerSocket.
+     * 
+     * @return the DirectSocketAddress for this DirectServerSocket
+     * @see ibis.smartsockets.direct.DirectSocketAddress
+     */
     public DirectSocketAddress getAddressSet() {
         if (external != null) { 
             return DirectSocketAddress.merge(local, external);            

@@ -710,12 +710,12 @@ public class NetworkPreference {
     public String toString() {
         return defaultPreference.toString();
     }
-
+/*
     public AddressIterator determineOrder(DirectSocketAddress target) {
         // TODO Auto-generated method stub
         return null;
     }
-    
+*/    
     public static NetworkPreference getPreference(IPAddressSet myAddress, 
             TypedProperties p) { 
         
