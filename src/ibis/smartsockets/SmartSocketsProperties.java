@@ -776,7 +776,7 @@ public final class SmartSocketsProperties {
             try {
                 in.close();
             } catch (Exception x) {
-                // ignore
+                LOGGER.warn("Failed to close property file: " + file, e);
             }
         }
 
