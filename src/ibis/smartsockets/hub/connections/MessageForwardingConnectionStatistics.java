@@ -21,30 +21,30 @@ public class MessageForwardingConnectionStatistics extends Statistics {
 
 	long messages;
 	long messagesError;
-	long messagesLost; 
+	long messagesLost;
 	long messagesBytes;
 
 	long messageACK;
 	long messageACK_Error;
-	long messageACKLost; 
+	long messageACKLost;
 
 	long infoMessages;
-	long infoMessagesBytes;	
+	long infoMessagesBytes;
 	long infoMessagesForwarded;
 	long infoMessagesDropped;
 	long infoMessagesReturned;
 	long infoMessagesDelivered;
-	long infoMessagesFailed; 
+	long infoMessagesFailed;
 
-	public MessageForwardingConnectionStatistics(String name) { 
+	public MessageForwardingConnectionStatistics(String name) {
 		super(name);
 	}
 
 	public void add(Statistics tmp) {
-		
-		MessageForwardingConnectionStatistics other = 
+
+		MessageForwardingConnectionStatistics other =
 			(MessageForwardingConnectionStatistics) tmp;
-		
+
 		connectionsTotal += other.connectionsTotal;
 		connectionsFailed += other.connectionsFailed;
 
@@ -60,23 +60,23 @@ public class MessageForwardingConnectionStatistics extends Statistics {
 
 		messages += other.messages;
 		messagesError += other.messagesError;
-		messagesLost += other.messagesLost; 
+		messagesLost += other.messagesLost;
 		messagesBytes += other.messagesBytes;
 
 		messageACK += other.messageACK;
 		messageACK_Error += other.messageACK_Error;
-		messageACKLost += other.messageACKLost; 
+		messageACKLost += other.messageACKLost;
 
 		infoMessages += other.infoMessages;
-		infoMessagesBytes += other.infoMessagesBytes;	
+		infoMessagesBytes += other.infoMessagesBytes;
 		infoMessagesForwarded += other.infoMessagesForwarded;
 		infoMessagesDropped += other.infoMessagesDropped;
 		infoMessagesReturned += other.infoMessagesReturned;
 		infoMessagesDelivered += other.infoMessagesDelivered;
-		infoMessagesFailed += other.infoMessagesFailed; 		
+		infoMessagesFailed += other.infoMessagesFailed;
 	}
 
-	public void print(PrintStream out, String prefix) { 
+	public void print(PrintStream out, String prefix) {
 		out.println(prefix + "VConnections: " + connectionsTotal);
 		out.println(prefix + "   - failed : " + connectionsFailed);
 		out.println(prefix + "   - lost   : " + connectionsRepliesLost);
@@ -85,11 +85,11 @@ public class MessageForwardingConnectionStatistics extends Statistics {
 		out.println(prefix + " - ACK      : " + connectionsACKs);
 		out.println(prefix + " - rejected : " + connectionsNACKs);
 		out.println(prefix + " - lost     : " + connectionsRepliesLost);
-		out.println(prefix + " - error    : " + connectionsRepliesError);            
+		out.println(prefix + " - error    : " + connectionsRepliesError);
 		out.println(prefix + "VMessages   : " + messages);
 		out.println(prefix + " - bytes    : " + messagesBytes);
 		out.println(prefix + " - lost     : " + messagesLost);
-		out.println(prefix + " - error    : " + messagesError);            
+		out.println(prefix + " - error    : " + messagesError);
 		out.println(prefix + "VMess. ACKS : " + messageACK);
 		out.println(prefix + "    - lost  : " + messageACKLost);
 		out.println(prefix + "    - error : " + messageACK_Error);

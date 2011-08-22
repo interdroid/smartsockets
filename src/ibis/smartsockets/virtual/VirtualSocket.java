@@ -14,20 +14,20 @@ import java.util.Map;
 
 
 public abstract class VirtualSocket {
-   
+
     protected DirectSocketAddress remote;
-    protected int remotePort;       
-    
+    protected int remotePort;
+
     protected Map<String, Object> props;
-    
-    protected VirtualSocket() {         
+
+    protected VirtualSocket() {
     }
-    
-    protected VirtualSocket(VirtualSocketAddress target) {         
+
+    protected VirtualSocket(VirtualSocketAddress target) {
         this.remote = target.machine();
-        this.remotePort = target.port();                
+        this.remotePort = target.port();
     }
-           
+
     public SocketAddress getRemoteSocketAddress() {
         return remote;
     }
@@ -35,17 +35,17 @@ public abstract class VirtualSocket {
     public int getPort() {
         return remotePort;
     }
-    
+
     public long getBytesWritten() throws IOException {
         System.err.println("getBytesWritten() not implemented by " + this);
         throw new RuntimeException("getBytesWritten() not implemented by " + this);
     }
-    
+
     public long getBytesRead() throws IOException {
         System.err.println("getBytesRead() not implemented by " + this);
         throw new RuntimeException("getBytesRead() not implemented by " + this);
     }
-    
+
     public void close() throws IOException {
         System.err.println("close() not implemented by " + this);
         throw new RuntimeException("close() not implemented by " + this);
@@ -55,7 +55,7 @@ public abstract class VirtualSocket {
         System.err.println("getChannel() not implemented by " + this);
         throw new RuntimeException("getChannel() not implemented by " + this);
     }
-   
+
     public InputStream getInputStream() throws IOException {
         System.err.println("getInputStream() not implemented by " + this);
         throw new RuntimeException("getInputStream() not implemented by "
@@ -66,7 +66,7 @@ public abstract class VirtualSocket {
         System.err.println("getKeepAlive() not implemented by " + this);
         throw new RuntimeException("getKeepAlive() not implemented by " + this);
     }
-        
+
     public int getLocalPort() {
         System.err.println("getLocalPort() not implemented by " + this);
         throw new RuntimeException("getLocalPort() not implemented by " + this);
@@ -230,36 +230,36 @@ public abstract class VirtualSocket {
                 + this);
     }
 
-    public void setPerformancePreferences(int connectionTime, int latency, 
+    public void setPerformancePreferences(int connectionTime, int latency,
             int bandwidth) {
-        System.err.println("setPerformancePreferences() not implemented by " 
+        System.err.println("setPerformancePreferences() not implemented by "
                 + this);
-      
+
         throw new RuntimeException("shutdownOutput() not implemented by "
                 + this);
-    }  
-    
+    }
+
     public String toString() {
         return "unimplemented toString()!";
     }
 
     /**
      * Returns the properties associated with this socket.
-     *   
-     * @return a map containing implementation-specific properties of this 
-     *         socket. 
+     *
+     * @return a map containing implementation-specific properties of this
+     *         socket.
      */
     public Map<String, Object> properties() {
         return props;
     }
 
     /**
-     * Sets a number of properties of this socket. 
-     * 
+     * Sets a number of properties of this socket.
+     *
      * Allows the user to set implementation-specific properties of this socket.
-     * 
-     * @param properties map containing the properties to set. 
-     *       
+     *
+     * @param properties map containing the properties to set.
+     *
      */
     public void setProperties(Map<String, Object> properties) {
         // TODO: Add instead of overwrite ?
@@ -268,21 +268,21 @@ public abstract class VirtualSocket {
 
     /**
      * Returns the value associated with a specific property of this socket.
-     * 
+     *
      * @param key name of the property whose value should be returned
-     * 
+     *
      * @return value associated with the property, or null if the property does
-     *         not exist. 
+     *         not exist.
      */
     public Object getProperty(String key) {
         return props.get(key);
     }
 
     /**
-     * Sets a property of this socket. 
-     * 
+     * Sets a property of this socket.
+     *
      * @param key name of the property to set.
-     * @param val new value of the property. 
+     * @param val new value of the property.
      */
     public void setProperty(String key, Object val) {
         props.put(key, val);
@@ -293,10 +293,10 @@ public abstract class VirtualSocket {
      * the input buffer size and output buffer size can be set using the system
      * properties "ibis.util.socketfactory.InputBufferSize" and
      * "ibis.util.socketfactory.OutputBufferSize".
-     * 
+     *
      * @exception IOException configuration failed for some reason.
      */
-    
+
     public abstract void waitForAccept(int timeout) throws IOException;
     protected abstract void connectionAccepted(int timeout) throws IOException;
     protected abstract void connectionRejected(int timeout);
@@ -310,7 +310,7 @@ public abstract class VirtualSocket {
         // NOTE: Can never be implemented correctly ?
         return null;
     }
-   
-        
-    
+
+
+
 }

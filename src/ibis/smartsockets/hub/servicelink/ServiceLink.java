@@ -35,26 +35,26 @@ public class ServiceLink implements Runnable {
 
     private static final int DEFAULT_WAIT_TIME = 10000;
 
-    private final HashMap<String, Object> callbacks 
+    private final HashMap<String, Object> callbacks
         = new HashMap<String, Object>();
 
-    private final HashMap<Integer, Object> infoRequests 
+    private final HashMap<Integer, Object> infoRequests
         = new HashMap<Integer, Object>();
 
     private final DirectSocketFactory factory;
 
     private final DirectSocketAddress myAddress;
-    
+
     private final List<DirectSocketAddress> hubs;
-    
+
     private DirectSocketAddress hubAddress;
 
     private boolean connected = false;
-    
+
     private boolean done = false;
-    
+
     private DirectSocket hub;
-    
+
     private DataOutputStream out;
 
     private DataInputStream in;
@@ -102,13 +102,13 @@ public class ServiceLink implements Runnable {
     private long outgoingMetaMessages;
 
     private final int virtualHubPort;
-    
+
     private final long maxReconnect;
-    
+
     private final boolean forceConnection;
 
     private ServiceLink(List<DirectSocketAddress> hubs,
-            DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer, 
+            DirectSocketAddress myAddress, int sendBuffer, int receiveBuffer,
             int virtualHubPort, long maxReconnect, boolean forceConnection) throws IOException {
 
         this.hubs = hubs;
@@ -118,44 +118,44 @@ public class ServiceLink implements Runnable {
 
         this.maxReconnect = maxReconnect;
         this.forceConnection = forceConnection;
-        
+
         this.virtualHubPort = virtualHubPort;
 
         factory = DirectSocketFactory.getSocketFactory();
-        
+
         ThreadPool.createNew(this, "ServiceLink Message Reader");
     }
 
-    public synchronized boolean getDone() { 
+    public synchronized boolean getDone() {
     	return done;
     }
-    
-    public synchronized void setDone() { 
-    	if (done) { 
+
+    public synchronized void setDone() {
+    	if (done) {
     		return;
     	}
-    	
+
     	done = true;
-    	
+
     	// hum... this may be a bit harsh ?
     	closeConnectionToHub();
     }
-    
+
     public synchronized void registerVCCallBack(VirtualConnectionCallBack cb) {
         vcCallBack = cb;
     }
-    
+
     public synchronized VirtualConnectionCallBack getVCCallBack() {
         return vcCallBack;
     }
-    
+
     public void register(String identifier, CallBack callback) {
 
-        synchronized (callbacks) { 
+        synchronized (callbacks) {
             if (callbacks.containsKey(identifier)) {
                 logger.warn("ServiceLink: refusing to override callback "
                         + identifier, new Exception());
-                
+
                 return;
             }
 
@@ -163,8 +163,8 @@ public class ServiceLink implements Runnable {
         }
     }
 
-    protected Object findCallback(String identifier) {        
-        synchronized (callbacks) {         
+    protected Object findCallback(String identifier) {
+        synchronized (callbacks) {
             return callbacks.get(identifier);
         }
     }
@@ -254,33 +254,33 @@ public class ServiceLink implements Runnable {
     public synchronized void waitConnected(int time) throws IOException {
 
         if (time < 0) {
-            
-            if (!connected) { 
+
+            if (!connected) {
                 throw new IOException("No connection to hub!");
             }
-        
+
             return;
         }
-        
+
         long deadline = System.currentTimeMillis() + time;
         long timeleft = time;
-        
+
         while (!connected) {
-            
+
             try {
-                if (time > 0) { 
+                if (time > 0) {
                     wait(timeleft);
-                } else { 
+                } else {
                     wait();
                 }
             } catch (InterruptedException e) {
                 // ignore
             }
-            
-            if (!connected && time > 0) { 
+
+            if (!connected && time > 0) {
                 timeleft = deadline - System.currentTimeMillis();
-                
-                if (timeleft <= 0) { 
+
+                if (timeleft <= 0) {
                     throw new IOException("No connection to hub!");
                 }
             }
@@ -298,11 +298,11 @@ public class ServiceLink implements Runnable {
 
         DirectSocketFactory.close(hub, out, in);
 
-        // Should close virtual connections here ? 
+        // Should close virtual connections here ?
 
         /*      Long [] tmp = credits.keySet().toArray(new Long[0]);
-         
-         for (long l : tmp) { 
+
+         for (long l : tmp) {
          closeConnection(l);
          }
          */
@@ -311,10 +311,10 @@ public class ServiceLink implements Runnable {
     private void connectToHub(DirectSocketAddress address) throws IOException {
         try {
             if (logger.isInfoEnabled()) {
-                logger.info("Service link attempting to connect to hub: " 
+                logger.info("Service link attempting to connect to hub: "
                         + address);
             }
-            
+
             // Create a connection to the hub
             hub = factory.createSocket(address, TIMEOUT, 0, sendBuffer,
                     receiveBuffer, null, false, virtualHubPort);
@@ -348,8 +348,8 @@ public class ServiceLink implements Runnable {
                         + reply);
             }
 
-            // If the connection is accepted, the hub will give us its full 
-            // address (since the user supplied one may be a partial).  
+            // If the connection is accepted, the hub will give us its full
+            // address (since the user supplied one may be a partial).
             hubAddress = DirectSocketAddress.getByAddress(in.readUTF());
 
             if (logger.isInfoEnabled()) {
@@ -379,12 +379,12 @@ public class ServiceLink implements Runnable {
         DirectSocketAddress source = DirectSocketAddress.read(in);
         DirectSocketAddress sourceHub = DirectSocketAddress.read(in);
 
-        // since we have reached our destination, the hop count and 
+        // since we have reached our destination, the hop count and
         // target addresses are not used anymore..
         skip(4);
-        
+
         boolean returnedToSender = in.readBoolean();
-        
+
         DirectSocketAddress.skip(in);
         DirectSocketAddress.skip(in);
 
@@ -394,7 +394,7 @@ public class ServiceLink implements Runnable {
         byte[][] message = readMessageBlob();
 
         if (logger.isInfoEnabled()) {
-            logger.info("ServiceLink: Received message for " + targetModule 
+            logger.info("ServiceLink: Received message for " + targetModule
                     + " (returnToSender: " + returnedToSender + ")");
         }
 
@@ -472,7 +472,7 @@ public class ServiceLink implements Runnable {
         }
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
@@ -483,8 +483,8 @@ public class ServiceLink implements Runnable {
             return;
         }
 
-        // Forward the connect call to the module responsible. This call will 
-        // result in an invocation of (n)ackVirtualConnection. 
+        // Forward the connect call to the module responsible. This call will
+        // result in an invocation of (n)ackVirtualConnection.
         vcb.connect(source, sourceHub, port, fragment, buffer, timeout, index);
 
         // Connection is now pending in the backlog of a serversocket somewhere.
@@ -504,7 +504,7 @@ public class ServiceLink implements Runnable {
         //      System.err.println("***** ACK IN " + index);
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
@@ -530,7 +530,7 @@ public class ServiceLink implements Runnable {
         boolean succes = in.readBoolean();
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
@@ -559,7 +559,7 @@ public class ServiceLink implements Runnable {
         byte reason = in.readByte();
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
 
             if (logger.isInfoEnabled()) {
@@ -577,38 +577,38 @@ public class ServiceLink implements Runnable {
         vcb.connectNACK(index, reason);
     }
 
-    /*    
+    /*
      public void rejectIncomingConnection(long index) {
-     
+
      // The incoming connection 'index' was rejected.
      if (logger.isInfoEnabled()) {
-     logger.info("REJECTED connection: (" + index 
+     logger.info("REJECTED connection: (" + index
      + "): serversocket did not accept");
      }
-     
+
      Credits c = credits.get(index);
-     
-     if (c == null) { 
+
+     if (c == null) {
      failedIncomingConnections++;
-     
-     logger.warn("Cannot close connection: " + index 
-     + " since it does not exist (anymore)!");            
+
+     logger.warn("Cannot close connection: " + index
+     + " since it does not exist (anymore)!");
      return;
      }
-     
-     try { 
-     synchronized (out) {         
+
+     try {
+     synchronized (out) {
      out.write(MessageForwarderProtocol.CREATE_VIRTUAL_ACK);
      out.writeLong(index);
-     out.writeUTF("DENIED");  
+     out.writeUTF("DENIED");
      out.writeUTF("Connection refused");
      out.flush();
      }
      } catch (IOException e) {
      logger.warn("ServiceLink: Exception while writing to hub!", e);
-     closeConnectionToHub();                      
+     closeConnectionToHub();
      }
-     
+
      rejectedIncomingConnections++;
      }
      */
@@ -616,7 +616,7 @@ public class ServiceLink implements Runnable {
     private void disconnectCallback(long index) {
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
             logger.warn("Cannot forward disconnect(" + index
                     + "): no callback!");
@@ -627,67 +627,67 @@ public class ServiceLink implements Runnable {
     }
 
     /*
-     public boolean acceptIncomingConnection(long index) throws IOException { 
-     
+     public boolean acceptIncomingConnection(long index) throws IOException {
+
      acceptedIncomingConnections++;
-     
-     // The incoming connection 'index' was accepted. The only problem is 
-     // that we are not sure if we are in time. We therefore send a reply, 
+
+     // The incoming connection 'index' was accepted. The only problem is
+     // that we are not sure if we are in time. We therefore send a reply,
      // for which we get a reply back again...
      if (logger.isInfoEnabled()) {
      logger.info("ACCEPTED connection: (" + index + ")");
      }
 
      Credits c = credits.get(index);
-     
-     if (c == null) { 
+
+     if (c == null) {
      if (logger.isInfoEnabled()) {
-     logger.info("ACCEPTED connection disappeared: " 
+     logger.info("ACCEPTED connection disappeared: "
      + " (" + index + "): client has already closed!");
      }
-     
+
      failedIncomingConnections++;
      disconnectCallback(index);
      return false;
      }
-     
-     try { 
-     synchronized (out) {         
+
+     try {
+     synchronized (out) {
      out.write(MessageForwarderProtocol.CREATE_VIRTUAL_ACK);
      out.writeLong(index);
-     out.writeUTF("OK");  
-     out.writeUTF("" + maxCredits);                    
+     out.writeUTF("OK");
+     out.writeUTF("" + maxCredits);
      out.flush();
      }
-     
+
      } catch (IOException e) {
      logger.warn("ServiceLink: Exception while writing to hub!", e);
      closeConnectionToHub();
-     throw new IOException("Connection to hub lost!");            
+     throw new IOException("Connection to hub lost!");
      }
-     
+
      acceptedIncomingConnections++;
-     
+
      return true;
      }
      */
 
-    /* 
-     private void closeConnection(long index) { 
-     
+    /*
+     private void closeConnection(long index) {
+
      Credits c = credits.remove(index);
-     
+
      if (c == null) {
      // This may happen if we closed the connection while the other
      // sides close was in transit...
-     if (logger.isInfoEnabled()) { 
-     logger.info("Cannot close connection: " + index 
+     if (logger.isInfoEnabled()) {
+     logger.info("Cannot close connection: " + index
      + " since it does not exist (anymore)!");
      }
      return;
      }
-     
-     disconnectCallback(index); 
+
+     disconnectCallback(index);
      }*/
 
     private void handleIncomingClose() throws IOException {
@@ -717,7 +717,7 @@ public class ServiceLink implements Runnable {
         incomingBytes += len;
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
             logger.warn("Received virtual message(" + len
                     + ") for connection: " + index + " which doesn't exist!!");
@@ -751,7 +751,7 @@ public class ServiceLink implements Runnable {
         }
 
         VirtualConnectionCallBack vcb = getVCCallBack();
-        
+
         if (vcb == null) {
             if (logger.isInfoEnabled()) {
                 logger.info("Cannot delivering virtual message ACK for"
@@ -831,11 +831,11 @@ public class ServiceLink implements Runnable {
                 }
 
             } catch (IOException e) {
-              
+
             	if (!getDone()) {
             		logger.warn("ServiceLink: Exception while receiving!", e);
             	}
-            	
+
             	closeConnectionToHub();
             }
         }
@@ -908,7 +908,7 @@ public class ServiceLink implements Runnable {
 
         if (logger.isInfoEnabled()) {
             logger.info("Sending message to hub: [" + target.toString() + ", "
-                    + targetModule + ", " + opcode + ", " 
+                    + targetModule + ", " + opcode + ", "
                     + Arrays.deepToString(message) + "]");
         }
 
@@ -921,10 +921,10 @@ public class ServiceLink implements Runnable {
 
                 // hops left is not used here...
                 out.writeInt(-1);
-                
+
                 // return to sender is set to false by default
                 out.writeBoolean(false);
-                
+
                 DirectSocketAddress.write(target, out);
                 DirectSocketAddress.write(targetHub, out); // may be null
 
@@ -952,25 +952,25 @@ public class ServiceLink implements Runnable {
             }
             return;
         }
-        
+
         try {
             synchronized (out) {
                 out.write(MessageForwarderProtocol.DATA_MESSAGE);
-                
-                out.writeInt(4 + targetHub.getAddress().length +  
-                		4 + target.getAddress().length +  
-                		4 + (message == null ? 0 : message.length)); 
+
+                out.writeInt(4 + targetHub.getAddress().length +
+                		4 + target.getAddress().length +
+                		4 + (message == null ? 0 : message.length));
 
                 DirectSocketAddress.write(targetHub, out); // may be null ?
                 DirectSocketAddress.write(target, out);
 
-                if (message == null) { 
+                if (message == null) {
                 	out.writeInt(0);
-                } else { 
+                } else {
                 	out.writeInt(message.length);
                 	out.write(message);
                 }
-                	
+
                 out.flush();
             }
         } catch (IOException e) {
@@ -981,15 +981,15 @@ public class ServiceLink implements Runnable {
         outgoingMetaMessages++;
     }
 
-    
-    
-    
+
+
+
     /*
-     public void send(SocketAddressSet target, 
-     SocketAddressSet targetHub, String targetModule, int opcode, 
-     String message) { 
-     
-     send(target, targetHub, targetModule, opcode, 
+     public void send(SocketAddressSet target,
+     SocketAddressSet targetHub, String targetModule, int opcode,
+     String message) {
+
+     send(target, targetHub, targetModule, opcode,
      new byte [][] { message.getBytes() });
      }*/
 
@@ -1023,7 +1023,7 @@ public class ServiceLink implements Runnable {
     private HubInfo[] convertToHubInfo(String[] message) {
 
   //      System.out.println("GOT MESSAGE: " + Arrays.deepToString(message));
-        
+
         HubInfo[] result = new HubInfo[message.length];
 
         for (int i = 0; i < message.length; i++) {
@@ -1133,11 +1133,11 @@ public class ServiceLink implements Runnable {
     public void addHubs(DirectSocketAddress... hubs) {
         // TODO: implement!
     }
-    
+
     public void addHubs(String... hubs) {
         // TODO: implement!
     }
-        
+
     public HubInfo[] hubDetails() throws IOException {
 
         if (logger.isInfoEnabled()) {
@@ -1208,116 +1208,116 @@ public class ServiceLink implements Runnable {
     }
 
     /*
-     private void registerConnectionACK(long index) {        
+     private void registerConnectionACK(long index) {
      synchronized (connectionACKs) {
      connectionACKs.put(index, null);
      }
      }
-     
-     private void gotConnectionACK(long index, String [] result) {    
-     
+
+     private void gotConnectionACK(long index, String [] result) {
+
      //logger.warn("Got ACK: " + index + ": " + Arrays.deepToString(result));
-     
-     synchronized (connectionACKs) { 
-     if (connectionACKs.containsKey(index)) { 
-     
+
+     synchronized (connectionACKs) {
+     if (connectionACKs.containsKey(index)) {
+
      //   logger.warn("Delivering ACK: " + index);
-     
+
      connectionACKs.put(index, result);
      connectionACKs.notifyAll();
      return;
-     }             
      }
-     
-     // If we end up here, there was no one waiting for a connection ACK 
+     }
+
+     // If we end up here, there was no one waiting for a connection ACK
      // for connection 'index' anymore. The connector probably timed out.
      // To inform the other side of this, we send a 'close' back as a reply.
-     
+
      //  logger.warn("Deleting ACK: " + index);
-     
-     try { 
+
+     try {
      closeVirtualConnection(index);
      } catch (IOException e) {
      // ignored... we did our best....
      }
      }
-     
-     public void waitForConnectionACK(long index, int timeout) 
-     throws IOException { 
+
+     public void waitForConnectionACK(long index, int timeout)
+     throws IOException {
 
      // logger.warn("Waiting for ACK: " + index);
-     
+
      byte result;
-     
+
      synchronized (connectionACKs) {
-     
+
      long endTime = System.currentTimeMillis() + timeout;
      long timeLeft = timeout;
-     
+
      result = connectionACKs.get(index);
-     
-     while (result == null && timeLeft >= 0) { 
-     try { 
+
+     while (result == null && timeLeft >= 0) {
+     try {
      connectionACKs.wait(timeLeft);
      } catch (InterruptedException e) {
      // ignore
      }
-     
-     if (timeout > 0) { 
+
+     if (timeout > 0) {
      timeLeft = endTime - System.currentTimeMillis();
-     
+
      // Prevents us from accidently falling into a wait(0)!!
-     if (timeLeft == 0) { 
+     if (timeLeft == 0) {
      timeLeft = -1;
      }
      }
-     
+
      result = connectionACKs.get(index);
      }
-     
+
      result = connectionACKs.remove(index);
      }
 
      // No result ? Timeout!
      if (result == null) {
      failedOutgoingConnections++;
-     throw new SocketTimeoutException("Connect " + index 
+     throw new SocketTimeoutException("Connect " + index
      + " timed out!");
      }
-     
+
      // We have a result, but it may not be positive...
      if (result[0].equals("DENIED")) {
-     
-     if (result[1].equals("Unknown host")) { 
+
+     if (result[1].equals("Unknown host")) {
      failedOutgoingConnections++;
-     throw new UnknownHostException(); 
+     throw new UnknownHostException();
      }
-     
+
      if (result[1].equals("Connection refused")) {
      rejectedOutgoingConnections++;
-     throw new ConnectException(); 
+     throw new ConnectException();
      }
-     
+
      failedOutgoingConnections++;
      throw new IOException("Connection " + index + " failed: " + result[1]);
-     } 
-     
+     }
+
      // Sanity check
      if (!result[0].equals("OK")) {
      failedOutgoingConnections++;
      throw new IOException("Connection + " + index + " failed: " + result[0]);
-     } 
-     
-     int tmp = DEFAULT_CREDITS; 
-     
-     try { 
+     }
+
+     int tmp = DEFAULT_CREDITS;
+
+     try {
      tmp = Integer.parseInt(result[1]);
      } catch (Exception e) {
      logger.warn("Failed to parse number of credits:" + result[1]);
      }
-     
+
      System.err.println("Created virtual stream with " + tmp + " credits!");
-     
+
      // Otherwise, the connection is accepted.
      credits.put(index, new Credits(tmp));
      acceptedOutgoingConnections++;
@@ -1463,7 +1463,7 @@ public class ServiceLink implements Runnable {
         if (logger.isInfoEnabled()) {
             logger.debug("Closing virtual connection: " + index);
         }
-        
+
         if (!getConnected()) {
             throw new IOException("No connection to hub");
         }
@@ -1639,7 +1639,7 @@ public class ServiceLink implements Runnable {
             removeInfoRequest(id);
         }
     }
-   
+
     public void printStatistics(String prefix) {
 
         if (statslogger.isInfoEnabled()) {
@@ -1664,17 +1664,17 @@ public class ServiceLink implements Runnable {
 
     public void run() {
 
-        // Connect to the hub and processes the messages it gets. When the 
+        // Connect to the hub and processes the messages it gets. When the
         // connection is lost, it will try to reconnect.
         while (!getDone()) {
-       
+
         	int sleep = 1000;
             long end = System.currentTimeMillis() + maxReconnect;
-            
+
         	do {
-                if (hubAddress == null) { 
+                if (hubAddress == null) {
                 	// This is the initial connect, where we haven't found a working hub yet....
-                    for (DirectSocketAddress a : hubs) { 
+                    for (DirectSocketAddress a : hubs) {
                         try {
                             connectToHub(a);
                             hubAddress = a;
@@ -1684,15 +1684,15 @@ public class ServiceLink implements Runnable {
                             logger.info("Failed to connect to hub: " + a);
                         }
                     }
-                
-                    if (!getConnected()) { 
+
+                    if (!getConnected()) {
                         try {
                             Thread.sleep(sleep);
                         } catch (InterruptedException ie) {
                             // ignore
                         }
-                    }                
-                } else { 
+                    }
+                } else {
                 	// This happens when we've lost contact with the hub and try to reconnect.
                     try {
                         connectToHub(hubAddress);
@@ -1704,17 +1704,17 @@ public class ServiceLink implements Runnable {
                         }
                     }
                 }
-                
+
                 if (sleep < 16000) {
                     sleep *= 2;
                 }
-                
-                if (forceConnection && maxReconnect > 0 && System.currentTimeMillis() > end) { 
+
+                if (forceConnection && maxReconnect > 0 && System.currentTimeMillis() > end) {
                 	logger.error("Permanent failure of servicelink! -- will exit");
                 	// FIXME!
                 	System.exit(1);
                 }
-                
+
             } while (!getConnected());
 
             sleep = 1000;
@@ -1726,8 +1726,8 @@ public class ServiceLink implements Runnable {
     public static ServiceLink getServiceLink(TypedProperties p,
             List<DirectSocketAddress> hubs, DirectSocketAddress myAddress) {
 
-        // TODO: cache service linkes here ? Shared a link between multiple 
-        // clients that use the same hub ?  
+        // TODO: cache service linkes here ? Shared a link between multiple
+        // clients that use the same hub ?
 
         if (hubs == null || hubs.size() == 0) {
             throw new NullPointerException("Hub address is null!");
@@ -1740,22 +1740,22 @@ public class ServiceLink implements Runnable {
         int sendBuffer = -1;
         int receiveBuffer = -1;
         int virtualHubPort = 42;
-                
+
         boolean force = true;
         long maxReconnect = 0;
-         
+
         if (p != null) {
             sendBuffer = p.getIntProperty(SmartSocketsProperties.SL_SEND_BUFFER, -1);
             receiveBuffer = p.getIntProperty(SmartSocketsProperties.SL_RECEIVE_BUFFER, -1);
             virtualHubPort = p.getIntProperty(SmartSocketsProperties.HUB_VIRTUAL_PORT, 42);
             force = p.booleanProperty(SmartSocketsProperties.SL_FORCE);
-          
-            if (force) { 
-            	maxReconnect = ((long) p.getIntProperty(SmartSocketsProperties.SL_RETRIES)) * 
+
+            if (force) {
+            	maxReconnect = ((long) p.getIntProperty(SmartSocketsProperties.SL_RETRIES)) *
             	((long) p.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
             }
         }
-        
+
         try {
             return new ServiceLink(hubs, myAddress, sendBuffer,
                     receiveBuffer, virtualHubPort, maxReconnect, force);

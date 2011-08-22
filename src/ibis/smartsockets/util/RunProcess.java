@@ -20,10 +20,10 @@ import java.util.Map;
  *     byte[] o = p.getStdout();
  *     byte[] e = p.getStderr();
  *     int status = p.getExitStatus();
- * </pre> 
+ * </pre>
  */
 public final class RunProcess {
-    
+
     private final ProcessBuilder builder;
 
     private static class buf {
@@ -116,7 +116,7 @@ public final class RunProcess {
     public RunProcess(List<String> command) {
         builder = new ProcessBuilder(command);
     }
-    
+
     /**
      * Runs the built command.
      * This method blocks until the command is finished, after
@@ -174,8 +174,8 @@ public final class RunProcess {
                 }
             }
         }
-        
-        // We must close the streams and destroy the process here, 
+
+        // We must close the streams and destroy the process here,
         // otherwise we'll leak file descriptors!! -- Jason
         if (p != null) {
             close(p.getOutputStream());
@@ -194,7 +194,7 @@ public final class RunProcess {
           }
         }
       }
-    
+
     /**
      * Returns the output buffer of the process.
      * @return the output buffer.
@@ -228,14 +228,14 @@ public final class RunProcess {
     public int getExitStatus() {
         return exitStatus;
     }
-    
+
     /**
      * See {@link ProcessBuilder#command()}.
      */
     public List<String> command() {
         return builder.command();
     }
-    
+
     /**
      * See {@link ProcessBuilder#command(List)}.
      */
@@ -243,7 +243,7 @@ public final class RunProcess {
         builder.command(command);
         return this;
     }
-    
+
     /**
      * See {@link ProcessBuilder#command(String...)}.
      */
@@ -251,14 +251,14 @@ public final class RunProcess {
         builder.command(command);
         return this;
     }
-    
+
     /**
      * See {@link ProcessBuilder#directory()}.
      */
     public File directory() {
         return builder.directory();
     }
-    
+
     /**
      * See {@link ProcessBuilder#directory(File)}.
      */
@@ -272,7 +272,7 @@ public final class RunProcess {
     public Map<String, String> environment() {
         return builder.environment();
     }
-    
+
     /**
      * See {@link ProcessBuilder#redirectErrorStream()}.
      */
@@ -287,7 +287,7 @@ public final class RunProcess {
         builder.redirectErrorStream(redirectErrorStream);
         return this;
     }
-    
+
     /**
      * See {@link ProcessBuilder#start()}.
      */

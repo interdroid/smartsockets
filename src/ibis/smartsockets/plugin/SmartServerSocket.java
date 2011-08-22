@@ -14,7 +14,7 @@ import java.nio.channels.ServerSocketChannel;
 public class SmartServerSocket extends ServerSocket {
 
     private VirtualServerSocket ss;
-    
+
     protected SmartServerSocket(VirtualServerSocket ss) throws IOException {
         this.ss = ss;
     }

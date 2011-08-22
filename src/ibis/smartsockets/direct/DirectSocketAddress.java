@@ -23,10 +23,10 @@ import java.util.StringTokenizer;
 /**
  * This class implements a multi SocketAddress (any number of IP addresses and
  * port numbers).
- * 
+ *
  * It provides an immutable object used by SmartSockets for binding, connecting,
  * or as returned values.
- * 
+ *
  * @author Jason Maassen
  * @version 1.0 Dec 19, 2005
  * @since 1.0
@@ -87,7 +87,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Construct a new IbisSocketAddress, starting from a byte encode version
-     * 
+     *
      * @param address
      *                The InetSocketAddress.
      * @throws UnknownHostException
@@ -251,17 +251,17 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * This method returns the byte coded form of the SocketAddressSet.
-     * 
+     *
      * This representation is either contains the 6 or 18 bytes of a single
      * InetAddress + port number, or it has the form (EGLMN (SAP)* (U)*) where:
-     * 
+     *
      * E is the number of external addresses that follow (1 byte) G is the
      * number of public addresses that follow (1 byte) L is the number of
      * private addresses that follow (1 byte) M is the length of the UUID (1
      * byte, normally 0 or 16) N is the length of the username (1 byte, 0 if
      * unused) S is the length of the next address (1 byte) A is an InetAddress
      * (4 or 16 bytes) P is the port number (2 bytes) U is a UUID (16 bytes)
-     * 
+     *
      * @return the bytes
      */
     public byte[] getAddress() {
@@ -318,7 +318,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Gets the InetAddressSet.
-     * 
+     *
      * @return the InetAddressSet.
      */
     public IPAddressSet getAddressSet() {
@@ -348,7 +348,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Return the port numbers used in this DirectSocketAddress.
-     * 
+     *
      * @param includeExternal
      *                should external (NAT) addresses be included ?
      * @return the port numbers used in this DirectSocketAddress.
@@ -384,7 +384,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Gets the SocketAddresses.
-     * 
+     *
      * @return the addresses.
      */
     protected InetSocketAddress[] getSocketAddresses() {
@@ -418,7 +418,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Return the external addresses of this DirectSocketAddress.
-     * 
+     *
      * @return an array containing the external addresses of this
      *         DirectSocketAddress
      */
@@ -428,7 +428,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Return the public addresses of this DirectSocketAddress.
-     * 
+     *
      * @return an array containing the public addresses of this
      *         DirectSocketAddress
      */
@@ -438,7 +438,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Return the private addresses of this DirectSocketAddress.
-     * 
+     *
      * @return an array containing the private addresses of this
      *         DirectSocketAddress
      */
@@ -448,7 +448,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Returns is this DirectSocketAddress has any public addresses.
-     * 
+     *
      * @return <code>true</code> if this DirectSocketAddress has any public
      *         addresses, <code>false</code> otherwise.
      */
@@ -459,7 +459,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Returns if the given InetSocketAddress is one of the external addresses
      * of this DirectSocketAddress.
-     * 
+     *
      * @return <code>true</code> if the given InetSocketAddress is one of the
      *         external addresses, <code>false</code> otherwise.
      */
@@ -470,7 +470,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Returns if the given InetSocketAddress is one of the public addresses of
      * this DirectSocketAddress.
-     * 
+     *
      * @return <code>true</code> if the given InetSocketAddress is one of the
      *         public addresses, <code>false</code> otherwise.
      */
@@ -481,7 +481,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Returns if the given InetSocketAddress is one of the private addresses of
      * this DirectSocketAddress.
-     * 
+     *
      * @return <code>true</code> if the given InetSocketAddress is one of the
      *         private addresses, <code>false</code> otherwise.
      */
@@ -491,7 +491,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Returns the username of the DirectSocketAddress.
-     * 
+     *
      * @return the username.
      */
     public String getUser() {
@@ -500,7 +500,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
@@ -521,7 +521,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object other) {
@@ -618,7 +618,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     public String toString() {
@@ -677,8 +677,8 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
         if (this == other) {
             return 0;
         }
-               
-        if (hashCode() < other.hashCode()) { 
+
+        if (hashCode() < other.hashCode()) {
             return -1;
         } else {
             return 1;
@@ -731,17 +731,17 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Check if this SocketAddressSet refers to the same machine as the 'other'
      * address. The following tests are performed:
-     * 
+     *
      * if either is loopback -> return true
-     * 
+     *
      * if both have public -> return (public overlap ?)
-     * 
+     *
      * if both have external && !(external overlap) return false
-     * 
+     *
      * if both have private -> return (private overlap)
-     * 
+     *
      * else they are different machines -> return false
-     * 
+     *
      * @param target
      * @return
      */
@@ -877,12 +877,12 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Construct a new SocketAddressSet, using IPAddressSet and a port number.
-     * 
+     *
      * A valid port value is between 0 and 65535. A port number of zero will let
      * the system pick up an ephemeral port in a bind operation.
-     * 
+     *
      * A null address will assign the wildcard address.
-     * 
+     *
      * @param a
      *                The IPAddressSet.
      * @param port
@@ -909,12 +909,12 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Construct a new SocketAddressSet, using an IPAddressSet and an array of
      * ports.
-     * 
+     *
      * A valid port value is between 1 and 65535. A port number of zero is not
      * allowed.
-     * 
+     *
      * A null address will assign the wildcard address.
-     * 
+     *
      * @param external
      *                The IPAddressSet containg the external addresses of the
      *                NAT box that this machine is behind.
@@ -1048,34 +1048,34 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Construct a new SocketAddresssET from a String representation of a
      * SocketAddressSet.
-     * 
+     *
      * This representation contains any number of InetAddresses seperated by
      * ADDRESS_SEPARATOR characters (usually defined as '/'), followed by a
      * IP_PORT_SEPERATOR (usually '-') and a port number.
-     * 
+     *
      * This sequence may be repeated any number of times, separated by slashes.
-     * 
+     *
      * The following examples are valid IPv4 string representations:
-     * 
+     *
      * 192.168.1.35-1234 192.168.1.35/10.0.0.1-1234
      * 192.168.1.35/10.0.0.1-1234/192.31.231.65-5678
      * 192.168.1.35/10.0.0.1-1234/192.31.231.65/130.37.24.4-5678
-     * 
+     *
      * We can also handle IPv6:
-     * 
+     *
      * fe80:0:0:0:2e0:18ff:fe2c:a31%2-1234
-     * 
+     *
      * Or a mix of the two:
-     * 
+     *
      * fe80:0:0:0:2e0:18ff:fe2c:a31%2/169.254.207.84-1234
-     * 
+     *
      * External addresses (for machines behind a NAT box) are marked using curly
      * brackets '{ }' since they are special. For example, the following address
      * identifies a NAT-ed machine with external address '82.161.4.24-5678' and
      * internal address '192.168.1.35-1234'
-     * 
+     *
      * {82.161.4.24-5678}/192.168.1.35-1234
-     * 
+     *
      * @param addressPort
      *                The String representation of a IbisSocketAddress.
      * @throws UnknownHostException
@@ -1149,12 +1149,12 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
         LinkedList<InetAddress> currentLocal = new LinkedList<InetAddress>();
 
         while (st.hasMoreTokens()) {
-        	
+
             String s = st.nextToken();
 
             // System.out.println("Read: " + s);
 
-            // FIXED - We need the SEPERATORS comparision to ensure we 
+            // FIXED - We need the SEPERATORS comparision to ensure we
             // can parse single character user names!!!!
             // Jason @ ComplexHPC2011 tutorial
             if (s.length() == 1 && SEPARATORS.contains(s)) {
@@ -1366,7 +1366,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Merges two IbisSocketAddresses.
-     * 
+     *
      * @param s1
      *                the first IbisSocketAddress
      * @param s2
@@ -1411,7 +1411,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Converts an array of SocketAddressSets to a String array.
-     * 
+     *
      * @param s
      *                the array of {@link DirectSocketAddress}
      * @return a new String array containing the {@link String} representations
@@ -1437,7 +1437,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Converts an array of Strings into an array of SocketAddressSets.
-     * 
+     *
      * @param s
      *                the array of {@link String} to convert
      * @param ignoreProblems
@@ -1478,7 +1478,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Converts an array of Strings into an array of SocketAddressSets.
-     * 
+     *
      * @param s
      *                the array of {@link String} to convert
      * @return a new array containing the {@link DirectSocketAddress}s or
@@ -1494,7 +1494,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Returns if the other SocketAddressSet represents the same machine as this
      * one.
-     * 
+     *
      * @param other
      *                the SocketAddressSet to compare to
      * @return if both SocketAddressSets represent the same machine
@@ -1506,7 +1506,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
     /**
      * Returns if the other SocketAddressSet represents the same process as this
      * one.
-     * 
+     *
      * @param other
      *                the SocketAddressSet to compare to
      * @return if both SocketAddressSets represent the same process
@@ -1517,7 +1517,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Returns if the two SocketAddressSets represent the same machine.
-     * 
+     *
      */
     public static boolean sameMachine(DirectSocketAddress a,
             DirectSocketAddress b) {
@@ -1526,7 +1526,7 @@ public class DirectSocketAddress extends SocketAddress implements Comparable<Dir
 
     /**
      * Returns if the two SocketAddressSets represent the same process.
-     * 
+     *
      */
     public static boolean sameProcess(DirectSocketAddress a,
             DirectSocketAddress b) {

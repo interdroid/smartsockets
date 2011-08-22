@@ -11,24 +11,24 @@ import java.util.Map;
 //INITIAL IMPLEMENTATION -- DO NOT USE!!
 
 public class SmartSocketImplFactory implements SocketImplFactory {
-    
+
    //  private VirtualSocketFactory factory;
-    
-    public SmartSocketImplFactory() throws InitializationException {   
+
+    public SmartSocketImplFactory() throws InitializationException {
         // factory = VirtualSocketFactory.createSocketFactory();
     }
-    
-    public SmartSocketImplFactory(Map<String, ?> properties, boolean addDefaults) 
-        throws InitializationException {   
+
+    public SmartSocketImplFactory(Map<String, ?> properties, boolean addDefaults)
+        throws InitializationException {
       //   factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
     }
-    
-    public SmartSocketImplFactory(java.util.Properties properties, 
+
+    public SmartSocketImplFactory(java.util.Properties properties,
             boolean addDefaults) throws InitializationException {
         // factory = VirtualSocketFactory.createSocketFactory(properties, addDefaults);
     }
-    
+
     public SocketImpl createSocketImpl() {
         return new SmartSocketImpl(this);
-    } 
+    }
 }

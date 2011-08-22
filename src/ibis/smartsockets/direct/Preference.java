@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package ibis.smartsockets.direct;
 
@@ -16,9 +16,9 @@ import org.slf4j.LoggerFactory;
 
 class Preference {
 
-    private static final Logger logger = 
+    private static final Logger logger =
         LoggerFactory.getLogger("ibis.smartsockets.network.preference");
-    
+
     private final String name;
 
     private final boolean strict;
@@ -51,13 +51,13 @@ class Preference {
                     + "already used.");
         }
 
-        if (noneAllowed) { 
+        if (noneAllowed) {
             logger.warn("Preference(" + name + "): "
                     + "Cannot combine network rule 'site' with rule 'none'!");
             throw new IllegalStateException(name + ": Cannot combine network " +
                     "rule 'site' with rule 'none'!");
         }
-               
+
         if (logger.isDebugEnabled()) {
             logger.debug("Preference(" + name
                     + "): Adding site-local addresses to "
@@ -77,13 +77,13 @@ class Preference {
                     + "already used.");
         }
 
-        if (noneAllowed) { 
+        if (noneAllowed) {
             logger.warn("Preference(" + name + "): "
                     + "Cannot combine network rule 'link' with rule 'none'!");
             throw new IllegalStateException(name + ": Cannot combine network " +
                     "rule 'link' with rule 'none'!");
         }
-                
+
         if (logger.isDebugEnabled()) {
             logger.debug("Preference(" + name + "): Adding "
                     + "link-local addresses to connection preference");
@@ -95,13 +95,13 @@ class Preference {
 
     void addGlobal() {
 
-        if (noneAllowed) { 
+        if (noneAllowed) {
             logger.warn("Preference(" + name + "): "
                     + "Cannot combine network rule 'global' with rule 'none'!");
             throw new IllegalStateException(name + ": Cannot combine network " +
                     "rule 'global' with rule 'none'!");
         }
-        
+
         if (globalUsed) {
             logger.warn("Preference(" + name + "): "
                     + "Global addresses already used.");
@@ -131,10 +131,10 @@ class Preference {
         preferences.add(Network.NONE);
         noneAllowed = true;
     }
-    
+
     void addNetwork(Network nw) {
 
-        if (noneAllowed) { 
+        if (noneAllowed) {
             logger.warn("Preference(" + name + "): "
                     + "Cannot combine network rule with rule 'none'!");
             throw new IllegalStateException(name + ": Cannot combine network " +
@@ -145,7 +145,7 @@ class Preference {
             logger.debug("Preference(" + name + "): "
                     + "Adding network " + nw + " to connection preference");
         }
-        
+
         preferences.add(nw);
     }
 
@@ -162,18 +162,18 @@ class Preference {
         preferences.add(new Network(network, mask));
     }
 */
-    
+
     private int score(InetAddress ad) {
 
         int score = 0;
-        
-        for (Network nw : preferences) { 
-            
-            if (nw.match(ad)) { 
+
+        for (Network nw : preferences) {
+
+            if (nw.match(ad)) {
                 return score;
-            } else { 
+            } else {
                 score++;
-            } 
+            }
         }
 
         return score + 1;
@@ -199,10 +199,10 @@ class Preference {
     InetSocketAddress[] sort(InetSocketAddress[] ads, boolean inPlace) {
 
         // TODO: New implementation here ?
-        // The global/local/link differences should now be trivial, so many 
+        // The global/local/link differences should now be trivial, so many
         // of the simpler rules can be implemented more efficiently....
-        
-        
+
+
         // Nothing to if there are no rules, or only 1 address....
         if (preferences.size() == 0 || ads.length == 1) {
             if (logger.isDebugEnabled()) {
@@ -344,8 +344,8 @@ class Preference {
         StringBuffer buf = new StringBuffer(name + ": Connection preference:");
 
         int i = 0;
-        
-        for (Network nw : preferences) { 
+
+        for (Network nw : preferences) {
             buf.append(nw.toString());
 
             if (++i < preferences.size()) {
@@ -356,5 +356,5 @@ class Preference {
         return buf.toString();
     }
 
-    
+
 }

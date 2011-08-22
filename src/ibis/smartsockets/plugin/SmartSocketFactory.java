@@ -17,23 +17,23 @@ import javax.net.SocketFactory;
 
 public class SmartSocketFactory extends SocketFactory {
 
-    private static SmartSocketFactory defaultFactory; 
-    
+    private static SmartSocketFactory defaultFactory;
+
     private VirtualSocketFactory factory;
-    
-    private SmartSocketFactory() throws InitializationException { 
+
+    private SmartSocketFactory() throws InitializationException {
         factory = VirtualSocketFactory.getDefaultSocketFactory();
     }
-    
+
     @Override
     public Socket createSocket() throws IOException {
         return new SmartSocket();
     }
-    
+
     @Override
     public Socket createSocket(String host, int port) throws IOException,
             UnknownHostException {
-    
+
         VirtualSocketAddress a = new VirtualSocketAddress(host, port);
         return new SmartSocket(factory.createClientSocket(a, 0, null));
     }
@@ -45,7 +45,7 @@ public class SmartSocketFactory extends SocketFactory {
     }
 
     @Override
-    public Socket createSocket(String host, int port, InetAddress localAddress, 
+    public Socket createSocket(String host, int port, InetAddress localAddress,
             int localPort) throws IOException, UnknownHostException {
 
         SmartSocket s = new SmartSocket();
@@ -55,33 +55,33 @@ public class SmartSocketFactory extends SocketFactory {
     }
 
     @Override
-    public Socket createSocket(InetAddress host, int port, 
+    public Socket createSocket(InetAddress host, int port,
             InetAddress localAddress, int localPort) throws IOException {
-  
+
         SmartSocket s = new SmartSocket();
         s.bind(new InetSocketAddress(localAddress, localPort));
         s.connect(VirtualSocketAddress.partialAddress(host, port, port));
         return s;
     }
 
-    protected VirtualSocket connect(VirtualSocketAddress target, int timeout, 
+    protected VirtualSocket connect(VirtualSocketAddress target, int timeout,
             Map<String, Object> properties) throws IOException {
         return factory.createClientSocket(target, timeout, properties);
     }
-    
-    public synchronized static SmartSocketFactory getDefault() { 
-        
-        if (defaultFactory == null) { 
-            try { 
+
+    public synchronized static SmartSocketFactory getDefault() {
+
+        if (defaultFactory == null) {
+            try {
                 defaultFactory = new SmartSocketFactory();
-            } catch (InitializationException e) { 
+            } catch (InitializationException e) {
                 System.err.println("WARNING: failed to create " +
                         "SmartSocketFactory");
                 e.printStackTrace(System.err);
                 return null;
             }
         }
-        
+
         return defaultFactory;
     }
 }

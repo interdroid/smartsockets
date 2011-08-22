@@ -10,25 +10,25 @@ import java.nio.channels.SocketChannel;
 
 public class DirectSimpleSocket extends DirectSocket {
 
-    private final Socket socket; 
-    
-    DirectSimpleSocket(DirectSocketAddress local, DirectSocketAddress remote, 
+    private final Socket socket;
+
+    DirectSimpleSocket(DirectSocketAddress local, DirectSocketAddress remote,
             InputStream in, OutputStream out, Socket socket) {
-        
+
         super(local, remote, in, out);
-        
+
         this.socket = socket;
     }
-    
+
     /*
     DirectSimpleSocket(SocketAddressSet local, Socket socket) {
-        
+
         super(local);
-        
+
         this.socket = socket;
     }*/
-    
-    
+
+
     public void close() throws IOException {
         socket.close();
     }
@@ -48,7 +48,7 @@ public class DirectSimpleSocket extends DirectSocket {
     public boolean getReuseAddress() throws SocketException {
         return socket.getReuseAddress();
     }
-    
+
     public int getSendBufferSize() throws SocketException {
         return socket.getSendBufferSize();
     }
@@ -58,7 +58,7 @@ public class DirectSimpleSocket extends DirectSocket {
     }
 
     public int getSoTimeout() throws SocketException {
-        return socket.getSoTimeout();        
+        return socket.getSoTimeout();
     }
 
     public boolean getTcpNoDelay() throws SocketException {
@@ -70,7 +70,7 @@ public class DirectSimpleSocket extends DirectSocket {
         return socket.getTrafficClass();
     }
      */
-    
+
     public boolean isBound() {
         return socket.isBound();
     }
@@ -96,7 +96,7 @@ public class DirectSimpleSocket extends DirectSocket {
         socket.sendUrgentData(data);
     }
     */
-    
+
     public void setKeepAlive(boolean on) throws SocketException {
         socket.setKeepAlive(on);
     }
@@ -135,7 +135,7 @@ public class DirectSimpleSocket extends DirectSocket {
         socket.setTrafficClass(tc);
     }
      */
-    
+
     public void shutdownInput() throws IOException {
         socket.shutdownInput();
     }
@@ -143,7 +143,7 @@ public class DirectSimpleSocket extends DirectSocket {
     public void shutdownOutput() throws IOException {
         socket.shutdownOutput();
     }
-    
+
     public int getLocalPort() throws IOException {
         return socket.getLocalPort();
     }
@@ -155,7 +155,7 @@ public class DirectSimpleSocket extends DirectSocket {
     public SocketAddress getLocalSocketAddress() {
         return socket.getLocalSocketAddress();
     }
-    
+
     public String toString() {
         return "DirectSimpleSocket(" + local + ")";
     }

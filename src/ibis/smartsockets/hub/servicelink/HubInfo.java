@@ -8,25 +8,25 @@ public class HubInfo {
     public final String name;
     public final long state;
     public final int clients;
-    
+
     public final String vizInfo;
 
-    
+
     public final DirectSocketAddress [] connectedTo;
     public final boolean [] usingSSH;
-    
-    public HubInfo(String info) { 
-        
-        if (!info.startsWith("HubInfo(") || !info.endsWith(")")) { 
+
+    public HubInfo(String info) {
+
+        if (!info.startsWith("HubInfo(") || !info.endsWith(")")) {
             throw new IllegalArgumentException("String does not contain " +
-                    "HubInfo!"); 
+                    "HubInfo!");
         }
 
         try {
-            
+
             String[] strings = info.substring(8, info.length()-1).split(",");
-            
-//            StringTokenizer t = 
+
+//            StringTokenizer t =
 //                new StringTokenizer(info.substring(8, info.length()-1), ",");
 
             hubAddress = DirectSocketAddress.getByAddress(strings[0]);
@@ -39,28 +39,28 @@ public class HubInfo {
 
             connectedTo = new DirectSocketAddress[tmp];
             usingSSH = new boolean[tmp];
-            
+
             for (int i=0;i<connectedTo.length;i++) {
-                
+
                 String address = strings[6 + i];
-                
-                if (address.endsWith(" (SSH)")) { 
+
+                if (address.endsWith(" (SSH)")) {
                     address = address.substring(0, address.length()-6);
                     usingSSH[i] = true;
-                } else { 
-                    usingSSH[i] = false;      
+                } else {
+                    usingSSH[i] = false;
                 }
-                
+
                 connectedTo[i] = DirectSocketAddress.getByAddress(address);
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("String does not contain HubInfo" 
+            throw new IllegalArgumentException("String does not contain HubInfo"
                     + ": \"" + info + "\"", e);
-        }            
+        }
     }
-    
-   
-    
+
+
+
 }
 
 

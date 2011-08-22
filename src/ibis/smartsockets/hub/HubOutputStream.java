@@ -13,12 +13,12 @@ public class HubOutputStream extends DataOutputStream {
         super(out);
     }
 
-    public void writeSocketAddressSet(DirectSocketAddress a) throws IOException { 
-        
+    public void writeSocketAddressSet(DirectSocketAddress a) throws IOException {
+
         byte [] codedForm = a.getAddress();
-        
+
         writeInt(codedForm.length);
         write(codedForm);
     }
-    
+
 }

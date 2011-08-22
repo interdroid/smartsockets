@@ -19,40 +19,40 @@ import java.util.Arrays;
 // INITIAL IMPLEMENTATION -- DO NOT USE!!
 
 public class SmartSocketImpl extends SocketImpl {
-   
+
     //private Socket socket;
-    
+
     //private SmartSocketImplFactory factory;
-    
-    protected SmartSocketImpl(SmartSocketImplFactory factory) { 
+
+    protected SmartSocketImpl(SmartSocketImplFactory factory) {
         /* this.factory = factory;
-        
+
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
-               
-                    try { 
+
+                    try {
                         Class c1 = Class.forName("java.net.PlainSocketImpl");
                         Constructor [] x = c1.getConstructors();
-                        
+
                         System.out.println("Conss: " + x.length + " " + Arrays.deepToString(x));
-                       
+
                         Constructor co1 = c1.getConstructor(new Class [0]);
                         co1.setAccessible(true);
                         SocketImpl si = (SocketImpl) co1.newInstance();
-                    
+
                         Class c2 = Class.forName("java.net.Socket");
                         Constructor c = c2.getConstructor(new Class [] { SocketImpl.class });
                         c.setAccessible(true);
                         socket = (Socket) c.newInstance(new Object [] { si });
-                    
+
                         System.out.println("Created socket!!!");
-                    } catch (Exception e) { 
+                    } catch (Exception e) {
                         System.out.println("Oops!");
                         e.printStackTrace();
-                    
+
                     }
-                        
+
                 return null;
                 }
             });
@@ -62,15 +62,15 @@ public class SmartSocketImpl extends SocketImpl {
         }
         */
     }
-    
+
     @Override
     protected void accept(SocketImpl s) throws IOException {
-        
+
         System.out.println("In SmartSocketImpl.accept()");
-        
-        
-        
-        
+
+
+
+
         // TODO Auto-generated method stub
 
     }
@@ -83,9 +83,9 @@ public class SmartSocketImpl extends SocketImpl {
 
     @Override
     protected void bind(InetAddress host, int port) throws IOException {
-        
-        
-        
+
+
+
         System.out.println("In SmartSocketImpl.bind(" + host + ", " + port + ")");
         // TODO Auto-generated method stub
 

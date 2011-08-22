@@ -13,27 +13,27 @@ import org.slf4j.LoggerFactory;
 abstract class CommunicationThread implements Runnable {
 
     protected static final int DEFAULT_TIMEOUT = 10000;
-       
+
     protected final String name;
-    protected final StateCounter state;         
-    
-    protected static final Logger hublogger = 
-        LoggerFactory.getLogger("ibis.smartsockets.hub"); 
-        
-    protected final Connections connections;     
-    
+    protected final StateCounter state;
+
+    protected static final Logger hublogger =
+        LoggerFactory.getLogger("ibis.smartsockets.hub");
+
+    protected final Connections connections;
+
     protected final HubList knownHubs;
     protected final VirtualConnections virtualConnections;
-    protected final DirectSocketFactory factory;    
-    
+    protected final DirectSocketFactory factory;
+
     protected DirectSocketAddress local;
     protected String localAsString;
     protected Thread thread;
-    
+
     private boolean end = false;
-    
-    protected CommunicationThread(String name, StateCounter state, 
-            Connections connections, HubList knownHubs, VirtualConnections vcs, 
+
+    protected CommunicationThread(String name, StateCounter state,
+            Connections connections, HubList knownHubs, VirtualConnections vcs,
             DirectSocketFactory factory) {
 
         this.name = name;
@@ -41,40 +41,40 @@ abstract class CommunicationThread implements Runnable {
         this.connections = connections;
         this.knownHubs = knownHubs;
         this.virtualConnections = vcs;
-        this.factory = factory;        
+        this.factory = factory;
     }
-    
-    protected void setLocal(DirectSocketAddress local) { 
+
+    protected void setLocal(DirectSocketAddress local) {
         this.local = local;
-        this.localAsString = local.toString();        
+        this.localAsString = local.toString();
     }
-    
+
     protected DirectSocketAddress getLocal() {
         return local;
     }
-    
+
     protected String getLocalAsString() {
         return localAsString;
     }
-    
-    protected synchronized boolean getDone() { 
+
+    protected synchronized boolean getDone() {
         return end;
     }
-    
-    public synchronized void end() { 
+
+    public synchronized void end() {
         end = true;
-    
-        try { 
+
+        try {
             thread.interrupt();
         } catch (Exception e) {
-            // ignore ? 
+            // ignore ?
         }
     }
-    
-    public void activate() {        
-        // thread = ThreadPool.createNew(this, name);        
+
+    public void activate() {
+        // thread = ThreadPool.createNew(this, name);
         thread = new Thread(this, name);
         thread.setDaemon(true);
-        thread.start();        
+        thread.start();
     }
 }

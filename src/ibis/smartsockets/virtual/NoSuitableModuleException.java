@@ -9,66 +9,66 @@ public class NoSuitableModuleException extends IOException {
 
     private final String [] names;
     private final Throwable [] causes;
-    
+
     private final LinkedList<NoSuitableModuleException> exceptions;
-    
-    public NoSuitableModuleException(String message, String [] names, 
-            Throwable [] causes) { 
-        
+
+    public NoSuitableModuleException(String message, String [] names,
+            Throwable [] causes) {
+
         super(message);
         this.names = names.clone();
         this.causes = causes.clone();
         this.exceptions = null;
-    }    
-    
-    public NoSuitableModuleException(String message, 
-            LinkedList<NoSuitableModuleException> exceptions) { 
-        
+    }
+
+    public NoSuitableModuleException(String message,
+            LinkedList<NoSuitableModuleException> exceptions) {
+
         super(message);
         this.names = null;
         this.causes = null;
         this.exceptions = exceptions;
-    }    
-        
-    public String toString() {        
+    }
+
+    public String toString() {
         String name = getClass().getName();
         String message = getLocalizedMessage();
-        
+
         StringBuilder builder = new StringBuilder();
 
         builder.append(name);
         builder.append(": ");
-        
-        if (message != null) { 
+
+        if (message != null) {
             builder.append(message);
-        } 
-        
-        if (exceptions != null) { 
+        }
+
+        if (exceptions != null) {
 
             int attempt = 0;
-            
-            for (NoSuitableModuleException e : exceptions) { 
+
+            for (NoSuitableModuleException e : exceptions) {
                 builder.append("\n Attempt: ");
                 builder.append(attempt++);
                 builder.append("\n");
-                
-                builder.append("  " + e.toString());                
-            }        
+
+                builder.append("  " + e.toString());
+            }
         } else {
-            for (int i=0;i<causes.length;i++) { 
+            for (int i=0;i<causes.length;i++) {
 
                 builder.append("\n   ");
                 builder.append(names[i]);
                 builder.append(": ");
 
-                if (causes[i] != null) { 
+                if (causes[i] != null) {
                     builder.append(causes[i].toString());
-                } else { 
+                } else {
                     builder.append("<unknown cause>");
                 }
             }
         }
-        
+
         return builder.toString();
     }
 }

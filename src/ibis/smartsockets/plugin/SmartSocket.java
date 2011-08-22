@@ -21,55 +21,55 @@ public class SmartSocket extends Socket {
     private VirtualSocket s;
     private boolean bound;
     private SocketAddress bindpoint;
-    
+
     private Map<String, Object> properties = new HashMap<String, Object>();
-    
+
     private boolean tcpNoDelay = false;
     private boolean solinger = false;
     private boolean soreuse = false;
     private boolean keepalive = false;
     private boolean OOBinline = false;
-    
-    private int linger = 0; 
+
+    private int linger = 0;
     private int timeout = 0;
     private int receiveBufferSize = -1;
     private int sendBufferSize = -1;
     private int trafficClass = -1;
-    
+
     SmartSocket() {
         bound = false;
     }
-    
-    SmartSocket(VirtualSocket s) { 
+
+    SmartSocket(VirtualSocket s) {
         this.s = s;
         bound = true;
     }
-    
+
     /**
      * @param bindpoint
      * @throws IOException
      * @see java.net.Socket#bind(java.net.SocketAddress)
      */
     public void bind(SocketAddress bindpoint) throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-        
+
         if (isBound()) {
             throw new SocketException("Already bound");
         }
-        
-        if (bindpoint == null) { 
+
+        if (bindpoint == null) {
             throw new IllegalArgumentException("Bindpoint is null");
         }
-         
-        if (!(bindpoint instanceof InetSocketAddress || 
-                bindpoint instanceof VirtualSocketAddress)) { 
+
+        if (!(bindpoint instanceof InetSocketAddress ||
+                bindpoint instanceof VirtualSocketAddress)) {
             throw new IllegalArgumentException("Unsupported address type!");
         }
-        
-        // TODO: should check here is the bindpoint is legal ? Problem is that 
+
+        // TODO: should check here is the bindpoint is legal ? Problem is that
         // it does not necessarily have to result in a real socket....
         this.bindpoint = bindpoint;
         bound = true;
@@ -77,14 +77,14 @@ public class SmartSocket extends Socket {
 
     /**
      * @throws IOException
-     * @see java.net.Socket#close() 
+     * @see java.net.Socket#close()
      */
     public void close() throws IOException {
-        
+
         if (isClosed()) {
             return;
         }
-            
+
         if (isConnected()) {
             s.close();
         }
@@ -97,34 +97,34 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#connect(java.net.SocketAddress, int)
      */
     public void connect(SocketAddress endpoint, int timeout) throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-        
+
         if (endpoint == null) {
             throw new IllegalArgumentException("The target address is null!");
         }
-            
+
         if (timeout < 0) {
           throw new IllegalArgumentException("Negative timeout");
         }
-        
-        if (isConnected()) { 
+
+        if (isConnected()) {
             throw new SocketException("Already connected!");
         }
-        
+
         VirtualSocketAddress tmp = null;
-        
+
         if (!(endpoint instanceof VirtualSocketAddress)) {
             throw new IllegalArgumentException("Unsupported address type");
         }
-        
+
         tmp = (VirtualSocketAddress) endpoint;
-        
+
         s = SmartSocketFactory.getDefault().connect(tmp, timeout, properties);
         bound = true;
-        
+
         // No longer used...
         properties = null;
     }
@@ -146,7 +146,7 @@ public class SmartSocket extends Socket {
         if (isClosed() || !isConnected()) {
             return null;
         }
-        
+
         return s.getChannel();
     }
 
@@ -154,11 +154,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getInetAddress()
      */
     public InetAddress getInetAddress() {
-        
+
         if (isClosed() || !isConnected()) {
             return null;
         }
-        
+
         return s.getInetAddress();
     }
 
@@ -167,15 +167,15 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getInputStream()
      */
     public InputStream getInputStream() throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-            
+
         if (!isConnected()) {
             throw new SocketException("Socket is not connected");
         }
-        
+
         return s.getInputStream();
     }
 
@@ -184,11 +184,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getKeepAlive()
      */
     public boolean getKeepAlive() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return keepalive;
         }
-        
+
         return s.getKeepAlive();
     }
 
@@ -196,20 +196,20 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getLocalAddress()
      */
     public InetAddress getLocalAddress() {
-        
-        if (!isBound()) { 
+
+        if (!isBound()) {
             return null;
         }
-        
-        if (s != null) { 
+
+        if (s != null) {
             return s.getLocalAddress();
-        } 
-        
-        if (bindpoint instanceof InetSocketAddress) { 
+        }
+
+        if (bindpoint instanceof InetSocketAddress) {
             return ((InetSocketAddress) bindpoint).getAddress();
         }
-        
-        // NOTE: May happen if we are bound to a VirtualSocketAddress. 
+
+        // NOTE: May happen if we are bound to a VirtualSocketAddress.
         return null;
     }
 
@@ -217,24 +217,24 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getLocalPort()
      */
     public int getLocalPort() {
-        
-        if (!isBound()) { 
+
+        if (!isBound()) {
             return -1;
         }
-        
-        if (s != null) { 
+
+        if (s != null) {
             return s.getLocalPort();
-        } 
-        
-        if (bindpoint instanceof InetSocketAddress) { 
+        }
+
+        if (bindpoint instanceof InetSocketAddress) {
             return ((InetSocketAddress) bindpoint).getPort();
         }
-        
-        if (bindpoint instanceof VirtualSocketAddress) { 
+
+        if (bindpoint instanceof VirtualSocketAddress) {
             return ((VirtualSocketAddress) bindpoint).port();
         }
-        
-        // NOTE: Should not happen! 
+
+        // NOTE: Should not happen!
         return -1;
     }
 
@@ -242,15 +242,15 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getLocalSocketAddress()
      */
     public SocketAddress getLocalSocketAddress() {
-        
-        if (!isBound()) { 
+
+        if (!isBound()) {
             return null;
         }
-        
+
         if (s != null) {
             return s.getLocalSocketAddress();
         }
-        
+
         return bindpoint;
     }
 
@@ -259,10 +259,10 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getOOBInline()
      */
     public boolean getOOBInline() throws SocketException {
-        if (s == null) { 
+        if (s == null) {
             return OOBinline;
         }
-        
+
         return s.getOOBInline();
     }
 
@@ -271,15 +271,15 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getOutputStream()
      */
     public OutputStream getOutputStream() throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-            
+
         if (!isConnected()) {
             throw new SocketException("Socket is not connected");
         }
-        
+
         return s.getOutputStream();
     }
 
@@ -287,11 +287,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getPort()
      */
     public int getPort() {
-        
+
         if (s == null) {
             return 0;
         }
-        
+
         return s.getPort();
     }
 
@@ -300,11 +300,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getReceiveBufferSize()
      */
     public int getReceiveBufferSize() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return receiveBufferSize;
         }
-        
+
         return s.getReceiveBufferSize();
     }
 
@@ -312,11 +312,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getRemoteSocketAddress()
      */
     public SocketAddress getRemoteSocketAddress() {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return null;
         }
-        
+
         return s.getRemoteSocketAddress();
     }
 
@@ -325,11 +325,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getReuseAddress()
      */
     public boolean getReuseAddress() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return soreuse;
         }
-        
+
         return s.getReuseAddress();
     }
 
@@ -338,11 +338,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getSendBufferSize()
      */
     public int getSendBufferSize() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return sendBufferSize;
         }
-        
+
         return s.getSendBufferSize();
     }
 
@@ -351,16 +351,16 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getSoLinger()
      */
     public int getSoLinger() throws SocketException {
-        
+
         if (s == null) {
-            
-            if (solinger) {     
+
+            if (solinger) {
                 return linger;
-            } else { 
+            } else {
                 return -1;
             }
         }
-        
+
         return s.getSoLinger();
     }
 
@@ -369,11 +369,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getSoTimeout()
      */
     public int getSoTimeout() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return timeout;
         }
-        
+
         return s.getSoTimeout();
     }
 
@@ -382,11 +382,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getTcpNoDelay()
      */
     public boolean getTcpNoDelay() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return tcpNoDelay;
         }
-        
+
         return s.getTcpNoDelay();
     }
 
@@ -395,11 +395,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#getTrafficClass()
      */
     public int getTrafficClass() throws SocketException {
-        
-        if (s == null) { 
+
+        if (s == null) {
             return trafficClass;
         }
-        
+
         return s.getTrafficClass();
     }
 
@@ -414,12 +414,12 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#isClosed()
      */
     public boolean isClosed() {
-        
-        if (s != null) {    
+
+        if (s != null) {
             return s.isClosed();
         }
-        
-        // NOTE: When the socket has not been created yet, it isn't closed. 
+
+        // NOTE: When the socket has not been created yet, it isn't closed.
         return false;
     }
 
@@ -427,11 +427,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#isConnected()
      */
     public boolean isConnected() {
-        
-        if (s != null) { 
+
+        if (s != null) {
             return s.isConnected();
         }
-        
+
         return false;
     }
 
@@ -439,11 +439,11 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#isInputShutdown()
      */
     public boolean isInputShutdown() {
-        
-        if (s != null) { 
+
+        if (s != null) {
             return s.isInputShutdown();
-        } 
-        
+        }
+
         return false;
     }
 
@@ -451,28 +451,28 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#isOutputShutdown()
      */
     public boolean isOutputShutdown() {
-        
-        if (s != null) { 
+
+        if (s != null) {
             return s.isOutputShutdown();
         }
-        
+
         return false;
-    } 
+    }
     /**
      * @param data
      * @throws IOException
      * @see java.net.Socket#sendUrgentData(int)
      */
     public void sendUrgentData(int data) throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-        
+
         if (!isConnected()) {
             throw new SocketException("Socket is not connected");
         }
-        
+
         s.sendUrgentData(data);
     }
 
@@ -482,13 +482,13 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setKeepAlive(boolean)
      */
     public void setKeepAlive(boolean on) throws SocketException {
-     
-        if (s != null) { 
+
+        if (s != null) {
             s.setKeepAlive(on);
-        } else { 
+        } else {
             properties.put("tcp.keepAlive", on);
         }
-        
+
         keepalive = on;
     }
 
@@ -498,15 +498,15 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setOOBInline(boolean)
      */
     public void setOOBInline(boolean on) throws SocketException {
-        if (s != null) { 
+        if (s != null) {
             s.setOOBInline(on);
-        } else { 
+        } else {
             properties.put("tcp.OOBinline", on);
         }
-        
+
         OOBinline = on;
     }
-    
+
     /**
      * @param connectionTime
      * @param latency
@@ -514,7 +514,7 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setPerformancePreferences(int, int, int)
      */
     public void setPerformancePreferences(int connectionTime, int latency, int bandwidth) {
-        
+
         // TODO: implement!
         // s.setPerformancePreferences(connectionTime, latency, bandwidth);
     }
@@ -525,13 +525,13 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setReceiveBufferSize(int)
      */
     public void setReceiveBufferSize(int size) throws SocketException {
-        
-        if (s != null) { 
+
+        if (s != null) {
             s.setReceiveBufferSize(size);
-        } else { 
+        } else {
             properties.put("tcp.receiveBufferSize", size);
         }
-        
+
         receiveBufferSize = size;
     }
 
@@ -541,13 +541,13 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setReuseAddress(boolean)
      */
     public void setReuseAddress(boolean on) throws SocketException {
-        
-        if (s != null) { 
+
+        if (s != null) {
             s.setReuseAddress(on);
-        } else { 
+        } else {
             properties.put("tcp.reuseAddress", on);
         }
-        
+
         soreuse = on;
     }
 
@@ -557,13 +557,13 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setSendBufferSize(int)
      */
     public void setSendBufferSize(int size) throws SocketException {
-        
-        if (s != null) { 
+
+        if (s != null) {
             s.setSendBufferSize(size);
-        } else { 
+        } else {
             properties.put("tcp.sendBufferSize", size);
         }
-        
+
         sendBufferSize = size;
     }
 
@@ -574,12 +574,12 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setSoLinger(boolean, int)
      */
     public void setSoLinger(boolean on, int linger) throws SocketException {
-        if (s != null) { 
+        if (s != null) {
             s.setSoLinger(on, linger);
-        } else { 
+        } else {
             properties.put("tcp.linger", linger);
         }
-        
+
         this.solinger = on;
         this.linger = linger;
     }
@@ -590,13 +590,13 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setSoTimeout(int)
      */
     public void setSoTimeout(int timeout) throws SocketException {
-        
-        if (s != null) { 
+
+        if (s != null) {
             s.setSoTimeout(timeout);
-        } else { 
+        } else {
             properties.put("tcp.timeout", timeout);
         }
-        
+
         this.timeout = timeout;
     }
 
@@ -606,12 +606,12 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setTcpNoDelay(boolean)
      */
     public void setTcpNoDelay(boolean on) throws SocketException {
-        if (s != null) { 
+        if (s != null) {
             s.setTcpNoDelay(on);
-        } else { 
+        } else {
             properties.put("tcp.nodelay", on);
         }
-        
+
         tcpNoDelay = on;
     }
 
@@ -621,13 +621,13 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#setTrafficClass(int)
      */
     public void setTrafficClass(int tc) throws SocketException {
-        
-        if (s != null) { 
+
+        if (s != null) {
             s.setTrafficClass(tc);
-        } else { 
+        } else {
             properties.put("tcp.trafficClass", tc);
         }
-        
+
         trafficClass = tc;
     }
 
@@ -636,15 +636,15 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#shutdownInput()
      */
     public void shutdownInput() throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-        
+
         if (!isConnected()) {
             throw new SocketException("Socket is not connected");
         }
-        
+
         s.shutdownInput();
     }
 
@@ -653,15 +653,15 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#shutdownOutput()
      */
     public void shutdownOutput() throws IOException {
-        
+
         if (isClosed()) {
             throw new SocketException("Socket is closed");
         }
-        
+
         if (!isConnected()) {
             throw new SocketException("Socket is not connected");
         }
-    
+
         s.shutdownOutput();
     }
 
@@ -669,7 +669,7 @@ public class SmartSocket extends Socket {
      * @see java.net.Socket#toString()
      */
     public String toString() {
-        return "SmartSocket(" + (s == null ? "<not connected>" : s.toString()) 
+        return "SmartSocket(" + (s == null ? "<not connected>" : s.toString())
             + ")";
     }
 }

@@ -19,51 +19,51 @@ public class ReverseVirtualSocket extends VirtualSocket {
 
     private final DirectVirtualSocket s;
 
-    protected ReverseVirtualSocket(DirectVirtualSocket s) { 
+    protected ReverseVirtualSocket(DirectVirtualSocket s) {
         this.s = s;
     }
-    
-    protected void connectionAccepted(int timeout) throws IOException { 
-        
+
+    protected void connectionAccepted(int timeout) throws IOException {
+
         int ack1 = -1;
         int ack2 = -1;
-        
+
         try {
             s.setSoTimeout(timeout);
             s.setTcpNoDelay(true);
-            
+
             OutputStream out = s.getOutputStream();
             InputStream in = s.getInputStream();
-            
-            // This is a bit nasty... We need to send the accept twice, and 
-            // read the reply twice, simply because the connection setup is 
+
+            // This is a bit nasty... We need to send the accept twice, and
+            // read the reply twice, simply because the connection setup is
             // 'doubled' by first doing a reverse setup followed by a 'normal'
             // setup
             out.write(AbstractDirectModule.ACCEPT);
             out.write(AbstractDirectModule.ACCEPT);
-            out.flush();        
+            out.flush();
 
             // We should do a three way handshake here to ensure both side agree
             // that we have a connection...
             ack1 = in.read();
             ack2 = in.read();
-            
-            if (ack1 == -1 || ack2 == -1) { 
+
+            if (ack1 == -1 || ack2 == -1) {
                 throw new EOFException("Reverse connection handshake failed: "
                         + " Unexpected EOF");
-            } else if (ack1 != AbstractDirectModule.ACCEPT || 
-                    ack2 != AbstractDirectModule.ACCEPT) { 
+            } else if (ack1 != AbstractDirectModule.ACCEPT ||
+                    ack2 != AbstractDirectModule.ACCEPT) {
                 throw new ConnectException("Client disconnected");
             }
-            
+
             s.setSoTimeout(0);
             s.setTcpNoDelay(false);
-        } catch (IOException e) { 
-            s.close();  
+        } catch (IOException e) {
+            s.close();
             throw e;
-        } 
+        }
     }
-        
+
     /**
      * @throws IOException
      * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket#close()
@@ -441,5 +441,5 @@ public class ReverseVirtualSocket extends VirtualSocket {
         s.waitForAccept(timeout);
     }
 
-  
+
 }

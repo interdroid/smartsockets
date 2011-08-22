@@ -9,29 +9,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class InetAddressCache {
-    
+
     /** How long entries in the cache stay valid, in milliseconds. */
     public static final long ENTRY_TIMEOUT = 300000;
-    
+
     private static class Address {
         InetAddress address;
         long        creationTime;
-        
+
         public Address(InetAddress address, long creationTime) {
             this.address = address;
             this.creationTime = creationTime;
         }
     }
-    
-    private static Logger logger = 
+
+    private static Logger logger =
         LoggerFactory.getLogger(InetAddressCache.class.getName());
-    
+
     private static Map<String, Address> cache = new HashMap<String, Address>();
-    
+
     private InetAddressCache() {
         // prevent construction
     }
-    
+
     public static synchronized InetAddress getByName(String name)
             throws UnknownHostException {
         Address result = null;
@@ -57,7 +57,7 @@ public class InetAddressCache {
         if (logger.isDebugEnabled()) {
             logger.debug("getByName had a cache miss on " + name);
         }
-        
+
         try {
             result = new Address(InetAddress.getByName(name), time);
         } catch (UnknownHostException e) {

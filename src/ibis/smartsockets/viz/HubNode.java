@@ -50,9 +50,9 @@ public class HubNode extends SmartNode {
         } else {
             setLabel("Hub");
         }
-        
+
         setRank(0);
-        
+
         // default text
         setMouseOverText(new String[] { "Hub", info.hubAddress.toString() });
 
@@ -151,7 +151,7 @@ public class HubNode extends SmartNode {
         }
     }
 
-    
+
     //this was unused.
 //    public void updateEdges() {
 //

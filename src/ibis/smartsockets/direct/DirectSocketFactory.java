@@ -40,12 +40,12 @@ import com.trilead.ssh2.LocalStreamForwarder;
  * This class implements a socket factory with support for multi-homes machines,
  * port ranges, external address discovery, UPNP port forwarding, NIO-style
  * socket creation, clustering and connection address order preference.
- * 
+ *
  * This socket factory always tries to set up a direct connection between
  * machines. As a result, there are many scenarios possible in which it will not
  * be able to connect. It is a good basis for other, 'smarter' socket factories
  * however.
- * 
+ *
  * @author Jason Maassen
  * @version 1.0 Jan 10, 2006
  * @since 1.0
@@ -129,25 +129,25 @@ public class DirectSocketFactory {
                 false);
 
         String username = null;
-        
+
         if (allowSSHIn) {
             username = System.getProperty("user.name");
-        
-            if (username == null || username.equals("") || username.equals("?")) { 
-            	// The user.name property fails on some machines (unclear why), so 
-            	// we use the $USER environment variable as an alternative. 	
+
+            if (username == null || username.equals("") || username.equals("?")) {
+            	// The user.name property fails on some machines (unclear why), so
+            	// we use the $USER environment variable as an alternative.
             	username = System.getenv("USER");
             }
-            
-            if (username != null && (username.equals("") || username.equals("?"))) { 
-            	// If $USER also returns a strang value, we give up. This will disable 
+
+            if (username != null && (username.equals("") || username.equals("?"))) {
+            	// If $USER also returns a strang value, we give up. This will disable
             	// SSH tunneling
             	username = null;
-            }    
-        } 
-        
+            }
+        }
+
         user = username;
-        
+
         boolean allowSSHOut = p.booleanProperty(SmartSocketsProperties.SSH_OUT,
                 false);
         FORCE_SSH_OUT = p.booleanProperty(SmartSocketsProperties.FORCE_SSH_OUT,
@@ -544,7 +544,7 @@ public class DirectSocketFactory {
      * This method retrieves the 'ibis.connect.external_address' property, which
      * contains a String representation of an InetAddress. If the property is
      * not set or the value could not be parsed, null is returned.
-     * 
+     *
      * @return an InetAddress or null
      */
     private InetAddress getExternalAddressProperty(TypedProperties p) {
@@ -714,7 +714,7 @@ public class DirectSocketFactory {
         }
 
         Connection conn = new Connection(host);
-        //conn.enableDebugging(true, null);        
+        //conn.enableDebugging(true, null);
         conn.connect(null, timeout, timeout);
 
         boolean isAuthenticated = false;
@@ -1292,7 +1292,7 @@ public class DirectSocketFactory {
      * If the property exists but has no value true is returned. - If the
      * property exists and has a value equal to "true", "yes", "on" or "1", true
      * is returned. - Otherwise, false is returned.
-     * 
+     *
      * @param prop
      *                the map
      * @param key
@@ -1403,7 +1403,7 @@ public class DirectSocketFactory {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
      *      int, java.util.Map)
      */
@@ -1450,7 +1450,7 @@ public class DirectSocketFactory {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
      *      int, java.util.Map)
      */
@@ -1521,7 +1521,7 @@ public class DirectSocketFactory {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see smartnet.factories.ClientServerSocketFactory#createClientSocket(smartnet.IbisSocketAddress,
      *      int, java.util.Map)
      */
@@ -1542,9 +1542,9 @@ public class DirectSocketFactory {
         if (properties != null) {
             /*
              * if (!properties.containsKey("direct.detailed.timing.ignore")) {
-             * 
+             *
              * timing = (long []) properties.get("direct.detailed.timing");
-             * 
+             *
              * if (timing != null) { timing[0] = System.nanoTime(); } }
              */
             forceGlobalFirst = properties.containsKey("direct.forcePublic");
@@ -1710,7 +1710,7 @@ public class DirectSocketFactory {
 
             /*
              * if (timing != null) {
-             * 
+             *
              * if (user == null) { timing[1+i] = System.nanoTime(); } else {
              * timing[1+sas.length+i] = System.nanoTime(); } }
              */
@@ -1750,7 +1750,7 @@ public class DirectSocketFactory {
 
             /*
              * if (timing != null) {
-             * 
+             *
              * if (user == null) { timing[1+i] = System.nanoTime() -
              * timing[1+i]; } else { timing[1+sas.length+i] = System.nanoTime() -
              * timing[1+sas.length+i]; } }
@@ -1798,35 +1798,35 @@ public class DirectSocketFactory {
     /*
      * public IbisSocket createBrokeredSocket(InputStream in, OutputStream out,
      * boolean hintIsServer, Map properties) throws IOException {
-     * 
+     *
      * IbisSocket s = null;
-     * 
+     *
      * if (hintIsServer) { IbisServerSocket server = createServerSocket(0, 1,
      * properties);
-     * 
+     *
      * DataOutputStream dos = new DataOutputStream(new
      * BufferedOutputStream(out));
-     * 
+     *
      * dos.writeUTF(server.getLocalSocketAddress().toString()); dos.flush();
-     * 
+     *
      * s = server.accept(); tuneSocket(s); } else { DataInputStream di = new
      * DataInputStream(new BufferedInputStream(in));
-     * 
+     *
      * String tmp = di.readUTF();
-     * 
+     *
      * MachineAddress address = null;
-     * 
+     *
      * try { address = new MachineAddress(tmp); } catch(Exception e) { throw new
      * Error("EEK, could not create an IbisSocketAddress " + " from " + tmp, e); }
-     * 
+     *
      * s = createClientSocket(address, 0, properties); }
-     * 
+     *
      * return s; }
      */
 
     /**
      * Returns if an address originated at this process.
-     * 
+     *
      * @return boolean indicating if the address is local.
      */
     public boolean isLocalAddress(IPAddressSet a) {
@@ -1835,7 +1835,7 @@ public class DirectSocketFactory {
 
     /**
      * Returns a custom instance of a DirectSocketFactory.
-     * 
+     *
      * @return PlainSocketFactory
      */
     public static DirectSocketFactory getSocketFactory(TypedProperties p) {
@@ -1852,7 +1852,7 @@ public class DirectSocketFactory {
 
     /**
      * Returns the default instance of a DirectSocketFactory.
-     * 
+     *
      * @return PlainSocketFactory
      */
     public static DirectSocketFactory getSocketFactory() {

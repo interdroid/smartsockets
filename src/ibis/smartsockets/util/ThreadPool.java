@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 public final class ThreadPool {
 
     static final Logger logger = LoggerFactory.getLogger(ThreadPool.class);
-    
+
     private static final class PoolThread extends Thread {
 
         static {
@@ -29,8 +29,8 @@ public final class ThreadPool {
                 logger.info("maximum number of simultaneous threads was: " + maxSimultaneousThreads);
             }
         }
-        
-        private static final int TIMEOUT = 30 * 1000; //30 seconds 
+
+        private static final int TIMEOUT = 30 * 1000; //30 seconds
 
         Runnable work = null;
 
@@ -41,7 +41,7 @@ public final class ThreadPool {
         private static int nrOfThreads = 0;
 
         private static int maxSimultaneousThreads = 0;
-        
+
         private static synchronized void newThread(String name) {
             nrOfThreads++;
             if(nrOfThreads > maxSimultaneousThreads) {
@@ -82,7 +82,7 @@ public final class ThreadPool {
             work = newWork;
             name = newName;
             logger.trace("issue(): reusing thread");
-            
+
             notifyAll();
             return true;
         }
@@ -170,7 +170,7 @@ public final class ThreadPool {
                 //issue of work succeeded, return
                 return;
             }
-            //shortest waiting poolThread in list timed out, 
+            //shortest waiting poolThread in list timed out,
             //assume all threads timed out
             if (logger.isDebugEnabled()) {
                 logger.debug("clearing thread pool of size "

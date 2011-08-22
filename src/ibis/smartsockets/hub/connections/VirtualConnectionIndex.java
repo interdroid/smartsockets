@@ -8,29 +8,29 @@ public class VirtualConnectionIndex {
     // a while :-)
 
     private long nextIndex = 0;
-    
-    public VirtualConnectionIndex(boolean even) { 
-    
-        int rnd = (int) Math.round(Math.random() * (Integer.MAX_VALUE-1)); 
-        
+
+    public VirtualConnectionIndex(boolean even) {
+
+        int rnd = (int) Math.round(Math.random() * (Integer.MAX_VALUE-1));
+
         if (even) {
-            if (rnd % 2 != 0) { 
+            if (rnd % 2 != 0) {
                 rnd++;
             }
-        } else { 
-            if (!(rnd % 2 != 0)) { 
+        } else {
+            if (!(rnd % 2 != 0)) {
                 rnd++;
             }
         }
 
         nextIndex = rnd % (Integer.MAX_VALUE - 1);
     }
-    
+
     // Made synchronized --Ceriel
-    public synchronized long nextIndex() { 
+    public synchronized long nextIndex() {
         long result = nextIndex;
         nextIndex = (nextIndex + 2) % (Integer.MAX_VALUE - 1);
         return result;
     }
-    
+
 }

@@ -9,146 +9,146 @@ import java.io.IOException;
 public class ClientMessage {
 
     private DirectSocketAddress source;
-    private DirectSocketAddress sourceHub;                      
-    private DirectSocketAddress target; 
-    private DirectSocketAddress targetHub;            
-    
+    private DirectSocketAddress sourceHub;
+    private DirectSocketAddress target;
+    private DirectSocketAddress targetHub;
+
     int hopsLeft;
     boolean returnToSender;
-    
-    String module; 
-    int code; 
-    byte [] message;    
-    
+
+    String module;
+    int code;
+    byte [] message;
+
     long messageSize = -1;
-    
+
     ClientMessage(DataInputStream in) throws IOException {
-        
+
         source = DirectSocketAddress.read(in);
-        sourceHub = DirectSocketAddress.read(in);       
-        
+        sourceHub = DirectSocketAddress.read(in);
+
         hopsLeft = in.readInt();
-        returnToSender = in.readBoolean(); 
-        
+        returnToSender = in.readBoolean();
+
         target = DirectSocketAddress.read(in);
         targetHub = DirectSocketAddress.read(in);
-                
+
         module = in.readUTF();
         code = in.readInt();
-        
+
         int len = in.readInt();
-        
-        if (len > 0) { 
-            message = new byte[len];        
+
+        if (len > 0) {
+            message = new byte[len];
             in.readFully(message);
         }
     }
-    
-    void write(DataOutputStream out) throws IOException { 
-    
+
+    void write(DataOutputStream out) throws IOException {
+
         DirectSocketAddress.write(source, out);
         DirectSocketAddress.write(sourceHub, out);
 
-        out.writeInt(hopsLeft);       
+        out.writeInt(hopsLeft);
         out.writeBoolean(returnToSender);
-        
+
         DirectSocketAddress.write(target, out);
         DirectSocketAddress.write(targetHub, out);
-        
+
         out.writeUTF(module);
         out.writeInt(code);
-        
-        if (message == null || message.length == 0) { 
+
+        if (message == null || message.length == 0) {
             out.writeInt(0);
-        } else { 
+        } else {
             out.writeInt(message.length);
             out.write(message);
         }
     }
-    
-    DirectSocketAddress getSource() { 
-        if (returnToSender) { 
+
+    DirectSocketAddress getSource() {
+        if (returnToSender) {
             return target;
-        } else { 
+        } else {
             return source;
         }
     }
-    
-    DirectSocketAddress getSourceHub() { 
-        if (returnToSender) { 
+
+    DirectSocketAddress getSourceHub() {
+        if (returnToSender) {
             return targetHub;
-        } else { 
+        } else {
             return sourceHub;
         }
     }
-    
-    DirectSocketAddress getTarget() { 
-        if (returnToSender) { 
+
+    DirectSocketAddress getTarget() {
+        if (returnToSender) {
             return source;
-        } else { 
+        } else {
             return target;
         }
     }
-    
-    DirectSocketAddress getTargetHub() { 
-        if (returnToSender) { 
+
+    DirectSocketAddress getTargetHub() {
+        if (returnToSender) {
             return sourceHub;
-        } else { 
+        } else {
             return targetHub;
         }
     }
-    
-    
-    String targetAsString() {        
-        if (targetHub != null) { 
+
+
+    String targetAsString() {
+        if (targetHub != null) {
             return target + "@" + targetHub;
-        } else { 
+        } else {
             return target.toString();
         }
     }
-    
-    String sourceAsString() { 
+
+    String sourceAsString() {
         return source + "@" + sourceHub;
     }
-    
-    public String toString() {         
-        return "Message [from " + source + "@" + sourceHub + "] [to " 
-            + target + "@" + targetHub + "] [module " + module + " code " 
-            + code + "] message: [" + (message == null ? 0 : message.length) 
-            + "]";        
+
+    public String toString() {
+        return "Message [from " + source + "@" + sourceHub + "] [to "
+            + target + "@" + targetHub + "] [module " + module + " code "
+            + code + "] message: [" + (message == null ? 0 : message.length)
+            + "]";
     }
 
     public void setSourceHub(DirectSocketAddress hub) {
-        if (sourceHub == null) { 
+        if (sourceHub == null) {
             sourceHub = hub;
         }
     }
 
 	public long messageSize() {
-		
-		if (messageSize <= 0) { 
+
+		if (messageSize <= 0) {
 			messageSize = 4 + 4 + 4 + 1; // Fixed length parts...
-			
+
 			messageSize += source.getAddress().length;
 			messageSize += target.getAddress().length;
 
-			if (sourceHub != null) { 
-				messageSize += sourceHub.getAddress().length;			
+			if (sourceHub != null) {
+				messageSize += sourceHub.getAddress().length;
 			}
 
-			if (targetHub != null) { 
-				messageSize += targetHub.getAddress().length;			
+			if (targetHub != null) {
+				messageSize += targetHub.getAddress().length;
 			}
 
-			if (module != null) { 
-				messageSize += module.length() * 2 + 4; 			
+			if (module != null) {
+				messageSize += module.length() * 2 + 4;
 			}
 
-			if (message != null) { 
+			if (message != null) {
 				messageSize += message.length;
 			}
 		}
-		
+
 		return messageSize;
-	}    
+	}
 }

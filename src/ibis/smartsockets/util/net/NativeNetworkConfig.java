@@ -39,122 +39,122 @@ import java.util.List;
 
 
 public final class NativeNetworkConfig {
-      
+
     private static List<NetworkInfo> info = new LinkedList<NetworkInfo>();
-        
-    private static List<NetworkInfoParser> parsers = 
-        new LinkedList<NetworkInfoParser>(); 
-    
-    static { 
+
+    private static List<NetworkInfoParser> parsers =
+        new LinkedList<NetworkInfoParser>();
+
+    static {
         // TODO: use reflection here ?
         parsers.add(new LinuxNetworkInfoParser());
         parsers.add(new WindowsNetworkInfoParser());
         parsers.add(new OSXNetworkInfoParser());
-        parsers.add(new SolarisNetworkInfoParser());     
-        
-        try { 
+        parsers.add(new SolarisNetworkInfoParser());
+
+        try {
             getNetworkInfo();
         } catch (Exception e) {
-            // TODO: print something ?   
+            // TODO: print something ?
         }
     }
-        
+
     private final static void getNetworkInfo() throws IOException {
         String os = System.getProperty("os.name");
-        
-        for (NetworkInfoParser parser : parsers) {           
+
+        for (NetworkInfoParser parser : parsers) {
             if (os.startsWith(parser.osName)) {
-                
+
                 if (getInfo(parser)) {
                     return;
-                }                 
+                }
             }
         }
-    
-        throw new IOException("Unable to retrieve network info for " + os);        
+
+        throw new IOException("Unable to retrieve network info for " + os);
     }
-    
-    private static boolean getInfo(NetworkInfoParser p) { 
-        
+
+    private static boolean getInfo(NetworkInfoParser p) {
+
         for (int i=0;i<p.numberOfCommands();i++) {
             String [] tmp = p.getCommand(i);
-            
-            if (getInfo(p, tmp)) { 
+
+            if (getInfo(p, tmp)) {
                 return true;
             }
-        }       
-        
+        }
+
         return false;
-    } 
-            
-    private static boolean getInfo(NetworkInfoParser p, String [] command) { 
-                
+    }
+
+    private static boolean getInfo(NetworkInfoParser p, String [] command) {
+
         RunProcess rp = new RunProcess(command);
         rp.run();
 
         byte [] errors = rp.getStderr();
-        
-        if (errors.length != 0) { 
-            
+
+        if (errors.length != 0) {
+
            // System.out.println("Command " + command[0] + " failed");
-            
+
             // Failed to get info!
             return false;
         }
-        
+
         byte [] output = rp.getStdout();
-        
+
         if (output.length == 0) {
             // No ouput ?
             return false;
         }
-        
-        return p.parse(output, info);        
+
+        return p.parse(output, info);
     }
 
-    public static NetworkInfo getNetworkInfo(InetAddress ip) {         
-        
+    public static NetworkInfo getNetworkInfo(InetAddress ip) {
+
         for (NetworkInfo nw : info) {
-            if (ip.equals(nw.ipv4) || ip.equals(nw.ipv6)) { 
+            if (ip.equals(nw.ipv4) || ip.equals(nw.ipv6)) {
                 return nw;
             }
         }
-        
-        return null;        
-    }       
-   
+
+        return null;
+    }
+
     public static byte [] getBroadcast(InetAddress ip) throws IOException {
-        NetworkInfo nw = getNetworkInfo(ip);                
-        
-        if (nw == null || nw.broadcast == null) { 
-            throw new IOException("Failed to retrieve BROADCAST for " + 
+        NetworkInfo nw = getNetworkInfo(ip);
+
+        if (nw == null || nw.broadcast == null) {
+            throw new IOException("Failed to retrieve BROADCAST for " +
                     NetworkUtils.ipToString(ip));
         }
-        
-        return nw.broadcast;        
+
+        return nw.broadcast;
     }
 
     public static byte[] getMACAddress(InetAddress ip) throws IOException {
-        NetworkInfo nw = getNetworkInfo(ip);                
-        
-        if (nw == null || nw.broadcast == null) { 
-            throw new IOException("Failed to retrieve BROADCAST for " + 
+        NetworkInfo nw = getNetworkInfo(ip);
+
+        if (nw == null || nw.broadcast == null) {
+            throw new IOException("Failed to retrieve BROADCAST for " +
                     NetworkUtils.ipToString(ip));
         }
-        
+
         return nw.mac;
     }
 
     public static byte[] getNetmask(InetAddress ip) throws IOException {
-        NetworkInfo nw = getNetworkInfo(ip);                
-        
-        if (nw == null || nw.broadcast == null) { 
-            throw new IOException("Failed to retrieve BROADCAST for " + 
+        NetworkInfo nw = getNetworkInfo(ip);
+
+        if (nw == null || nw.broadcast == null) {
+            throw new IOException("Failed to retrieve BROADCAST for " +
                     NetworkUtils.ipToString(ip));
         }
-        
+
         return nw.netmask;
     }
-    
-    
+
+
 }

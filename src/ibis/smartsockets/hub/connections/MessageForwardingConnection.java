@@ -41,19 +41,19 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 	/*
 	 * private long connectionsTotal; private long connectionsFailed;
-	 * 
+	 *
 	 * private long connectionsReplies; private long connectionsACKs; private
 	 * long connectionsNACKs; private long connectionsRepliesLost; private long
 	 * connectionsRepliesError;
-	 * 
+	 *
 	 * private long closeTotal; private long closeError; private long closeLost;
-	 * 
+	 *
 	 * private long messages; private long messagesError; private long
 	 * messagesLost; private long messagesBytes;
-	 * 
+	 *
 	 * private long messageACK; private long messageACK_Error; private long
 	 * messageACKLost;
-	 * 
+	 *
 	 * private long infoMessages; private long infoMessagesBytes; private long
 	 * infoMessagesForwarded; private long infoMessagesDropped; private long
 	 * infoMessagesReturned; private long infoMessagesDelivered; private long
@@ -66,7 +66,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 	protected MessageForwardingConnection(DirectSocket s, DataInputStream in,
 			DataOutputStream out, Connections connections, HubList hubs,
-			VirtualConnections vcs, boolean master, String name, 
+			VirtualConnections vcs, boolean master, String name,
 			StatisticsCallback callback, long statisticsInterval) {
 
 		super(s, in, out, connections, hubs, callback, statisticsInterval);
@@ -76,7 +76,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 		index = new VirtualConnectionIndex(master);
 
-		stats = new MessageForwardingConnectionStatistics("Connection(" + name 
+		stats = new MessageForwardingConnectionStatistics("Connection(" + name
 				+ ")");
 	}
 
@@ -538,13 +538,13 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 		/*
 		 * int off = 4 + (hub == null ? 4 : 4 + hub.getAddress().length);
-		 * 
+		 *
 		 * //System.err.println("Off is " + off);
-		 * 
+		 *
 		 * DirectSocketAddress node = DirectSocketAddress.fromBytes(data, off);
-		 * 
+		 *
 		 * //System.err.println("Node is " + node);
-		 * 
+		 *
 		 * off += node.getAddress().length;
 		 */
 		// System.err.println("Dropping data for " + node + " @ " + hub + " :
@@ -1119,9 +1119,9 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 	/*
 	 * public void printStatistics() {
-	 * 
+	 *
 	 * if (true) {
-	 * 
+	 *
 	 * System.out.println(name + " ----- Connection statistics -----");
 	 * System.out.println(name + " "); System.out.println(name + " Connections: " +
 	 * connectionsTotal); System.out.println(name + " - failed: " +
@@ -1149,17 +1149,17 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 	 * infoMessagesReturned); } }
 	 */
 
-	
+
 	protected synchronized Statistics getStatistics() {
-		
+
 		stats.setEndTime();
-		
-		MessageForwardingConnectionStatistics tmp = stats; 
-		stats = new MessageForwardingConnectionStatistics("Connection(" 
+
+		MessageForwardingConnectionStatistics tmp = stats;
+		stats = new MessageForwardingConnectionStatistics("Connection("
 				+ name + ")");
 		return tmp;
 	}
-	
+
 	protected abstract boolean handleOpcode(int opcode);
 
 	protected final boolean runConnection() {
@@ -1255,7 +1255,7 @@ public abstract class MessageForwardingConnection extends BaseConnection {
 
 		} catch (SocketTimeoutException e) {
 			// This is allowed.
-			return true;			
+			return true;
 		} catch (Exception e) {
 			handleDisconnect(e);
 		}

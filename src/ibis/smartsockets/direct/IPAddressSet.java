@@ -30,15 +30,15 @@ import java.util.StringTokenizer;
  * address must be used, depending on the location of the machine that is trying
  * to connect to the server.
  * <p>
- * This class encapsulates a set of IP addresses and is used to represent  
- * all potential contact addresses of a single machine. 
- * 
+ * This class encapsulates a set of IP addresses and is used to represent
+ * all potential contact addresses of a single machine.
+ *
  * @author Jason Maassen
  * @version 1.0 Dec 19, 2005
  * @since 1.0
- * 
+ *
  */
-public class IPAddressSet implements Serializable {
+public final class IPAddressSet implements Serializable {
 
 	private static final long serialVersionUID = 8548119455369383377L;
 
@@ -80,15 +80,15 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Returns a byte representation of this InetAddressSet.
-	 * 
+	 *
 	 * This representation is either contains the 4 or 16 bytes of a single
 	 * InetAddress, or it has the form (NM (SA)* (U)*) where:
-	 * 
+	 *
 	 * N is the number of addresses that follow (1 byte) M is a flag that
 	 * indicates if the U field is used (0 or 1) S is the length of the next
 	 * address (1 byte) A is an InetAddress (4 or 16 bytes) U is the UUID of the
 	 * machine (16 bytes)
-	 * 
+	 *
 	 * @return the bytes
 	 */
 	public byte[] getAddress() {
@@ -144,7 +144,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Returns an array of all InetAddresses encapsulated by this object.
-	 * 
+	 *
 	 * @return array of InetAddresses.
 	 */
 	public InetAddress[] getAddresses() {
@@ -153,7 +153,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Checks if this IPAddressSet contains at least one public InetAddress.
-	 * 
+	 *
 	 * @return true if this IPAddressSet contains at least one public address,
 	 *         false otherwise.
 	 */
@@ -163,7 +163,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Checks if this IPAddressSet contains a UUID.
-	 * 
+	 *
 	 * @return true if this IPAddressSet contains a UUID, false otherwise.
 	 */
 	public boolean containsUUID() {
@@ -172,7 +172,7 @@ public class IPAddressSet implements Serializable {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.net.InetAddress#hashCode()
 	 */
 	public int hashCode() {
@@ -187,7 +187,7 @@ public class IPAddressSet implements Serializable {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.net.InetAddress#equals(java.lang.Object)
 	 */
 	public boolean equals(Object other) {
@@ -219,7 +219,7 @@ public class IPAddressSet implements Serializable {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.net.InetAddress#toString()
 	 */
 	public String toString() {
@@ -243,7 +243,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet by adding an InetAddress to an existing one.
-	 * 
+	 *
 	 * @param address
 	 *            source InetAddressSet
 	 * @param add
@@ -260,7 +260,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet by combing two existing ones.
-	 * 
+	 *
 	 * @param a1
 	 *            source InetAddressSet
 	 * @param a2
@@ -298,7 +298,7 @@ public class IPAddressSet implements Serializable {
 	/**
 	 * Create a new InetAddressSet by combing an existing one and an
 	 * InetAddress.
-	 * 
+	 *
 	 * @param a1
 	 *            source InetAddressSet
 	 * @param a2
@@ -331,7 +331,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new IPAddressSet by combing an existing one and a UUID
-	 * 
+	 *
 	 * @param a
 	 *            source IPAddressSet
 	 * @param uuid
@@ -344,16 +344,16 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet from a byte array.
-	 * 
+	 *
 	 * The byte array may either contain the byte representation of an
 	 * InetAddress (IPv4 or IPv6) or the byte representation of an
 	 * InetAddressSet which has the form (NM (SA)* (U)*) where:
-	 * 
+	 *
 	 * N is the number of addresses that follow (1 byte) M is a flag that
 	 * indicates if the U field is used (0 or 1) S is the length of the next
 	 * address (1 byte) A is an InetAddress (4 or 16 bytes) U is the UUID of the
 	 * machine (16 bytes)
-	 * 
+	 *
 	 * @param bytes
 	 *            input byte array
 	 * @return new InetAddressSet
@@ -425,13 +425,13 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet from a String.
-	 * 
+	 *
 	 * The String must have the form
-	 * 
+	 *
 	 * A ('/'A)* ['#'U]
-	 * 
+	 *
 	 * where: A is a String representation of a InetAddress, and U a UUID
-	 * 
+	 *
 	 * @param address
 	 *            the InetAddressSet as a String
 	 * @return new InetAddressSet
@@ -467,7 +467,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet from an array of InetAddress objects.
-	 * 
+	 *
 	 * @param addresses
 	 *            the InetAddresses
 	 * @return new InetAddressSet
@@ -478,7 +478,7 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet from a single InetAddress object.
-	 * 
+	 *
 	 * @param address
 	 *            the InetAddress
 	 * @return new InetAddressSet
@@ -489,11 +489,11 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet that represents this host.
-	 * 
+	 *
 	 * All addresses that can be found locally will be included in the
 	 * InetAddressSet. Note that this does not necessarilly include the
 	 * 'external' address of the network when NAT is used.
-	 * 
+	 *
 	 * @return new InetAddressSet representing this host.
 	 */
 	public static IPAddressSet getLocalHost() {
@@ -502,15 +502,15 @@ public class IPAddressSet implements Serializable {
 
 	/**
 	 * Create a new InetAddressSet that represents this host.
-	 * 
+	 *
 	 * All addresses that can be found locally will be included in the
 	 * InetAddressSet. Note that this does not necessarilly include the
 	 * 'external' address of the network when NAT is used.
-	 * 
+	 *
 	 * @param cacheIPaddress
 	 *            if set to false, the IPAddressSet will be refreshed upon every
 	 *            call, otherwise the result will be cached.
-	 * 
+	 *
 	 * @return new InetAddressSet representing this host.
 	 */
 	public static IPAddressSet getLocalHost(boolean cacheIPaddress) {
@@ -553,10 +553,10 @@ public class IPAddressSet implements Serializable {
 	/**
 	 * Sorts an array of InetAddress object according to the order defined by
 	 * the InetAddressSorter.
-	 * 
+	 *
 	 * Note that this method changes the content of the parameter array and, for
 	 * convenience, also returns a reference to this array.
-	 * 
+	 *
 	 * @param in
 	 *            the array that must be sorted.
 	 * @return reference to the sorted array parameter.

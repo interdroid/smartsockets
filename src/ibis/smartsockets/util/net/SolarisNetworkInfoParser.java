@@ -4,10 +4,10 @@ import java.util.List;
 
 public class SolarisNetworkInfoParser extends NetworkInfoParser {
 
-    public SolarisNetworkInfoParser() { 
+    public SolarisNetworkInfoParser() {
         super("Solaris");
     }
-    
+
     String[] getCommand(int number) {
         // TODO Auto-generated method stub
         return null;

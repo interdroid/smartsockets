@@ -33,7 +33,7 @@ public class TypedProperties extends Properties {
      * Adds all properties to the current property set, possibly overwriting the
      * current ones. Unlike the default putAll method, this one also looks in
      * the nested property sets of the parameter.
-     * 
+     *
      * @param p
      *            the properties to add.
      */
@@ -49,7 +49,7 @@ public class TypedProperties extends Properties {
      * Returns true if property <code>name</code> is defined and has a value
      * that is conventionally associated with 'true' (as in Ant): any of 1, on,
      * true, yes.
-     * 
+     *
      * @return true if property is defined and set
      * @param name
      *            property name
@@ -62,7 +62,7 @@ public class TypedProperties extends Properties {
      * Returns true if property <code>name</code> has a value that is
      * conventionally associated with 'true' (as in Ant): any of 1, on, true,
      * yes. If the property is not defined, return the specified default value.
-     * 
+     *
      * @return true if property is defined and set
      * @param key
      *            property name
@@ -82,7 +82,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns the integer value of property
-     * 
+     *
      * @return the integer value of property
      * @param key
      *            property name
@@ -106,7 +106,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns the integer value of property
-     * 
+     *
      * @return the integer value of property
      * @param key
      *            property name
@@ -132,7 +132,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns the long value of property
-     * 
+     *
      * @return the long value of property
      * @param key
      *            property name
@@ -156,7 +156,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns the long value of property
-     * 
+     *
      * @return the long value of property
      * @param key
      *            property name
@@ -182,7 +182,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns the short value of property
-     * 
+     *
      * @return the short value of property
      * @param key
      *            property name
@@ -206,7 +206,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns the short value of property
-     * 
+     *
      * @return the short value of property
      * @param key
      *            property name
@@ -235,7 +235,7 @@ public class TypedProperties extends Properties {
      * are a long, a long followed by K, a long followed by M or a long followed
      * by G. Size modifiers multiply the value by 1024, 1024^2 and 1024^3
      * respectively.
-     * 
+     *
      * @return the size value of property
      * @param key
      *            property name
@@ -257,7 +257,7 @@ public class TypedProperties extends Properties {
      * are a long, a long followed by K, a long followed by M or a long followed
      * by G. Size modifiers multiply the value by 1024, 1024^2 and 1024^3
      * respectively. returns the default value if the property is undefined
-     * 
+     *
      * @return the size value of property
      * @param key
      *            property name
@@ -316,7 +316,7 @@ public class TypedProperties extends Properties {
     /**
      * Returns true if property name is defined and has a string value that
      * equals match.
-     * 
+     *
      * @return true if property is defined and equals match
      * @param key
      *            property name
@@ -357,7 +357,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Checks all properties with the given prefix for validity.
-     * 
+     *
      * @return a Property object containing all unrecognized properties.
      * @param prefix
      *            the prefix that should be checked
@@ -403,7 +403,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Returns all properties who's key start with a certain prefix.
-     * 
+     *
      * @return a Property object containing all matching properties.
      * @param prefix
      *            the desired prefix
@@ -447,7 +447,7 @@ public class TypedProperties extends Properties {
 
     /**
      * Prints properties (including default properties) to a stream.
-     * 
+     *
      * @param out
      *            The stream to write output to.
      * @param prefix

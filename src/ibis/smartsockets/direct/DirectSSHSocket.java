@@ -14,12 +14,12 @@ public class DirectSSHSocket extends DirectSocket {
 
     private final LocalStreamForwarder lsf;
     private boolean closed = false;
-    
-    public DirectSSHSocket(DirectSocketAddress local, DirectSocketAddress remote, 
+
+    public DirectSSHSocket(DirectSocketAddress local, DirectSocketAddress remote,
             InputStream in, OutputStream out, LocalStreamForwarder lsf) {
-        
+
         super(local, remote, in, out);
-    
+
         this.lsf = lsf;
     }
 
@@ -89,43 +89,43 @@ public class DirectSSHSocket extends DirectSocket {
 
     @Override
     public void setReceiveBufferSize(int sz) throws SocketException {
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     @Override
     public void setReuseAddress(boolean on) throws SocketException {
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     @Override
     public void setSendBufferSize(int sz) throws SocketException {
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     @Override
     public void setSoLinger(boolean on, int linger) throws SocketException {
-        // TODO Auto-generated method stub       
+        // TODO Auto-generated method stub
     }
 
     @Override
     public void setSoTimeout(int t) throws SocketException {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void setTcpNoDelay(boolean on) throws SocketException {
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     @Override
     public void shutdownInput() throws IOException {
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     @Override
     public void shutdownOutput() throws IOException {
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     @Override

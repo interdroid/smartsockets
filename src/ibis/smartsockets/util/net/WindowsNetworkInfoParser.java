@@ -4,10 +4,10 @@ import java.util.List;
 
 public class WindowsNetworkInfoParser extends NetworkInfoParser {
 
-    public WindowsNetworkInfoParser() { 
+    public WindowsNetworkInfoParser() {
         super("Windows");
     }
-    
+
     String[] getCommand(int number) {
         // TODO Auto-generated method stub
         return null;

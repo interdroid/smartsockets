@@ -6,40 +6,40 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 /**
- * This class contains the description of a single network. 
- * 
+ * This class contains the description of a single network.
+ *
  * Two types of network descriptions are supported:<p>
  * generic: one of "none", "site", "link", "global"<br>
  * specific: a network address and netmask<br>
- * 
+ *
  * @author Jason Maassen
  * @version 1.0 Dec 19, 2005
  * @since 1.0
- * 
+ *
  */
 public final class Network {
 
-    private enum Type { 
-        NONE, 
-        SITE, 
-        LINK, 
-        GLOBAL, 
-        SPECIFIC;            
+    private enum Type {
+        NONE,
+        SITE,
+        LINK,
+        GLOBAL,
+        SPECIFIC;
     }
 
-    /** No network */    
+    /** No network */
     public static final Network NONE = new Network(Type.NONE);
-    
-    /** Site local network */    
+
+    /** Site local network */
     public static final Network SITE = new Network(Type.SITE);
-    
-    /** Link local network */    
+
+    /** Link local network */
     public static final Network LINK = new Network(Type.LINK);
-    
-    /** Global network */    
+
+    /** Global network */
     public static final Network GLOBAL = new Network(Type.GLOBAL);
-    
-    final Type type;         
+
+    final Type type;
     final byte[] network;
     final byte[] mask;
 
@@ -48,58 +48,58 @@ public final class Network {
         this.network = null;
         this.mask = null;
     }
-       
+
     Network(byte[] network, byte[] mask) {
-        this.type = Type.SPECIFIC; 
+        this.type = Type.SPECIFIC;
         this.network = network;
         this.mask = mask;
     }
-    
-    boolean match(InetAddress addr) { 
-        
-        switch (type) { 
+
+    boolean match(InetAddress addr) {
+
+        switch (type) {
         case NONE:
             return false;
         case SITE:
         case LINK:
             return addr.isSiteLocalAddress();
         case GLOBAL:
-            return (!(addr.isSiteLocalAddress() || addr.isLinkLocalAddress() || 
+            return (!(addr.isSiteLocalAddress() || addr.isLinkLocalAddress() ||
                     addr.isLoopbackAddress() || addr.isAnyLocalAddress() ||
                     addr.isMulticastAddress()));
-        case SPECIFIC: 
+        case SPECIFIC:
             return NetworkUtils.matchAddress(addr, network, mask);
         }
-        
+
         // stupid compiler!
         return false;
     }
-    
+
     boolean match(InetAddress [] addr) {
-        
-        for (int i=0;i<addr.length;i++) { 
-            if (match(addr[i])) { 
+
+        for (int i=0;i<addr.length;i++) {
+            if (match(addr[i])) {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     boolean match(InetSocketAddress [] addr) {
-        
-        for (int i=0;i<addr.length;i++) { 
-            if (match(addr[i].getAddress())) { 
+
+        for (int i=0;i<addr.length;i++) {
+            if (match(addr[i].getAddress())) {
                 return true;
             }
         }
-        
+
         return false;
-    }    
-    
-    public String toString() { 
-        
-        switch (type) { 
+    }
+
+    public String toString() {
+
+        switch (type) {
         case NONE:
             return "none";
         case SITE:
@@ -108,8 +108,8 @@ public final class Network {
             return "link";
         case GLOBAL:
             return "global";
-        case SPECIFIC: 
-            return NetworkUtils.bytesToString(network) + "/" 
+        case SPECIFIC:
+            return NetworkUtils.bytesToString(network) + "/"
                 + NetworkUtils.bytesToString(mask);
         }
 

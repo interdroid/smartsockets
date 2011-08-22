@@ -2,7 +2,7 @@ package ibis.smartsockets.util;
 
 public class MalformedAddressException extends RuntimeException {
 
-    /** 
+    /**
      * Generated
      */
     private static final long serialVersionUID = 3651250662722497089L;
@@ -18,7 +18,7 @@ public class MalformedAddressException extends RuntimeException {
     /**
      * Constructs an <code>MalformedAddressException</code> with the specified detail
      * message.
-     * 
+     *
      * @param s
      *            the detail message
      */
@@ -29,7 +29,7 @@ public class MalformedAddressException extends RuntimeException {
     /**
      * Constructs an <code>MalformedAddressException</code> with the specified detail
      * message and cause.
-     * 
+     *
      * @param s
      *            the detail message
      * @param cause
@@ -41,7 +41,7 @@ public class MalformedAddressException extends RuntimeException {
 
     /**
      * Constructs an <code>MalformedAddressException</code> with the specified cause.
-     * 
+     *
      * @param cause
      *            the cause
      */

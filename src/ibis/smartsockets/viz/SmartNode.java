@@ -12,7 +12,7 @@ public class SmartNode extends Node {
         super(id);
     }
 
-    
+
     public SmartNode() {
         super();
     }
@@ -26,21 +26,21 @@ public class SmartNode extends Node {
     public void setPattern(Color color) {
 
         // float[] hsb = new float[3];
-        //        
+        //
         // Color.RGBtoHSB(color.getRed(), color.getGreen(),
         // color.getBlue(),hsb);
-        //        
+        //
         // if (hsb[2] == 0) {
         // hsb[2] = 0.1f;
         // }
-        //        
+        //
         // Color lighter = new Color(Color.HSBtoRGB(hsb[0], hsb[1], hsb[2] *
         // 2));
 
         // int red = Math.min(255, color.getRed() + 100);
         // int green = Math.min(255, color.getGreen() + 100);
         // int blue = Math.min(255, color.getBlue() + 100);
-        //        
+        //
         // Color lighter = new Color(red, green, blue, 255);
 
         Color lighter = new Color(color.getRed(), color.getGreen(), color

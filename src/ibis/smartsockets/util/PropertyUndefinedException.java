@@ -18,7 +18,7 @@ public class PropertyUndefinedException extends Exception {
     /**
      * Constructs an <code>PropertyUndefinedException</code> with the specified detail
      * message.
-     * 
+     *
      * @param s
      *            the detail message
      */
@@ -29,7 +29,7 @@ public class PropertyUndefinedException extends Exception {
     /**
      * Constructs an <code>PropertyUndefinedException</code> with the specified detail
      * message and cause.
-     * 
+     *
      * @param s
      *            the detail message
      * @param cause
@@ -41,7 +41,7 @@ public class PropertyUndefinedException extends Exception {
 
     /**
      * Constructs an <code>PropertyUndefinedException</code> with the specified cause.
-     * 
+     *
      * @param cause
      *            the cause
      */

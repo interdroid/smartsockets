@@ -32,7 +32,7 @@ import com.touchgraph.graphlayout.TGException;
  * GLPanel contains code for adding scrollbars and interfaces to the TGPanel The
  * "GL" prefix indicates that this class is GraphLayout specific, and will
  * probably need to be rewritten for other applications.
- * 
+ *
  * @author Alexander Shapiro
  * @version 1.22-jre1.1 $Id: GLPanel.java,v 1.3 2002/09/23 18:45:56 ldornbusch
  *          Exp $
@@ -115,7 +115,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
             boolean showself, DirectSocketAddress... hubs) {
         this(textColor, backgroundColor, showself, true, true, hubs);
     }
-    
+
     public SmartsocketsViz(Color textColor, Color backgroundColor,
             boolean showself, boolean useSliders, boolean compact,
             String... hubs) throws Exception {
@@ -124,7 +124,7 @@ public final class SmartsocketsViz extends GLPanel implements Runnable {
 
     /**
      * Default constructor.
-     * 
+     *
      */
     public SmartsocketsViz(Color textColor, Color backgroundColor,
             boolean showself, boolean useSliders, boolean compact,

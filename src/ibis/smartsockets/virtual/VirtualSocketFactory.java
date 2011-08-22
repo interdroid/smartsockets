@@ -33,11 +33,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This class implements a 'virtual' socket factory.
- * 
+ *
  * @author Jason Maassen
  * @version 1.0 Jan 30, 2006
  * @since 1.0
- * 
+ *
  */
 public class VirtualSocketFactory {
 
@@ -488,7 +488,7 @@ public class VirtualSocketFactory {
 			// instead we use an 'educated guess' of the form:
 			//
 			// smartsockets.virtual.modules.<name>.<Name>
-			//            
+			//
 			StringBuffer tmp = new StringBuffer();
 			tmp.append("ibis.smartsockets.virtual.modules.");
 			tmp.append(name.toLowerCase());
@@ -1089,7 +1089,7 @@ public class VirtualSocketFactory {
 
 				/*
 				 * if (timing != null) { timing[1 + i] = System.nanoTime();
-				 * 
+				 *
 				 * if (i > 0) { prop.put("direct.detailed.timing.ignore", null);
 				 * } }
 				 */
@@ -1183,11 +1183,11 @@ public class VirtualSocketFactory {
 
 		/*
 		 * long [] timing = null;
-		 * 
+		 *
 		 * if (prop != null) { // Note: it's up to the user to ensure that this
 		 * thing is large // enough! i.e., it should be of size 1+modules.length
 		 * timing = (long[]) prop.get("virtual.detailed.timing");
-		 * 
+		 *
 		 * if (timing != null) { timing[0] = System.nanoTime(); } }
 		 */
 
