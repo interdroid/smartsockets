@@ -188,7 +188,7 @@ public final class VirtualSocketFactory {
     private StatisticsPrinter printer = null;
 
     /**
-     * An innerclass that accepts incoming connections for a hub.
+     * An inner class that accepts incoming connections for a hub.
      *
      * Only used when hub delegation is active: a hub and VirtualSocketFactory
      * are running in the same process and share one contact address. This is
