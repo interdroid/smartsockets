@@ -12,9 +12,6 @@ import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 import ibis.smartsockets.virtual.modules.AcceptHandler;
 import ibis.smartsockets.virtual.modules.ConnectModule;
 import ibis.smartsockets.virtual.modules.direct.Direct;
-import ibis.smartsockets.virtual.modules.hubrouted.Hubrouted;
-import ibis.smartsockets.virtual.modules.reverse.Reverse;
-import ibis.smartsockets.virtual.modules.splice.Splice;
 import ibis.smartsockets.util.ThreadPool;
 
 import java.io.IOException;
@@ -33,8 +30,6 @@ import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.sun.java_cup.internal.runtime.virtual_parse_stack;
 
 /**
  * This class implements a virtual socket factory.
@@ -81,14 +76,17 @@ import com.sun.java_cup.internal.runtime.virtual_parse_stack;
  */
 public final class VirtualSocketFactory {
 
+    /**
+     * An inner class the prints connection statistics at a regular interval.
+     */
     private static class StatisticsPrinter implements Runnable {
 
         private int timeout;
         private VirtualSocketFactory factory;
         private String prefix;
 
-        StatisticsPrinter(VirtualSocketFactory factory, int timeout,
-                String prefix) {
+        StatisticsPrinter(final VirtualSocketFactory factory, final int timeout,
+                final String prefix) {
             this.timeout = timeout;
             this.factory = factory;
             this.prefix = prefix;
@@ -103,7 +101,7 @@ public final class VirtualSocketFactory {
                     synchronized (this) {
                         wait(t);
                     }
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
                     // ignore
                 }
 
@@ -113,7 +111,7 @@ public final class VirtualSocketFactory {
                     try {
                         factory.printStatistics(prefix);
                     } catch (Exception e) {
-                        // TODO: IGNORE ?
+                        logger.warn("Failed to print statistics", e);
                     }
                 }
             }
@@ -123,7 +121,7 @@ public final class VirtualSocketFactory {
             return timeout;
         }
 
-        public synchronized void adjustInterval(int interval) {
+        public synchronized void adjustInterval(final int interval) {
             timeout = interval;
             notifyAll();
         }
@@ -134,10 +132,11 @@ public final class VirtualSocketFactory {
 
     private static VirtualSocketFactory defaultFactory = null;
 
-
+    /** Generic logger for this class. */
     protected static final Logger logger =
             LoggerFactory.getLogger("ibis.smartsockets.virtual.misc");
 
+    /** Logger for connection related logging. */
     protected static final Logger conlogger =
             LoggerFactory.getLogger("ibis.smartsockets.virtual.connect");
 
@@ -188,6 +187,13 @@ public final class VirtualSocketFactory {
 
     private StatisticsPrinter printer = null;
 
+    /**
+     * An innerclass that accepts incoming connections for a hub.
+     *
+     * Only used when hub delegation is active: a hub and VirtualSocketFactory
+     * are running in the same process and share one contact address. This is
+     * only used in special server processes (such as the Ibis Registry).
+     */
     private static class HubAcceptor implements AcceptHandler {
 
         private final Hub hub;
@@ -281,7 +287,8 @@ public final class VirtualSocketFactory {
         }
     }
 
-    private void startHub(TypedProperties p) throws InitializationException {
+    private void startHub(TypedProperties p)
+            throws InitializationException {
 
         if (p.booleanProperty(SmartSocketsProperties.START_HUB, false)) {
 
@@ -572,7 +579,7 @@ public final class VirtualSocketFactory {
         return null;
     }
 
-    private void loadModule(String name) throws Exception {
+    private void loadModule(final String name) throws Exception {
 
         ConnectModule m = instantiateModule(name);
         m.init(this, name, properties, logger);
@@ -728,10 +735,22 @@ public final class VirtualSocketFactory {
         return timeout;
     }
 
+    /**
+     * Retrieve an array of the available connection modules.
+     * @return array of available connection modules.
+     */
     protected ConnectModule[] getModules() {
         return modules.toArray(new ConnectModule[modules.size()]);
     }
 
+    /**
+     * Retrieve an array of the available connection modules whose names are
+     * listed in names.
+     *
+     * @param names set of modules that may be returned.
+     * @return array of available connection modules whose name was included in
+     * names.
+     */
     protected ConnectModule[] getModules(String[] names) {
 
         ArrayList<ConnectModule> tmp = new ArrayList<ConnectModule>();
@@ -802,12 +821,24 @@ public final class VirtualSocketFactory {
         failed.clear();
     }
 
+    /**
+     * Retrieve VirtualServerSocket that is bound to given port.
+     *
+     * @param port port for which to retrieve VirtualServerSocket.
+     * @return VirtualServerSocket bound to port, or null if port is not in use.
+     */
     public VirtualServerSocket getServerSocket(int port) {
         synchronized (serverSockets) {
             return serverSockets.get(port);
         }
     }
 
+    /**
+     * Retrieve the ConnectModule with a given name.
+     *
+     * @param name name of requested ConnectModule.
+     * @return ConnectModule bound to name, or null is this name is not in use.
+     */
     public ConnectModule findModule(String name) {
 
         // Direct is special, since it may be loaded without being part of the
@@ -825,14 +856,23 @@ public final class VirtualSocketFactory {
         return null;
     }
 
-    public static void close(VirtualSocket s, OutputStream out, InputStream in) {
+    /**
+     * Close a VirtualSocket and its related I/O Streams while ignoring
+     * exceptions.
+     *
+     * @param s VirtualSocket to close (may be null).
+     * @param out OutputStream to close (may be null).
+     * @param in InputStream to close (may be null).
+     */
+    public static void close(VirtualSocket s, OutputStream out,
+            InputStream in) {
 
         try {
             if (out != null) {
                 out.close();
             }
         } catch (Throwable e) {
-            // ignore
+            logger.info("Failed to close OutputStream", e);
         }
 
         try {
@@ -840,7 +880,7 @@ public final class VirtualSocketFactory {
                 in.close();
             }
         } catch (Throwable e) {
-            // ignore
+            logger.info("Failed to close InputStream", e);
         }
 
         try {
@@ -848,17 +888,24 @@ public final class VirtualSocketFactory {
                 s.close();
             }
         } catch (Throwable e) {
-            // ignore
+            logger.info("Failed to close Socket", e);
         }
     }
 
+    /**
+     * Close a VirtualSocket and its related SocketChannel while ignoring
+     * exceptions.
+     *
+     * @param s VirtualSocket to close (may be null).
+     * @param channel SocketChannel to close (may be null).
+     */
     public static void close(VirtualSocket s, SocketChannel channel) {
 
         if (channel != null) {
             try {
                 channel.close();
             } catch (Exception e) {
-                // ignore
+                logger.info("Failed to close SocketChannel", e);
             }
         }
 
@@ -866,29 +913,44 @@ public final class VirtualSocketFactory {
             try {
                 s.close();
             } catch (Exception e) {
-                // ignore
+                logger.info("Failed to close Socket", e);
             }
         }
     }
 
-    // This method implements a connect using a specific module. This method
-    // will return null when:
-    //
-    // - runtime requirements do not match
-    // - the module throws a NonFatalIOException
-    //
-    // When a connection is succesfully establed, we wait for a accept from the
-    // remote. There are three possible outcomes:
-    //
-    // - the connection is accepted in time
-    // - the connection is not accepted in time or the connection is lost
-    // - the remote side is overloaded and closes the connection
-    //
-    // In the first case the newly created socket is returned and in the second
-    // case an exception is thrown. In the last case the connection will be
-    // retried using a backoff mechanism until 'timeleft' (the total timeout
-    // specified by the user) is spend. Each new try behaves exactly the same as
-    // the previous attempts.
+    /**
+     * This method implements a connect using a specific module.
+     *
+     * This method will return null when:
+     * <p>
+     * - runtime requirements do not match
+     * - the module throws a NonFatalIOException
+     * <p>
+     * When a connection is successfully established, we wait for a accept from
+     * the remote side. There are three possible outcomes:
+     * <p>
+     * - the connection is accepted in time
+     * - the connection is not accepted in time or the connection is lost
+     * - the remote side is overloaded and closes the connection
+     * <p>
+     * In the first case the newly created socket is returned and in the second
+     * case an exception is thrown. In the last case the connection will be
+     * retried using a backoff mechanism until 'timeleft' (the total timeout
+     * specified by the user) is spend. Each new try behaves exactly the same as
+     * the previous attempts.
+     *
+     * @param m ConnectModule to use in connection attempt.
+     * @param target Target VirtualServerSocket.
+     * @param timeout Timeout to use for this specific attempt.
+     * @param timeLeft Total timeout left.
+     * @param fillTimeout Should we retry until the timeout expires ?
+     * @param properties Properties to use in connection setup.
+     * @return a VirtualSocket if the connection setup succeeded, null
+     * otherwise.
+     * @throws IOException a non-transient error occured (i.e., target port does
+     * not exist).
+     * @throws NonFatalIOException a transient error occured (i.e., timeout).
+     */
     private VirtualSocket createClientSocket(ConnectModule m,
             VirtualSocketAddress target, int timeout, int timeLeft,
             boolean fillTimeout, Map<String, Object> properties)
@@ -1103,13 +1165,29 @@ public final class VirtualSocketFactory {
         return names;
     }
 
-    // This method loops over and array of connection modules, trying to setup
-    // a connection with each of them each in turn. Returns when:
-    // - a connection is established
-    // - a non-transient error occurs (i.e. remote port not found)
-    // - all modules have failed
-    // - a timeout occurred
-    //
+    /**
+     * This method loops over and array of connection modules, trying to setup
+     * a connection with each of them each in turn.
+     * <p>
+     * This method returns when:<br>
+     * - a connection is established<b>
+     * - a non-transient error occurs (i.e. remote port not found)<b>
+     * - all modules have failed<b>
+     * - a timeout occurred<b>
+     *
+     * @param target Target VirtualServerSocket.
+     * @param order ConnectModules in the order in which they should be tried.
+     * @param timeouts Timeouts for each of the modules.
+     * @param totalTimeout Total timeout for the connection setup.
+     * @param timing Array in which to record the time required by each module.
+     * @param fillTimeout Should we retry until the timeout expires ?
+     * @param properties Properties to use in connection setup.
+     * @return a VirtualSocket if the connection setup succeeded, null
+     * otherwise.
+     * @throws IOException a non-transient error occurred (i.e., target port
+     * does not exist on receiver).
+     * @throws NoSuitableModuleException No module could create the connection.
+     */
     private VirtualSocket createClientSocket(VirtualSocketAddress target,
             ConnectModule[] order, int[] timeouts, int totalTimeout,
             long[] timing, boolean fillTimeout, Map<String, Object> prop)
@@ -1209,11 +1287,44 @@ public final class VirtualSocketFactory {
         return timeouts;
     }
 
+    /**
+     * Create a connection to the VirtualServerSocket at target.
+     *
+     * This method will attempt to setup a connection to the VirtualServerSocket
+     * at target within the given timeout. Using the prop parameter, properties
+     * can be specified that modify the connection setup behavior.
+     *
+     * @param target Address of target VirtualServerSocket.
+     * @param timeout The maximum timeout for the connection setup in
+     * milliseconds. When the timeout is zero the call may block indefinitely,
+     * while a negative timeout will revert to the default value.
+     * @param prop Properties that modify the connection setup behavior (may be
+     *        null).
+     * @return a VirtualSocket when the connection setup was successful.
+     * @throws IOException when the connection setup failed.
+     */
     public VirtualSocket createClientSocket(VirtualSocketAddress target,
             int timeout, Map<String, Object> prop) throws IOException {
         return createClientSocket(target, timeout, false, prop);
     }
 
+    /**
+     * Create a connection to the VirtualServerSocket at target.
+     *
+     * This method will attempt to setup a connection to the VirtualServerSocket
+     * at target within the given timeout. Using the prop parameter, properties
+     * can be specified that modify the connection setup behavior.
+     *
+     * @param target Address of target VirtualServerSocket.
+     * @param timeout The maximum timeout for the connection setup in
+     * milliseconds. When the timeout is zero the call may block indefinitely,
+     * while a negative timeout will revert to the default value.
+     * @param fillTimeout Should we retry until the timeout expires ?
+     * @param prop Properties that modify the connection setup behavior (may be
+     *        null).
+     * @return a VirtualSocket when the connection setup was successful.
+     * @throws IOException when the connection setup failed.
+     */
     public VirtualSocket createClientSocket(VirtualSocketAddress target,
             int timeout, boolean fillTimeout, Map<String, Object> prop)
             throws IOException {
@@ -1346,6 +1457,25 @@ public final class VirtualSocketFactory {
         }
     }
 
+    /**
+     * Create a new VirtualServerSocket bound the the given port.
+     *
+     * This method will create a new VirtualServerSocket bound the the given,
+     * and using the specified backlog. If port is zero or negative, a valid
+     * unused port number will be generated. If the backlog is zero or negative,
+     * the default value will be used.
+     * <p>
+     * The properties parameter used to modify the connection setup behavior of
+     * the new VirtualServerSocket.
+     *
+     * @param port The port number to use.
+     * @param backlog The maximum number of pending connections this
+     * VirtualServerSocket will allow.
+     * @param retry Retry if the VirtualServerSocket creation fails.
+     * @param properties Properties that modify the connection setup behavior
+     *        (may be null).
+     * @return the new VirtualServerSocket, or null if the creation failed.
+     */
     public VirtualServerSocket createServerSocket(int port, int backlog,
             boolean retry, java.util.Properties properties) {
 
@@ -1380,11 +1510,32 @@ public final class VirtualSocketFactory {
         return result;
     }
 
-    public VirtualServerSocket createServerSocket(Map<String, Object> properties)
+    /**
+     * Create a new unbound VirtualServerSocket.
+     *
+     * This method will create a new VirtualServerSocket that is not yet bound
+     * to a port.
+     * <p>
+     * The properties parameter used to modify the connection setup behavior of
+     * the new VirtualServerSocket.
+     *
+     * @param props Properties that modify the connection setup behavior
+     *        (may be null).
+     * @return the new VirtualServerSocket.
+     * @throws IOException the VirtualServerSocket creation has failed.
+     */
+    public VirtualServerSocket createServerSocket(Map<String, Object> props)
             throws IOException {
-        return new VirtualServerSocket(this, DEFAULT_ACCEPT_TIMEOUT, properties);
+        return new VirtualServerSocket(this, DEFAULT_ACCEPT_TIMEOUT, props);
     }
 
+    /**
+     * Bind an unbound VirtualServerSocket to a port.
+     *
+     * @param vss The VirtualServerSocket to bind to the port.
+     * @param port The port to bind the VirtualServerSocket to.
+     * @throws BindException Failed to bind the port to the VirtualServerSocket.
+     */
     protected void bindServerSocket(VirtualServerSocket vss, int port)
             throws BindException {
 
@@ -1396,6 +1547,26 @@ public final class VirtualSocketFactory {
             serverSockets.put(port, vss);
         }
     }
+
+    /**
+     * Create a new VirtualServerSocket bound the the given port.
+     *
+     * This method will create a new VirtualServerSocket bound the the given,
+     * and using the specified backlog. If port is zero or negative, a valid
+     * unused port number will be generated. If the backlog is zero or negative,
+     * the default value will be used.
+     * <p>
+     * The properties parameter used to modify the connection setup behavior of
+     * the new VirtualServerSocket.
+     *
+     * @param port The port number to use.
+     * @param backlog The maximum number of pending connections this
+     * VirtualServerSocket will allow.
+     * @param properties Properties that modify the connection setup behavior
+     *        (may be null).
+     * @return the new VirtualServerSocket, or null if the creation failed.
+     */
+
 
     public VirtualServerSocket createServerSocket(int port, int backlog,
             Map<String, Object> properties) throws IOException {
@@ -1430,22 +1601,44 @@ public final class VirtualSocketFactory {
     }
 
     // TODO: hide this thing ?
+    /**
+     * Retrieve the ServiceLink that is connected to the hub.
+     * @return the ServiceLink that is connected to the Hub
+     */
     public ServiceLink getServiceLink() {
         return serviceLink;
     }
 
+    /**
+     * Retrieve the DirectSocketAddress of this machine.
+     * @return the DirectSocketAddress of this machine.
+     */
     public DirectSocketAddress getLocalHost() {
         return myAddresses;
     }
 
+    /**
+     * Retrieve the name of the local cluster.
+     * @return the name of the local cluster.
+     */
     public String getLocalCluster() {
         return clusters.localCluster();
     }
 
+    /**
+     * Retrieve the DirectSocketAddress of the hub this VirtualSocketFactory is
+     * connected to.
+     * @return the DirectSocketAddress of the hub this VirtualSocketFactory is
+     * connected to.
+     */
     public DirectSocketAddress getLocalHub() {
         return hubAddress;
     }
 
+    /**
+     * Provide a list of hub addresses to the VirtualSocketFactory.
+     * @param hubs The hub addresses.
+     */
     public void addHubs(DirectSocketAddress... hubs) {
         if (hub != null) {
             hub.addHubs(hubs);
@@ -1454,6 +1647,10 @@ public final class VirtualSocketFactory {
         }
     }
 
+    /**
+     * Provide a list of hub addresses to the VirtualSocketFactory.
+     * @param hubs The hub addresses.
+     */
     public void addHubs(String... hubs) {
         if (hub != null) {
             hub.addHubs(hubs);
@@ -1462,6 +1659,10 @@ public final class VirtualSocketFactory {
         }
     }
 
+    /**
+     * Retrieve the known hub addresses.
+     * @return an array containing the known hub addresses.
+     */
     public DirectSocketAddress[] getKnownHubs() {
 
         if (hub != null) {
@@ -1477,6 +1678,9 @@ public final class VirtualSocketFactory {
         return null;
     }
 
+    /**
+     * Shutdown the VirtualSocketFactory.
+     */
     public void end() {
 
         if (printer != null) {
@@ -1496,17 +1700,47 @@ public final class VirtualSocketFactory {
         }
     }
 
+    /**
+     * Close a port.
+     * @param port the port to close.
+     */
     protected void closed(int port) {
         synchronized (serverSockets) {
             serverSockets.remove(Integer.valueOf(port));
         }
     }
 
-    public static synchronized VirtualSocketFactory getSocketFactory(String name) {
+    /**
+     * Retrieve a previously created (and configured) VirtualSocketFactory.
+     *
+     * @param name the VirtualSocketFactory to retrieve.
+     * @return the VirtualSocketFactory, or null if it does not exist.
+     */
+    public static synchronized VirtualSocketFactory getSocketFactory(
+            String name) {
 
         return factories.get(name);
     }
 
+
+    /**
+     * Get a VirtualSocketFactory, either by retrieving or by creating it.
+     *
+     * If the VirtualSocketFactory already existed, the provided properties will
+     * be compared to those of the existing VirtualSocketFactory to ensure that
+     * they are the same. If they are not, an InitializationException will be
+     * thrown.
+     * <p>
+     * If the VirtualSocketFactory did not exist, it will be created and stored
+     * under name for later lookup.
+     *
+     * @param name the name of the VirtualSocketFactory to retrieve or create.
+     * @param p A set of properties that configure the VirtualSocketFactory.
+     * @param addDefaults Add the default properties to the configuration.
+     * @return the retrieved or created VirtualSocketFactory.
+     * @throws InitializationException if the VirtualSocketFactory could not be
+     * created or received.
+     */
     public static synchronized VirtualSocketFactory getOrCreateSocketFactory(
             String name, java.util.Properties p, boolean addDefaults)
             throws InitializationException {
@@ -1537,11 +1771,23 @@ public final class VirtualSocketFactory {
         return result;
     }
 
+    /**
+     * Register an existing VirtualSocketFactory under a different name.
+     * @param name The name to register the VirtualSocketFactory.
+     * @param factory The VirtualSocketFactory to register.
+     */
     public static synchronized void registerSocketFactory(String name,
             VirtualSocketFactory factory) {
         factories.put(name, factory);
     }
 
+    /**
+     * Retrieve a VirtualSocketFactory using the default configuration.
+     *
+     * @return a VirtualSocketFactory using the default configuration.
+     * @throws InitializationException the VirtualSocketFactory could not be
+     * retrieved.
+     */
     public static synchronized VirtualSocketFactory getDefaultSocketFactory()
             throws InitializationException {
 
@@ -1552,17 +1798,43 @@ public final class VirtualSocketFactory {
         return defaultFactory;
     }
 
+    /**
+     * Create a VirtualSocketFactory using the default configuration.
+     *
+     * @return a VirtualSocketFactory using the default configuration.
+     * @throws InitializationException the VirtualSocketFactory could not be
+     * created.
+     */
     public static VirtualSocketFactory createSocketFactory()
             throws InitializationException {
 
         return createSocketFactory((java.util.Properties) null, true);
     }
 
+    /**
+     * Create a VirtualSocketFactory using the configuration provided in p.
+     *
+     * @param p the configuration to use (as a key-value map).
+     * @param addDefaults Should the default configuration be added ?
+     * @return a VirtualSocketFactory using the configuration in p.
+     * @throws InitializationException the VirtualSocketFactory could not be
+     * created.
+     */
     public static VirtualSocketFactory createSocketFactory(Map<String, ?> p,
             boolean addDefaults) throws InitializationException {
         return createSocketFactory(new TypedProperties(p), addDefaults);
     }
 
+    /**
+     * Create a VirtualSocketFactory using the configuration provided in
+     * properties.
+     *
+     * @param properties the configuration to use.
+     * @param addDefaults Should the default configuration be added ?
+     * @return a VirtualSocketFactory using the configuration in properties.
+     * @throws InitializationException the VirtualSocketFactory could not be
+     * created.
+     */
     public static VirtualSocketFactory createSocketFactory(
             java.util.Properties properties, boolean addDefaults)
             throws InitializationException {
@@ -1600,14 +1872,33 @@ public final class VirtualSocketFactory {
         return factory;
     }
 
+    /**
+     * Retrieve the contact address of this VirtualSocketFactory.
+     *
+     * @return a VirtualSocketAddress containing the contact address of this
+     * VirtualSocketFactory.
+     */
     public VirtualSocketAddress getLocalVirtual() {
         return localVirtualAddress;
     }
 
+    /**
+     * Retrieve the contact address of this VirtualSocketFactory.
+     *
+     * @return a String containing the contact address of this
+     * VirtualSocketFactory.
+     */
     public String getVirtualAddressAsString() {
         return localVirtualAddressAsString;
     }
 
+    /**
+     * Print statistics on the connections created by this VirtualSocketFactory.
+     *
+     * Every line printed will prepended with the given prefix.
+     *
+     * @param prefix the prefix to use when printing.
+     */
     public void printStatistics(String prefix) {
 
         if (statslogger.isInfoEnabled()) {
