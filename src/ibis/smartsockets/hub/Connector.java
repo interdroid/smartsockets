@@ -94,7 +94,7 @@ class Connector extends CommunicationThread {
         }
 
         try {
-	        s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0,
+            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0,
                     sendBuffer, receiveBuffer, null, false, usercode);
             s.setTcpNoDelay(true);
             s.setSoTimeout(DEFAULT_TIMEOUT);
@@ -160,7 +160,7 @@ class Connector extends CommunicationThread {
         }
 
         try {
-	        s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0,
+            s = factory.createSocket(d.hubAddress, DEFAULT_TIMEOUT, 0,
                     sendBuffer, receiveBuffer, null, false, usercode);
 
             s.setTcpNoDelay(true);

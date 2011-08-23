@@ -1,4 +1,4 @@
- package ibis.smartsockets.discovery;
+package ibis.smartsockets.discovery;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

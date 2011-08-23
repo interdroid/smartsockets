@@ -134,15 +134,15 @@ public class DirectSocketFactory {
             username = System.getProperty("user.name");
 
             if (username == null || username.equals("") || username.equals("?")) {
-            	// The user.name property fails on some machines (unclear why), so
-            	// we use the $USER environment variable as an alternative.
-            	username = System.getenv("USER");
+                // The user.name property fails on some machines (unclear why), so
+                // we use the $USER environment variable as an alternative.
+                username = System.getenv("USER");
             }
 
             if (username != null && (username.equals("") || username.equals("?"))) {
-            	// If $USER also returns a strang value, we give up. This will disable
-            	// SSH tunneling
-            	username = null;
+                // If $USER also returns a strang value, we give up. This will disable
+                // SSH tunneling
+                username = null;
             }
         }
 
@@ -209,7 +209,7 @@ public class DirectSocketFactory {
                 SmartSocketsProperties.DIRECT_RECEIVE_BUFFER, 0);
 
         boolean cacheIPaddress = p.booleanProperty(SmartSocketsProperties.DIRECT_CACHE_IP, true);
-       	localAddress = IPAddressSet.getLocalHost(cacheIPaddress);
+           localAddress = IPAddressSet.getLocalHost(cacheIPaddress);
 
         if (!localAddress.containsPublicAddress()) {
             haveOnlyLocalAddresses = true;

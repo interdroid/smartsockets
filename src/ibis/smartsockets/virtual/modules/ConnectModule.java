@@ -217,9 +217,9 @@ public abstract class ConnectModule implements CallBack {
 
         if (tmp != null) {
             if (contains(tmp, module)) {
-            	if (logger.isInfoEnabled()) {
-            		logger.info("Skipping module: " + module);
-            	}
+                if (logger.isInfoEnabled()) {
+                    logger.info("Skipping module: " + module);
+                }
 
                 return false;
             } // else, continue with other checks
@@ -233,9 +233,9 @@ public abstract class ConnectModule implements CallBack {
         if (tmp != null) {
             if (contains(tmp, myTypes)) {
 
-            	if (logger.isInfoEnabled()) {
-            		logger.info("Skipping module type: " + tmp + "(" + module + ")");
-            	}
+                if (logger.isInfoEnabled()) {
+                    logger.info("Skipping module type: " + tmp + "(" + module + ")");
+                }
 
                 return false;
             } // else, continue with other checks

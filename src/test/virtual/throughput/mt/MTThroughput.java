@@ -13,43 +13,43 @@ import java.net.SocketException;
 import java.util.HashMap;
 
 public class MTThroughput {
-    
-    private static int OPCODE_META = 42;    
-    private static int OPCODE_DATA = 24;    
-       
-    private static int DEFAULT_STREAMS = 2;    
+
+    private static int OPCODE_META = 42;
+    private static int OPCODE_DATA = 24;
+
+    private static int DEFAULT_STREAMS = 2;
     private static int DEFAULT_REPEAT = 10;
     private static int DEFAULT_COUNT = 100;
-    
+
     private static int TIMEOUT = 15000;
     private static int DEFAULT_SIZE = 1024*1024;
-    
-    private static int count = DEFAULT_COUNT;    
+
+    private static int count = DEFAULT_COUNT;
     private static int repeat = DEFAULT_REPEAT;
     private static int size = DEFAULT_SIZE;
     private static int streams = DEFAULT_STREAMS;
-   
-    private static VirtualSocketFactory sf;    
+
+    private static VirtualSocketFactory sf;
     private static HashMap<String, Object> connectProperties;
-    
-    private static void configure(VirtualSocket s) throws SocketException { 
- 
+
+    private static void configure(VirtualSocket s) throws SocketException {
+
         s.setTcpNoDelay(true);
-    
-        System.out.println("Configured socket: ");         
+
+        System.out.println("Configured socket: ");
         System.out.println(" sendbuffer     = " + s.getSendBufferSize());
         System.out.println(" receiverbuffer = " + s.getReceiveBufferSize());
-        System.out.println(" no delay       = " + s.getTcpNoDelay());        
+        System.out.println(" no delay       = " + s.getTcpNoDelay());
     }
-    
-    private static void createStreamOut(VirtualSocketAddress target, DataSource d, int id, int size) { 
-        
+
+    private static void createStreamOut(VirtualSocketAddress target, DataSource d, int id, int size) {
+
         VirtualSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
-        
-        try { 
-            s = sf.createClientSocket(target, TIMEOUT, 
+
+        try {
+            s = sf.createClientSocket(target, TIMEOUT,
                     connectProperties);
 
             System.out.println("Created DATA connection to " + target);
@@ -59,41 +59,41 @@ public class MTThroughput {
             in = new DataInputStream(s.getInputStream());
             out = new DataOutputStream(s.getOutputStream());
 
-            out.writeInt(OPCODE_DATA);            
+            out.writeInt(OPCODE_DATA);
             out.writeInt(id);
-            out.flush();                
+            out.flush();
 
             new Sender(d, s, out, in, size).start();
-            
+
         } catch (IOException e) {
             VirtualSocketFactory.close(s, out, in);
             System.out.println("Failed to create connection to " + target);
         }
     }
-    
-    private static void printPerformance(long time, long size) { 
-      
-        double tp = (1000.0 * size) / (1024.0*1024.0*time);  
-        double mbit = (8000.0 * size) / (1024.0*1024.0*time);  
-           
-        if (mbit > 1000) { 
+
+    private static void printPerformance(long time, long size) {
+
+        double tp = (1000.0 * size) / (1024.0*1024.0*time);
+        double mbit = (8000.0 * size) / (1024.0*1024.0*time);
+
+        if (mbit > 1000) {
             mbit = mbit / 1024.0;
             System.out.printf("Test took %d ms. Througput = %4.1f " +
                     "MByte/s (%3.1f GBit/s)\n", time, tp, mbit);
-        } else { 
+        } else {
             System.out.printf("Test took %d ms. Througput = %4.1f " +
                     "MByte/s (%3.1f MBit/s)\n", time, tp, mbit);
         }
     }
-    
-    public static void client(VirtualSocketAddress target) { 
-        
+
+    public static void client(VirtualSocketAddress target) {
+
         VirtualSocket s = null;
         DataInputStream in = null;
         DataOutputStream out = null;
-        
-        try { 
-            s = sf.createClientSocket(target, TIMEOUT, 
+
+        try {
+            s = sf.createClientSocket(target, TIMEOUT,
                     connectProperties);
 
             System.out.println("Created META connection to " + target);
@@ -105,56 +105,56 @@ public class MTThroughput {
 
             // TODO: draw random ID here!
             int id = 42;
-            
-            out.writeInt(OPCODE_META);            
+
+            out.writeInt(OPCODE_META);
             out.writeInt(size);
             out.writeInt(count);
             out.writeInt(repeat);
-            out.writeInt(streams);            
+            out.writeInt(streams);
             out.writeInt(id);
-            out.flush();                
+            out.flush();
 
             DataSource d = new DataSource();
-            
-            for (int i=0;i<streams;i++) { 
+
+            for (int i=0;i<streams;i++) {
                 createStreamOut(target, d, id, size);
             }
- 
+
             System.out.println("Starting test");
 
             for (int r=0;r<repeat;r++) {
-                
+
                 long start = System.currentTimeMillis();
-                
+
                 d.set(count);
                 in.readInt();
-                
+
                 long end = System.currentTimeMillis();
-                
+
                 printPerformance(end-start, count*size);
-                
+
                 // System.out.println("Send " + count + " (" + tmp + ")");
-                
+
                 // TODO: print some stats here!
-            } 
-            
+            }
+
             d.done();
 
         } catch (IOException e) {
-            System.out.println("Failed to create connection to " + target); 
-        } finally { 
+            System.out.println("Failed to create connection to " + target);
+        } finally {
             VirtualSocketFactory.close(s, out, in);
         }
     }
 
 
-    private static void createStreamIn(VirtualServerSocket ss, DataSink d, 
-            int id, int size) { 
+    private static void createStreamIn(VirtualServerSocket ss, DataSink d,
+            int id, int size) {
 
-        try { 
+        try {
             VirtualSocket s = ss.accept();
 
-            System.out.println("Incoming connection from " 
+            System.out.println("Incoming connection from "
                     + s.getRemoteSocketAddress());
 
             configure(s);
@@ -164,108 +164,108 @@ public class MTThroughput {
 
             int opcode = in.readInt();
 
-            if (opcode != OPCODE_DATA) { 
+            if (opcode != OPCODE_DATA) {
                 throw new Error("EEK: sender out of sync (2)!");
             }
-            
+
             int tmp = in.readInt();
-            
+
             if (tmp != id) {
                 throw new Error("EEK: sender out of sync (3)!");
             }
 
             new Receiver(d, s, out, in, size).start();
-                        
-        } catch (Exception e) { 
+
+        } catch (Exception e) {
             throw new Error("EEK: got exception while accepting! ", e);
         }
     }
-    
+
     public static void server() throws IOException {
-        
+
         System.out.println("Creating server");
-        
+
         VirtualServerSocket ss = sf.createServerSocket(0, 0, connectProperties);
-        
+
         System.out.println("Created server on " + ss.getLocalSocketAddress());
-                    
+
         while (true) {
-            System.out.println("Server waiting for connections"); 
-            
+            System.out.println("Server waiting for connections");
+
             VirtualSocket s = null;
             DataInputStream in = null;
             DataOutputStream out = null;
-            
-            try { 
+
+            try {
                 s = ss.accept();
-                            
-                System.out.println("Incoming connection from " 
+
+                System.out.println("Incoming connection from "
                         + s.getRemoteSocketAddress());
-            
+
                 configure(s);
-                
+
                 in = new DataInputStream(s.getInputStream());
                 out = new DataOutputStream(s.getOutputStream());
-                
+
                 int opcode = in.readInt();
-                
-                if (opcode != OPCODE_META) { 
+
+                if (opcode != OPCODE_META) {
                     throw new Error("EEK: sender out of sync!");
                 }
-                
+
                 size = in.readInt();
-                count = in.readInt();                              
-                repeat = in.readInt();                              
-                streams = in.readInt();                              
-            
+                count = in.readInt();
+                repeat = in.readInt();
+                streams = in.readInt();
+
                 int id = in.readInt();
-                
+
                 DataSink d = new DataSink();
-                
-                for (int i=0;i<streams;i++) { 
+
+                for (int i=0;i<streams;i++) {
                     createStreamIn(ss, d, id, size);
                 }
-     
+
                 for (int r=0;r<repeat;r++) {
-                    
+
                     d.waitForCount(streams);
                     out.writeInt(streams);
                     out.flush();
-                } 
-                
-                System.out.println("done!"); 
+                }
+
+                System.out.println("done!");
 
             } catch (IOException e) {
-                throw new Error("Server got exception!", e); 
-            } finally { 
+                throw new Error("Server got exception!", e);
+            } finally {
                 VirtualSocketFactory.close(s, out, in);
             }
         }
     }
-    
-    public static void main(String [] args) throws IOException { 
-                
+
+    public static void main(String [] args) throws IOException {
+
         connectProperties = new HashMap<String, Object>();
 
         VirtualSocketAddress target = null;
 
-        for (int i=0;i<args.length;i++) { 
-            if (args[i].equals("-target")) {                                 
+        for (int i=0;i<args.length;i++) {
+            if (args[i].equals("-target")) {
                 target = new VirtualSocketAddress(args[++i]);
-            } else if (args[i].equals("-size")) {                                 
+            } else if (args[i].equals("-size")) {
                 size = Integer.parseInt(args[++i]);
-            } else if (args[i].equals("-count")) {                                 
-                count = Integer.parseInt(args[++i]);    
-            } else if (args[i].equals("-repeat")) {                                 
+            } else if (args[i].equals("-count")) {
+                count = Integer.parseInt(args[++i]);
+            } else if (args[i].equals("-repeat")) {
                 repeat = Integer.parseInt(args[++i]);
-            } else if (args[i].equals("-streams")) {                                 
+            } else if (args[i].equals("-streams")) {
                 streams = Integer.parseInt(args[++i]);
-            } else if (args[i].equals("-buffers")) {                                 
-                int size = Integer.parseInt(args[++i]);                            
+            } else if (args[i].equals("-buffers")) {
+                int size = Integer.parseInt(args[++i]);
                 connectProperties.put("sendbuffer", size);
                 connectProperties.put("receivebuffer", size);
-            } else { 
-                System.err.println("Unknown option: " + args[i]);                
+            } else {
+                System.err.println("Unknown option: " + args[i]);
             }
         }
 
@@ -276,10 +276,10 @@ public class MTThroughput {
             e.printStackTrace();
             System.exit(1);
         }
-        
-        if (target == null) { 
+
+        if (target == null) {
             server();
-        } else { 
+        } else {
             client(target);
         }
     }

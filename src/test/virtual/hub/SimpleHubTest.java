@@ -11,27 +11,27 @@ public class SimpleHubTest implements Runnable {
     private VirtualSocketFactory factory;
     private int state = 0;
     private boolean done = false;
-    
+
     public SimpleHubTest(VirtualSocketFactory factory) throws IOException {
-       
+
         this.factory = factory;
-    
-        factory.getServiceLink().registerProperty("smartsockets.viz", 
-                "S^state=" + state++);    
-    }    
-    
+
+        factory.getServiceLink().registerProperty("smartsockets.viz",
+                "S^state=" + state++);
+    }
+
     public synchronized void done() {
         done = true;
     }
-    
+
     public synchronized boolean getDone() {
         return done;
     }
-        
-    public void run() { 
-        
-        try { 
-            while (!getDone()) { 
+
+    public void run() {
+
+        try {
+            while (!getDone()) {
                 DirectSocketAddress[] hubs = factory.getKnownHubs();
 
                 System.out.println("Known hubs: " + Arrays.deepToString(hubs));
@@ -42,7 +42,7 @@ public class SimpleHubTest implements Runnable {
                     // ignore
                 }
 
-                factory.getServiceLink().updateProperty("smartsockets.viz", 
+                factory.getServiceLink().updateProperty("smartsockets.viz",
                         "S^state=" + state++);
             }
 
@@ -59,17 +59,17 @@ public class SimpleHubTest implements Runnable {
 
         System.out.println("Done!");
     }
-    
+
     public static void main(String[] args) {
 
-        try { 
-            VirtualSocketFactory factory = 
+        try {
+            VirtualSocketFactory factory =
                 VirtualSocketFactory.createSocketFactory((java.util.Properties) null, true);
 
             System.out.println("Created socket factory");
-        
+
             new SimpleHubTest(factory).run();
-            
+
         } catch (Exception e) {
             System.err.println("Oops: " + e);
             e.printStackTrace(System.err);

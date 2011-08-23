@@ -148,7 +148,7 @@ public class DirectServerSocket {
      * ensure that the connection ha reached the intended destination.
      *
      * @return A DirectSocket representing the new connection.
-     * @throws IOException 
+     * @throws IOException
      */
     public DirectSocket accept() throws IOException {
 

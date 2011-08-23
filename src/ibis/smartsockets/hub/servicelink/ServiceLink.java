@@ -127,18 +127,18 @@ public class ServiceLink implements Runnable {
     }
 
     public synchronized boolean getDone() {
-    	return done;
+        return done;
     }
 
     public synchronized void setDone() {
-    	if (done) {
-    		return;
-    	}
+        if (done) {
+            return;
+        }
 
-    	done = true;
+        done = true;
 
-    	// hum... this may be a bit harsh ?
-    	closeConnectionToHub();
+        // hum... this may be a bit harsh ?
+        closeConnectionToHub();
     }
 
     public synchronized void registerVCCallBack(VirtualConnectionCallBack cb) {
@@ -832,11 +832,11 @@ public class ServiceLink implements Runnable {
 
             } catch (IOException e) {
 
-            	if (!getDone()) {
-            		logger.warn("ServiceLink: Exception while receiving!", e);
-            	}
+                if (!getDone()) {
+                    logger.warn("ServiceLink: Exception while receiving!", e);
+                }
 
-            	closeConnectionToHub();
+                closeConnectionToHub();
             }
         }
     }
@@ -958,17 +958,17 @@ public class ServiceLink implements Runnable {
                 out.write(MessageForwarderProtocol.DATA_MESSAGE);
 
                 out.writeInt(4 + targetHub.getAddress().length +
-                		4 + target.getAddress().length +
-                		4 + (message == null ? 0 : message.length));
+                        4 + target.getAddress().length +
+                        4 + (message == null ? 0 : message.length));
 
                 DirectSocketAddress.write(targetHub, out); // may be null ?
                 DirectSocketAddress.write(target, out);
 
                 if (message == null) {
-                	out.writeInt(0);
+                    out.writeInt(0);
                 } else {
-                	out.writeInt(message.length);
-                	out.write(message);
+                    out.writeInt(message.length);
+                    out.write(message);
                 }
 
                 out.flush();
@@ -1668,12 +1668,12 @@ public class ServiceLink implements Runnable {
         // connection is lost, it will try to reconnect.
         while (!getDone()) {
 
-        	int sleep = 1000;
+            int sleep = 1000;
             long end = System.currentTimeMillis() + maxReconnect;
 
-        	do {
+            do {
                 if (hubAddress == null) {
-                	// This is the initial connect, where we haven't found a working hub yet....
+                    // This is the initial connect, where we haven't found a working hub yet....
                     for (DirectSocketAddress a : hubs) {
                         try {
                             connectToHub(a);
@@ -1693,7 +1693,7 @@ public class ServiceLink implements Runnable {
                         }
                     }
                 } else {
-                	// This happens when we've lost contact with the hub and try to reconnect.
+                    // This happens when we've lost contact with the hub and try to reconnect.
                     try {
                         connectToHub(hubAddress);
                     } catch (IOException e) {
@@ -1710,9 +1710,9 @@ public class ServiceLink implements Runnable {
                 }
 
                 if (forceConnection && maxReconnect > 0 && System.currentTimeMillis() > end) {
-                	logger.error("Permanent failure of servicelink! -- will exit");
-                	// FIXME!
-                	System.exit(1);
+                    logger.error("Permanent failure of servicelink! -- will exit");
+                    // FIXME!
+                    System.exit(1);
                 }
 
             } while (!getConnected());
@@ -1751,8 +1751,8 @@ public class ServiceLink implements Runnable {
             force = p.booleanProperty(SmartSocketsProperties.SL_FORCE);
 
             if (force) {
-            	maxReconnect = ((long) p.getIntProperty(SmartSocketsProperties.SL_RETRIES)) *
-            	((long) p.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
+                maxReconnect = ((long) p.getIntProperty(SmartSocketsProperties.SL_RETRIES)) *
+                ((long) p.getIntProperty(SmartSocketsProperties.SL_TIMEOUT));
             }
         }
 

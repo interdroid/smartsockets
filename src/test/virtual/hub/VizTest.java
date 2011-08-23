@@ -8,102 +8,102 @@ import java.util.Arrays;
 
 public class VizTest {
 
-	private VirtualSocketFactory factory;
-	private int state = 0;
-	private boolean done = false;
+    private VirtualSocketFactory factory;
+    private int state = 0;
+    private boolean done = false;
 
-	public VizTest(VirtualSocketFactory factory) throws IOException {
+    public VizTest(VirtualSocketFactory factory) throws IOException {
 
-		this.factory = factory;
+        this.factory = factory;
 
-	//	factory.getServiceLink().registerProperty("smartsockets.viz", 
-	//			"S^state=" + state++);
-		
-		System.out.println("##### VIZ TEST START #####");
-		
-		
-		boolean ok = factory.getServiceLink().registerProperty("smartsockets.viz", "I^" + "ibis0"
+    //    factory.getServiceLink().registerProperty("smartsockets.viz",
+    //            "S^state=" + state++);
+
+        System.out.println("##### VIZ TEST START #####");
+
+
+        boolean ok = factory.getServiceLink().registerProperty("smartsockets.viz", "I^" + "ibis0"
                   + "," + "@little@house@ontheprairy");
-	
-		if (!ok) { 
-			System.out.println("EEP: registration failed!");
-		}
-	
-	}    
 
-	public synchronized void done() {
-		done = true;
-	}
+        if (!ok) {
+            System.out.println("EEP: registration failed!");
+        }
 
-	public synchronized boolean getDone() {
-		return done;
-	}
+    }
 
-	public void run() { 
+    public synchronized void done() {
+        done = true;
+    }
 
-		try { 
-			while (!getDone()) { 
-				DirectSocketAddress[] hubs = factory.getKnownHubs();
+    public synchronized boolean getDone() {
+        return done;
+    }
 
-				System.out.println("Known hubs: " + Arrays.deepToString(hubs));
+    public void run() {
 
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					// ignore
-				}
+        try {
+            while (!getDone()) {
+                DirectSocketAddress[] hubs = factory.getKnownHubs();
 
-	//			factory.getServiceLink().updateProperty("smartsockets.viz", 
-	//					"S^state=" + state++);
-	
-				String tmp = "I^" + "ibis" + state++  + "," + "@little@house@ontheprairy";
-				
-				System.out.println("PROP: " + tmp);
-				
-				boolean ok = factory.getServiceLink().updateProperty("smartsockets.viz", tmp);
+                System.out.println("Known hubs: " + Arrays.deepToString(hubs));
 
-				if (!ok) { 
-					System.out.println("EEP: update failed!");
-				}
-						
-				if (state >= 5) { 
-					done();
-				}
-			}
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
 
-		} catch (Exception e) {
-			System.err.println("Oops: " + e);
-			e.printStackTrace(System.err);
-		} finally {
-			try {
-				factory.end();
-			} catch (Exception e) {
-				// ignore
-			}
-		}
+    //            factory.getServiceLink().updateProperty("smartsockets.viz",
+    //                    "S^state=" + state++);
 
-		System.out.println("Done!");
-		
-		try {
-			Thread.sleep(50000);
-		} catch (InterruptedException e) {
-			// ignore
-		}
-	}
+                String tmp = "I^" + "ibis" + state++  + "," + "@little@house@ontheprairy";
 
-	public static void main(String[] args) {
+                System.out.println("PROP: " + tmp);
 
-		try { 
-			VirtualSocketFactory factory = 
-				VirtualSocketFactory.createSocketFactory((java.util.Properties) null, true);
+                boolean ok = factory.getServiceLink().updateProperty("smartsockets.viz", tmp);
 
-			System.out.println("Created socket factory");
+                if (!ok) {
+                    System.out.println("EEP: update failed!");
+                }
 
-			new VizTest(factory).run();
+                if (state >= 5) {
+                    done();
+                }
+            }
 
-		} catch (Exception e) {
-			System.err.println("Oops: " + e);
-			e.printStackTrace(System.err);
-		}
-	}
+        } catch (Exception e) {
+            System.err.println("Oops: " + e);
+            e.printStackTrace(System.err);
+        } finally {
+            try {
+                factory.end();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        System.out.println("Done!");
+
+        try {
+            Thread.sleep(50000);
+        } catch (InterruptedException e) {
+            // ignore
+        }
+    }
+
+    public static void main(String[] args) {
+
+        try {
+            VirtualSocketFactory factory =
+                VirtualSocketFactory.createSocketFactory((java.util.Properties) null, true);
+
+            System.out.println("Created socket factory");
+
+            new VizTest(factory).run();
+
+        } catch (Exception e) {
+            System.err.println("Oops: " + e);
+            e.printStackTrace(System.err);
+        }
+    }
 }

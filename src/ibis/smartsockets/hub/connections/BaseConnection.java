@@ -60,13 +60,13 @@ public abstract class BaseConnection implements Runnable {
 
             if (System.currentTimeMillis() > next) {
 
-            	Statistics s = getStatistics();
+                Statistics s = getStatistics();
 
-            	if (s != null && callback != null) {
-            		callback.add(s);
-            	}
+                if (s != null && callback != null) {
+                    callback.add(s);
+                }
 
-            	next = System.currentTimeMillis() + statisticsInterval;
+                next = System.currentTimeMillis() + statisticsInterval;
             }
         }
 

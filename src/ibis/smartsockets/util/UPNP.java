@@ -355,7 +355,7 @@ public class UPNP {
             UPNPMessageFactory.getNewInstance(wanConnectionService);
 
         if (factory == null) {
-        	throw new IOException("Failed to create UPNPMessageFactory");
+            throw new IOException("Failed to create UPNPMessageFactory");
         }
 
         int loop = 0;

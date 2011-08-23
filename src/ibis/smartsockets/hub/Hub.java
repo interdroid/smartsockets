@@ -60,7 +60,7 @@ public final class Hub extends Thread implements StatisticsCallback {
 
     // FIXME: Quick hack
     private MessageForwardingConnectionStatistics mfcStats =
-    	new MessageForwardingConnectionStatistics("Connection(*)");
+        new MessageForwardingConnectionStatistics("Connection(*)");
 
     private boolean done = false;
 
@@ -83,7 +83,7 @@ public final class Hub extends Thread implements StatisticsCallback {
 
         if (allowSSHForHub) {
             misclogger.info("Hub allowd to use SSH");
-        	p.setProperty(SmartSocketsProperties.SSH_IN, "true");
+            p.setProperty(SmartSocketsProperties.SSH_IN, "true");
             p.setProperty(SmartSocketsProperties.SSH_OUT, "true");
         }
 
@@ -340,17 +340,17 @@ public final class Hub extends Thread implements StatisticsCallback {
 
     public void add(Statistics s) {
 
-    	if (!printStatistics) {
+        if (!printStatistics) {
             return;
         }
 
-    	if (mfcStats == null) {
-    		return;
-    	}
+        if (mfcStats == null) {
+            return;
+        }
 
-    	synchronized (mfcStats) {
-    		mfcStats.add(s);
-    	}
+        synchronized (mfcStats) {
+            mfcStats.add(s);
+        }
     }
 
     private synchronized void statistics() {
@@ -360,8 +360,8 @@ public final class Hub extends Thread implements StatisticsCallback {
         }
 
         if (mfcStats == null) {
-    		return;
-    	}
+            return;
+        }
 
         long now = System.currentTimeMillis();
 
@@ -401,8 +401,8 @@ public final class Hub extends Thread implements StatisticsCallback {
         }*/
 
         synchronized (mfcStats) {
-    		mfcStats.print(System.err, " ");
-    	}
+            mfcStats.print(System.err, " ");
+        }
 
         nextStats = now + STAT_FREQ;
     }

@@ -37,7 +37,7 @@ public class ConnectTest {
             boolean ssh = false;
             boolean sleep = false;
             boolean pingpong = false;
-            
+
             int targetCount = args.length;
 
             for (int i = 0; i < args.length; i++) {
@@ -79,15 +79,15 @@ public class ConnectTest {
                 }
             }
 
-            if (targetCount > 0) { 
-                DirectSocketAddress[] targets 
+            if (targetCount > 0) {
+                DirectSocketAddress[] targets
                     = new DirectSocketAddress[targetCount];
-                
+
                 int index = 0;
 
                 for (int i = 0; i < args.length; i++) {
                     if (args[i] != null) {
-                        targets[index++] 
+                        targets[index++]
                                 = DirectSocketAddress.getByAddress(args[i]);
                     }
                 }
@@ -100,7 +100,7 @@ public class ConnectTest {
                 }
 
                 int total = 0;
-                
+
                 for (DirectSocketAddress t : targets) {
 
                     if (sleep) {
@@ -118,12 +118,12 @@ public class ConnectTest {
 
                         for (int c = 0; c < count; c++) {
 
-                            DirectSocket s 
+                            DirectSocket s
                                 = sf.createSocket(t, timeout, 0, prop);
 
-                            if (pingpong) { 
+                            if (pingpong) {
                                 s.setTcpNoDelay(true);
-                                
+
                                 OutputStream out = s.getOutputStream();
 
                                 out.write(42);
@@ -135,14 +135,14 @@ public class ConnectTest {
                                 in.close();
                                 out.close();
                             }
-                                
+
                             s.close();
                         }
 
                         time = System.currentTimeMillis() - time;
 
                         total += count;
-                        
+
                         System.out.println(count + " connections in " + time
                                 + " ms. -> " + (((double) time) / count)
                                 + "ms/conn (total: " + total + ")");
@@ -161,7 +161,7 @@ public class ConnectTest {
 
                     if (pingpong) {
                         s.setTcpNoDelay(true);
-                        
+
                         InputStream in = s.getInputStream();
                         in.read();
 
@@ -173,7 +173,7 @@ public class ConnectTest {
                         in.close();
                         out.close();
                     }
-                    
+
                     s.close();
                 }
             }

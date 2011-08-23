@@ -124,31 +124,31 @@ public class ClientMessage {
         }
     }
 
-	public long messageSize() {
+    public long messageSize() {
 
-		if (messageSize <= 0) {
-			messageSize = 4 + 4 + 4 + 1; // Fixed length parts...
+        if (messageSize <= 0) {
+            messageSize = 4 + 4 + 4 + 1; // Fixed length parts...
 
-			messageSize += source.getAddress().length;
-			messageSize += target.getAddress().length;
+            messageSize += source.getAddress().length;
+            messageSize += target.getAddress().length;
 
-			if (sourceHub != null) {
-				messageSize += sourceHub.getAddress().length;
-			}
+            if (sourceHub != null) {
+                messageSize += sourceHub.getAddress().length;
+            }
 
-			if (targetHub != null) {
-				messageSize += targetHub.getAddress().length;
-			}
+            if (targetHub != null) {
+                messageSize += targetHub.getAddress().length;
+            }
 
-			if (module != null) {
-				messageSize += module.length() * 2 + 4;
-			}
+            if (module != null) {
+                messageSize += module.length() * 2 + 4;
+            }
 
-			if (message != null) {
-				messageSize += message.length;
-			}
-		}
+            if (message != null) {
+                messageSize += message.length;
+            }
+        }
 
-		return messageSize;
-	}
+        return messageSize;
+    }
 }
