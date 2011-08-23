@@ -809,7 +809,7 @@ public final class SmartSocketsProperties {
             defaultProperties = new TypedProperties();
 
             // Start by inserting the default values.
-            for (int i=0;i<DEFAULTS.length;i+=2) {
+            for (int i=0; i<DEFAULTS.length; i+=2) {
                 defaultProperties.put(DEFAULTS[i], DEFAULTS[i+1]);
             }
 

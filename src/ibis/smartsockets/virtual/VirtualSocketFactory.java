@@ -12,6 +12,9 @@ import ibis.smartsockets.virtual.modules.AbstractDirectModule;
 import ibis.smartsockets.virtual.modules.AcceptHandler;
 import ibis.smartsockets.virtual.modules.ConnectModule;
 import ibis.smartsockets.virtual.modules.direct.Direct;
+import ibis.smartsockets.virtual.modules.hubrouted.Hubrouted;
+import ibis.smartsockets.virtual.modules.reverse.Reverse;
+import ibis.smartsockets.virtual.modules.splice.Splice;
 import ibis.smartsockets.util.ThreadPool;
 
 import java.io.IOException;
@@ -31,21 +34,58 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.java_cup.internal.runtime.virtual_parse_stack;
+
 /**
- * This class implements a 'virtual' socket factory.
+ * This class implements a virtual socket factory.
+ *
+ * The VirtualSocketFactory is the public interface to the virtual connection
+ * layer of SmartSockets. It implements several types of connection setup using
+ * the direct connection layer (see {@link DirectSocketFactory}) and a
+ * {@link ServiceLink} to the {@link Hub}.
+ *<p>
+ * The different connection setup schemes are implemented in separate modules
+ * each extending the {@link ConnectModule} class.
+ *<p>
+ * Currently, 4 different connect modules are available:<br>
+ *<p>
+ * {@link Direct}: creates a direct connection to the target.<br>
+ * {@link Reverse}: reverses the connection setup.such that the target creates a
+ * direct connection to the source.<br>
+ * {@link Splice}: uses TCP splicing to create a direct connection to the
+ * target.<br>
+ * {@link Hubrouted}: create a virtual connection that routes all traffic
+ * through the hub overlay.<br>
+ *<p>
+ * To create a new connection, each module is tried in sequence until a
+ * connection is established, or until it is clear that a connection can not be
+ * established at all (e.g., because the destination port does not exist on the
+ * target machine). By default, the order<br>
+ *<p>
+ * Direct, Reverse, Splice, Routed
+ * <p>is used. This order prefers modules that produce a direct connection. This
+ * default order can be changed using the
+ * smartsockets.modules.order property. The order can also be
+ * adjusted on a per connection basis by providing this property to the
+ * createClientSocket method.
+ *
+ * @see ibis.smartsockets.virtual.modules
+ * @see DirectSocketFactory
+ * @see ServiceLink
+ * @see Hub
  *
  * @author Jason Maassen
  * @version 1.0 Jan 30, 2006
  * @since 1.0
  *
  */
-public class VirtualSocketFactory {
+public final class VirtualSocketFactory {
 
-	private static class StatisticsPrinter implements Runnable {
+    private static class StatisticsPrinter implements Runnable {
 
-		private int timeout;
-		private VirtualSocketFactory factory;
-		private String prefix;
+        private int timeout;
+        private VirtualSocketFactory factory;
+        private String prefix;
 
 		StatisticsPrinter(VirtualSocketFactory factory, int timeout,
 				String prefix) {
@@ -80,7 +120,7 @@ public class VirtualSocketFactory {
 		}
 
 		private synchronized int getTimeout() {
-			return timeout;
+		    return timeout;
 		}
 
 		public synchronized void adjustInterval(int interval) {
@@ -89,22 +129,25 @@ public class VirtualSocketFactory {
 		}
 	}
 
-	private static final Map<String, VirtualSocketFactory> factories = new HashMap<String, VirtualSocketFactory>();
+	private static final Map<String, VirtualSocketFactory> factories =
+	        new HashMap<String, VirtualSocketFactory>();
 
 	private static VirtualSocketFactory defaultFactory = null;
 
-	protected static final Logger logger = LoggerFactory
-			.getLogger("ibis.smartsockets.virtual.misc");
 
-	protected static final Logger conlogger = LoggerFactory
-			.getLogger("ibis.smartsockets.virtual.connect");
+	protected static final Logger logger =
+            LoggerFactory.getLogger("ibis.smartsockets.virtual.misc");
+
+	protected static final Logger conlogger =
+            LoggerFactory.getLogger("ibis.smartsockets.virtual.connect");
 
 	private static final Logger statslogger = LoggerFactory
 			.getLogger("ibis.smartsockets.statistics");
 
 	private final DirectSocketFactory directSocketFactory;
 
-	private final ArrayList<ConnectModule> modules = new ArrayList<ConnectModule>();
+	private final ArrayList<ConnectModule> modules =
+			new ArrayList<ConnectModule>();
 
 	private ConnectModule direct;
 
@@ -120,7 +163,8 @@ public class VirtualSocketFactory {
 
 	private final Random random;
 
-	private final HashMap<Integer, VirtualServerSocket> serverSockets = new HashMap<Integer, VirtualServerSocket>();
+	private final HashMap<Integer, VirtualServerSocket> serverSockets =
+			new HashMap<Integer, VirtualServerSocket>();
 
 	private int nextPort = 3000;
 
@@ -218,8 +262,8 @@ public class VirtualSocketFactory {
 
 		localVirtualAddressAsString = localVirtualAddress.toString();
 
-		printStatistics = p
-				.booleanProperty(SmartSocketsProperties.STATISTICS_PRINT);
+		printStatistics =
+		        p.booleanProperty(SmartSocketsProperties.STATISTICS_PRINT);
 
 		if (printStatistics) {
 			statisticPrefix = p.getProperty(
