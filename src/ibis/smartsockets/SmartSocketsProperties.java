@@ -35,7 +35,7 @@ public final class SmartSocketsProperties {
 
     /**
      * The SmartSockets property file to load. ("smartsockets.properties")
-     * @see DEFAULT_FILE
+     * See {@link #DEFAULT_FILE}.
      */
     public static final String FILE = PREFIX + "file";
 
@@ -381,7 +381,7 @@ public final class SmartSocketsProperties {
             DIRECT_PREFIX + "receivebuffer";
 
     /**
-     * Count the bytes send by a DirectVirtualSocket (false).
+     * Count the bytes sent by a DirectVirtualSocket (false).
      * @see ibis.smartsockets.virtual.modules.direct.Direct
      */
     public static final String DIRECT_COUNT = DIRECT_PREFIX + "count";
@@ -389,7 +389,7 @@ public final class SmartSocketsProperties {
     /**
      * Cache the network addresses of the local machine, so only a single
      * lookup is required (true).
-     * @see ibis.smartsockets.direct.DirectVirtualSocket
+     * @see ibis.smartsockets.virtual.modules.direct.DirectVirtualSocket
      */
     public static final String DIRECT_CACHE_IP = DIRECT_PREFIX + "cacheIP";
 

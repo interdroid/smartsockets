@@ -45,11 +45,11 @@ import org.slf4j.LoggerFactory;
  * Currently, 4 different connect modules are available:<br>
  *<p>
  * {@link Direct}: creates a direct connection to the target.<br>
- * {@link Reverse}: reverses the connection setup.such that the target creates a
+ * {@link ibis.smartsockets.virtual.modules.reverse.Reverse Reverse}: reverses the connection setup.such that the target creates a
  * direct connection to the source.<br>
- * {@link Splice}: uses TCP splicing to create a direct connection to the
+ * {@link ibis.smartsockets.virtual.modules.splice.Splice Splice}: uses TCP splicing to create a direct connection to the
  * target.<br>
- * {@link Hubrouted}: create a virtual connection that routes all traffic
+ * {@link ibis.smartsockets.virtual.modules.hubrouted.Hubrouted Hubrouted}: create a virtual connection that routes all traffic
  * through the hub overlay.<br>
  *<p>
  * To create a new connection, each module is tried in sequence until a

@@ -290,7 +290,7 @@ public class DirectServerSocket {
      *
      * @return the ServerSocketChannel representing this DirectServerSocket, or
      * null if unavailable.
-     * @see java.nio.ServerSocketChannel
+     * @see java.nio.channels.ServerSocketChannel
      */
     public ServerSocketChannel getChannel() {
         return serverSocket.getChannel();
