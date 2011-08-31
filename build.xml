@@ -93,7 +93,7 @@
         <!-- Create the javadoc -->
         <mkdir dir="${javadoc}" />
         <javadoc destdir="${javadoc}" access="public" sourcepath="src" windowtitle="SmartSockets Documentation" packagenames="ibis.smartsockets.*" doctitle="SmartSockets 1.0 Documentation" bottom="SmartSockets 1.60" classpathref="default.classpath">
-	    <link href=""http://download.oracle.com/javase/1.5.0/docs/api/" />
+	    <link href="http://download.oracle.com/javase/1.5.0/docs/api/" />
         </javadoc>
 
     </target>
