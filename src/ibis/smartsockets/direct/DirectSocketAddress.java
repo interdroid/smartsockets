@@ -776,8 +776,11 @@ public class DirectSocketAddress extends SocketAddress
             }
         }
 
-        // If either is loopback, we always match
+        // If either is loopback, we always match.
+        // TODO: I don't understand this. What if one is a loopback and the
+        // other represents a remote host? --Ceriel
         if (isLoopBack(privateAds) || isLoopBack(other.privateAds)) {
+            // TODO: What if comparePorts is set? --Ceriel
             return true;
         }
 
