@@ -46,7 +46,9 @@ public abstract class BaseConnection implements Runnable {
     }
 
     public boolean isLocalHub(DirectSocketAddress sa) {
-        return getLocalHub().equals(sa);
+        // return getLocalHub().equals(sa);
+	// This is too strong. Should test for same process. --Ceriel
+	return getLocalHub().sameProcess(sa);
     }
 
     public void run() {
