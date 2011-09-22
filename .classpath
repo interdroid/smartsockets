@@ -3,18 +3,17 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="lib/commons-jxpath-1.1.jar"/>
-	<classpathentry kind="lib" path="lib/commons-logging-api.jar"/>
-	<classpathentry kind="lib" path="lib/commons-logging.jar"/>
-	<classpathentry kind="lib" path="lib/jmdns-3.4.0.jar"/>
-	<classpathentry kind="lib" path="lib/jstun-0.6.1.jar"/>
-	<classpathentry kind="lib" path="lib/juds-0.94-universal.jar"/>
-	<classpathentry kind="lib" path="lib/log4j-1.2.13.jar"/>
-	<classpathentry kind="lib" path="lib/sbbi-upnplib-1.0.2.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-api-1.5.3.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-log4j12-1.5.3.jar"/>
-	<classpathentry kind="lib" path="lib/smartsockets-1.60.jar"/>
-	<classpathentry kind="lib" path="lib/TGGraphLayout-ibis-1.58.jar"/>
-	<classpathentry kind="lib" path="lib/trilead-ssh2-r13339-CJ.jar"/>
+	<classpathentry kind="lib" path="external/commons-jxpath-1.1.jar"/>
+	<classpathentry kind="lib" path="external/commons-logging-api.jar"/>
+	<classpathentry kind="lib" path="external/commons-logging.jar"/>
+	<classpathentry kind="lib" path="external/jmdns-3.4.0.jar"/>
+	<classpathentry kind="lib" path="external/jstun-0.6.1.jar"/>
+	<classpathentry kind="lib" path="external/juds-0.94-universal.jar"/>
+	<classpathentry kind="lib" path="external/log4j-1.2.13.jar"/>
+	<classpathentry kind="lib" path="external/sbbi-upnplib-1.0.2.jar"/>
+	<classpathentry kind="lib" path="external/slf4j-api-1.5.3.jar"/>
+	<classpathentry kind="lib" path="external/slf4j-log4j12-1.5.3.jar"/>
+	<classpathentry kind="lib" path="external/TGGraphLayout-ibis-1.58.jar"/>
+	<classpathentry kind="lib" path="external/trilead-ssh2-r13339-CJ.jar"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
