@@ -427,4 +427,12 @@ public final class NameResolver {
         }
         return localNames;
     }
+
+    /**
+     * Add hub addresses to the resolver.
+     * @param string the addresses of the hubs
+     */
+    public void addHub(String... string) {
+        mFactory.addHubs(string);
+    }
 }
